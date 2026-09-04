@@ -1,0 +1,65 @@
+<div class="login-page">
+  <div class="login-card card card--glass">
+    <div class="login-header">
+      <div class="brand-logo">
+        <i class="ri-drop-fill"></i>
+      </div>
+      <h2>Sistema Integrado Junta La Jones</h2>
+      <p class="caption">Portal Administrativo — Iniciar Sesión</p>
+    </div>
+
+    <div class="alert alert--danger" *ngIf="errorMensaje">
+      <i class="ri-error-warning-line"></i> {{ errorMensaje }}
+    </div>
+
+    <form (submit)="iniciarSesion(); $event.preventDefault();" class="login-form">
+      <div class="form-group">
+        <label for="usuario"><i class="ri-user-line"></i> Usuario o Cédula</label>
+        <input 
+          type="text" 
+          id="usuario"
+          class="form-control" 
+          placeholder="Ingrese su usuario" 
+          [(ngModel)]="usuario" 
+          name="usuario" 
+          required 
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password"><i class="ri-lock-password-line"></i> Contraseña</label>
+        <div class="password-input-wrapper">
+          <input 
+            [type]="mostrarPassword ? 'text' : 'password'" 
+            id="password"
+            class="form-control" 
+            placeholder="••••••••" 
+            [(ngModel)]="password" 
+            name="password" 
+            required 
+          />
+          <button type="button" class="btn-toggle-eye" (click)="togglePassword()">
+            <i [class]="mostrarPassword ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-options">
+        <label class="remember-me">
+          <input type="checkbox" checked /> Recordar mi sesión
+        </label>
+        <a href="javascript:void(0)" class="forgot-link">¿Olvidó su contraseña?</a>
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--lg btn-block" [disabled]="cargando">
+        <i class="ri-login-box-line" *ngIf="!cargando"></i>
+        <i class="ri-loader-4-line spin" *ngIf="cargando"></i>
+        {{ cargando ? 'Verificando...' : 'Ingresar al Sistema' }}
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <small>© 2026 Junta de Agua y Riego "La Jones" — Patate</small>
+    </div>
+  </div>
+</div>
