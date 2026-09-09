@@ -1,0 +1,313 @@
+<div class="admin-layout">
+  
+  <!-- BARRA LATERAL / NAVIGATION -->
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <div class="brand-icon"><i class="ri-drop-fill"></i></div>
+      <div>
+        <h3>Junta La Jones</h3>
+        <span class="caption">Panel de Gestión v1.0</span>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <button class="nav-item" [class.active]="tabActiva === 'USUARIOS'" (click)="cambiarTab('USUARIOS')">
+        <i class="ri-user-line"></i> Nómina & Lotes
+      </button>
+      <button class="nav-item" [class.active]="tabActiva === 'ASISTENCIAS'" (click)="cambiarTab('ASISTENCIAS')">
+        <i class="ri-calendar-check-line"></i> Asambleas & Mingas
+      </button>
+      <button class="nav-item" [class.active]="tabActiva === 'TURNOS'" (click)="cambiarTab('TURNOS')">
+        <i class="ri-time-line"></i> Turnos de Agua
+      </button>
+      <button class="nav-item" [class.active]="tabActiva === 'FINANZAS'" (click)="cambiarTab('FINANZAS')">
+        <i class="ri-money-dollar-circle-line"></i> Gestión Financiera
+      </button>
+      <button class="nav-item" [class.active]="tabActiva === 'ACTAS'" (click)="cambiarTab('ACTAS')">
+        <i class="ri-folder-line"></i> Actas & Comunicaciones
+      </button>
+    </nav>
+
+    <div class="sidebar__user">
+      <div class="avatar"><i class="ri-user-settings-fill"></i></div>
+      <div>
+        <strong>Admin Directiva</strong>
+        <small>Tesorero / Secretario</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-content">
+    
+    <!-- ENCABEZADO SUPERIOR -->
+    <header class="top-header">
+      <div>
+        <h2>
+          <span *ngIf="tabActiva === 'USUARIOS'"><i class="ri-user-shared-line"></i> Nómina de Comuneros y Lotes Georreferenciados</span>
+          <span *ngIf="tabActiva === 'ASISTENCIAS'"><i class="ri-checkbox-list-line"></i> Control de Asistencia a Asambleas y Mingas</span>
+          <span *ngIf="tabActiva === 'TURNOS'"><i class="ri-time-fill"></i> Horarios Semanales de Agua por Sector</span>
+          <span *ngIf="tabActiva === 'FINANZAS'"><i class="ri-funds-box-line"></i> Control Financiero, Ingresos/Egresos y SRI</span>
+          <span *ngIf="tabActiva === 'ACTAS'"><i class="ri-file-text-line"></i> Archivo Digital de Actas y Convocatorias</span>
+        </h2>
+        <p class="caption">Junta de Agua y Riego "La Jones" — Patate (Tungurahua)</p>
+      </div>
+
+      <div class="header-actions">
+        <span class="badge badge--success"><i class="ri-pulse-line"></i> Sistema en Línea</span>
+      </div>
+    </header>
+
+    <!-- METRICAS / KPIS SUPERIORES -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-card__icon"><i class="ri-hand-coin-line"></i></div>
+        <div class="kpi-card__content">
+          <span class="kpi-card__value">${{ kpis.recaudadoMes.toFixed(2) }}</span>
+          <span class="kpi-card__label">Recaudado este Mes</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__icon" style="background:#fee2e2; color:#ef4444;"><i class="ri-error-warning-line"></i></div>
+        <div class="kpi-card__content">
+          <span class="kpi-card__value" style="color:#ef4444;">${{ kpis.pendientesCobro.toFixed(2) }}</span>
+          <span class="kpi-card__label">Pendientes por Cobrar</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__icon" style="background:#fef3c7; color:#d97706;"><i class="ri-shopping-bag-line"></i></div>
+        <div class="kpi-card__content">
+          <span class="kpi-card__value">${{ kpis.egresosMes.toFixed(2) }}</span>
+          <span class="kpi-card__label">Egresos / Gastos</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__icon" style="background:#d1fae5; color:#059669;"><i class="ri-scales-3-line"></i></div>
+        <div class="kpi-card__content">
+          <span class="kpi-card__value" style="color:#059669;">${{ kpis.balanceAlDia.toFixed(2) }}</span>
+          <span class="kpi-card__label">Balance General Al Día</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 1: NÓMINA DE USUARIOS Y LOTES -->
+    <section *ngIf="tabActiva === 'USUARIOS'" class="tab-view">
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title"><i class="ri-team-line"></i> Registro de Comuneros y Terrenos</h3>
+          <button class="btn btn--primary btn--sm">
+            <i class="ri-user-add-line"></i> Nuevo Comunero / Lote
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Cédula</th>
+                <th>Nombre del Comunero</th>
+                <th>Sector</th>
+                <th>Código Lote</th>
+                <th>Superficie</th>
+                <th>Mapa / Coordenadas</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of usuarios">
+                <td><strong>{{ u.cedula }}</strong></td>
+                <td>{{ u.nombres }}</td>
+                <td>{{ u.sector }}</td>
+                <td><span class="badge badge--info">{{ u.loteCodigo }}</span></td>
+                <td>{{ u.superficie }} m²</td>
+                <td>
+                  <button class="btn btn--outline btn--sm" (click)="verLoteEnMapa(u)">
+                    <i class="ri-map-pin-2-fill text-primary"></i> Ver en Mapa
+                  </button>
+                </td>
+                <td><span class="badge badge--success">{{ u.estado }}</span></td>
+                <td>
+                  <button class="btn btn--outline btn--sm"><i class="ri-edit-line"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA 2: ASISTENCIAS Y MINGAS -->
+    <section *ngIf="tabActiva === 'ASISTENCIAS'" class="tab-view">
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title"><i class="ri-calendar-event-fill"></i> Control de Asistencia a Asambleas y Mingas</h3>
+          <button class="btn btn--primary btn--sm">
+            <i class="ri-add-circle-line"></i> Programar Nuevo Evento
+          </button>
+        </div>
+
+        <div class="events-list">
+          <div class="event-item card" *ngFor="let e of eventos">
+            <div class="event-item__header">
+              <div>
+                <span class="badge" [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo }}</span>
+                <h4>{{ e.titulo }}</h4>
+                <p class="caption">Fecha: {{ e.fecha }} | Multa inasistencia: <strong>${{ e.multaAbsencia.toFixed(2) }}</strong></p>
+              </div>
+              <div class="event-item__actions">
+                <span class="badge badge--success">{{ e.asistentes }} / {{ e.totalComuneros }} Asistentes</span>
+                <button class="btn btn--secondary btn--sm">
+                  <i class="ri-checkbox-fill"></i> Tomar Asistencia Digital
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA 3: TURNOS DE AGUA -->
+    <section *ngIf="tabActiva === 'TURNOS'" class="tab-view">
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title"><i class="ri-time-line"></i> Turnos Semanales de Agua por Sector</h3>
+          <button class="btn btn--primary btn--sm">
+            <i class="ri-time-line"></i> Asignar Horario
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Lote</th>
+                <th>Comunero Asignado</th>
+                <th>Sector</th>
+                <th>Día de la Semana</th>
+                <th>Horario de Inicio</th>
+                <th>Horario de Fin</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let t of turnos">
+                <td><span class="badge badge--info">{{ t.lote }}</span></td>
+                <td><strong>{{ t.usuario }}</strong></td>
+                <td>{{ t.sector }}</td>
+                <td>{{ t.dia }}</td>
+                <td><i class="ri-play-circle-line text-success"></i> {{ t.horaInicio }}</td>
+                <td><i class="ri-stop-circle-line text-danger"></i> {{ t.horaFin }}</td>
+                <td><span class="badge badge--success">ACTIVO</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA 4: FINANZAS & SRI -->
+    <section *ngIf="tabActiva === 'FINANZAS'" class="tab-view">
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title"><i class="ri-bank-line"></i> Módulo Financiero, Caja/Bancos y SRI</h3>
+          <button class="btn btn--secondary btn--sm">
+            <i class="ri-file-chart-line"></i> Anexo SRI (IVA)
+          </button>
+        </div>
+
+        <div class="finanzas-summary grid-2">
+          <div class="card">
+            <h4><i class="ri-download-2-line text-success"></i> Registrar Ingreso / Pago</h4>
+            <div class="form-group">
+              <label>Buscar Comunero</label>
+              <input type="text" class="form-control" placeholder="Cédula o Nombres..." value="1801234567 - Juan Morales" />
+            </div>
+            <div class="form-group">
+              <label>Concepto</label>
+              <select class="form-control">
+                <option>Agua de Riego - Mensual ($10.00)</option>
+                <option>Multa por Inasistencia a Asamblea ($10.00)</option>
+                <option>Multa por Inasistencia a Minga ($15.00)</option>
+              </select>
+            </div>
+            <button class="btn btn--primary btn--block"><i class="ri-money-dollar-box-line"></i> Emitir Recibo de Pago</button>
+          </div>
+
+          <div class="card">
+            <h4><i class="ri-upload-2-line text-danger"></i> Registrar Egreso / Compra</h4>
+            <div class="form-group">
+              <label>Proveedor</label>
+              <input type="text" class="form-control" placeholder="RUC / Nombre Proveedor" />
+            </div>
+            <div class="form-group">
+              <label>Monto ($)</label>
+              <input type="number" class="form-control" placeholder="0.00" />
+            </div>
+            <button class="btn btn--outline btn--block"><i class="ri-save-line"></i> Guardar Egreso</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA 5: ACTAS & COMUNICACIONES -->
+    <section *ngIf="tabActiva === 'ACTAS'" class="tab-view">
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title"><i class="ri-folder-open-fill"></i> Archivo Digital de Actas y Resoluciones</h3>
+          <button class="btn btn--primary btn--sm">
+            <i class="ri-file-upload-line"></i> Subir Nueva Acta PDF
+          </button>
+        </div>
+
+        <div class="actas-grid">
+          <div class="card document-card">
+            <i class="ri-file-pdf-fill pdf-icon"></i>
+            <h4>Acta Asamblea General - Q2 2026</h4>
+            <p class="caption">Fecha: 15 de Junio, 2026</p>
+            <button class="btn btn--outline btn--sm"><i class="ri-download-line"></i> Descargar PDF</button>
+          </div>
+          <div class="card document-card">
+            <i class="ri-file-pdf-fill pdf-icon"></i>
+            <h4>Resolución Directiva N° 04-2026</h4>
+            <p class="caption">Fecha: 02 de Julio, 2026</p>
+            <button class="btn btn--outline btn--sm"><i class="ri-download-line"></i> Descargar PDF</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL MAPA GEORREFERENCIADO DE LOTE -->
+<div class="modal-backdrop" *ngIf="modalMapaVisible && loteSeleccionadoMapa">
+  <div class="modal card card--glass">
+    <div class="modal__header">
+      <h4><i class="ri-map-pin-2-fill text-primary"></i> Ubicación del Lote {{ loteSeleccionadoMapa.loteCodigo }}</h4>
+      <button class="btn-close" (click)="cerrarModalMapa()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal__body">
+      <p><strong>Titular:</strong> {{ loteSeleccionadoMapa.nombres }} ({{ loteSeleccionadoMapa.cedula }})</p>
+      <p><strong>Sector:</strong> {{ loteSeleccionadoMapa.sector }} | <strong>Superficie:</strong> {{ loteSeleccionadoMapa.superficie }} m²</p>
+      <p><strong>Coordenadas GPS:</strong> Lat {{ loteSeleccionadoMapa.latitud }}, Lng {{ loteSeleccionadoMapa.longitud }}</p>
+      
+      <div class="map-placeholder">
+        <i class="ri-earth-line map-bg-icon"></i>
+        <div class="map-pin">
+          <i class="ri-map-pin-fill"></i>
+          <span>Lote {{ loteSeleccionadoMapa.loteCodigo }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" (click)="abrirGoogleMaps(loteSeleccionadoMapa.latitud, loteSeleccionadoMapa.longitud)">
+        <i class="ri-google-fill"></i> Abrir en Google Maps Satelital
+      </button>
+      <button class="btn btn--outline" (click)="cerrarModalMapa()">Cerrar</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,124 @@
+<div class="consulta-page">
+  <div class="container">
+    
+    <!-- ENCABEZADO DE BÚSQUEDA -->
+    <div class="search-header card card--glass">
+      <span class="badge badge--info"><i class="ri-search-line"></i> Consulta Pública en Línea</span>
+      <h2>Consulta de Obligaciones y Multas por Cédula</h2>
+      <p class="caption">Ingresa la cédula de ciudadanía del titular del lote para consultar el estado de cuentas de agua de riego y multas por asistencia.</p>
+
+      <form (submit)="buscarCedula(); $event.preventDefault();" class="search-form">
+        <div class="input-wrapper">
+          <i class="ri-id-card-line input-icon"></i>
+          <input 
+            type="text" 
+            class="form-control form-control--lg" 
+            placeholder="Ingrese número de cédula (Ej: 1801234567)" 
+            [(ngModel)]="cedulaInput" 
+            name="cedula"
+            maxlength="13"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn--primary btn--lg" [disabled]="cargando">
+          <i class="ri-search-2-line" *ngIf="!cargando"></i>
+          <i class="ri-loader-4-line spin" *ngIf="cargando"></i>
+          {{ cargando ? 'Consultando...' : 'Consultar Cédula' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- RESULTADO DE BÚSQUEDA -->
+    <div class="search-results" *ngIf="buscado && resultado">
+      
+      <!-- TARJETA DEL TITULAR -->
+      <div class="card user-info-card">
+        <div class="user-info-header">
+          <div class="user-avatar">
+            <i class="ri-user-3-line"></i>
+          </div>
+          <div>
+            <h3>{{ resultado.nombres }}</h3>
+            <p class="caption">Cédula: <strong>{{ resultado.cedula }}</strong> | Lote: <span class="badge badge--info">{{ resultado.loteCodigo }}</span></p>
+          </div>
+        </div>
+
+        <div class="user-location-info">
+          <div>
+            <small>Sector de Riego:</small>
+            <strong>{{ resultado.sector }}</strong>
+          </div>
+          <div>
+            <small>Estado Financiero:</small>
+            <span class="badge" [ngClass]="{'badge--success': totalPendiente === 0, 'badge--danger': totalPendiente > 0}">
+              {{ totalPendiente === 0 ? 'AL DÍA EN PAGOS' : 'VALORES PENDIENTES' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESUMEN DE SALDO A PAGAR -->
+      <div class="kpi-card" [ngClass]="{'kpi-card--danger': totalPendiente > 0, 'kpi-card--success': totalPendiente === 0}">
+        <div class="kpi-card__icon">
+          <i class="ri-money-dollar-circle-line"></i>
+        </div>
+        <div class="kpi-card__content">
+          <span class="kpi-card__value">${{ totalPendiente.toFixed(2) }}</span>
+          <span class="kpi-card__label">Total Saldo Pendiente a Cancelar</span>
+        </div>
+      </div>
+
+      <!-- TABLA DETALLADA DE OBLIGACIONES -->
+      <div class="card table-card" *ngIf="resultado.deudas.length > 0">
+        <div class="card__header">
+          <h4 class="card__title"><i class="ri-file-list-3-line"></i> Detalle de Cuentas por Cobrar</h4>
+        </div>
+
+        <div class="table-container">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Emisión</th>
+                <th>Concepto de Cobro</th>
+                <th>Período / Referencia</th>
+                <th>Monto</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of resultado.deudas">
+                <td>{{ item.fechaEmision }}</td>
+                <td><strong>{{ item.concepto }}</strong></td>
+                <td>{{ item.periodo }} ({{ item.anio }})</td>
+                <td><strong>${{ item.valor.toFixed(2) }}</strong></td>
+                <td>
+                  <span class="badge" [ngClass]="{'badge--danger': item.estado === 'PENDIENTE', 'badge--success': item.estado === 'PAGADA'}">
+                    {{ item.estado }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SI NO TIENE DEUDAS -->
+      <div class="card success-empty-card" *ngIf="resultado.deudas.length === 0">
+        <i class="ri-checkbox-circle-fill success-icon"></i>
+        <h3>¡Felicitaciones! No registra valores pendientes.</h3>
+        <p>El comunero se encuentra al día con las cuotas de agua de riego y asistencias a mingas/asambleas.</p>
+      </div>
+
+      <!-- INFORMACIÓN DE PAGO -->
+      <div class="card payment-info-card" *ngIf="totalPendiente > 0">
+        <h4><i class="ri-bank-card-line"></i> Puntos de Pago Autorizados</h4>
+        <p class="caption">Para cancelar tus valores pendientes, acércate a la recaudación de la Junta o realiza una transferencia bancaria:</p>
+        <ul class="payment-list">
+          <li><strong>Recaudación Presencial:</strong> Casa Comunal Junta La Jones (Lunes a Viernes de 08:00 a 16:00).</li>
+          <li><strong>Transferencia Bancaria:</strong> Cuenta de Ahorros Banco del Pichincha N° 2200112233 — Junta de Agua La Jones (RUC: 1890123456001).</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>

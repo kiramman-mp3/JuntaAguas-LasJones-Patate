@@ -1,0 +1,134 @@
+<!-- HERO SECTION -->
+<section class="hero">
+  <div class="hero__container">
+    <div class="hero__content">
+      <span class="hero__badge">
+        <i class="ri-drop-fill"></i> Junta de Agua y Riego "La Jones" — Patate
+      </span>
+      <h1 class="hero__title">
+        Gestión Transparente del Agua de Riego y Servicios Comunitarios
+      </h1>
+      <p class="hero__description">
+        Plataforma oficial para la administración de comuneros, georreferenciación de lotes, turnos de agua, convocatorias a mingas y consulta pública de obligaciones.
+      </p>
+      <div class="hero__actions">
+        <a routerLink="/consulta" class="btn btn--primary btn--lg">
+          <i class="ri-search-eye-line"></i> Consultar Multas y Deudas por Cédula
+        </a>
+        <a routerLink="/login" class="btn btn--outline btn--lg">
+          <i class="ri-user-settings-line"></i> Acceso Directiva / Admin
+        </a>
+      </div>
+    </div>
+    <div class="hero__card-preview">
+      <div class="card card--glass">
+        <div class="preview-header">
+          <div class="preview-icon">
+            <i class="ri-water-flash-fill"></i>
+          </div>
+          <div>
+            <h4>Canal de Riego La Jones</h4>
+            <p class="caption">Estado de Servicio: Normal (2026)</p>
+          </div>
+        </div>
+        <div class="preview-stats">
+          <div class="stat-box">
+            <span class="stat-number">165</span>
+            <span class="stat-label">Comuneros</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number">3</span>
+            <span class="stat-label">Sectores</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number">55.7 L/s</span>
+            <span class="stat-label">Caudal Total</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECCIÓN DE CONSULTA RÁPIDA -->
+<section class="quick-search-section">
+  <div class="container">
+    <div class="search-banner card card--glass">
+      <div class="search-banner__text">
+        <h3><i class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus cuotas o multas?</h3>
+        <p>Ingresa tu número de cédula para consultar pagos pendientes de agua de riego, asistencia a mingas y asambleas.</p>
+      </div>
+      <a routerLink="/consulta" class="btn btn--secondary btn--lg">
+        <i class="ri-search-line"></i> Ir a la herramienta de Consulta
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CONVOCATORIAS VIGENTES -->
+<section class="section-events">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <span class="badge badge--info"><i class="ri-notification-3-line"></i> Anuncios Oficiales</span>
+        <h2>Próximas Convocatorias y Mingas</h2>
+      </div>
+      <span class="caption">Asistencia obligatoria según reglamento interno</span>
+    </div>
+
+    <div class="events-grid">
+      <div class="card event-card" *ngFor="let item of convocatorias">
+        <div class="event-card__header">
+          <span class="badge" [ngClass]="{'badge--primary': item.tipo === 'ASAMBLEA GENERAL', 'badge--warning': item.tipo === 'MINGA COMUNITARIA'}">
+            {{ item.tipo }}
+          </span>
+          <span class="small font-bold text-danger"><i class="ri-error-warning-line"></i> Multa: {{ item.multa }}</span>
+        </div>
+        <h3 class="event-card__title">{{ item.titulo }}</h3>
+        <div class="event-card__details">
+          <div class="detail-item">
+            <i class="ri-calendar-event-line"></i> <span><strong>Fecha:</strong> {{ item.fecha }}</span>
+          </div>
+          <div class="detail-item">
+            <i class="ri-time-line"></i> <span><strong>Hora:</strong> {{ item.hora }}</span>
+          </div>
+          <div class="detail-item">
+            <i class="ri-map-pin-2-line"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTORES Y CANALES -->
+<section class="section-sectors">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <span class="badge badge--success"><i class="ri-map-2-line"></i> Geografía y Riego</span>
+        <h2>Sectores y Distribución de Agua</h2>
+      </div>
+    </div>
+
+    <div class="sectors-grid">
+      <div class="card sector-card" *ngFor="let s of sectores">
+        <div class="sector-card__icon">
+          <i class="ri-drop-line"></i>
+        </div>
+        <h3>{{ s.nombre }}</h3>
+        <p class="caption">Abastecimiento: {{ s.canal }}</p>
+        <div class="sector-card__info">
+          <div>
+            <small>Lotes Registrados</small>
+            <strong>{{ s.lotesCount }} lotes</strong>
+          </div>
+          <div>
+            <small>Caudal Asignado</small>
+            <strong>{{ s.caudal }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
