@@ -1,42 +1,32 @@
 <div class="consulta-page">
   <div class="container">
     
-    <!-- ENCABEZADO DE BÚSQUEDA -->
-    <div class="search-header card card--glass">
-      <span class="badge badge--info"><i class="ri-search-line"></i> Consulta Pública en Línea</span>
-      <h2>Consulta de Obligaciones y Multas por Cédula</h2>
-      <p class="caption">Ingresa la cédula de ciudadanía del titular del lote para consultar el estado de cuentas de agua de riego y multas por asistencia.</p>
-
-      <form (submit)="buscarCedula(); $event.preventDefault();" class="search-form">
-        <div class="input-wrapper">
-          <i class="ri-id-card-line input-icon"></i>
-          <input 
-            type="text" 
-            class="form-control form-control--lg" 
-            placeholder="Ingrese número de cédula (Ej: 1801234567)" 
-            [(ngModel)]="cedulaInput" 
-            name="cedula"
-            maxlength="13"
-            required
-          />
-        </div>
-        <button type="submit" class="btn btn--primary btn--lg" [disabled]="cargando">
-          <i class="ri-search-2-line" *ngIf="!cargando"></i>
-          <i class="ri-loader-4-line spin" *ngIf="cargando"></i>
-          {{ cargando ? 'Consultando...' : 'Consultar Cédula' }}
-        </button>
-      </form>
+    <!-- ENCABEZADO -->
+    <div class="search-header card card--glass" style="display: flex; justify-content: space-between; align-items: center; text-align: left;">
+      <div>
+        <span class="badge badge--info"><i class="ri-user-settings-line"></i> Portal del Comunero</span>
+        <h2 style="margin-top: 0.5rem; font-size: 1.5rem;">Mi Cuenta y Estado de Obligaciones</h2>
+      </div>
+      <div>
+        <button class="btn btn--outline btn--sm" (click)="cerrarSesion()"><i class="ri-logout-box-r-line"></i> Cerrar Sesión</button>
+      </div>
     </div>
 
-    <!-- ALERTA DE ERROR SI NO EXISTE -->
-    <div class="card error-card" *ngIf="buscado && errorMensaje">
+    <!-- CARGANDO -->
+    <div *ngIf="cargando" style="text-align: center; padding: 3rem;">
+      <i class="ri-loader-4-line spin" style="font-size: 3rem; color: var(--color-primary);"></i>
+      <p style="margin-top: 1rem; color: var(--text-muted);">Cargando tu información...</p>
+    </div>
+
+    <!-- ALERTA DE ERROR -->
+    <div class="card error-card" *ngIf="!cargando && errorMensaje">
       <i class="ri-error-warning-fill error-icon"></i>
-      <h3>Comunero No Encontrado</h3>
+      <h3>Información no disponible</h3>
       <p>{{ errorMensaje }}</p>
     </div>
 
-    <!-- RESULTADO DE BÚSQUEDA -->
-    <div class="search-results" *ngIf="buscado && resultado">
+    <!-- RESULTADO -->
+    <div class="search-results" *ngIf="!cargando && resultado">
       
       <!-- TARJETA DEL TITULAR -->
       <div class="card user-info-card">
@@ -78,7 +68,7 @@
       <!-- TABLA DETALLADA DE OBLIGACIONES -->
       <div class="card table-card" *ngIf="resultado.deudas.length > 0">
         <div class="card__header">
-          <h4 class="card__title"><i class="ri-file-list-3-line"></i> Detalle de Cuentas por Cobrar</h4>
+          <h4 class="card__title"><i class="ri-file-list-3-line"></i> Mi Historial de Cuentas y Multas</h4>
         </div>
 
         <div class="table-container">
@@ -112,8 +102,8 @@
       <!-- SI NO TIENE DEUDAS -->
       <div class="card success-empty-card" *ngIf="resultado.deudas.length === 0">
         <i class="ri-checkbox-circle-fill success-icon"></i>
-        <h3>¡Felicitaciones! No registra valores pendientes.</h3>
-        <p>El comunero se encuentra al día con las cuotas de agua de riego y asistencias a mingas/asambleas.</p>
+        <h3>¡Felicitaciones! No registras valores pendientes.</h3>
+        <p>Te encuentras al día con tus cuotas de agua de riego y asistencias a mingas/asambleas.</p>
       </div>
 
       <!-- INFORMACIÓN DE PAGO -->

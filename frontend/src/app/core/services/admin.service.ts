@@ -30,6 +30,10 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/turnos`, { headers: this.getAuthHeaders() });
   }
 
+  asignarTurno(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/turnos`, payload, { headers: this.getAuthHeaders() });
+  }
+
   getEventos(): Observable<any> {
     return this.http.get(`${this.baseUrl}/eventos`, { headers: this.getAuthHeaders() });
   }

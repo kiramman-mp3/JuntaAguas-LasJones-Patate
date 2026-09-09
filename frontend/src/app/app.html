@@ -1,35 +1,19 @@
-<!-- NAVEGACIÓN SUPERIOR GLOBAL -->
-<header class="navbar-global">
-  <div class="navbar-container">
-    <a routerLink="/" class="navbar-brand">
-      <div class="brand-logo">
-        <i class="ri-drop-fill"></i>
-      </div>
-      <div class="brand-text">
-        <span class="brand-name">Junta La Jones</span>
-        <span class="brand-sub">Patate — Tungurahua</span>
-      </div>
-    </a>
-
-    <nav class="navbar-menu">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
-        <i class="ri-home-4-line"></i> Inicio
-      </a>
-      <a routerLink="/consulta" routerLinkActive="active" class="nav-link">
-        <i class="ri-search-eye-line"></i> Consultar Cédula
-      </a>
-      <a routerLink="/admin" routerLinkActive="active" class="nav-link">
-        <i class="ri-dashboard-3-line"></i> Panel Admin
-      </a>
-    </nav>
-
-    <div class="navbar-actions">
-      <a routerLink="/login" class="btn btn--outline btn--sm">
-        <i class="ri-lock-line"></i> Iniciar Sesión
-      </a>
+<!-- TOP NAVIGATION BAR GLOBAL -->
+<nav class="main-nav">
+  <div class="container main-nav__container">
+    <div class="main-nav__brand">
+      <i class="ri-drop-fill"></i>
+      <span>Junta La Jones</span>
+    </div>
+    <ul class="main-nav__links">
+      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a></li>
+      <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
+    </ul>
+    <div class="main-nav__actions">
+      <a routerLink="/login" class="btn btn--primary btn--sm"><i class="ri-login-circle-line"></i> Iniciar Sesión</a>
     </div>
   </div>
-</header>
+</nav>
 
 <!-- CONTENIDO DINÁMICO DE RUTAS -->
 <div class="app-body">

@@ -36,6 +36,7 @@ interface EventoAdmin {
 export class AdminComponent implements OnInit {
   tabActiva: 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS' = 'USUARIOS';
   subTabEventos: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
+  subTabFinanzas: 'INGRESOS' | 'EGRESOS' = 'INGRESOS';
   modalMapaVisible: boolean = false;
   loteSeleccionadoMapa: UsuarioAdmin | null = null;
   
@@ -59,8 +60,17 @@ export class AdminComponent implements OnInit {
   // Mocks de Eventos / Asistencias inicializados en vacío
   eventos: EventoAdmin[] = [];
 
-  // Turnos de agua inicializados en vacío
+  // Turnos de agua
   turnos: any[] = [];
+  modalTurnoVisible: boolean = false;
+  nuevoTurno = {
+    persona_id: null as number | null,
+    dia_semana: 1,
+    hora_inicio: '08:00',
+    hora_fin: '10:00',
+    tipo: 'REGULAR',
+    observacion: ''
+  };
 
   constructor(private adminService: AdminService) {}
 
@@ -148,6 +158,10 @@ export class AdminComponent implements OnInit {
     this.subTabEventos = subTab;
   }
 
+  cambiarSubTabFinanzas(subTab: 'INGRESOS' | 'EGRESOS') {
+    this.subTabFinanzas = subTab;
+  }
+
   get eventosFiltrados() {
     return this.eventos.filter(e => e.tipo === this.subTabEventos);
   }
@@ -211,6 +225,103 @@ export class AdminComponent implements OnInit {
         alert('Hubo un error al guardar las asistencias.');
         console.error(err);
       }
+    });
+  }
+
+  // Lógica Turnos
+  abrirModalTurno() {
+    this.nuevoTurno = { persona_id: null, dia_semana: 1, hora_inicio: '08:00', hora_fin: '10:00', tipo: 'REGULAR', observacion: '' };
+    this.modalTurnoVisible = true;
+  }
+
+  cerrarModalTurno() {
+    this.modalTurnoVisible = false;
+  }
+
+  guardarTurno() {
+    if (!this.nuevoTurno.persona_id) {
+      alert('Debe seleccionar un comunero.');
+      return;
+    }
+    
+    // El lote asociado a la persona (Simplificado)
+    const comunero = this.usuarios.find(u => Number(u.id) === Number(this.nuevoTurno.persona_id));
+    const payload = {
+      ...this.nuevoTurno,
+      lote_id: comunero ? comunero.id : null // Asumiendo lote_id == persona_id para pruebas simplificadas
+    };
+
+    this.adminService.asignarTurno(payload).subscribe({
+      next: () => {
+        alert('Turno de agua asignado con éxito.');
+        this.cerrarModalTurno();
+        // Recargar turnos
+        this.adminService.getTurnos().subscribe(res => {
+          if (res && res.data) {
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            this.turnos = res.data.map((t: any) => ({
+              lote: t.lote_codigo || 'N/A',
+              usuario: t.comunero_nombre,
+              dia: diasSemana[t.dia_semana] || 'Desconocido',
+              horaInicio: t.hora_inicio,
+              horaFin: t.hora_fin,
+              sector: t.sector_nombre || 'N/A'
+            }));
+          }
+        });
+      },
+      error: (err) => {
+        alert(err.error?.message || 'Error al asignar el turno.');
+      }
+    });
+  }
+
+  // Lógica Finanzas
+  comuneroBusqueda: string = '';
+  obligacionesComunero: any[] = [];
+  obligacionSeleccionada: any = null;
+
+  buscarObligaciones() {
+    if (!this.comuneroBusqueda) {
+      this.obligacionesComunero = [];
+      return;
+    }
+    const term = this.comuneroBusqueda.toLowerCase();
+    const comunero = this.usuarios.find(u => u.cedula === term || u.nombres.toLowerCase().includes(term));
+    if (comunero) {
+      this.adminService.getObligaciones(comunero.id).subscribe({
+        next: (res) => {
+          this.obligacionesComunero = res.data.filter((o: any) => o.estado === 'PENDIENTE');
+          if (this.obligacionesComunero.length > 0) {
+            this.obligacionSeleccionada = this.obligacionesComunero[0]; // Selecciona la primera por defecto
+          }
+        },
+        error: () => alert('Error al buscar obligaciones.')
+      });
+    } else {
+      alert('Comunero no encontrado.');
+      this.obligacionesComunero = [];
+    }
+  }
+
+  cobrarObligacion() {
+    if (!this.obligacionSeleccionada) return;
+    
+    // Regla de Negocio: Se cobra la totalidad del valor. No se permiten abonos.
+    const payload = {
+      persona_id: this.obligacionSeleccionada.persona_id,
+      metodo: 'EFECTIVO',
+      obligacionesIds: [this.obligacionSeleccionada.id],
+      observaciones: 'Pago completo procesado desde panel administrativo.'
+    };
+
+    this.adminService.registrarPago(payload).subscribe({
+      next: () => {
+        alert('Pago registrado exitosamente.');
+        this.cargarDatosBackend(); // Recargar balance
+        this.buscarObligaciones(); // Recargar lista del usuario
+      },
+      error: (err) => alert(err.error?.message || 'Error al procesar pago.')
     });
   }
 }
