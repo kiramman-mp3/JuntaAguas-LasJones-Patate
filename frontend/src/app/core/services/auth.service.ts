@@ -23,7 +23,7 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/v1/auth';
+  private apiUrl = 'http://localhost:3000/api/auth';
   private tokenKey = 'junta_token';
   private userKey = 'junta_user';
 

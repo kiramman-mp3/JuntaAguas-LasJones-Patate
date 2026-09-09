@@ -53,27 +53,14 @@ export class AdminComponent implements OnInit {
     balanceAlDia: 1130.00
   };
 
-  // Mocks de Usuarios por defecto
-  usuarios: UsuarioAdmin[] = [
-    { id: 1, cedula: '1801234567', nombres: 'Juan Carlos Morales Soria', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A04', superficie: 2500, latitud: -1.33241, longitud: -78.51421, radioError: 15, estado: 'ACTIVO' },
-    { id: 2, cedula: '1802345678', nombres: 'Luis Fernando Salazar Guaman', sector: 'Sector Las Jones Centro', loteCodigo: 'LOT-JONES-C12', superficie: 1800, latitud: -1.33502, longitud: -78.51105, radioError: 20, estado: 'ACTIVO' },
-    { id: 3, cedula: '1804567890', nombres: 'Segundo Luis Chimbo Ortiz', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A09', superficie: 3200, latitud: -1.33110, longitud: -78.51600, radioError: 10, estado: 'ACTIVO' },
-    { id: 4, cedula: '1805678901', nombres: 'Rosa Mercedes Vargas Paredes', sector: 'Sector Las Jones Bajo', loteCodigo: 'LOT-JONES-B02', superficie: 1450, latitud: -1.33920, longitud: -78.50890, radioError: 25, estado: 'ACTIVO' }
-  ];
+  // Mocks de Usuarios por defecto inicializados en vacío
+  usuarios: UsuarioAdmin[] = [];
 
-  // Mocks de Eventos / Asistencias
-  eventos: EventoAdmin[] = [
-    { id: 1, tipo: 'ASAMBLEA', titulo: 'Asamblea General Trimestral #3', fecha: '2026-08-15', asistentes: 142, totalComuneros: 165, multaAbsencia: 10.00 },
-    { id: 2, tipo: 'MINGA', titulo: 'Minga de Limpieza Canal Matriz A', fecha: '2026-08-22', asistentes: 130, totalComuneros: 165, multaAbsencia: 15.00 }
-  ];
+  // Mocks de Eventos / Asistencias inicializados en vacío
+  eventos: EventoAdmin[] = [];
 
-  // Turnos de agua
-  turnos = [
-    { lote: 'LOT-JONES-A04', usuario: 'Juan Morales', dia: 'Lunes', horaInicio: '08:00 AM', horaFin: '12:00 PM', sector: 'Sector Alto' },
-    { lote: 'LOT-JONES-C12', usuario: 'Luis Salazar', dia: 'Lunes', horaInicio: '12:00 PM', horaFin: '04:00 PM', sector: 'Sector Centro' },
-    { lote: 'LOT-JONES-A09', usuario: 'Segundo Chimbo', dia: 'Martes', horaInicio: '08:00 AM', horaFin: '12:00 PM', sector: 'Sector Alto' },
-    { lote: 'LOT-JONES-B02', usuario: 'Rosa Vargas', dia: 'Miércoles', horaInicio: '09:00 AM', horaFin: '01:00 PM', sector: 'Sector Bajo' }
-  ];
+  // Turnos de agua inicializados en vacío
+  turnos: any[] = [];
 
   constructor(private adminService: AdminService) {}
 
@@ -110,6 +97,42 @@ export class AdminComponent implements OnInit {
             longitud: -78.51421,
             radioError: 20, // valor simulado si la BD no lo trae en esta query
             estado: p.estado
+          }));
+        }
+      },
+      error: () => {}
+    });
+
+    // Cargar eventos desde la API
+    this.adminService.getEventos().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.eventos = res.data.map((e: any) => ({
+            id: e.id,
+            tipo: e.tipo,
+            titulo: e.titulo,
+            fecha: new Date(e.fecha).toLocaleDateString(),
+            asistentes: 0,
+            totalComuneros: this.usuarios.length || 0,
+            multaAbsencia: Number(e.valor_multa)
+          }));
+        }
+      },
+      error: () => {}
+    });
+
+    // Cargar turnos desde la API
+    this.adminService.getTurnos().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+          this.turnos = res.data.map((t: any) => ({
+            lote: t.lote_codigo || 'N/A',
+            usuario: t.comunero_nombre,
+            dia: diasSemana[t.dia_semana] || 'Desconocido',
+            horaInicio: t.hora_inicio,
+            horaFin: t.hora_fin,
+            sector: t.sector_nombre || 'N/A'
           }));
         }
       },
@@ -171,8 +194,23 @@ export class AdminComponent implements OnInit {
   }
 
   guardarAsistencia() {
-    // Aquí se llamaría a la API registrarAsistencias
-    alert(`Asistencia guardada. Presentes: ${this.usuariosAsistencia.filter(u => u.presente).length}`);
-    this.cerrarModalAsistencia();
+    if (!this.eventoSeleccionado) return;
+    
+    const payload = this.usuariosAsistencia.map(u => ({
+      persona_id: u.id,
+      estado: u.presente ? 'PRESENTE' : 'AUSENTE',
+      motivo_justificacion: null
+    }));
+
+    this.adminService.registrarAsistencias(this.eventoSeleccionado.id, payload).subscribe({
+      next: () => {
+        alert(`Asistencia guardada con éxito en el backend. Presentes: ${payload.filter(p => p.estado === 'PRESENTE').length}`);
+        this.cerrarModalAsistencia();
+      },
+      error: (err) => {
+        alert('Hubo un error al guardar las asistencias.');
+        console.error(err);
+      }
+    });
   }
 }

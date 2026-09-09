@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
   providedIn: 'root'
 })
 export class AdminService {
-  private baseUrl = 'http://localhost:3000/api/v1';
+  private baseUrl = 'http://localhost:3000/api';
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -32,6 +32,14 @@ export class AdminService {
 
   getEventos(): Observable<any> {
     return this.http.get(`${this.baseUrl}/eventos`, { headers: this.getAuthHeaders() });
+  }
+
+  getEventoById(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/eventos/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  registrarAsistencias(id: number, asistencias: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
   }
 
   getBalance(): Observable<any> {

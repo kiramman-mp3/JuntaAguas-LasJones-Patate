@@ -30,7 +30,7 @@ import { AuthService } from './auth.service';
   providedIn: 'root'
 })
 export class ConsultaService {
-  private apiUrl = 'http://localhost:3000/api/v1';
+  private apiUrl = 'http://localhost:3000/api';
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 

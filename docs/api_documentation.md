@@ -7,8 +7,8 @@
 
 La API REST del sistema está construida en **Node.js con Express** sobre una base de datos relacional **MySQL**. Proporciona endpoints para la gestión de comuneros, lotes georreferenciados, turnos de agua, asistencias a asambleas/mingas con multas automáticas, recaudación financiera y auditoría.
 
-- **URL Base de la API v1:** `http://localhost:3000/api/v1`
-- **Documentación Interactiva Swagger UI:** [`http://localhost:3000/api-docs`](http://localhost:3000/api-docs) (o `http://localhost:3000/api/v1/docs`)
+- **URL Base de la API:** `http://localhost:3000/api`
+- **Documentación Interactiva Swagger UI:** [`http://localhost:3000/api-docs`](http://localhost:3000/api-docs) (o `http://localhost:3000/api/docs`)
 - **Comprobación de Salud (Health Check):** `GET http://localhost:3000/api/health`
 
 ---
@@ -31,7 +31,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ## 📋 3. Resumen de Módulos y Endpoints
 
-### 3.1. 🔐 Autenticación (`/api/v1/auth`)
+### 3.1. 🔐 Autenticación (`/api/auth`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -41,7 +41,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ---
 
-### 3.2. 👤 Comuneros / Personas (`/api/v1/personas`)
+### 3.2. 👤 Comuneros / Personas (`/api/personas`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -53,7 +53,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ---
 
-### 3.3. 🗺️ Lotes y Sectores (`/api/v1/lotes`)
+### 3.3. 🗺️ Lotes y Sectores (`/api/lotes`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -65,7 +65,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ---
 
-### 3.4. 💧 Turnos y Horarios de Agua (`/api/v1/turnos`)
+### 3.4. 💧 Turnos y Horarios de Agua (`/api/turnos`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -74,7 +74,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ---
 
-### 3.5. 📅 Eventos, Asistencias y Multas (`/api/v1/eventos`)
+### 3.5. 📅 Eventos, Asistencias y Multas (`/api/eventos`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -87,7 +87,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ---
 
-### 3.6. 💰 Gestión Financiera & Recaudación (`/api/v1/financiero`)
+### 3.6. 💰 Gestión Financiera & Recaudación (`/api/financiero`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -118,7 +118,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ## 🧪 4. Ejemplos de Payload JSON
 
-### Ejemplo: Consulta Pública por Cédula (`GET /api/v1/personas/consulta/1801234567`)
+### Ejemplo: Consulta Pública por Cédula (`GET /api/personas/consulta/1801234567`)
 ```json
 {
   "status": "OK",
@@ -152,7 +152,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 }
 ```
 
-### Ejemplo: Registro de Pago Completo (`POST /api/v1/financiero/pagos`)
+### Ejemplo: Registro de Pago Completo (`POST /api/financiero/pagos`)
 ```json
 {
   "persona_id": 1,

@@ -26,12 +26,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Documentación Swagger UI (Accesible en /api-docs y /api/v1/docs)
+// Documentación Swagger UI (Accesible en /api-docs)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Montar API v1
-app.use('/api/v1', apiRouter);
+// Montar API principal en /api
+app.use('/api', apiRouter);
 
 // Middleware global de manejo de errores
 app.use(errorHandler);
@@ -40,5 +39,5 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`[Servidor Backend] Ejecutándose en http://localhost:${PORT}`);
   console.log(`[Documentación Swagger UI] http://localhost:${PORT}/api-docs`);
-  console.log(`[API v1 Base] http://localhost:${PORT}/api/v1`);
+  console.log(`[API Base] http://localhost:${PORT}/api`);
 });
