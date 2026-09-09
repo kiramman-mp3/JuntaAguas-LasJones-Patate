@@ -69,8 +69,13 @@ JuntaAguas-LasJones-Patate/
 ---
 
 ### 1. Base de Datos
-1. Abre tu gestor de base de datos MySQL (phpMyAdmin, MySQL Workbench, DBeaver, etc.).
-2. Ejecuta el script SQL ubicado en [`backend/database/schema.sql`](backend/database/schema.sql) para crear la base de datos `junta_las_jones` y todas sus tablas.
+1. Asegúrate de tener tu servidor MySQL activo.
+2. Puedes ejecutar el script automático de inicialización desde el backend:
+   ```bash
+   cd backend
+   npm run init-db
+   ```
+   *Alternativamente, puedes importar manualmente el archivo [`backend/database/schema.sql`](backend/database/schema.sql) en tu cliente MySQL.*
 
 ---
 
@@ -86,6 +91,7 @@ cp .env.example .env
 npm run dev
 ```
 El servidor backend se ejecutará en: `http://localhost:3000`
+Documentación Swagger UI interactiva: `http://localhost:3000/api-docs`
 
 ---
 
