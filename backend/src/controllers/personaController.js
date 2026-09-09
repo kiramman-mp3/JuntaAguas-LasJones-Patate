@@ -143,6 +143,11 @@ async function consultaPublicaPorCedula(req, res, next) {
       return res.status(400).json({ status: 'ERROR', message: 'Se requiere número de cédula.' });
     }
 
+    // Validar que el usuario sea ADMIN o el dueño de la cédula
+    if (req.user && req.user.rol !== 'ADMIN' && req.user.cedula !== cleanCedula) {
+      return res.status(403).json({ status: 'ERROR', message: 'Acceso denegado. Solo puede consultar sus propias deudas.' });
+    }
+
     const [personaRows] = await db.query(
       `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.estado
        FROM personas p

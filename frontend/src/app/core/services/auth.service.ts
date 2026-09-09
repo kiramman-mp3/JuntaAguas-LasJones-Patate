@@ -45,6 +45,12 @@ export class AuthService {
     localStorage.removeItem(this.userKey);
   }
 
+  changePassword(actualPassword: string, nuevaPassword: string): Observable<any> {
+    const token = this.getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+    return this.http.put(`${this.apiUrl}/password`, { actualPassword, nuevaPassword }, { headers });
+  }
+
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }

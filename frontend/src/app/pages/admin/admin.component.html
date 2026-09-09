@@ -144,14 +144,40 @@
     <section *ngIf="tabActiva === 'ASISTENCIAS'" class="tab-view">
       <div class="card">
         <div class="card__header">
-          <h3 class="card__title"><i class="ri-calendar-event-fill"></i> Control de Asistencia a Asambleas y Mingas</h3>
+          <h3 class="card__title"><i class="ri-calendar-event-fill"></i> Control de Asistencia a Eventos</h3>
+          <!-- Botón único según el tab activo -->
           <button class="btn btn--primary btn--sm">
-            <i class="ri-add-circle-line"></i> Programar Nuevo Evento
+            <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
           </button>
         </div>
 
+        <!-- Sub TABS -->
+        <div class="tabs-container" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
+          <button 
+            class="tab-btn" 
+            [class.active]="subTabEventos === 'ASAMBLEA'" 
+            (click)="cambiarSubTabEventos('ASAMBLEA')"
+            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+            <i class="ri-group-line"></i> Asambleas
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="subTabEventos === 'MINGA'" 
+            (click)="cambiarSubTabEventos('MINGA')"
+            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+            <i class="ri-tools-line"></i> Mingas Comunitarias
+          </button>
+        </div>
+
+        <style>
+          .tab-btn.active {
+            color: var(--primary-color) !important;
+            border-bottom-color: var(--primary-color) !important;
+          }
+        </style>
+
         <div class="events-list">
-          <div class="event-item card" *ngFor="let e of eventos">
+          <div class="event-item card" *ngFor="let e of eventosFiltrados">
             <div class="event-item__header">
               <div>
                 <span class="badge" [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo }}</span>
@@ -160,11 +186,14 @@
               </div>
               <div class="event-item__actions">
                 <span class="badge badge--success">{{ e.asistentes }} / {{ e.totalComuneros }} Asistentes</span>
-                <button class="btn btn--secondary btn--sm">
+                <button class="btn btn--secondary btn--sm" (click)="abrirModalAsistencia(e)">
                   <i class="ri-checkbox-fill"></i> Tomar Asistencia Digital
                 </button>
               </div>
             </div>
+          </div>
+          <div *ngIf="eventosFiltrados.length === 0" class="alert" style="text-align: center; color: var(--text-muted);">
+            No hay {{ subTabEventos === 'ASAMBLEA' ? 'asambleas' : 'mingas' }} registradas.
           </div>
         </div>
       </div>
@@ -294,6 +323,7 @@
       <p><strong>Titular:</strong> {{ loteSeleccionadoMapa.nombres }} ({{ loteSeleccionadoMapa.cedula }})</p>
       <p><strong>Sector:</strong> {{ loteSeleccionadoMapa.sector }} | <strong>Superficie:</strong> {{ loteSeleccionadoMapa.superficie }} m²</p>
       <p><strong>Coordenadas GPS:</strong> Lat {{ loteSeleccionadoMapa.latitud }}, Lng {{ loteSeleccionadoMapa.longitud }}</p>
+      <p><strong>Precisión (Radio de Error):</strong> <span class="badge badge--warning">± {{ loteSeleccionadoMapa.radioError }} metros</span></p>
       
       <div class="map-placeholder">
         <i class="ri-earth-line map-bg-icon"></i>
@@ -308,6 +338,54 @@
         <i class="ri-google-fill"></i> Abrir en Google Maps Satelital
       </button>
       <button class="btn btn--outline" (click)="cerrarModalMapa()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ASISTENCIA MASIVA -->
+<div class="modal-backdrop" *ngIf="modalAsistenciaVisible && eventoSeleccionado">
+  <div class="modal card card--glass" style="max-width: 600px; width: 100%;">
+    <div class="modal__header">
+      <h4><i class="ri-checkbox-multiple-line text-primary"></i> Asistencia: {{ eventoSeleccionado.titulo }}</h4>
+      <button class="btn-close" (click)="cerrarModalAsistencia()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal__body">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <input type="text" class="form-control" placeholder="Buscar comunero..." [(ngModel)]="filtroAsistencia" style="max-width: 300px;" />
+        <button class="btn btn--outline btn--sm" (click)="marcarTodosAsistencia()">
+          <i class="ri-check-double-line"></i> Marcar todos presentes
+        </button>
+      </div>
+
+      <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th style="width: 50px;">Asistió</th>
+              <th>Cédula</th>
+              <th>Nombres</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of usuariosAsistenciaFiltrados">
+              <td style="text-align: center;">
+                <input type="checkbox" [(ngModel)]="u.presente" style="transform: scale(1.5);" />
+              </td>
+              <td>{{ u.cedula }}</td>
+              <td>{{ u.nombres }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert--warning" style="margin-top: 1rem; font-size: 0.85rem;">
+        <i class="ri-error-warning-line"></i> Nota: Al finalizar el evento, el sistema asignará automáticamente la multa de ${{ eventoSeleccionado.multaAbsencia }} a los comuneros desmarcados (Ausentes).
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--primary" (click)="guardarAsistencia()">
+        <i class="ri-save-line"></i> Guardar Asistencias
+      </button>
+      <button class="btn btn--outline" (click)="cerrarModalAsistencia()">Cancelar</button>
     </div>
   </div>
 </div>

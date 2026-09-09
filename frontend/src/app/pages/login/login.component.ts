@@ -12,11 +12,17 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
-  usuario: string = '1801234567';
-  password: string = '123456';
+  usuario: string = '';
+  password: string = '';
   mostrarPassword: boolean = false;
   cargando: boolean = false;
   errorMensaje: string = '';
+  
+  // Flujo de cambio de contraseña
+  requiereCambioPassword: boolean = false;
+  nuevaPassword1: string = '';
+  nuevaPassword2: string = '';
+  exitoMensaje: string = '';
 
   constructor(private authService: AuthService, private router: Router) {}
 
@@ -34,17 +40,55 @@ export class LoginComponent {
       next: (res) => {
         this.cargando = false;
         if (res.status === 'OK') {
-          this.router.navigate(['/admin']);
+          if (res.user.debeCambiarPassword) {
+             this.requiereCambioPassword = true;
+          } else {
+             this.redirigirPorRol(res.user.rol);
+          }
         }
       },
       error: (err) => {
         this.cargando = false;
         if (err.error && err.error.message) {
           this.errorMensaje = err.error.message;
-        } else {
-          // Si el servidor backend no responde, permitir acceso demostrativo
-          this.router.navigate(['/admin']);
         }
+      }
+    });
+  }
+
+  redirigirPorRol(rol: string) {
+    if (rol === 'ADMIN' || rol === 'SECRETARIO') {
+      this.router.navigate(['/admin']);
+    } else {
+      this.router.navigate(['/consulta']);
+    }
+  }
+
+  cambiarPassword() {
+    if (this.nuevaPassword1.length < 6) {
+       this.errorMensaje = 'La contraseña debe tener al menos 6 caracteres.';
+       return;
+    }
+    if (this.nuevaPassword1 !== this.nuevaPassword2) {
+       this.errorMensaje = 'Las contraseñas no coinciden.';
+       return;
+    }
+
+    this.cargando = true;
+    this.errorMensaje = '';
+
+    this.authService.changePassword(this.password, this.nuevaPassword1).subscribe({
+      next: () => {
+         this.cargando = false;
+         this.exitoMensaje = 'Contraseña actualizada. Redirigiendo...';
+         const user = this.authService.getUser();
+         setTimeout(() => {
+           this.redirigirPorRol(user.rol);
+         }, 1500);
+      },
+      error: (err) => {
+         this.cargando = false;
+         this.errorMensaje = err.error?.message || 'Error al cambiar contraseña.';
       }
     });
   }

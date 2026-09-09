@@ -12,6 +12,7 @@ interface UsuarioAdmin {
   superficie: number;
   latitud: number;
   longitud: number;
+  radioError: number;
   estado: 'ACTIVO' | 'INACTIVO';
 }
 
@@ -34,8 +35,15 @@ interface EventoAdmin {
 })
 export class AdminComponent implements OnInit {
   tabActiva: 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS' = 'USUARIOS';
+  subTabEventos: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
   modalMapaVisible: boolean = false;
   loteSeleccionadoMapa: UsuarioAdmin | null = null;
+  
+  // Asistencia
+  modalAsistenciaVisible: boolean = false;
+  eventoSeleccionado: EventoAdmin | null = null;
+  usuariosAsistencia: any[] = [];
+  filtroAsistencia: string = '';
 
   // KPIs Financieros
   kpis = {
@@ -47,10 +55,10 @@ export class AdminComponent implements OnInit {
 
   // Mocks de Usuarios por defecto
   usuarios: UsuarioAdmin[] = [
-    { id: 1, cedula: '1801234567', nombres: 'Juan Carlos Morales Soria', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A04', superficie: 2500, latitud: -1.33241, longitud: -78.51421, estado: 'ACTIVO' },
-    { id: 2, cedula: '1802345678', nombres: 'Luis Fernando Salazar Guaman', sector: 'Sector Las Jones Centro', loteCodigo: 'LOT-JONES-C12', superficie: 1800, latitud: -1.33502, longitud: -78.51105, estado: 'ACTIVO' },
-    { id: 3, cedula: '1804567890', nombres: 'Segundo Luis Chimbo Ortiz', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A09', superficie: 3200, latitud: -1.33110, longitud: -78.51600, estado: 'ACTIVO' },
-    { id: 4, cedula: '1805678901', nombres: 'Rosa Mercedes Vargas Paredes', sector: 'Sector Las Jones Bajo', loteCodigo: 'LOT-JONES-B02', superficie: 1450, latitud: -1.33920, longitud: -78.50890, estado: 'ACTIVO' }
+    { id: 1, cedula: '1801234567', nombres: 'Juan Carlos Morales Soria', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A04', superficie: 2500, latitud: -1.33241, longitud: -78.51421, radioError: 15, estado: 'ACTIVO' },
+    { id: 2, cedula: '1802345678', nombres: 'Luis Fernando Salazar Guaman', sector: 'Sector Las Jones Centro', loteCodigo: 'LOT-JONES-C12', superficie: 1800, latitud: -1.33502, longitud: -78.51105, radioError: 20, estado: 'ACTIVO' },
+    { id: 3, cedula: '1804567890', nombres: 'Segundo Luis Chimbo Ortiz', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A09', superficie: 3200, latitud: -1.33110, longitud: -78.51600, radioError: 10, estado: 'ACTIVO' },
+    { id: 4, cedula: '1805678901', nombres: 'Rosa Mercedes Vargas Paredes', sector: 'Sector Las Jones Bajo', loteCodigo: 'LOT-JONES-B02', superficie: 1450, latitud: -1.33920, longitud: -78.50890, radioError: 25, estado: 'ACTIVO' }
   ];
 
   // Mocks de Eventos / Asistencias
@@ -100,6 +108,7 @@ export class AdminComponent implements OnInit {
             superficie: 2000,
             latitud: -1.33241,
             longitud: -78.51421,
+            radioError: 20, // valor simulado si la BD no lo trae en esta query
             estado: p.estado
           }));
         }
@@ -110,6 +119,14 @@ export class AdminComponent implements OnInit {
 
   cambiarTab(tab: 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS') {
     this.tabActiva = tab;
+  }
+
+  cambiarSubTabEventos(subTab: 'ASAMBLEA' | 'MINGA') {
+    this.subTabEventos = subTab;
+  }
+
+  get eventosFiltrados() {
+    return this.eventos.filter(e => e.tipo === this.subTabEventos);
   }
 
   verLoteEnMapa(u: UsuarioAdmin) {
@@ -124,5 +141,38 @@ export class AdminComponent implements OnInit {
 
   abrirGoogleMaps(lat: number, lng: number) {
     window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+  }
+
+  // Lógica Asistencia
+  abrirModalAsistencia(evento: EventoAdmin) {
+    this.eventoSeleccionado = evento;
+    this.usuariosAsistencia = this.usuarios.map(u => ({
+      id: u.id,
+      nombres: u.nombres,
+      cedula: u.cedula,
+      presente: false
+    }));
+    this.modalAsistenciaVisible = true;
+  }
+
+  cerrarModalAsistencia() {
+    this.modalAsistenciaVisible = false;
+    this.eventoSeleccionado = null;
+  }
+
+  marcarTodosAsistencia() {
+    this.usuariosAsistencia.forEach(u => u.presente = true);
+  }
+
+  get usuariosAsistenciaFiltrados() {
+    if (!this.filtroAsistencia) return this.usuariosAsistencia;
+    const term = this.filtroAsistencia.toLowerCase();
+    return this.usuariosAsistencia.filter(u => u.nombres.toLowerCase().includes(term) || u.cedula.includes(term));
+  }
+
+  guardarAsistencia() {
+    // Aquí se llamaría a la API registrarAsistencias
+    alert(`Asistencia guardada. Presentes: ${this.usuariosAsistencia.filter(u => u.presente).length}`);
+    this.cerrarModalAsistencia();
   }
 }

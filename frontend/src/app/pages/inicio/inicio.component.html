@@ -65,39 +65,99 @@
   </div>
 </section>
 
-<!-- CONVOCATORIAS VIGENTES -->
+<!-- CONVOCATORIAS Y EVENTOS -->
 <section class="section-events">
   <div class="container">
     <div class="section-header">
       <div>
         <span class="badge badge--info"><i class="ri-notification-3-line"></i> Anuncios Oficiales</span>
-        <h2>Próximas Convocatorias y Mingas</h2>
+        <h2>Tablón de Asambleas y Mingas</h2>
       </div>
-      <span class="caption">Asistencia obligatoria según reglamento interno</span>
+      <span class="caption">Información de eventos y actas resolutivas</span>
     </div>
 
-    <div class="events-grid">
-      <div class="card event-card" *ngFor="let item of convocatorias">
+    <!-- TABS -->
+    <div class="tabs-container" style="margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
+      <button 
+        class="tab-btn" 
+        [class.active]="tabActivo === 'FUTUROS'" 
+        (click)="setTab('FUTUROS')"
+        style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+        <i class="ri-calendar-event-line"></i> Próximos Eventos
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="tabActivo === 'PASADOS'" 
+        (click)="setTab('PASADOS')"
+        style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+        <i class="ri-history-line"></i> Eventos Pasados y Actas
+      </button>
+    </div>
+
+    <style>
+      .tab-btn.active {
+        color: var(--primary-color) !important;
+        border-bottom-color: var(--primary-color) !important;
+      }
+    </style>
+
+    <!-- EVENTOS FUTUROS -->
+    <div class="events-grid" *ngIf="tabActivo === 'FUTUROS'">
+      <div class="card event-card" *ngFor="let item of eventosFuturos">
         <div class="event-card__header">
-          <span class="badge" [ngClass]="{'badge--primary': item.tipo === 'ASAMBLEA GENERAL', 'badge--warning': item.tipo === 'MINGA COMUNITARIA'}">
+          <span class="badge" [ngClass]="{'badge--primary': item.tipo === 'ASAMBLEA', 'badge--warning': item.tipo === 'MINGA'}">
             {{ item.tipo }}
           </span>
-          <span class="small font-bold text-danger"><i class="ri-error-warning-line"></i> Multa: {{ item.multa }}</span>
+          <span class="small font-bold text-danger" *ngIf="item.genera_multa_ausencia">
+            <i class="ri-error-warning-line"></i> Multa: ${{ item.valor_multa }}
+          </span>
         </div>
         <h3 class="event-card__title">{{ item.titulo }}</h3>
         <div class="event-card__details">
           <div class="detail-item">
-            <i class="ri-calendar-event-line"></i> <span><strong>Fecha:</strong> {{ item.fecha }}</span>
+            <i class="ri-calendar-event-line"></i> <span><strong>Fecha:</strong> {{ item.fecha | date:'mediumDate' }}</span>
           </div>
           <div class="detail-item">
-            <i class="ri-time-line"></i> <span><strong>Hora:</strong> {{ item.hora }}</span>
+            <i class="ri-time-line"></i> <span><strong>Hora:</strong> {{ item.hora_inicio }}</span>
           </div>
           <div class="detail-item">
             <i class="ri-map-pin-2-line"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
           </div>
         </div>
       </div>
+      
+      <div *ngIf="eventosFuturos.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+        No hay próximos eventos programados.
+      </div>
     </div>
+
+    <!-- EVENTOS PASADOS -->
+    <div class="events-grid" *ngIf="tabActivo === 'PASADOS'">
+      <div class="card event-card" *ngFor="let item of eventosPasados" style="border-left: 4px solid var(--text-muted);">
+        <div class="event-card__header">
+          <span class="badge badge--secondary">
+            {{ item.tipo }}
+          </span>
+          <span class="small" style="color: var(--text-muted);"><i class="ri-check-double-line"></i> Finalizado</span>
+        </div>
+        <h3 class="event-card__title" style="color: var(--text-muted);">{{ item.titulo }}</h3>
+        <div class="event-card__details" style="opacity: 0.8;">
+          <div class="detail-item">
+            <i class="ri-calendar-event-line"></i> <span><strong>Realizado el:</strong> {{ item.fecha | date:'mediumDate' }}</span>
+          </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+          <button class="btn btn--outline btn--sm" style="width: 100%;" (click)="descargarActa(item.id)" [disabled]="cargandoActa">
+            <i class="ri-file-download-line"></i> Descargar Acta / Resoluciones
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="eventosPasados.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+        No hay eventos pasados registrados.
+      </div>
+    </div>
+
   </div>
 </section>
 

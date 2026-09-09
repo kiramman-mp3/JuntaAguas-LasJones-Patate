@@ -19,7 +19,7 @@ const { verificarToken, verificarRol } = require('../middlewares/authMiddleware'
  *       200: { description: Información del comunero y lista de obligaciones pendientes. }
  *       404: { description: Cédula no encontrada. }
  */
-router.get('/consulta/:cedula', personaController.consultaPublicaPorCedula);
+router.get('/consulta/:cedula', verificarToken, personaController.consultaPublicaPorCedula);
 
 /**
  * @openapi
