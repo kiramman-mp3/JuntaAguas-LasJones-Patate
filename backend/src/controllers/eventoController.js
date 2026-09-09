@@ -8,9 +8,10 @@ async function getEventos(req, res, next) {
   try {
     const { tipo, estado, desde, hasta } = req.query;
 
-    let sql = `SELECT e.*, c.usuario AS creado_por_usuario
+    let sql = `SELECT e.*, CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario
                FROM eventos e
                LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
+               LEFT JOIN personas p ON p.id = c.persona_id
                WHERE 1=1`;
     const params = [];
 

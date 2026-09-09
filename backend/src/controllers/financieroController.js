@@ -273,10 +273,11 @@ async function getPagos(req, res, next) {
     const { persona_id, desde, hasta } = req.query;
 
     let sql = `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS comunero_nombre, per.cedula,
-                      c.usuario AS registrado_por_usuario
+                      CONCAT(reg_per.nombres, ' ', reg_per.apellidos) AS registrado_por_usuario
                FROM pagos p
                JOIN personas per ON per.id = p.persona_id
                LEFT JOIN cuentas c ON c.id = p.registrado_por_cuenta_id
+               LEFT JOIN personas reg_per ON reg_per.id = c.persona_id
                WHERE 1=1`;
     const params = [];
 
@@ -310,10 +311,11 @@ async function getEgresos(req, res, next) {
     const { desde, hasta, proveedor_id } = req.query;
 
     let sql = `SELECT e.*, prv.nombre AS proveedor_nombre, prv.identificacion AS proveedor_ruc,
-                      c.usuario AS registrado_por_usuario
+                      CONCAT(reg_per.nombres, ' ', reg_per.apellidos) AS registrado_por_usuario
                FROM egresos e
                LEFT JOIN proveedores prv ON prv.id = e.proveedor_id
                LEFT JOIN cuentas c ON c.id = e.registrado_por_cuenta_id
+               LEFT JOIN personas reg_per ON reg_per.id = c.persona_id
                WHERE 1=1`;
     const params = [];
 
