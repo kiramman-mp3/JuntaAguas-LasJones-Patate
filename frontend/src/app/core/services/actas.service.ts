@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
-// Inicializar fuentes virtuales para pdfmake
-(pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
+const pdfMakeAny: any = pdfMake;
+const pdfFontsAny: any = pdfFonts;
+pdfMakeAny.vfs = pdfFontsAny.pdfMake ? pdfFontsAny.pdfMake.vfs : pdfFontsAny.vfs;
 
 @Injectable({
   providedIn: 'root'
