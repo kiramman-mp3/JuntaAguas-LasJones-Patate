@@ -28,6 +28,13 @@
       </form>
     </div>
 
+    <!-- ALERTA DE ERROR SI NO EXISTE -->
+    <div class="card error-card" *ngIf="buscado && errorMensaje">
+      <i class="ri-error-warning-fill error-icon"></i>
+      <h3>Comunero No Encontrado</h3>
+      <p>{{ errorMensaje }}</p>
+    </div>
+
     <!-- RESULTADO DE BÚSQUEDA -->
     <div class="search-results" *ngIf="buscado && resultado">
       

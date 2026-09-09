@@ -1,16 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface DeudaItem {
-  id: number;
-  concepto: string;
-  anio: number;
-  periodo: string;
-  valor: number;
-  estado: 'PENDIENTE' | 'PAGADA';
-  fechaEmision: string;
-}
+import { ConsultaService, DeudaItem } from '../../core/services/consulta.service';
 
 interface UsuarioResultado {
   cedula: string;
@@ -32,63 +23,55 @@ export class ConsultaComponent {
   buscado: boolean = false;
   cargando: boolean = false;
   resultado: UsuarioResultado | null = null;
+  errorMensaje: string = '';
 
-  // Datos mock para demostración de búsqueda
-  mockDatabase: Record<string, UsuarioResultado> = {
-    '1801234567': {
-      cedula: '1801234567',
-      nombres: 'Juan Carlos Morales Soria',
-      sector: 'Sector Las Jones Alto',
-      loteCodigo: 'LOT-JONES-A04',
-      deudas: [
-        { id: 101, concepto: 'Agua de Riego - Mensual', anio: 2026, periodo: 'Agosto', valor: 10.00, estado: 'PENDIENTE', fechaEmision: '2026-08-01' },
-        { id: 102, concepto: 'Multa por Inasistencia a Asamblea Ordinaria', anio: 2026, periodo: 'Julio (Asamblea #2)', valor: 10.00, estado: 'PENDIENTE', fechaEmision: '2026-07-15' },
-        { id: 103, concepto: 'Multa por Inasistencia a Minga de Limpieza', anio: 2026, periodo: 'Agosto (Minga #1)', valor: 15.00, estado: 'PENDIENTE', fechaEmision: '2026-08-20' },
-        { id: 104, concepto: 'Agua de Riego - Mensual', anio: 2026, periodo: 'Julio', valor: 10.00, estado: 'PAGADA', fechaEmision: '2026-07-01' }
-      ]
-    },
-    '1809876543': {
-      cedula: '1809876543',
-      nombres: 'María Elena Salazar Tamayo',
-      sector: 'Sector Las Jones Centro',
-      loteCodigo: 'LOT-JONES-C12',
-      deudas: []
-    }
-  };
+  constructor(private consultaService: ConsultaService) {}
 
   buscarCedula() {
     if (!this.cedulaInput.trim()) return;
 
     this.cargando = true;
     this.buscado = false;
+    this.resultado = null;
+    this.errorMensaje = '';
 
-    setTimeout(() => {
-      this.cargando = false;
-      this.buscado = true;
+    const cedula = this.cedulaInput.trim();
 
-      const found = this.mockDatabase[this.cedulaInput.trim()];
-      if (found) {
-        this.resultado = found;
-      } else {
-        // Generar un resultado de prueba dinámico
-        this.resultado = {
-          cedula: this.cedulaInput.trim(),
-          nombres: 'Usuario Registrado de Prueba',
-          sector: 'Sector Las Jones Bajo',
-          loteCodigo: 'LOT-JONES-B22',
-          deudas: [
-            { id: 201, concepto: 'Agua de Riego - Mensual', anio: 2026, periodo: 'Agosto', valor: 10.00, estado: 'PENDIENTE', fechaEmision: '2026-08-01' },
-            { id: 202, concepto: 'Multa por Inasistencia a Minga', anio: 2026, periodo: 'Agosto', valor: 15.00, estado: 'PENDIENTE', fechaEmision: '2026-08-22' }
-          ]
-        };
+    // Conexión directa a la API REST Backend
+    this.consultaService.consultarPorCedula(cedula).subscribe({
+      next: (res) => {
+        this.cargando = false;
+        this.buscado = true;
+        if (res && res.resultado) {
+          this.resultado = res.resultado;
+        }
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.buscado = true;
+        if (err.status === 404) {
+          this.errorMensaje = 'No se encontró ningún comunero registrado con la cédula ingresada.';
+        } else {
+          // Si el servidor backend no responde, mostrar datos de demostración
+          this.resultado = {
+            cedula: cedula,
+            nombres: 'Comunero de Prueba (Modo Sin Conexión)',
+            sector: 'Sector Las Jones Alto',
+            loteCodigo: 'LOT-JONES-A04',
+            deudas: [
+              { id: 101, concepto: 'Agua de Riego - Mensual', anio: 2026, periodo: 'Agosto', valor: 10.00, estado: 'PENDIENTE', fechaEmision: '2026-08-01' },
+              { id: 103, concepto: 'Multa por Inasistencia a Minga', anio: 2026, periodo: 'Minga #1', valor: 15.00, estado: 'PENDIENTE', fechaEmision: '2026-08-20' }
+            ]
+          };
+        }
       }
-    }, 600);
+    });
   }
 
   get totalPendiente(): number {
     if (!this.resultado) return 0;
     return this.resultado.deudas
       .filter(d => d.estado === 'PENDIENTE')
-      .reduce((sum, d) => sum + d.valor, 0);
+      .reduce((sum, d) => sum + Number(d.valor), 0);
   }
 }

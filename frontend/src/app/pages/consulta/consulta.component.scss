@@ -143,13 +143,19 @@
   .kpi-card__value { color: var(--color-success); }
 }
 
-.success-empty-card {
+.success-empty-card, .error-card {
   text-align: center;
   padding: 3rem 2rem;
 
   .success-icon {
     font-size: 4rem;
     color: var(--color-success);
+    margin-bottom: 1rem;
+  }
+
+  .error-icon {
+    font-size: 4rem;
+    color: var(--color-danger);
     margin-bottom: 1rem;
   }
 
