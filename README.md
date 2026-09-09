@@ -70,10 +70,14 @@ JuntaAguas-LasJones-Patate/
 
 ### 1. Base de Datos
 1. Asegúrate de tener tu servidor MySQL activo.
-2. Puedes ejecutar el script automático de inicialización desde el backend:
+2. Inicializa la base de datos y sus tablas:
    ```bash
    cd backend
    npm run init-db
+   ```
+3. Opcional: Siembra datos de prueba realistas para pruebas iniciales:
+   ```bash
+   npm run seed-db
    ```
    *Alternativamente, puedes importar manualmente el archivo [`backend/database/schema.sql`](backend/database/schema.sql) en tu cliente MySQL.*
 

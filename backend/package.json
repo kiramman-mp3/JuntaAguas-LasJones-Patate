@@ -7,6 +7,8 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "init-db": "node src/utils/initDb.js",
+    "seed-db": "node src/utils/seedDb.js",
+    "seed": "node src/utils/seedDb.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
