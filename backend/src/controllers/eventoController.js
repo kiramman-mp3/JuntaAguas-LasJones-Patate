@@ -8,7 +8,9 @@ async function getEventos(req, res, next) {
   try {
     const { tipo, estado, desde, hasta } = req.query;
 
-    let sql = `SELECT e.*, CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario
+    let sql = `SELECT e.*, CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
+                      (SELECT COUNT(*) FROM asistencias a WHERE a.evento_id = e.id AND a.estado = 'PRESENTE') AS asistentes,
+                      (SELECT COUNT(*) FROM personas p2 WHERE p2.estado = 'ACTIVO') AS totalComuneros
                FROM eventos e
                LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
                LEFT JOIN personas p ON p.id = c.persona_id
@@ -36,6 +38,24 @@ async function getEventos(req, res, next) {
 
     const [eventos] = await db.query(sql, params);
     return res.json({ status: 'OK', data: eventos });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Obtener eventos próximos para la landing page (solo Programados)
+ */
+async function getEventosPublicos(req, res, next) {
+  try {
+    const [eventos] = await db.query(
+      `SELECT id, tipo, titulo, descripcion, fecha, hora_inicio, lugar
+       FROM eventos
+       WHERE estado = 'PROGRAMADO' AND fecha >= CURDATE()
+       ORDER BY fecha ASC, hora_inicio ASC
+       LIMIT 3`
+    );
+    return res.json({ status: 'OK', eventos });
   } catch (error) {
     next(error);
   }
@@ -275,6 +295,7 @@ async function finalizarEventoYGenerarMultas(req, res, next) {
 
 module.exports = {
   getEventos,
+  getEventosPublicos,
   getEventoById,
   createEvento,
   savePuntosAsamblea,

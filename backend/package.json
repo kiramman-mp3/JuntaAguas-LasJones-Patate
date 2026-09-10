@@ -9,6 +9,7 @@
     "init-db": "node src/utils/initDb.js",
     "seed-db": "node src/utils/seedDb.js",
     "seed": "node src/utils/seedDb.js",
+    "db:reset": "node src/utils/cleanDb.js && npm run init-db && npm run seed-db",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

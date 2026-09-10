@@ -38,8 +38,15 @@ async function getPersonas(req, res, next) {
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     let sql = `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.direccion, p.telefono, p.celular, p.email, p.fecha_nacimiento, p.estado, p.created_at,
-                      (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count
+                      (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count,
+                      l.id AS loteId, l.codigo AS loteCodigo, l.superficie_m2 AS superficie, l.latitud_aproximada AS latitud, l.longitud_aproximada AS longitud, l.radio_error_m AS radioError
                FROM personas p
+               LEFT JOIN (
+                  SELECT persona_id, MIN(lote_id) as min_lote_id
+                  FROM persona_lotes
+                  GROUP BY persona_id
+               ) as pl_min ON pl_min.persona_id = p.id
+               LEFT JOIN lotes l ON l.id = pl_min.min_lote_id
                WHERE 1=1`;
     const params = [];
 

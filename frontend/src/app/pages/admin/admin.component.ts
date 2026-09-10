@@ -9,6 +9,7 @@ interface UsuarioAdmin {
   nombres: string;
   sector: string;
   loteCodigo: string;
+  loteId: number | null;
   superficie: number;
   latitud: number;
   longitud: number;
@@ -48,10 +49,10 @@ export class AdminComponent implements OnInit {
 
   // KPIs Financieros
   kpis = {
-    recaudadoMes: 1450.00,
-    pendientesCobro: 680.00,
-    egresosMes: 320.00,
-    balanceAlDia: 1130.00
+    recaudadoMes: 0,
+    pendientesCobro: 0,
+    egresosMes: 0,
+    balanceAlDia: 0
   };
 
   // Mocks de Usuarios por defecto inicializados en vacío
@@ -96,18 +97,19 @@ export class AdminComponent implements OnInit {
     this.adminService.getPersonas().subscribe({
       next: (res) => {
         if (res && res.data && res.data.length > 0) {
-          this.usuarios = res.data.map((p: any) => ({
-            id: p.id,
-            cedula: p.cedula,
-            nombres: `${p.nombres} ${p.apellidos}`,
-            sector: p.direccion || 'Sector Las Jones',
-            loteCodigo: `LOT-JONES-${p.id}`,
-            superficie: 2000,
-            latitud: -1.33241,
-            longitud: -78.51421,
-            radioError: 20, // valor simulado si la BD no lo trae en esta query
-            estado: p.estado
-          }));
+            this.usuarios = res.data.map((p: any) => ({
+              id: p.id,
+              cedula: p.cedula,
+              nombres: `${p.nombres} ${p.apellidos}`,
+              sector: p.direccion || 'Sector Las Jones',
+              loteCodigo: p.loteCodigo || 'Sin Lote',
+              loteId: p.loteId || null,
+              superficie: Number(p.superficie) || 0,
+              latitud: Number(p.latitud) || -1.33241, // Fallback si no tiene coordenadas
+              longitud: Number(p.longitud) || -78.51421,
+              radioError: Number(p.radioError) || 20,
+              estado: p.estado
+            }));
         }
       },
       error: () => {}
@@ -122,8 +124,8 @@ export class AdminComponent implements OnInit {
             tipo: e.tipo,
             titulo: e.titulo,
             fecha: new Date(e.fecha).toLocaleDateString(),
-            asistentes: 0,
-            totalComuneros: this.usuarios.length || 0,
+            asistentes: Number(e.asistentes) || 0,
+            totalComuneros: Number(e.totalComuneros) || 0,
             multaAbsencia: Number(e.valor_multa)
           }));
         }
@@ -244,11 +246,15 @@ export class AdminComponent implements OnInit {
       return;
     }
     
-    // El lote asociado a la persona (Simplificado)
     const comunero = this.usuarios.find(u => Number(u.id) === Number(this.nuevoTurno.persona_id));
+    if (!comunero || !comunero.loteId) {
+      alert('El comunero seleccionado no tiene un lote asociado.');
+      return;
+    }
+
     const payload = {
       ...this.nuevoTurno,
-      lote_id: comunero ? comunero.id : null // Asumiendo lote_id == persona_id para pruebas simplificadas
+      lote_id: comunero.loteId
     };
 
     this.adminService.asignarTurno(payload).subscribe({

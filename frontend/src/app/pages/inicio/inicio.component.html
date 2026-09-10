@@ -1,7 +1,9 @@
 <!-- HERO SECTION -->
-<section class="hero" id="inicio">
+<section class="hero hero-carousel" id="inicio">
+  <div class="hero__overlay"></div>
   <div class="hero__container">
     <div class="hero__content">
+      <span class="badge badge--info mb-3"><i class="ri-calendar-event-line"></i> Junta La Jones</span>
       <h1 class="hero__title">
         Gestión del Agua de Riego y Servicios Comunitarios
       </h1>
@@ -23,7 +25,7 @@
         <div class="preview-stats">
           <div class="stat-box">
             <span class="stat-number">{{ totalComuneros || 0 }}</span>
-            <span class="stat-label">Comuneros</span>
+            <span class="stat-label">Comuneros activos</span>
           </div>
           <div class="stat-box">
             <span class="stat-number">3</span>
@@ -37,16 +39,13 @@
       </div>
     </div>
   </div>
-</section>
 
-<!-- SECCIÓN DE CONSULTA RÁPIDA -->
-<section class="quick-search-section">
-  <div class="container">
-    <div class="search-banner card card--glass">
+  <!-- SECCIÓN DE CONSULTA RÁPIDA DENTRO DEL HERO -->
+  <div class="quick-search-section container">
+    <div class="search-banner card card--glass hover-effect">
       <div class="search-banner__text">
         <h3><i class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus obligaciones?</h3>
-        <p>Inicia sesión para consultar tus pagos pendientes de agua de riego, asistencia a mingas y
-          asambleas.</p>
+        <p>Inicia sesión para consultar tus pagos pendientes de agua de riego, asistencia a mingas y asambleas.</p>
       </div>
       <a routerLink="/login" class="btn btn--secondary btn--lg">
         <i class="ri-user-settings-line"></i> Inicia sesión para verificarlas
@@ -55,7 +54,30 @@
   </div>
 </section>
 
-
+<!-- SECCIÓN DE PRÓXIMOS EVENTOS -->
+<section class="section-events" id="eventos" *ngIf="proximosEventos.length > 0">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <span class="badge badge--warning"><i class="ri-notification-3-line"></i> Avisos Importantes</span>
+        <h2>Próximas Mingas y Asambleas</h2>
+      </div>
+    </div>
+    <div class="events-grid">
+      <div class="card event-card" *ngFor="let ev of proximosEventos">
+        <div class="event-card__header">
+          <span class="badge" [ngClass]="ev.tipo === 'ASAMBLEA' ? 'badge--info' : 'badge--success'">
+            {{ ev.tipo }}
+          </span>
+          <span class="event-date"><i class="ri-calendar-2-line"></i> {{ ev.fecha | date:'longDate' }}</span>
+        </div>
+        <h3>{{ ev.titulo }}</h3>
+        <p class="event-time"><i class="ri-time-line"></i> Hora de inicio: {{ ev.hora_inicio }}</p>
+        <p class="event-location"><i class="ri-map-pin-line"></i> {{ ev.lugar }}</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- SECTORES Y CANALES -->
 <section class="section-sectors" id="sectores">
