@@ -144,14 +144,40 @@
     <section *ngIf="tabActiva === 'ASISTENCIAS'" class="tab-view">
       <div class="card">
         <div class="card__header">
-          <h3 class="card__title"><i class="ri-calendar-event-fill"></i> Control de Asistencia a Asambleas y Mingas</h3>
+          <h3 class="card__title"><i class="ri-calendar-event-fill"></i> Control de Asistencia a Eventos</h3>
+          <!-- Botón único según el tab activo -->
           <button class="btn btn--primary btn--sm">
-            <i class="ri-add-circle-line"></i> Programar Nuevo Evento
+            <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
           </button>
         </div>
 
+        <!-- Sub TABS -->
+        <div class="tabs-container" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
+          <button 
+            class="tab-btn" 
+            [class.active]="subTabEventos === 'ASAMBLEA'" 
+            (click)="cambiarSubTabEventos('ASAMBLEA')"
+            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+            <i class="ri-group-line"></i> Asambleas
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="subTabEventos === 'MINGA'" 
+            (click)="cambiarSubTabEventos('MINGA')"
+            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+            <i class="ri-tools-line"></i> Mingas Comunitarias
+          </button>
+        </div>
+
+        <style>
+          .tab-btn.active {
+            color: var(--primary-color) !important;
+            border-bottom-color: var(--primary-color) !important;
+          }
+        </style>
+
         <div class="events-list">
-          <div class="event-item card" *ngFor="let e of eventos">
+          <div class="event-item card" *ngFor="let e of eventosFiltrados">
             <div class="event-item__header">
               <div>
                 <span class="badge" [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo }}</span>
@@ -160,11 +186,14 @@
               </div>
               <div class="event-item__actions">
                 <span class="badge badge--success">{{ e.asistentes }} / {{ e.totalComuneros }} Asistentes</span>
-                <button class="btn btn--secondary btn--sm">
+                <button class="btn btn--secondary btn--sm" (click)="abrirModalAsistencia(e)">
                   <i class="ri-checkbox-fill"></i> Tomar Asistencia Digital
                 </button>
               </div>
             </div>
+          </div>
+          <div *ngIf="eventosFiltrados.length === 0" class="alert" style="text-align: center; color: var(--text-muted);">
+            No hay {{ subTabEventos === 'ASAMBLEA' ? 'asambleas' : 'mingas' }} registradas.
           </div>
         </div>
       </div>
@@ -175,8 +204,8 @@
       <div class="card">
         <div class="card__header">
           <h3 class="card__title"><i class="ri-time-line"></i> Turnos Semanales de Agua por Sector</h3>
-          <button class="btn btn--primary btn--sm">
-            <i class="ri-time-line"></i> Asignar Horario
+          <button class="btn btn--primary btn--sm" (click)="abrirModalTurno()">
+            <i class="ri-time-line"></i> Asignar Horario Adicional
           </button>
         </div>
 
@@ -219,37 +248,77 @@
           </button>
         </div>
 
-        <div class="finanzas-summary grid-2">
-          <div class="card">
-            <h4><i class="ri-download-2-line text-success"></i> Registrar Ingreso / Pago</h4>
-            <div class="form-group">
-              <label>Buscar Comunero</label>
-              <input type="text" class="form-control" placeholder="Cédula o Nombres..." value="1801234567 - Juan Morales" />
-            </div>
-            <div class="form-group">
-              <label>Concepto</label>
-              <select class="form-control">
-                <option>Agua de Riego - Mensual ($10.00)</option>
-                <option>Multa por Inasistencia a Asamblea ($10.00)</option>
-                <option>Multa por Inasistencia a Minga ($15.00)</option>
-              </select>
-            </div>
-            <button class="btn btn--primary btn--block"><i class="ri-money-dollar-box-line"></i> Emitir Recibo de Pago</button>
-          </div>
+        <!-- Sub TABS FINANZAS -->
+        <div class="tabs-container" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
+          <button 
+            class="tab-btn" 
+            [class.active]="subTabFinanzas === 'INGRESOS'" 
+            (click)="cambiarSubTabFinanzas('INGRESOS')"
+            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+            <i class="ri-download-2-line"></i> Ingresos y Cobros
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="subTabFinanzas === 'EGRESOS'" 
+            (click)="cambiarSubTabFinanzas('EGRESOS')"
+            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
+            <i class="ri-upload-2-line"></i> Egresos y Compras
+          </button>
+        </div>
 
+        <!-- TAB: INGRESOS -->
+        <div *ngIf="subTabFinanzas === 'INGRESOS'" class="finanzas-ingresos" style="max-width: 600px; margin: 0 auto;">
           <div class="card">
-            <h4><i class="ri-upload-2-line text-danger"></i> Registrar Egreso / Compra</h4>
-            <div class="form-group">
-              <label>Proveedor</label>
-              <input type="text" class="form-control" placeholder="RUC / Nombre Proveedor" />
+            <h4><i class="ri-search-line text-primary"></i> Búsqueda de Comunero para Cobro</h4>
+            <div class="form-group" style="display: flex; gap: 0.5rem; align-items: flex-end;">
+              <div style="flex: 1;">
+                <label>Cédula o Nombres</label>
+                <input type="text" class="form-control" placeholder="Buscar..." [(ngModel)]="comuneroBusqueda" (keyup.enter)="buscarObligaciones()" />
+              </div>
+              <button class="btn btn--outline" (click)="buscarObligaciones()">Buscar</button>
             </div>
-            <div class="form-group">
-              <label>Monto ($)</label>
-              <input type="number" class="form-control" placeholder="0.00" />
+
+            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);" />
+            
+            <div *ngIf="obligacionesComunero.length > 0">
+              <div class="alert alert--info" style="margin-bottom: 1rem;">
+                <i class="ri-information-line"></i> <strong>Importante:</strong> Según las reglas de la Junta, los cobros no pueden fraccionarse. Se debe cobrar la totalidad de la obligación.
+              </div>
+              <div class="form-group">
+                <label>Obligación Pendiente a Cobrar</label>
+                <select class="form-control" [(ngModel)]="obligacionSeleccionada">
+                  <option *ngFor="let ob of obligacionesComunero" [ngValue]="ob">
+                    {{ ob.concepto }} - {{ ob.periodo }} (${{ ob.valor }})
+                  </option>
+                </select>
+              </div>
+              <button class="btn btn--primary btn--block" (click)="cobrarObligacion()">
+                <i class="ri-money-dollar-box-line"></i> Procesar Pago Completo (${{ obligacionSeleccionada?.valor || 0 }})
+              </button>
             </div>
-            <button class="btn btn--outline btn--block"><i class="ri-save-line"></i> Guardar Egreso</button>
+            
+            <div *ngIf="obligacionesComunero.length === 0" style="text-align: center; color: var(--text-muted); padding: 1rem 0;">
+              Busca a un comunero para listar sus deudas pendientes.
+            </div>
           </div>
         </div>
+
+        <!-- TAB: EGRESOS -->
+        <div *ngIf="subTabFinanzas === 'EGRESOS'" class="finanzas-egresos" style="max-width: 600px; margin: 0 auto;">
+          <div class="card">
+            <h4><i class="ri-upload-2-line text-danger"></i> Registrar Nuevo Egreso / Compra</h4>
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label>Proveedor (RUC / Nombre)</label>
+              <input type="text" class="form-control" placeholder="RUC / Nombre Proveedor" />
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label>Monto Total ($)</label>
+              <input type="number" class="form-control" placeholder="0.00" />
+            </div>
+            <button class="btn btn--outline btn--block"><i class="ri-save-line"></i> Guardar Egreso en Sistema</button>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -294,6 +363,7 @@
       <p><strong>Titular:</strong> {{ loteSeleccionadoMapa.nombres }} ({{ loteSeleccionadoMapa.cedula }})</p>
       <p><strong>Sector:</strong> {{ loteSeleccionadoMapa.sector }} | <strong>Superficie:</strong> {{ loteSeleccionadoMapa.superficie }} m²</p>
       <p><strong>Coordenadas GPS:</strong> Lat {{ loteSeleccionadoMapa.latitud }}, Lng {{ loteSeleccionadoMapa.longitud }}</p>
+      <p><strong>Precisión (Radio de Error):</strong> <span class="badge badge--warning">± {{ loteSeleccionadoMapa.radioError }} metros</span></p>
       
       <div class="map-placeholder">
         <i class="ri-earth-line map-bg-icon"></i>
@@ -308,6 +378,116 @@
         <i class="ri-google-fill"></i> Abrir en Google Maps Satelital
       </button>
       <button class="btn btn--outline" (click)="cerrarModalMapa()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ASISTENCIA MASIVA -->
+<div class="modal-backdrop" *ngIf="modalAsistenciaVisible && eventoSeleccionado">
+  <div class="modal card card--glass" style="max-width: 600px; width: 100%;">
+    <div class="modal__header">
+      <h4><i class="ri-checkbox-multiple-line text-primary"></i> Asistencia: {{ eventoSeleccionado.titulo }}</h4>
+      <button class="btn-close" (click)="cerrarModalAsistencia()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal__body">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <input type="text" class="form-control" placeholder="Buscar comunero..." [(ngModel)]="filtroAsistencia" style="max-width: 300px;" />
+        <button class="btn btn--outline btn--sm" (click)="marcarTodosAsistencia()">
+          <i class="ri-check-double-line"></i> Marcar todos presentes
+        </button>
+      </div>
+
+      <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th style="width: 50px;">Asistió</th>
+              <th>Cédula</th>
+              <th>Nombres</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of usuariosAsistenciaFiltrados">
+              <td style="text-align: center;">
+                <input type="checkbox" [(ngModel)]="u.presente" style="transform: scale(1.5);" />
+              </td>
+              <td>{{ u.cedula }}</td>
+              <td>{{ u.nombres }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert--warning" style="margin-top: 1rem; font-size: 0.85rem;">
+        <i class="ri-error-warning-line"></i> Nota: Al finalizar el evento, el sistema asignará automáticamente la multa de ${{ eventoSeleccionado.multaAbsencia }} a los comuneros desmarcados (Ausentes).
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--primary" (click)="guardarAsistencia()">
+        <i class="ri-save-line"></i> Guardar Asistencias
+      </button>
+      <button class="btn btn--outline" (click)="cerrarModalAsistencia()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ASIGNAR TURNO -->
+<div class="modal-backdrop" *ngIf="modalTurnoVisible">
+  <div class="modal card card--glass" style="max-width: 500px; width: 100%;">
+    <div class="modal__header">
+      <h4><i class="ri-time-fill text-primary"></i> Asignar Turno de Agua</h4>
+      <button class="btn-close" (click)="cerrarModalTurno()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label>Comunero Asociado</label>
+        <select class="form-control" [(ngModel)]="nuevoTurno.persona_id">
+          <option [ngValue]="null">Seleccione un comunero...</option>
+          <option *ngFor="let u of usuarios" [value]="u.id">{{ u.cedula }} - {{ u.nombres }}</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label>Tipo de Turno</label>
+        <select class="form-control" [(ngModel)]="nuevoTurno.tipo">
+          <option value="REGULAR">REGULAR (Semanal Fijo)</option>
+          <option value="ADICIONAL">ADICIONAL (Comprado Extra)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label>Día de la Semana</label>
+        <select class="form-control" [(ngModel)]="nuevoTurno.dia_semana">
+          <option [value]="1">Lunes</option>
+          <option [value]="2">Martes</option>
+          <option [value]="3">Miércoles</option>
+          <option [value]="4">Jueves</option>
+          <option [value]="5">Viernes</option>
+          <option [value]="6">Sábado</option>
+          <option [value]="7">Domingo</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <div class="form-group" style="flex: 1;">
+          <label>Hora Inicio</label>
+          <input type="time" class="form-control" [(ngModel)]="nuevoTurno.hora_inicio" />
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Hora Fin</label>
+          <input type="time" class="form-control" [(ngModel)]="nuevoTurno.hora_fin" />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label>Observación (Opcional)</label>
+        <textarea class="form-control" [(ngModel)]="nuevoTurno.observacion" rows="2" placeholder="Ej: Compra extra por $2.00"></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--primary" (click)="guardarTurno()">
+        <i class="ri-save-line"></i> Asignar Turno
+      </button>
+      <button class="btn btn--outline" (click)="cerrarModalTurno()">Cancelar</button>
     </div>
   </div>
 </div>

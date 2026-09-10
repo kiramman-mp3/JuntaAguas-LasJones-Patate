@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AdminService } from '../../core/services/admin.service';
 
 interface UsuarioAdmin {
   id: number;
@@ -11,6 +12,7 @@ interface UsuarioAdmin {
   superficie: number;
   latitud: number;
   longitud: number;
+  radioError: number;
   estado: 'ACTIVO' | 'INACTIVO';
 }
 
@@ -31,10 +33,18 @@ interface EventoAdmin {
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
-export class AdminComponent {
+export class AdminComponent implements OnInit {
   tabActiva: 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS' = 'USUARIOS';
+  subTabEventos: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
+  subTabFinanzas: 'INGRESOS' | 'EGRESOS' = 'INGRESOS';
   modalMapaVisible: boolean = false;
   loteSeleccionadoMapa: UsuarioAdmin | null = null;
+  
+  // Asistencia
+  modalAsistenciaVisible: boolean = false;
+  eventoSeleccionado: EventoAdmin | null = null;
+  usuariosAsistencia: any[] = [];
+  filtroAsistencia: string = '';
 
   // KPIs Financieros
   kpis = {
@@ -44,30 +54,116 @@ export class AdminComponent {
     balanceAlDia: 1130.00
   };
 
-  // Mocks de Usuarios
-  usuarios: UsuarioAdmin[] = [
-    { id: 1, cedula: '1801234567', nombres: 'Juan Carlos Morales Soria', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A04', superficie: 2500, latitud: -1.33241, longitud: -78.51421, estado: 'ACTIVO' },
-    { id: 2, cedula: '1809876543', nombres: 'María Elena Salazar Tamayo', sector: 'Sector Las Jones Centro', loteCodigo: 'LOT-JONES-C12', superficie: 1800, latitud: -1.33502, longitud: -78.51105, estado: 'ACTIVO' },
-    { id: 3, cedula: '1803456789', nombres: 'Segundo Luis Chimbo Ortiz', sector: 'Sector Las Jones Alto', loteCodigo: 'LOT-JONES-A09', superficie: 3200, latitud: -1.33110, longitud: -78.51600, estado: 'ACTIVO' },
-    { id: 4, cedula: '1805554433', nombres: 'Rosa Mercedes Vargas Paredes', sector: 'Sector Las Jones Bajo', loteCodigo: 'LOT-JONES-B02', superficie: 1450, latitud: -1.33920, longitud: -78.50890, estado: 'ACTIVO' }
-  ];
+  // Mocks de Usuarios por defecto inicializados en vacío
+  usuarios: UsuarioAdmin[] = [];
 
-  // Mocks de Eventos / Asistencias
-  eventos: EventoAdmin[] = [
-    { id: 1, tipo: 'ASAMBLEA', titulo: 'Asamblea General Trimestral #3', fecha: '2026-08-15', asistentes: 142, totalComuneros: 165, multaAbsencia: 10.00 },
-    { id: 2, tipo: 'MINGA', titulo: 'Minga de Limpieza Canal Matriz A', fecha: '2026-08-22', asistentes: 130, totalComuneros: 165, multaAbsencia: 15.00 }
-  ];
+  // Mocks de Eventos / Asistencias inicializados en vacío
+  eventos: EventoAdmin[] = [];
 
   // Turnos de agua
-  turnos = [
-    { lote: 'LOT-JONES-A04', usuario: 'Juan Morales', dia: 'Lunes', horaInicio: '08:00 AM', horaFin: '12:00 PM', sector: 'Sector Alto' },
-    { lote: 'LOT-JONES-C12', usuario: 'María Salazar', dia: 'Lunes', horaInicio: '12:00 PM', horaFin: '04:00 PM', sector: 'Sector Centro' },
-    { lote: 'LOT-JONES-A09', usuario: 'Segundo Chimbo', dia: 'Martes', horaInicio: '08:00 AM', horaFin: '12:00 PM', sector: 'Sector Alto' },
-    { lote: 'LOT-JONES-B02', usuario: 'Rosa Vargas', dia: 'Miércoles', horaInicio: '09:00 AM', horaFin: '01:00 PM', sector: 'Sector Bajo' }
-  ];
+  turnos: any[] = [];
+  modalTurnoVisible: boolean = false;
+  nuevoTurno = {
+    persona_id: null as number | null,
+    dia_semana: 1,
+    hora_inicio: '08:00',
+    hora_fin: '10:00',
+    tipo: 'REGULAR',
+    observacion: ''
+  };
+
+  constructor(private adminService: AdminService) {}
+
+  ngOnInit() {
+    this.cargarDatosBackend();
+  }
+
+  cargarDatosBackend() {
+    // Cargar balance financiero en tiempo real desde la API
+    this.adminService.getBalance().subscribe({
+      next: (res) => {
+        if (res && res.balance) {
+          this.kpis.recaudadoMes = Number(res.balance.totalIngresos) || this.kpis.recaudadoMes;
+          this.kpis.egresosMes = Number(res.balance.totalEgresos) || this.kpis.egresosMes;
+          this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || this.kpis.pendientesCobro;
+          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia) || this.kpis.balanceAlDia;
+        }
+      },
+      error: () => {}
+    });
+
+    // Cargar comuneros desde la API
+    this.adminService.getPersonas().subscribe({
+      next: (res) => {
+        if (res && res.data && res.data.length > 0) {
+          this.usuarios = res.data.map((p: any) => ({
+            id: p.id,
+            cedula: p.cedula,
+            nombres: `${p.nombres} ${p.apellidos}`,
+            sector: p.direccion || 'Sector Las Jones',
+            loteCodigo: `LOT-JONES-${p.id}`,
+            superficie: 2000,
+            latitud: -1.33241,
+            longitud: -78.51421,
+            radioError: 20, // valor simulado si la BD no lo trae en esta query
+            estado: p.estado
+          }));
+        }
+      },
+      error: () => {}
+    });
+
+    // Cargar eventos desde la API
+    this.adminService.getEventos().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.eventos = res.data.map((e: any) => ({
+            id: e.id,
+            tipo: e.tipo,
+            titulo: e.titulo,
+            fecha: new Date(e.fecha).toLocaleDateString(),
+            asistentes: 0,
+            totalComuneros: this.usuarios.length || 0,
+            multaAbsencia: Number(e.valor_multa)
+          }));
+        }
+      },
+      error: () => {}
+    });
+
+    // Cargar turnos desde la API
+    this.adminService.getTurnos().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+          this.turnos = res.data.map((t: any) => ({
+            lote: t.lote_codigo || 'N/A',
+            usuario: t.comunero_nombre,
+            dia: diasSemana[t.dia_semana] || 'Desconocido',
+            horaInicio: t.hora_inicio,
+            horaFin: t.hora_fin,
+            sector: t.sector_nombre || 'N/A'
+          }));
+        }
+      },
+      error: () => {}
+    });
+  }
 
   cambiarTab(tab: 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS') {
     this.tabActiva = tab;
+  }
+
+  cambiarSubTabEventos(subTab: 'ASAMBLEA' | 'MINGA') {
+    this.subTabEventos = subTab;
+  }
+
+  cambiarSubTabFinanzas(subTab: 'INGRESOS' | 'EGRESOS') {
+    this.subTabFinanzas = subTab;
+  }
+
+  get eventosFiltrados() {
+    return this.eventos.filter(e => e.tipo === this.subTabEventos);
   }
 
   verLoteEnMapa(u: UsuarioAdmin) {
@@ -82,5 +178,150 @@ export class AdminComponent {
 
   abrirGoogleMaps(lat: number, lng: number) {
     window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+  }
+
+  // Lógica Asistencia
+  abrirModalAsistencia(evento: EventoAdmin) {
+    this.eventoSeleccionado = evento;
+    this.usuariosAsistencia = this.usuarios.map(u => ({
+      id: u.id,
+      nombres: u.nombres,
+      cedula: u.cedula,
+      presente: false
+    }));
+    this.modalAsistenciaVisible = true;
+  }
+
+  cerrarModalAsistencia() {
+    this.modalAsistenciaVisible = false;
+    this.eventoSeleccionado = null;
+  }
+
+  marcarTodosAsistencia() {
+    this.usuariosAsistencia.forEach(u => u.presente = true);
+  }
+
+  get usuariosAsistenciaFiltrados() {
+    if (!this.filtroAsistencia) return this.usuariosAsistencia;
+    const term = this.filtroAsistencia.toLowerCase();
+    return this.usuariosAsistencia.filter(u => u.nombres.toLowerCase().includes(term) || u.cedula.includes(term));
+  }
+
+  guardarAsistencia() {
+    if (!this.eventoSeleccionado) return;
+    
+    const payload = this.usuariosAsistencia.map(u => ({
+      persona_id: u.id,
+      estado: u.presente ? 'PRESENTE' : 'AUSENTE',
+      motivo_justificacion: null
+    }));
+
+    this.adminService.registrarAsistencias(this.eventoSeleccionado.id, payload).subscribe({
+      next: () => {
+        alert(`Asistencia guardada con éxito en el backend. Presentes: ${payload.filter(p => p.estado === 'PRESENTE').length}`);
+        this.cerrarModalAsistencia();
+      },
+      error: (err) => {
+        alert('Hubo un error al guardar las asistencias.');
+        console.error(err);
+      }
+    });
+  }
+
+  // Lógica Turnos
+  abrirModalTurno() {
+    this.nuevoTurno = { persona_id: null, dia_semana: 1, hora_inicio: '08:00', hora_fin: '10:00', tipo: 'REGULAR', observacion: '' };
+    this.modalTurnoVisible = true;
+  }
+
+  cerrarModalTurno() {
+    this.modalTurnoVisible = false;
+  }
+
+  guardarTurno() {
+    if (!this.nuevoTurno.persona_id) {
+      alert('Debe seleccionar un comunero.');
+      return;
+    }
+    
+    // El lote asociado a la persona (Simplificado)
+    const comunero = this.usuarios.find(u => Number(u.id) === Number(this.nuevoTurno.persona_id));
+    const payload = {
+      ...this.nuevoTurno,
+      lote_id: comunero ? comunero.id : null // Asumiendo lote_id == persona_id para pruebas simplificadas
+    };
+
+    this.adminService.asignarTurno(payload).subscribe({
+      next: () => {
+        alert('Turno de agua asignado con éxito.');
+        this.cerrarModalTurno();
+        // Recargar turnos
+        this.adminService.getTurnos().subscribe(res => {
+          if (res && res.data) {
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            this.turnos = res.data.map((t: any) => ({
+              lote: t.lote_codigo || 'N/A',
+              usuario: t.comunero_nombre,
+              dia: diasSemana[t.dia_semana] || 'Desconocido',
+              horaInicio: t.hora_inicio,
+              horaFin: t.hora_fin,
+              sector: t.sector_nombre || 'N/A'
+            }));
+          }
+        });
+      },
+      error: (err) => {
+        alert(err.error?.message || 'Error al asignar el turno.');
+      }
+    });
+  }
+
+  // Lógica Finanzas
+  comuneroBusqueda: string = '';
+  obligacionesComunero: any[] = [];
+  obligacionSeleccionada: any = null;
+
+  buscarObligaciones() {
+    if (!this.comuneroBusqueda) {
+      this.obligacionesComunero = [];
+      return;
+    }
+    const term = this.comuneroBusqueda.toLowerCase();
+    const comunero = this.usuarios.find(u => u.cedula === term || u.nombres.toLowerCase().includes(term));
+    if (comunero) {
+      this.adminService.getObligaciones(comunero.id).subscribe({
+        next: (res) => {
+          this.obligacionesComunero = res.data.filter((o: any) => o.estado === 'PENDIENTE');
+          if (this.obligacionesComunero.length > 0) {
+            this.obligacionSeleccionada = this.obligacionesComunero[0]; // Selecciona la primera por defecto
+          }
+        },
+        error: () => alert('Error al buscar obligaciones.')
+      });
+    } else {
+      alert('Comunero no encontrado.');
+      this.obligacionesComunero = [];
+    }
+  }
+
+  cobrarObligacion() {
+    if (!this.obligacionSeleccionada) return;
+    
+    // Regla de Negocio: Se cobra la totalidad del valor. No se permiten abonos.
+    const payload = {
+      persona_id: this.obligacionSeleccionada.persona_id,
+      metodo: 'EFECTIVO',
+      obligacionesIds: [this.obligacionSeleccionada.id],
+      observaciones: 'Pago completo procesado desde panel administrativo.'
+    };
+
+    this.adminService.registrarPago(payload).subscribe({
+      next: () => {
+        alert('Pago registrado exitosamente.');
+        this.cargarDatosBackend(); // Recargar balance
+        this.buscarObligaciones(); // Recargar lista del usuario
+      },
+      error: (err) => alert(err.error?.message || 'Error al procesar pago.')
+    });
   }
 }

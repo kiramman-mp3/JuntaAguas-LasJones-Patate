@@ -1,5 +1,7 @@
+
+
 <!-- HERO SECTION -->
-<section class="hero">
+<section class="hero" id="inicio">
   <div class="hero__container">
     <div class="hero__content">
       <span class="hero__badge">
@@ -12,11 +14,8 @@
         Plataforma oficial para la administración de comuneros, georreferenciación de lotes, turnos de agua, convocatorias a mingas y consulta pública de obligaciones.
       </p>
       <div class="hero__actions">
-        <a routerLink="/consulta" class="btn btn--primary btn--lg">
-          <i class="ri-search-eye-line"></i> Consultar Multas y Deudas por Cédula
-        </a>
-        <a routerLink="/login" class="btn btn--outline btn--lg">
-          <i class="ri-user-settings-line"></i> Acceso Directiva / Admin
+        <a routerLink="/login" class="btn btn--primary btn--lg">
+          <i class="ri-user-settings-line"></i> Acceso Comuneros / Directiva
         </a>
       </div>
     </div>
@@ -65,44 +64,10 @@
   </div>
 </section>
 
-<!-- CONVOCATORIAS VIGENTES -->
-<section class="section-events">
-  <div class="container">
-    <div class="section-header">
-      <div>
-        <span class="badge badge--info"><i class="ri-notification-3-line"></i> Anuncios Oficiales</span>
-        <h2>Próximas Convocatorias y Mingas</h2>
-      </div>
-      <span class="caption">Asistencia obligatoria según reglamento interno</span>
-    </div>
 
-    <div class="events-grid">
-      <div class="card event-card" *ngFor="let item of convocatorias">
-        <div class="event-card__header">
-          <span class="badge" [ngClass]="{'badge--primary': item.tipo === 'ASAMBLEA GENERAL', 'badge--warning': item.tipo === 'MINGA COMUNITARIA'}">
-            {{ item.tipo }}
-          </span>
-          <span class="small font-bold text-danger"><i class="ri-error-warning-line"></i> Multa: {{ item.multa }}</span>
-        </div>
-        <h3 class="event-card__title">{{ item.titulo }}</h3>
-        <div class="event-card__details">
-          <div class="detail-item">
-            <i class="ri-calendar-event-line"></i> <span><strong>Fecha:</strong> {{ item.fecha }}</span>
-          </div>
-          <div class="detail-item">
-            <i class="ri-time-line"></i> <span><strong>Hora:</strong> {{ item.hora }}</span>
-          </div>
-          <div class="detail-item">
-            <i class="ri-map-pin-2-line"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- SECTORES Y CANALES -->
-<section class="section-sectors">
+<section class="section-sectors" id="sectores">
   <div class="container">
     <div class="section-header">
       <div>
