@@ -142,19 +142,15 @@
               <div style="position: relative; display: flex; align-items: center;">
                 <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
                 <input type="text" class="input input--sm" placeholder="Buscar por cédula o nombre..."
-                  [(ngModel)]="usuariosBusqueda" (keyup.enter)="aplicarFiltroUsuarios()"
+                  [(ngModel)]="usuariosBusqueda" (ngModelChange)="aplicarFiltroUsuarios()"
                   style="padding-left: 2rem; width: 260px;">
               </div>
-              <select class="input input--sm" [(ngModel)]="usuariosEstadoFiltro" (change)="aplicarFiltroUsuarios()"
+              <select class="input input--sm" [(ngModel)]="usuariosEstadoFiltro" (ngModelChange)="aplicarFiltroUsuarios()"
                 style="width: 140px;">
                 <option value="">Todos</option>
                 <option value="ACTIVO">Activos</option>
                 <option value="INACTIVO">Inactivos</option>
               </select>
-              <button class="btn btn--outline btn--sm" (click)="aplicarFiltroUsuarios()"
-                style="padding: 0.4rem 0.8rem;">
-                Filtrar
-              </button>
             </div>
 
             <!-- Filters Lotes -->
@@ -163,17 +159,14 @@
               <div style="position: relative; display: flex; align-items: center;">
                 <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
                 <input type="text" class="input input--sm" placeholder="Buscar por código..."
-                  [(ngModel)]="lotesBusqueda" (keyup.enter)="aplicarFiltroLotes()"
+                  [(ngModel)]="lotesBusqueda" (ngModelChange)="aplicarFiltroLotes()"
                   style="padding-left: 2rem; width: 220px;">
               </div>
-              <select class="input input--sm" [(ngModel)]="lotesSectorFiltro" (change)="aplicarFiltroLotes()"
+              <select class="input input--sm" [(ngModel)]="lotesSectorFiltro" (ngModelChange)="aplicarFiltroLotes()"
                 style="width: 180px;">
                 <option [ngValue]="null">Todos los sectores</option>
                 <option *ngFor="let s of sectores" [ngValue]="s.id">{{ s.nombre }}</option>
               </select>
-              <button class="btn btn--outline btn--sm" (click)="aplicarFiltroLotes()" style="padding: 0.4rem 0.8rem;">
-                Filtrar
-              </button>
             </div>
           </div>
         </div>
@@ -668,47 +661,55 @@
     <!-- VISTA 2: ASISTENCIAS Y MINGAS -->
     <section *ngIf="tabActiva === 'ASISTENCIAS'" class="tab-view">
       <div class="card">
-        <div class="card__header">
-          <h3 class="card__title"><i class="ri-calendar-event-fill"></i> Control de Asistencia a Eventos</h3>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn--secondary btn--sm" (click)="generarReporteEventosPdf()">
-              <i class="ri-file-pdf-line"></i> Reporte PDF
-            </button>
-            <button class="btn btn--primary btn--sm" (click)="abrirModalNuevoEvento()">
-              <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
-            </button>
+        <div class="card__header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0;">
+          
+          <!-- Top Row: Title and Main Actions -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <h3 class="card__title" style="margin: 0; font-size: 1.3rem;"><i class="ri-calendar-event-fill" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Control de Asistencia a Eventos</h3>
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn--primary" (click)="abrirModalNuevoEvento()">
+                <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Tabs and Filters inside a toolbar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+            
+            <!-- Tabs -->
+            <div class="tab-pills" style="display: flex; gap: 0.5rem;">
+              <button class="btn btn--sm" [ngClass]="subTabEventos === 'ASAMBLEA' ? 'btn--primary' : 'btn--outline'" (click)="cambiarSubTabEventos('ASAMBLEA')" style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
+                <i class="ri-group-line"></i> Asambleas
+              </button>
+              <button class="btn btn--sm" [ngClass]="subTabEventos === 'MINGA' ? 'btn--primary' : 'btn--outline'" (click)="cambiarSubTabEventos('MINGA')" style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
+                <i class="ri-tools-line"></i> Mingas Comunitarias
+              </button>
+            </div>
+
+            <!-- Filters Eventos -->
+            <div class="filters" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <div style="position: relative; display: flex; align-items: center;">
+                <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+                <input type="text" class="input input--sm" placeholder="Buscar evento..." [(ngModel)]="eventosBusqueda" (ngModelChange)="aplicarFiltroEventos()" style="padding-left: 2rem; width: 260px;">
+              </div>
+              <select class="input input--sm" [(ngModel)]="eventosEstadoFiltro" (ngModelChange)="aplicarFiltroEventos()" style="width: 140px;">
+                <option value="">Todos</option>
+                <option value="FUTURO">Próximos</option>
+                <option value="PASADO">Ya pasaron</option>
+              </select>
+            </div>
           </div>
         </div>
-
-        <!-- Sub TABS -->
-        <div class="tabs-container"
-          style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
-          <button class="tab-btn" [class.active]="subTabEventos === 'ASAMBLEA'"
-            (click)="cambiarSubTabEventos('ASAMBLEA')"
-            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
-            <i class="ri-group-line"></i> Asambleas
-          </button>
-          <button class="tab-btn" [class.active]="subTabEventos === 'MINGA'" (click)="cambiarSubTabEventos('MINGA')"
-            style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
-            <i class="ri-tools-line"></i> Mingas Comunitarias
-          </button>
-        </div>
-
-        <style>
-          .tab-btn.active {
-            color: var(--primary-color) !important;
-            border-bottom-color: var(--primary-color) !important;
-          }
-        </style>
 
         <div class="events-list">
           <div class="event-item card" *ngFor="let e of eventosFiltrados">
             <div class="event-item__header">
               <div>
                 <span class="badge"
-                  [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo
-                  }}</span>
-                <h4>{{ e.titulo }}</h4>
+                  [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo }}</span>
+                <span class="badge badge--danger" *ngIf="esEventoPasado(e.fecha)" style="margin-left: 0.5rem; background-color: var(--color-danger); color: white;">Ya pasó</span>
+                <span class="badge badge--success" *ngIf="!esEventoPasado(e.fecha)" style="margin-left: 0.5rem; background-color: var(--color-success); color: white;">Próximo</span>
+                <h4 style="margin-top: 0.5rem;">{{ e.titulo }}</h4>
                 <p class="caption">Fecha: {{ e.fecha }} | Multa inasistencia: <strong>${{ e.multaAbsencia.toFixed(2)
                     }}</strong></p>
               </div>
@@ -740,8 +741,8 @@
                   <input type="text" class="input" name="titulo" [(ngModel)]="formEvento.titulo" required placeholder="Ej: Asamblea General Ordinaria">
                 </div>
                 <div class="form-group">
-                  <label>Descripción / Orden del Día</label>
-                  <textarea class="input" name="descripcion" [(ngModel)]="formEvento.descripcion" rows="3"></textarea>
+                  <label>{{ formEvento.tipo === 'ASAMBLEA' ? 'Puntos a tratar en la reunión' : 'Descripción de actividades' }}</label>
+                  <textarea class="input" name="descripcion" [(ngModel)]="formEvento.descripcion" rows="4" [placeholder]="formEvento.tipo === 'ASAMBLEA' ? 'Ej:\n1. Lectura del acta anterior\n2. Informe económico\n3. Asuntos varios' : 'Describa las actividades de la minga...'"></textarea>
                 </div>
                 <div class="grid-2">
                   <div class="form-group">
@@ -972,50 +973,78 @@
 
 <!-- MODAL ASISTENCIA MASIVA -->
 <div class="modal-backdrop" *ngIf="modalAsistenciaVisible && eventoSeleccionado">
-  <div class="modal card card--glass" style="max-width: 600px; width: 100%;">
-    <div class="modal__header">
-      <h4><i class="ri-checkbox-multiple-line text-primary"></i> Asistencia: {{ eventoSeleccionado.titulo }}</h4>
+  <div class="modal card" style="max-width: 720px; width: 95%;">
+    <div class="modal__header" style="border-bottom: 2px solid var(--border-color);">
+      <div>
+        <h4 style="margin: 0; font-size: 1.15rem;"><i class="ri-checkbox-multiple-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Asistencia: {{ eventoSeleccionado.titulo }}</h4>
+        <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted);">
+          {{ eventoSeleccionado.fecha }} · {{ eventoSeleccionado.tipo }}
+        </p>
+      </div>
       <button class="btn-close" (click)="cerrarModalAsistencia()"><i class="ri-close-line"></i></button>
     </div>
-    <div class="modal__body">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <input type="text" class="form-control" placeholder="Buscar comunero..." [(ngModel)]="filtroAsistencia"
-          style="max-width: 300px;" />
-        <button class="btn btn--outline btn--sm" (click)="marcarTodosAsistencia()">
-          <i class="ri-check-double-line"></i> Marcar todos presentes
-        </button>
+    <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+      
+      <!-- Toolbar: Search + Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="position: relative; display: flex; align-items: center; flex: 1; min-width: 200px;">
+          <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+          <input type="text" class="input input--sm" placeholder="Buscar comunero por nombre o cédula..."
+            [(ngModel)]="filtroAsistencia" style="padding-left: 2rem; width: 100%;" />
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <span class="badge badge--primary" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">
+            <i class="ri-user-line"></i> {{ usuariosAsistencia.length }} comuneros
+          </span>
+          <button class="btn btn--outline btn--sm" (click)="marcarTodosAsistencia()" style="white-space: nowrap;">
+            <i class="ri-check-double-line"></i> Marcar todos
+          </button>
+        </div>
       </div>
 
-      <div class="table-container" style="max-height: 300px; overflow-y: auto;">
-        <table class="table-custom">
-          <thead>
+      <!-- Table -->
+      <div class="table-container" style="max-height: 420px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <table class="table-custom" style="margin: 0;">
+          <thead style="position: sticky; top: 0; z-index: 1;">
             <tr>
-              <th style="width: 50px;">Asistió</th>
-              <th>Cédula</th>
+              <th style="width: 60px; text-align: center;">Asistió</th>
+              <th style="width: 130px;">Cédula</th>
               <th>Nombres</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let u of usuariosAsistenciaFiltrados">
+            <tr *ngFor="let u of usuariosAsistenciaFiltrados" 
+                [style.background]="u.presente ? 'rgba(34, 197, 94, 0.08)' : 'transparent'"
+                style="transition: background 0.2s ease;">
               <td style="text-align: center;">
-                <input type="checkbox" [(ngModel)]="u.presente" style="transform: scale(1.5);" />
+                <input type="checkbox" [(ngModel)]="u.presente" 
+                  style="width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: var(--color-primary);" />
               </td>
-              <td>{{ u.cedula }}</td>
+              <td style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem;">{{ u.cedula }}</td>
               <td>{{ u.nombres }}</td>
+            </tr>
+            <tr *ngIf="usuariosAsistenciaFiltrados.length === 0">
+              <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <i class="ri-search-line" style="font-size: 1.5rem;"></i>
+                <p style="margin: 0.5rem 0 0;">No se encontraron comuneros con ese criterio.</p>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="alert alert--warning" style="margin-top: 1rem; font-size: 0.85rem;">
-        <i class="ri-error-warning-line"></i> Nota: Al finalizar el evento, el sistema asignará automáticamente la multa
-        de ${{ eventoSeleccionado.multaAbsencia }} a los comuneros desmarcados (Ausentes).
+
+      <!-- Warning -->
+      <div *ngIf="eventoSeleccionado.multaAbsencia > 0" 
+        style="margin-top: 1rem; padding: 0.75rem 1rem; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: var(--radius-md); font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ri-error-warning-line" style="color: #d97706; font-size: 1.1rem;"></i>
+        <span>Los comuneros <strong>no marcados</strong> recibirán una multa automática de <strong>${{ eventoSeleccionado.multaAbsencia.toFixed(2) }}</strong>.</span>
       </div>
     </div>
-    <div class="modal__footer">
+    <div class="modal__footer" style="border-top: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+      <button class="btn btn--outline" (click)="cerrarModalAsistencia()">Cancelar</button>
       <button class="btn btn--primary" (click)="guardarAsistencia()">
         <i class="ri-save-line"></i> Guardar Asistencias
       </button>
-      <button class="btn btn--outline" (click)="cerrarModalAsistencia()">Cancelar</button>
     </div>
   </div>
 </div>

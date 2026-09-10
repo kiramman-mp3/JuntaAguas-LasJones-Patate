@@ -81,6 +81,10 @@ export class AdminService {
     return this.http.post(`${this.baseUrl}/eventos/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
   }
 
+  getAsistencias(eventoId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/eventos/${eventoId}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
   getBalance(): Observable<any> {
     return this.http.get(`${this.baseUrl}/financiero/balance`, { headers: this.getAuthHeaders() });
   }

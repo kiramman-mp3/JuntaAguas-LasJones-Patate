@@ -212,6 +212,27 @@ async function registrarAsistencias(req, res, next) {
 }
 
 /**
+ * Obtener asistencias registradas de un evento
+ */
+async function getAsistencias(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const [asistencias] = await db.query(
+      `SELECT a.persona_id, a.estado, a.hora_registro, a.motivo_justificacion
+       FROM asistencias a
+       WHERE a.evento_id = ?
+       ORDER BY a.persona_id`,
+      [id]
+    );
+
+    return res.json({ status: 'OK', data: asistencias });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * FINALIZAR EVENTO Y GENERACIÓN AUTOMÁTICA DE MULTAS POR AUSENCIA
  */
 async function finalizarEventoYGenerarMultas(req, res, next) {
@@ -300,5 +321,6 @@ module.exports = {
   createEvento,
   savePuntosAsamblea,
   registrarAsistencias,
+  getAsistencias,
   finalizarEventoYGenerarMultas
 };

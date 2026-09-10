@@ -150,6 +150,8 @@ export class AdminComponent implements OnInit {
 
   // Mocks de Eventos / Asistencias inicializados en vacío
   eventos: EventoAdmin[] = [];
+  eventosBusqueda: string = '';
+  eventosEstadoFiltro: string = '';
   modalEventoVisible: boolean = false;
   formEvento = {
     tipo: 'ASAMBLEA',
@@ -194,22 +196,7 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  cargarDatosBackend() {
-    // Cargar balance financiero en tiempo real desde la API
-    this.adminService.getBalance().subscribe({
-      next: (res) => {
-        if (res && res.balance) {
-          this.kpis.recaudadoMes = Number(res.balance.totalIngresos) || this.kpis.recaudadoMes;
-          this.kpis.egresosMes = Number(res.balance.totalEgresos) || this.kpis.egresosMes;
-          this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || this.kpis.pendientesCobro;
-          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia) || this.kpis.balanceAlDia;
-        }
-        this.cdr.detectChanges();
-      },
-      error: () => {}
-    });
-
-    // Cargar otros datos (eventos, turnos, etc.) que não están paginados
+  cargarEventos() {
     this.adminService.getEventos().subscribe({
       next: (res) => {
         if (res && res.data) {
@@ -227,6 +214,25 @@ export class AdminComponent implements OnInit {
       },
       error: () => {}
     });
+  }
+
+  cargarDatosBackend() {
+    // Cargar balance financiero en tiempo real desde la API
+    this.adminService.getBalance().subscribe({
+      next: (res) => {
+        if (res && res.balance) {
+          this.kpis.recaudadoMes = Number(res.balance.totalIngresos) || this.kpis.recaudadoMes;
+          this.kpis.egresosMes = Number(res.balance.totalEgresos) || this.kpis.egresosMes;
+          this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || this.kpis.pendientesCobro;
+          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia) || this.kpis.balanceAlDia;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+
+    // Cargar otros datos (eventos, turnos, etc.) que não estão paginados
+    this.cargarEventos();
 
     // Cargar turnos desde la API
     this.adminService.getTurnos().subscribe({
@@ -567,7 +573,69 @@ export class AdminComponent implements OnInit {
   }
 
   get eventosFiltrados() {
-    return this.eventos.filter(e => e.tipo === this.subTabEventos);
+    let filtrados = this.eventos.filter(e => e.tipo === this.subTabEventos);
+    
+    if (this.eventosBusqueda.trim()) {
+      const termino = this.eventosBusqueda.toLowerCase();
+      filtrados = filtrados.filter(e => e.titulo.toLowerCase().includes(termino));
+    }
+    
+    if (this.eventosEstadoFiltro) {
+      filtrados = filtrados.filter(e => {
+        const pasado = this.esEventoPasado(e.fecha);
+        if (this.eventosEstadoFiltro === 'FUTURO') return !pasado;
+        if (this.eventosEstadoFiltro === 'PASADO') return pasado;
+        return true;
+      });
+    }
+    
+    return filtrados;
+  }
+
+  aplicarFiltroEventos() {
+    // La reactividad angular actualiza eventosFiltrados automáticamente,
+    // pero podemos forzar detección de cambios si es necesario.
+    this.cdr.detectChanges();
+  }
+
+  esEventoPasado(fechaStr: string): boolean {
+    if (!fechaStr) return false;
+    
+    // Tratamos de parsear la fecha. En el backend se guarda como fecha o string ISO
+    // Si viene en formato local (DD/MM/YYYY) hay que tener cuidado, 
+    // pero this.eventos se mapeó como new Date(e.fecha).toLocaleDateString()
+    // Es más seguro comparar con el objeto date o convertir a un formato estándar.
+    // Como lo guardamos como local string, parsearlo puede ser complicado según el locale.
+    // Vamos a parsear desde las partes asumiendo un formato estándar local o ISO.
+    
+    const hoy = new Date();
+    hoy.setHours(0,0,0,0);
+    
+    // Intentar convertir la cadena de fecha local a un objeto Date
+    // Si la cadena es "MM/DD/YYYY" o "DD/MM/YYYY" depende del locale del sistema.
+    // La forma más segura en TS sin librerías: 
+    const partes = fechaStr.split(/[\/\-]/);
+    let fechaObj: Date;
+    if (partes.length === 3) {
+       // heurística simple: si el último tiene 4 digitos es año
+       if (partes[2].length === 4) {
+         // Puede ser DD/MM/YYYY o MM/DD/YYYY. Asumiremos que Date.parse o new Date de MM/DD/YYYY funciona en general
+         // O mejor, construimos manualmente si sabemos que es DD/MM/YYYY (común en latam)
+         const dia = parseInt(partes[0], 10);
+         const mes = parseInt(partes[1], 10) - 1;
+         const anio = parseInt(partes[2], 10);
+         // Si dia > 12 definitivamente es DD/MM. Si es ambiguo, new Date(anio, mes, dia) usará el formato DD/MM
+         // De hecho, toLocaleDateString() comúnmente en español es D/M/YYYY
+         fechaObj = new Date(anio, mes, dia);
+       } else {
+         fechaObj = new Date(fechaStr);
+       }
+    } else {
+      fechaObj = new Date(fechaStr);
+    }
+    
+    fechaObj.setHours(0,0,0,0);
+    return fechaObj < hoy;
   }
 
   verLoteEnMapa(u: UsuarioAdmin) {
@@ -587,13 +655,45 @@ export class AdminComponent implements OnInit {
   // Lógica Asistencia
   abrirModalAsistencia(evento: EventoAdmin) {
     this.eventoSeleccionado = evento;
-    this.usuariosAsistencia = this.usuarios.map(u => ({
-      id: u.id,
-      nombres: u.nombres,
-      cedula: u.cedula,
-      presente: false
-    }));
-    this.modalAsistenciaVisible = true;
+    // Cargar TODOS los comuneros (limit alto) para la asistencia, no solo la página actual
+    this.adminService.getPersonas(1, 9999, '', 'ACTIVO').subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.usuariosAsistencia = res.data.map((u: any) => ({
+            id: u.id,
+            nombres: `${u.apellidos} ${u.nombres}`,
+            cedula: u.cedula,
+            presente: false
+          }));
+
+          // Cargar asistencias previas guardadas en BD
+          this.adminService.getAsistencias(evento.id).subscribe({
+            next: (asistRes) => {
+              if (asistRes && asistRes.data && asistRes.data.length > 0) {
+                const presentes = new Set(
+                  asistRes.data
+                    .filter((a: any) => a.estado === 'PRESENTE')
+                    .map((a: any) => a.persona_id)
+                );
+                this.usuariosAsistencia.forEach(u => {
+                  if (presentes.has(u.id)) {
+                    u.presente = true;
+                  }
+                });
+              }
+              this.modalAsistenciaVisible = true;
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              // Si falla obtener asistencias previas, igual abrir el modal limpio
+              this.modalAsistenciaVisible = true;
+              this.cdr.detectChanges();
+            }
+          });
+        }
+      },
+      error: () => alert('Error al cargar comuneros para asistencia.')
+    });
   }
 
   // Lógica de Crear Evento
@@ -618,9 +718,10 @@ export class AdminComponent implements OnInit {
   guardarEvento() {
     this.adminService.createEvento(this.formEvento).subscribe({
       next: (res) => {
-        alert(`${this.formEvento.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga'} creada exitosamente.`);
+        alert(`${this.formEvento.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga'} creada exitosamente. Descargando convocatoria...`);
+        this.generarConvocatoriaPdf(this.formEvento);
         this.cerrarModalEvento();
-        // Si tuviéramos un cargarEventos real que actualice la lista this.eventos, lo llamaríamos aquí.
+        this.cargarEventos();
       },
       error: (err) => {
         alert(err.error?.message || 'Error al crear el evento');
@@ -628,32 +729,64 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  generarReporteEventosPdf() {
+  generarConvocatoriaPdf(evento: any) {
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`Reporte de ${this.subTabEventos === 'ASAMBLEA' ? 'Asambleas' : 'Mingas'}`, 14, 20);
     
-    doc.setFontSize(10);
-    doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 28);
+    // Encabezado
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`CONVOCATORIA A ${evento.tipo === 'ASAMBLEA' ? 'ASAMBLEA GENERAL' : 'MINGA COMUNITARIA'}`, 105, 20, { align: 'center' });
     
-    const columns = ['Tipo', 'Título', 'Fecha', 'Multa ($)', 'Asistentes'];
-    const rows = this.eventosFiltrados.map(e => [
-      e.tipo,
-      e.titulo,
-      e.fecha,
-      e.multaAbsencia.toFixed(2),
-      `${e.asistentes} / ${e.totalComuneros}`
-    ]);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Junta Administradora de Agua Potable "Las Jones"', 105, 28, { align: 'center' });
     
-    autoTable(doc, {
-      head: [columns],
-      body: rows,
-      startY: 35,
-      theme: 'striped',
-      headStyles: { fillColor: [30, 64, 175] } // Var color-primary
-    });
+    doc.line(20, 35, 190, 35);
     
-    doc.save(`reporte_${this.subTabEventos.toLowerCase()}_${new Date().getTime()}.pdf`);
+    // Cuerpo
+    doc.setFontSize(12);
+    doc.text('Por medio del presente, se convoca a todos los comuneros al siguiente evento:', 20, 50);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Título:`, 20, 65);
+    doc.setFont('helvetica', 'normal');
+    doc.text(evento.titulo, 45, 65);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Fecha:`, 20, 75);
+    doc.setFont('helvetica', 'normal');
+    doc.text(evento.fecha, 45, 75);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Hora:`, 100, 75);
+    doc.setFont('helvetica', 'normal');
+    doc.text(evento.hora_inicio, 115, 75);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Lugar:`, 20, 85);
+    doc.setFont('helvetica', 'normal');
+    doc.text(evento.lugar || 'Casa Comunal Junta La Jones', 45, 85);
+    
+    if (evento.genera_multa_ausencia) {
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(200, 0, 0); // Rojo oscuro para énfasis
+      doc.text(`* Nota: La inasistencia a este evento generará una multa automática de $${evento.valor_multa.toFixed(2)}.`, 20, 100);
+      doc.setTextColor(0, 0, 0);
+    }
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(evento.tipo === 'ASAMBLEA' ? 'Puntos a tratar en la reunión:' : 'Descripción de actividades:', 20, 115);
+    doc.setFont('helvetica', 'normal');
+    
+    const splitDesc = doc.splitTextToSize(evento.descripcion || 'Sin detalles adicionales.', 170);
+    doc.text(splitDesc, 20, 125);
+    
+    // Firma
+    doc.line(65, 220, 145, 220);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LA DIRECTIVA', 105, 230, { align: 'center' });
+    
+    doc.save(`Convocatoria_${evento.tipo}_${evento.fecha}.pdf`);
   }
 
   cerrarModalAsistencia() {
@@ -682,8 +815,10 @@ export class AdminComponent implements OnInit {
 
     this.adminService.registrarAsistencias(this.eventoSeleccionado.id, payload).subscribe({
       next: () => {
-        alert(`Asistencia guardada con éxito en el backend. Presentes: ${payload.filter(p => p.estado === 'PRESENTE').length}`);
+        const presentes = payload.filter(p => p.estado === 'PRESENTE').length;
+        alert(`Asistencia guardada exitosamente. Presentes: ${presentes} de ${payload.length}`);
         this.cerrarModalAsistencia();
+        this.cargarEventos(); // Actualizar conteo en la lista
         this.cdr.detectChanges();
       },
       error: (err) => {
