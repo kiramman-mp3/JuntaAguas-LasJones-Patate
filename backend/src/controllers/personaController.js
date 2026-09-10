@@ -311,10 +311,23 @@ async function updatePersona(req, res, next) {
   }
 }
 
+/**
+ * Obtener estadísticas públicas
+ */
+async function getStatsPublicos(req, res, next) {
+  try {
+    const [rows] = await db.query(`SELECT COUNT(*) as total FROM personas WHERE estado = 'ACTIVO'`);
+    return res.json({ status: 'OK', stats: { totalComuneros: rows[0].total } });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getPersonas,
   getPersonaById,
   consultaPublicaPorCedula,
   createPersona,
-  updatePersona
+  updatePersona,
+  getStatsPublicos
 };

@@ -1,23 +1,14 @@
-
-
 <!-- HERO SECTION -->
 <section class="hero" id="inicio">
   <div class="hero__container">
     <div class="hero__content">
-      <span class="hero__badge">
-        <i class="ri-drop-fill"></i> Junta de Agua y Riego "La Jones" — Patate
-      </span>
       <h1 class="hero__title">
-        Gestión Transparente del Agua de Riego y Servicios Comunitarios
+        Gestión del Agua de Riego y Servicios Comunitarios
       </h1>
       <p class="hero__description">
-        Plataforma oficial para la administración de comuneros, georreferenciación de lotes, turnos de agua, convocatorias a mingas y consulta pública de obligaciones.
+        Plataforma oficial para la administración de los comuneros, turnos de agua, convocatorias a mingas y consulta
+        pública de obligaciones.
       </p>
-      <div class="hero__actions">
-        <a routerLink="/login" class="btn btn--primary btn--lg">
-          <i class="ri-user-settings-line"></i> Acceso Comuneros / Directiva
-        </a>
-      </div>
     </div>
     <div class="hero__card-preview">
       <div class="card card--glass">
@@ -27,12 +18,11 @@
           </div>
           <div>
             <h4>Canal de Riego La Jones</h4>
-            <p class="caption">Estado de Servicio: Normal (2026)</p>
           </div>
         </div>
         <div class="preview-stats">
           <div class="stat-box">
-            <span class="stat-number">165</span>
+            <span class="stat-number">{{ totalComuneros || 0 }}</span>
             <span class="stat-label">Comuneros</span>
           </div>
           <div class="stat-box">
@@ -54,11 +44,12 @@
   <div class="container">
     <div class="search-banner card card--glass">
       <div class="search-banner__text">
-        <h3><i class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus cuotas o multas?</h3>
-        <p>Ingresa tu número de cédula para consultar pagos pendientes de agua de riego, asistencia a mingas y asambleas.</p>
+        <h3><i class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus obligaciones?</h3>
+        <p>Inicia sesión para consultar tus pagos pendientes de agua de riego, asistencia a mingas y
+          asambleas.</p>
       </div>
-      <a routerLink="/consulta" class="btn btn--secondary btn--lg">
-        <i class="ri-search-line"></i> Ir a la herramienta de Consulta
+      <a routerLink="/login" class="btn btn--secondary btn--lg">
+        <i class="ri-user-settings-line"></i> Inicia sesión para verificarlas
       </a>
     </div>
   </div>
