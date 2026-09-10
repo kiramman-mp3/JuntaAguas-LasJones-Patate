@@ -166,6 +166,9 @@ export class AdminComponent implements OnInit {
 
   // Turnos de agua
   turnos: any[] = [];
+  turnosBusqueda: string = '';
+  turnosDiaFiltro: string = '';
+  turnosTipoFiltro: string = '';
   modalTurnoVisible: boolean = false;
   nuevoTurno = {
     persona_id: null as number | null,
@@ -175,6 +178,29 @@ export class AdminComponent implements OnInit {
     tipo: 'REGULAR',
     observacion: ''
   };
+
+  get turnosFiltrados() {
+    let filtrados = this.turnos;
+
+    if (this.turnosBusqueda.trim()) {
+      const termino = this.turnosBusqueda.toLowerCase();
+      filtrados = filtrados.filter(t =>
+        t.usuario.toLowerCase().includes(termino) ||
+        t.lote.toLowerCase().includes(termino) ||
+        t.sector.toLowerCase().includes(termino)
+      );
+    }
+
+    if (this.turnosDiaFiltro) {
+      filtrados = filtrados.filter(t => t.dia === this.turnosDiaFiltro);
+    }
+
+    if (this.turnosTipoFiltro) {
+      filtrados = filtrados.filter(t => t.tipo === this.turnosTipoFiltro);
+    }
+
+    return filtrados;
+  }
 
   constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
 
@@ -240,13 +266,16 @@ export class AdminComponent implements OnInit {
         if (res && res.data) {
           const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
           this.turnos = res.data.map((t: any) => ({
+            id: t.id,
             lote: t.lote_codigo || 'N/A',
             usuario: t.comunero_nombre,
             dia: diasSemana[t.dia_semana] || 'Desconocido',
+            dia_semana: t.dia_semana,
             horaInicio: t.hora_inicio,
             horaFin: t.hora_fin,
             sector: t.sector_nombre || 'N/A',
-            observacion: t.observacion || 'Ninguna'
+            tipo: t.tipo || 'REGULAR',
+            observacion: t.observacion || ''
           }));
           this.cdr.detectChanges();
         }

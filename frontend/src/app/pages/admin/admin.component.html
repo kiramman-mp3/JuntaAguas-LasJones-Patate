@@ -786,13 +786,56 @@
     <!-- VISTA 3: TURNOS DE AGUA -->
     <section *ngIf="tabActiva === 'TURNOS'" class="tab-view">
       <div class="card">
-        <div class="card__header">
-          <h3 class="card__title"><i class="ri-time-line"></i> Turnos Semanales de Agua por Sector</h3>
-          <button class="btn btn--primary btn--sm" (click)="abrirModalTurno()">
-            <i class="ri-time-line"></i> Asignar Horario Adicional
-          </button>
+        <div class="card__header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0;">
+          
+          <!-- Top Row: Title and Actions -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <h3 class="card__title" style="margin: 0; font-size: 1.3rem;">
+              <i class="ri-drop-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Turnos Semanales de Agua
+            </h3>
+            <div style="display: flex; gap: 0.75rem;">
+              <span class="badge badge--primary" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+                <i class="ri-calendar-check-line"></i> {{ turnos.length }} turnos registrados
+              </span>
+              <button class="btn btn--primary" (click)="abrirModalTurno()">
+                <i class="ri-add-circle-line"></i> Asignar Turno
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Filters -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 0 -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+
+            <!-- Search -->
+            <div style="position: relative; display: flex; align-items: center; flex: 1; min-width: 200px; max-width: 320px;">
+              <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+              <input type="text" class="input input--sm" placeholder="Buscar por comunero, lote o sector..."
+                [(ngModel)]="turnosBusqueda"
+                style="padding-left: 2rem; width: 100%;">
+            </div>
+
+            <!-- Selects -->
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <select class="input input--sm" [(ngModel)]="turnosDiaFiltro" style="width: 150px;">
+                <option value="">Todos los días</option>
+                <option value="Lunes">Lunes</option>
+                <option value="Martes">Martes</option>
+                <option value="Miércoles">Miércoles</option>
+                <option value="Jueves">Jueves</option>
+                <option value="Viernes">Viernes</option>
+                <option value="Sábado">Sábado</option>
+                <option value="Domingo">Domingo</option>
+              </select>
+              <select class="input input--sm" [(ngModel)]="turnosTipoFiltro" style="width: 150px;">
+                <option value="">Todos los tipos</option>
+                <option value="REGULAR">Regular</option>
+                <option value="ADICIONAL">Adicional</option>
+              </select>
+            </div>
+          </div>
         </div>
 
+        <!-- Table -->
         <div class="table-container">
           <table class="table-custom">
             <thead>
@@ -800,21 +843,43 @@
                 <th>Lote</th>
                 <th>Comunero Asignado</th>
                 <th>Sector</th>
-                <th>Día de la Semana</th>
-                <th>Horario de Inicio</th>
-                <th>Horario de Fin</th>
-                <th>Estado</th>
+                <th>Día</th>
+                <th>Horario</th>
+                <th>Tipo</th>
+                <th>Observación</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let t of turnos">
+              <tr *ngFor="let t of turnosFiltrados">
                 <td><span class="badge badge--info">{{ t.lote }}</span></td>
                 <td><strong>{{ t.usuario }}</strong></td>
                 <td>{{ t.sector }}</td>
-                <td>{{ t.dia }}</td>
-                <td><i class="ri-play-circle-line text-success"></i> {{ t.horaInicio }}</td>
-                <td><i class="ri-stop-circle-line text-danger"></i> {{ t.horaFin }}</td>
-                <td><span class="badge badge--success">ACTIVO</span></td>
+                <td>
+                  <span class="badge" style="background: var(--bg-surface-hover); color: var(--text-color); font-weight: 600;">
+                    {{ t.dia }}
+                  </span>
+                </td>
+                <td>
+                  <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <i class="ri-play-circle-line" style="color: var(--color-success);"></i> {{ t.horaInicio }}
+                    <span style="color: var(--text-muted); margin: 0 0.25rem;">→</span>
+                    <i class="ri-stop-circle-line" style="color: var(--color-danger);"></i> {{ t.horaFin }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="t.tipo === 'REGULAR' ? 'badge--success' : 'badge--warning'">
+                    {{ t.tipo }}
+                  </span>
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ t.observacion || '—' }}
+                </td>
+              </tr>
+              <tr *ngIf="turnosFiltrados.length === 0">
+                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  <i class="ri-drop-line" style="font-size: 2rem; opacity: 0.3;"></i>
+                  <p style="margin: 0.5rem 0 0;">No se encontraron turnos con los filtros aplicados.</p>
+                </td>
               </tr>
             </tbody>
           </table>
