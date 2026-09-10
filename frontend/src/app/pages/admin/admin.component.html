@@ -973,8 +973,10 @@
 
 <!-- MODAL ASISTENCIA MASIVA -->
 <div class="modal-backdrop" *ngIf="modalAsistenciaVisible && eventoSeleccionado">
-  <div class="modal card" style="max-width: 720px; width: 95%;">
-    <div class="modal__header" style="border-bottom: 2px solid var(--border-color);">
+  <div class="modal card" style="max-width: 720px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+    
+    <!-- Header fijo -->
+    <div class="modal__header" style="border-bottom: 2px solid var(--border-color); flex-shrink: 0;">
       <div>
         <h4 style="margin: 0; font-size: 1.15rem;"><i class="ri-checkbox-multiple-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Asistencia: {{ eventoSeleccionado.titulo }}</h4>
         <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted);">
@@ -983,10 +985,10 @@
       </div>
       <button class="btn-close" (click)="cerrarModalAsistencia()"><i class="ri-close-line"></i></button>
     </div>
-    <div class="modal-body" style="padding: 1.25rem 1.5rem;">
-      
-      <!-- Toolbar: Search + Actions -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+
+    <!-- Toolbar fijo -->
+    <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); flex-shrink: 0; background: var(--bg-surface-hover);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
         <div style="position: relative; display: flex; align-items: center; flex: 1; min-width: 200px;">
           <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
           <input type="text" class="input input--sm" placeholder="Buscar comunero por nombre o cédula..."
@@ -1001,50 +1003,52 @@
           </button>
         </div>
       </div>
-
-      <!-- Table -->
-      <div class="table-container" style="max-height: 420px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-        <table class="table-custom" style="margin: 0;">
-          <thead style="position: sticky; top: 0; z-index: 1;">
-            <tr>
-              <th style="width: 60px; text-align: center;">Asistió</th>
-              <th style="width: 130px;">Cédula</th>
-              <th>Nombres</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let u of usuariosAsistenciaFiltrados" 
-                [style.background]="u.presente ? 'rgba(34, 197, 94, 0.08)' : 'transparent'"
-                style="transition: background 0.2s ease;">
-              <td style="text-align: center;">
-                <input type="checkbox" [(ngModel)]="u.presente" 
-                  style="width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: var(--color-primary);" />
-              </td>
-              <td style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem;">{{ u.cedula }}</td>
-              <td>{{ u.nombres }}</td>
-            </tr>
-            <tr *ngIf="usuariosAsistenciaFiltrados.length === 0">
-              <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                <i class="ri-search-line" style="font-size: 1.5rem;"></i>
-                <p style="margin: 0.5rem 0 0;">No se encontraron comuneros con ese criterio.</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Warning -->
-      <div *ngIf="eventoSeleccionado.multaAbsencia > 0" 
-        style="margin-top: 1rem; padding: 0.75rem 1rem; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: var(--radius-md); font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-        <i class="ri-error-warning-line" style="color: #d97706; font-size: 1.1rem;"></i>
-        <span>Los comuneros <strong>no marcados</strong> recibirán una multa automática de <strong>${{ eventoSeleccionado.multaAbsencia.toFixed(2) }}</strong>.</span>
-      </div>
     </div>
-    <div class="modal__footer" style="border-top: 1px solid var(--border-color); padding: 1rem 1.5rem;">
-      <button class="btn btn--outline" (click)="cerrarModalAsistencia()">Cancelar</button>
-      <button class="btn btn--primary" (click)="guardarAsistencia()">
-        <i class="ri-save-line"></i> Guardar Asistencias
-      </button>
+
+    <!-- Cuerpo scrolleable (único scroll) -->
+    <div style="flex: 1; overflow-y: auto; min-height: 0;">
+      <table class="table-custom" style="margin: 0; width: 100%;">
+        <thead style="position: sticky; top: 0; z-index: 1;">
+          <tr>
+            <th style="width: 70px; text-align: center;">Asistió</th>
+            <th style="width: 140px;">Cédula</th>
+            <th>Apellidos y Nombres</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of usuariosAsistenciaFiltrados" 
+              [style.background]="u.presente ? 'rgba(34, 197, 94, 0.08)' : 'transparent'"
+              style="transition: background 0.2s ease;">
+            <td style="text-align: center;">
+              <input type="checkbox" [(ngModel)]="u.presente" 
+                style="width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: var(--color-primary);" />
+            </td>
+            <td style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem;">{{ u.cedula }}</td>
+            <td>{{ u.nombres }}</td>
+          </tr>
+          <tr *ngIf="usuariosAsistenciaFiltrados.length === 0">
+            <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              <i class="ri-search-line" style="font-size: 1.5rem;"></i>
+              <p style="margin: 0.5rem 0 0;">No se encontraron comuneros con ese criterio.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer fijo -->
+    <div style="border-top: 2px solid var(--border-color); padding: 1rem 1.5rem; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
+      <div *ngIf="eventoSeleccionado.multaAbsencia > 0" style="font-size: 0.8rem; color: #d97706; display: flex; align-items: center; gap: 0.4rem;">
+        <i class="ri-error-warning-line"></i>
+        <span>Multa por inasistencia: <strong>${{ eventoSeleccionado.multaAbsencia.toFixed(2) }}</strong></span>
+      </div>
+      <div *ngIf="!(eventoSeleccionado.multaAbsencia > 0)"></div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn btn--outline" (click)="cerrarModalAsistencia()">Cancelar</button>
+        <button class="btn btn--primary" (click)="guardarAsistencia()">
+          <i class="ri-save-line"></i> Guardar Asistencias
+        </button>
+      </div>
     </div>
   </div>
 </div>
