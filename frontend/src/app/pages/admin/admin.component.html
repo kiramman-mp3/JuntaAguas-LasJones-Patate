@@ -1,5 +1,5 @@
 <div class="admin-layout">
-  
+
   <!-- BARRA LATERAL / NAVIGATION -->
   <aside class="sidebar">
     <div class="sidebar__brand">
@@ -39,16 +39,20 @@
 
   <!-- CONTENIDO PRINCIPAL -->
   <main class="main-content">
-    
+
     <!-- ENCABEZADO SUPERIOR -->
     <header class="top-header">
       <div>
         <h2>
-          <span *ngIf="tabActiva === 'USUARIOS'"><i class="ri-user-shared-line"></i> Nómina de Comuneros y Lotes Georreferenciados</span>
-          <span *ngIf="tabActiva === 'ASISTENCIAS'"><i class="ri-checkbox-list-line"></i> Control de Asistencia a Asambleas y Mingas</span>
+          <span *ngIf="tabActiva === 'USUARIOS'"><i class="ri-user-shared-line"></i> Nómina de Comuneros y Lotes
+            Georreferenciados</span>
+          <span *ngIf="tabActiva === 'ASISTENCIAS'"><i class="ri-checkbox-list-line"></i> Control de Asistencia a
+            Asambleas y Mingas</span>
           <span *ngIf="tabActiva === 'TURNOS'"><i class="ri-time-fill"></i> Horarios Semanales de Agua por Sector</span>
-          <span *ngIf="tabActiva === 'FINANZAS'"><i class="ri-funds-box-line"></i> Control Financiero, Ingresos/Egresos y SRI</span>
-          <span *ngIf="tabActiva === 'ACTAS'"><i class="ri-file-text-line"></i> Archivo Digital de Actas y Convocatorias</span>
+          <span *ngIf="tabActiva === 'FINANZAS'"><i class="ri-funds-box-line"></i> Control Financiero, Ingresos/Egresos
+            y SRI</span>
+          <span *ngIf="tabActiva === 'ACTAS'"><i class="ri-file-text-line"></i> Archivo Digital de Actas y
+            Convocatorias</span>
         </h2>
         <p class="caption">Junta de Agua y Riego "La Jones" — Patate (Tungurahua)</p>
       </div>
@@ -69,7 +73,8 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-card__icon" style="background:#fee2e2; color:#ef4444;"><i class="ri-error-warning-line"></i></div>
+        <div class="kpi-card__icon" style="background:#fee2e2; color:#ef4444;"><i class="ri-error-warning-line"></i>
+        </div>
         <div class="kpi-card__content">
           <span class="kpi-card__value" style="color:#ef4444;">${{ kpis.pendientesCobro.toFixed(2) }}</span>
           <span class="kpi-card__label">Pendientes por Cobrar</span>
@@ -77,7 +82,8 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-card__icon" style="background:#fef3c7; color:#d97706;"><i class="ri-shopping-bag-line"></i></div>
+        <div class="kpi-card__icon" style="background:#fef3c7; color:#d97706;"><i class="ri-shopping-bag-line"></i>
+        </div>
         <div class="kpi-card__content">
           <span class="kpi-card__value">${{ kpis.egresosMes.toFixed(2) }}</span>
           <span class="kpi-card__label">Egresos / Gastos</span>
@@ -96,74 +102,593 @@
     <!-- VISTA 1: NÓMINA DE USUARIOS Y LOTES -->
     <section *ngIf="tabActiva === 'USUARIOS'" class="tab-view">
       <div class="card">
-        <div class="card__header">
-          <h3 class="card__title"><i class="ri-team-line"></i> Registro de Comuneros y Terrenos</h3>
-          <button class="btn btn--primary btn--sm">
-            <i class="ri-user-add-line"></i> Nuevo Comunero / Lote
-          </button>
+        <div class="card__header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0;">
+
+          <!-- Top Row: Title and Main Actions -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <h3 class="card__title" style="margin: 0; font-size: 1.3rem;"><i class="ri-team-line"
+                style="color: var(--color-primary); margin-right: 0.5rem;"></i> Registro de Comuneros y Terrenos</h3>
+            <div style="display: flex; gap: 0.75rem;">
+              <button *ngIf="subTabUsuarios === 'COMUNEROS'" class="btn btn--primary"
+                (click)="abrirModalNuevoUsuario()">
+                <i class="ri-user-add-line"></i> Nuevo Comunero
+              </button>
+              <button *ngIf="subTabUsuarios === 'LOTES'" class="btn btn--primary" (click)="abrirModalNuevoLote()">
+                <i class="ri-add-line"></i> Nuevo Lote
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Tabs and Filters inside a toolbar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+
+            <!-- Tabs -->
+            <div class="tab-pills" style="display: flex; gap: 0.5rem;">
+              <button class="btn btn--sm" [ngClass]="subTabUsuarios === 'COMUNEROS' ? 'btn--primary' : 'btn--outline'"
+                (click)="cambiarSubTabUsuarios('COMUNEROS')"
+                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
+                <i class="ri-user-line"></i> Comuneros
+              </button>
+              <button class="btn btn--sm" [ngClass]="subTabUsuarios === 'LOTES' ? 'btn--primary' : 'btn--outline'"
+                (click)="cambiarSubTabUsuarios('LOTES')"
+                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
+                <i class="ri-map-pin-line"></i> Catastro de Lotes
+              </button>
+            </div>
+
+            <!-- Filters Comuneros -->
+            <div *ngIf="subTabUsuarios === 'COMUNEROS'" class="filters"
+              style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <div style="position: relative; display: flex; align-items: center;">
+                <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+                <input type="text" class="input input--sm" placeholder="Buscar por cédula o nombre..."
+                  [(ngModel)]="usuariosBusqueda" (keyup.enter)="aplicarFiltroUsuarios()"
+                  style="padding-left: 2rem; width: 260px;">
+              </div>
+              <select class="input input--sm" [(ngModel)]="usuariosEstadoFiltro" (change)="aplicarFiltroUsuarios()"
+                style="width: 140px;">
+                <option value="">Todos</option>
+                <option value="ACTIVO">Activos</option>
+                <option value="INACTIVO">Inactivos</option>
+              </select>
+              <button class="btn btn--outline btn--sm" (click)="aplicarFiltroUsuarios()"
+                style="padding: 0.4rem 0.8rem;">
+                Filtrar
+              </button>
+            </div>
+
+            <!-- Filters Lotes -->
+            <div *ngIf="subTabUsuarios === 'LOTES'" class="filters"
+              style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <div style="position: relative; display: flex; align-items: center;">
+                <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+                <input type="text" class="input input--sm" placeholder="Buscar por código..."
+                  [(ngModel)]="lotesBusqueda" (keyup.enter)="aplicarFiltroLotes()"
+                  style="padding-left: 2rem; width: 220px;">
+              </div>
+              <select class="input input--sm" [(ngModel)]="lotesSectorFiltro" (change)="aplicarFiltroLotes()"
+                style="width: 180px;">
+                <option [ngValue]="null">Todos los sectores</option>
+                <option *ngFor="let s of sectores" [ngValue]="s.id">{{ s.nombre }}</option>
+              </select>
+              <button class="btn btn--outline btn--sm" (click)="aplicarFiltroLotes()" style="padding: 0.4rem 0.8rem;">
+                Filtrar
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="table-container">
+        <div class="card__body" style="padding: 0;"> <!-- TABLA COMUNEROS -->
+          <div *ngIf="subTabUsuarios === 'COMUNEROS'">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>Cédula</th>
+                  <th>Comunero</th>
+                  <th>Contacto</th>
+                  <th>Dirección</th>
+                  <th>Lotes</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="usuarios.length === 0">
+                  <td colspan="7" style="text-align: center; padding: 2rem;">No hay comuneros registrados o que
+                    coincidan con la búsqueda.</td>
+                </tr>
+                <tr *ngFor="let u of usuarios">
+                  <td><strong>{{ u.cedula }}</strong></td>
+                  <td>
+                    <div style="font-weight: 600;">{{ u.apellidos }} {{ u.nombres }}</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ u.email || 'Sin correo' }}</div>
+                  </td>
+                  <td>
+                    <div *ngIf="u.celular || u.telefono">{{ u.celular }} <span *ngIf="u.celular && u.telefono">/</span>
+                      {{ u.telefono }}</div>
+                    <span *ngIf="!u.celular && !u.telefono" class="text-muted" style="font-size: 0.85rem;">N/D</span>
+                  </td>
+                  <td>
+                    <div class="text-truncate-2" [title]="u.direccion || 'No registrada'"
+                      style="max-width: 200px; font-size: 0.85rem;">
+                      {{ u.direccion || 'N/D' }}
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <span class="badge" [ngClass]="u.lotes_count > 0 ? 'badge--info' : 'badge--warning'">
+                        {{ u.lotes_count > 0 ? u.lotes_count + ' Lote(s)' : 'Ninguno' }}
+                      </span>
+                      <button *ngIf="u.lotes_count > 0" class="btn btn--outline btn--sm"
+                        (click)="abrirModalLotesComunero(u)" title="Ver Lotes del Comunero"
+                        style="padding: 0.15rem 0.35rem; border-radius: var(--radius-full);">
+                        <i class="ri-list-check" style="margin: 0;"></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="u.estado === 'ACTIVO' ? 'badge--success' : 'badge--danger'">{{
+                      u.estado }}</span>
+                  </td>
+                  <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                      <button class="btn btn--outline btn--sm" (click)="abrirModalEditarUsuario(u)"
+                        title="Editar Comunero">
+                        <i class="ri-edit-line"></i> Editar Comunero
+                      </button>
+                      <button class="btn btn--outline btn--sm" (click)="abrirModalVincular(u)"
+                        title="Asignar Terreno al Comunero">
+                        <i class="ri-map-pin-add-line"></i> Asignar Terreno
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Controles de Paginación Comuneros -->
+            <div class="pagination-controls"
+              style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-top: 1px solid var(--border-color);">
+              <div class="pagination-info">
+                Mostrando página <strong>{{ usuariosPaginaActual }}</strong> de <strong>{{ usuariosTotalPaginas
+                  }}</strong> (Total: {{ usuariosTotalRegistros }} comuneros)
+              </div>
+              <div class="pagination-actions" style="display: flex; gap: 0.5rem;">
+                <button class="btn btn--outline btn--sm" [disabled]="usuariosPaginaActual === 1"
+                  (click)="cambiarPaginaUsuarios(usuariosPaginaActual - 1)">
+                  <i class="ri-arrow-left-s-line"></i> Anterior
+                </button>
+                <button class="btn btn--outline btn--sm" [disabled]="usuariosPaginaActual === usuariosTotalPaginas"
+                  (click)="cambiarPaginaUsuarios(usuariosPaginaActual + 1)">
+                  Siguiente <i class="ri-arrow-right-s-line"></i>
+                </button>
+              </div>
+            </div>
+          </div> <!-- Fin TABLA COMUNEROS -->
+
+          <!-- TABLA LOTES -->
+          <div *ngIf="subTabUsuarios === 'LOTES'">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>Código Lote</th>
+                  <th>Sector</th>
+                  <th>Dueño(s) / Propietarios</th>
+                  <th>Superficie</th>
+                  <th>Coordenadas</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="lotes.length === 0">
+                  <td colspan="6" style="text-align: center; padding: 2rem;">No hay lotes registrados o que coincidan
+                    con la búsqueda.</td>
+                </tr>
+                <tr *ngFor="let lote of lotes">
+                  <td><strong>{{ lote.codigo }}</strong></td>
+                  <td>{{ lote.sector_nombre }}</td>
+                  <td>
+                    <div *ngIf="lote.propietarios" class="text-truncate-2" [title]="lote.propietarios">{{
+                      lote.propietarios }}</div>
+                    <span *ngIf="!lote.propietarios" class="badge badge--warning">Sin dueño</span>
+                  </td>
+                  <td>{{ lote.superficie_m2 ? lote.superficie_m2 + ' m²' : 'N/D' }}</td>
+                  <td>
+                    <span *ngIf="lote.latitud_aproximada && lote.longitud_aproximada" class="text-muted"
+                      style="font-size: 0.85rem;">
+                      {{ lote.latitud_aproximada }}, {{ lote.longitud_aproximada }}
+                    </span>
+                    <span *ngIf="!lote.latitud_aproximada">N/D</span>
+                  </td>
+                  <td>
+                    <button class="btn btn--outline btn--sm" (click)="abrirModalDetalleLote(lote)"
+                      title="Ver Detalle"><i class="ri-eye-line"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div> <!-- Fin TABLA LOTES -->
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL DE NUEVO/EDITAR COMUNERO -->
+    <div class="modal-backdrop" *ngIf="modalUsuarioVisible">
+      <div class="card modal" style="max-width: 650px; width: 95%;">
+        <div class="modal__header">
+          <h3>{{ modoEdicionUsuario ? 'Editar Comunero' : 'Registrar Nuevo Comunero' }}</h3>
+          <button class="btn-close" (click)="cerrarModalUsuario()"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body">
+          <form (ngSubmit)="guardarUsuario()" #usuarioForm="ngForm">
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Cédula *</label>
+                <input type="text" class="input" name="cedula" [(ngModel)]="formUsuario.cedula" required
+                  [disabled]="modoEdicionUsuario" placeholder="Ej: 1801234567">
+              </div>
+              <div class="form-group">
+                <label>Nombres *</label>
+                <input type="text" class="input" name="nombres" [(ngModel)]="formUsuario.nombres" required>
+              </div>
+              <div class="form-group">
+                <label>Apellidos *</label>
+                <input type="text" class="input" name="apellidos" [(ngModel)]="formUsuario.apellidos"
+                  [required]="!modoEdicionUsuario">
+              </div>
+              <div class="form-group">
+                <label>Teléfono Convencional</label>
+                <input type="text" class="input" name="telefono" [(ngModel)]="formUsuario.telefono">
+              </div>
+              <div class="form-group">
+                <label>Celular</label>
+                <input type="text" class="input" name="celular" [(ngModel)]="formUsuario.celular">
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label>Correo Electrónico (Opcional)</label>
+                <input type="email" class="input" name="email" [(ngModel)]="formUsuario.email"
+                  placeholder="ejemplo@correo.com">
+              </div>
+              <div class="form-group">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" class="input" name="fecha_nacimiento" [(ngModel)]="formUsuario.fecha_nacimiento">
+              </div>
+              <div class="form-group" *ngIf="modoEdicionUsuario">
+                <label>Estado</label>
+                <select class="input" name="estado" [(ngModel)]="formUsuario.estado">
+                  <option value="ACTIVO">ACTIVO</option>
+                  <option value="INACTIVO">INACTIVO</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Sección de Acceso al Sistema (Solo al Crear) -->
+            <div *ngIf="!modoEdicionUsuario"
+              style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="crearCuenta" [(ngModel)]="formUsuario.crearCuenta"
+                  style="width: 1rem; height: 1rem;">
+                Generar cuenta de acceso web para este comunero
+              </label>
+              <div *ngIf="formUsuario.crearCuenta" class="grid-2" style="margin-top: 1rem;">
+                <div class="form-group">
+                  <label>Rol de Usuario</label>
+                  <select class="input" name="rol_id" [(ngModel)]="formUsuario.rol_id">
+                    <option [ngValue]="3">Comunero / Usuario Normal</option>
+                    <option [ngValue]="2">Directiva</option>
+                    <option [ngValue]="1">Administrador</option>
+                  </select>
+                </div>
+                <div class="form-group" style="justify-content: center;">
+                  <span class="text-muted" style="font-size: 0.85rem; display: block; padding-top: 1.5rem;">
+                    * La contraseña temporal será la cédula del usuario.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contraseña y Cuenta (Solo en Edición) -->
+            <div *ngIf="modoEdicionUsuario"
+              style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <div class="form-group">
+                <label style="color: var(--color-danger); font-weight: 600;"><i class="ri-key-2-line"></i> Cambiar
+                  Contraseña de Acceso (Opcional)</label>
+                <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.5rem; margin-top: 0.25rem;">Si escribes
+                  una contraseña aquí, se actualizará o creará la cuenta de acceso para este comunero.</p>
+                <input type="text" class="input" name="nuevaContrasena" [(ngModel)]="formUsuario.nuevaContrasena"
+                  placeholder="Escribe la nueva contraseña si deseas cambiarla">
+              </div>
+            </div>
+
+            <div class="modal__footer">
+              <button type="button" class="btn btn--outline" (click)="cerrarModalUsuario()">Cancelar</button>
+              <button type="submit" class="btn btn--primary" [disabled]="usuarioForm.invalid">
+                <i class="ri-save-line"></i> Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE NUEVO LOTE -->
+    <div class="modal-backdrop" *ngIf="modalLoteVisible">
+      <div class="card modal" style="max-width: 600px; width: 95%;">
+        <div class="modal__header">
+          <h3>Registrar Nuevo Lote</h3>
+          <button class="btn-close" (click)="cerrarModalLote()"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body">
+          <form (ngSubmit)="guardarLote()" #loteForm="ngForm">
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Sector *</label>
+                <select class="input" name="sector" [(ngModel)]="formLote.sector_id" required>
+                  <option [ngValue]="null">Seleccione un sector...</option>
+                  <option *ngFor="let s of sectores" [ngValue]="s.id">{{ s.nombre }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Código Interno Lote *</label>
+                <input type="text" class="input" name="codigo" [(ngModel)]="formLote.codigo" required
+                  placeholder="Ej: LZN-001">
+              </div>
+              <div class="form-group">
+                <label>Superficie (m²)</label>
+                <input type="number" class="input" name="superficie" [(ngModel)]="formLote.superficie_m2"
+                  placeholder="Ej: 1500">
+              </div>
+              <div class="form-group">
+                <label>Referencia Geográfica / Ubicación</label>
+                <input type="text" class="input" name="referencia" [(ngModel)]="formLote.referencia_ubicacion"
+                  placeholder="Ej: Junto a la escuela">
+              </div>
+              <div class="form-group">
+                <label>Latitud</label>
+                <input type="text" class="input" name="latitud" [(ngModel)]="formLote.latitud_aproximada"
+                  placeholder="Latitud" readonly>
+              </div>
+              <div class="form-group">
+                <label>Longitud</label>
+                <input type="text" class="input" name="longitud" [(ngModel)]="formLote.longitud_aproximada"
+                  placeholder="Longitud" readonly>
+              </div>
+              <div class="form-group">
+                <label>Margen de Error (m)</label>
+                <input type="number" class="input" name="radio_error" [(ngModel)]="formLote.radio_error_m"
+                  placeholder="Ej: 5">
+              </div>
+            </div>
+
+            <!-- Contenedor del Mapa Interactivo -->
+            <div class="form-group" style="margin-top: 1rem;">
+              <label>Selecciona la ubicación aproximada en el mapa *</label>
+              <div id="loteMap"
+                style="height: 250px; border-radius: 8px; border: 1px solid var(--border-color); z-index: 1;"></div>
+              <small class="text-muted" style="margin-top: 0.25rem;">Haz clic en el mapa para colocar el marcador de la
+                acometida o terreno.</small>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+              <label>Observaciones Adicionales</label>
+              <input type="text" class="input" name="observacion" [(ngModel)]="formLote.observacion">
+            </div>
+
+            <div class="modal__footer">
+              <button type="button" class="btn btn--outline" (click)="cerrarModalLote()">Cancelar</button>
+              <button type="submit" class="btn btn--primary" [disabled]="loteForm.invalid">
+                <i class="ri-save-line"></i> Guardar Lote
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE ASIGNAR LOTE A COMUNERO -->
+    <div class="modal-backdrop" *ngIf="modalVincularVisible">
+      <div class="card modal" style="max-width: 500px; width: 95%;">
+        <div class="modal__header">
+          <h3>Vincular Lote a Comunero</h3>
+          <button class="btn-close" (click)="cerrarModalVincular()"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 1.5rem;">
+            Se vinculará un lote al comunero: <strong>{{ comuneroSeleccionadoParaLote?.nombres }} {{
+              comuneroSeleccionadoParaLote?.apellidos }}</strong> (C.I. {{ comuneroSeleccionadoParaLote?.cedula }})
+          </p>
+          <form (ngSubmit)="guardarVinculo()" #vincularForm="ngForm">
+            <div class="form-group">
+              <label>Seleccionar Lote *</label>
+              <select class="input" name="lote_id" [(ngModel)]="formVincular.lote_id" required>
+                <option [ngValue]="null">Elija un lote disponible...</option>
+                <option *ngFor="let lote of lotes" [ngValue]="lote.id">{{ lote.sector_nombre }} - Lote {{ lote.codigo }}
+                </option>
+              </select>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Relación Legal</label>
+                <select class="input" name="tipo_relacion" [(ngModel)]="formVincular.tipo_relacion">
+                  <option value="PROPIETARIO">Propietario Titular</option>
+                  <option value="HEREDERO">Heredero</option>
+                  <option value="ARRENDATARIO">Arrendatario / Posicionario</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Porcentaje (%)</label>
+                <input type="number" class="input" name="porcentaje" [(ngModel)]="formVincular.porcentaje" min="1"
+                  max="100">
+              </div>
+            </div>
+
+            <div class="modal__footer">
+              <button type="button" class="btn btn--outline" (click)="cerrarModalVincular()">Cancelar</button>
+              <button type="submit" class="btn btn--primary" [disabled]="vincularForm.invalid">
+                <i class="ri-link"></i> Vincular
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE LOTES DEL COMUNERO -->
+    <div class="modal-backdrop" *ngIf="modalLotesComuneroVisible">
+      <div class="card modal" style="max-width: 800px; width: 95%;">
+        <div class="modal__header">
+          <h3>Lotes Asignados a {{ comuneroSeleccionadoParaLotes?.nombres }} {{ comuneroSeleccionadoParaLotes?.apellidos
+            }}</h3>
+          <button class="btn-close" (click)="cerrarModalLotesComunero()"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
           <table class="table-custom">
             <thead>
               <tr>
-                <th>Cédula</th>
-                <th>Nombre del Comunero</th>
-                <th>Sector</th>
                 <th>Código Lote</th>
+                <th>Sector</th>
                 <th>Superficie</th>
-                <th>Mapa / Coordenadas</th>
-                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let u of usuarios">
-                <td><strong>{{ u.cedula }}</strong></td>
-                <td>{{ u.nombres }}</td>
-                <td>{{ u.sector }}</td>
-                <td><span class="badge badge--info">{{ u.loteCodigo }}</span></td>
-                <td>{{ u.superficie }} m²</td>
+              <tr *ngIf="lotesDelComunero.length === 0">
+                <td colspan="4" style="text-align: center; padding: 1rem;">Cargando lotes...</td>
+              </tr>
+              <tr *ngFor="let lote of lotesDelComunero">
+                <td><strong>{{ lote.codigo }}</strong></td>
+                <td>{{ lote.sector_nombre }}</td>
+                <td>{{ lote.superficie_m2 ? lote.superficie_m2 + ' m²' : 'N/D' }}</td>
                 <td>
-                  <button class="btn btn--outline btn--sm" (click)="verLoteEnMapa(u)">
-                    <i class="ri-map-pin-2-fill text-primary"></i> Ver en Mapa
-                  </button>
-                </td>
-                <td><span class="badge badge--success">{{ u.estado }}</span></td>
-                <td>
-                  <button class="btn btn--outline btn--sm"><i class="ri-edit-line"></i></button>
+                  <button class="btn btn--outline btn--sm"
+                    (click)="cerrarModalLotesComunero(); abrirModalDetalleLote(lote)" title="Ver Detalle Completo"><i
+                      class="ri-eye-line"></i> Ver Detalle</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--primary"
+            (click)="cerrarModalLotesComunero(); abrirModalVincular(comuneroSeleccionadoParaLotes)">
+            <i class="ri-map-pin-add-line"></i> Asignar Otro Terreno
+          </button>
+          <button type="button" class="btn btn--outline" (click)="cerrarModalLotesComunero()">Cerrar</button>
+        </div>
       </div>
-    </section>
+    </div>
+
+    <!-- MODAL DE DETALLE DEL LOTE -->
+    <div class="modal-backdrop" *ngIf="modalDetalleLoteVisible">
+      <div class="card modal" style="max-width: 600px; width: 95%;">
+        <div class="modal__header">
+          <h3>Detalle del Lote</h3>
+          <button class="btn-close" (click)="cerrarModalDetalleLote()"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body" *ngIf="loteSeleccionadoParaDetalle">
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+            <!-- Resumen principal -->
+            <div
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; background: var(--bg-surface-hover); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <div>
+                <small class="text-muted" style="display: block; font-size: 0.8rem; text-transform: uppercase;">Código
+                  Interno</small>
+                <strong style="font-size: 1.2rem;">{{ loteSeleccionadoParaDetalle.codigo }}</strong>
+              </div>
+              <div>
+                <small class="text-muted"
+                  style="display: block; font-size: 0.8rem; text-transform: uppercase;">Sector</small>
+                <strong>{{ loteSeleccionadoParaDetalle.sector_nombre }}</strong>
+              </div>
+              <div>
+                <small class="text-muted"
+                  style="display: block; font-size: 0.8rem; text-transform: uppercase;">Superficie</small>
+                <strong>{{ loteSeleccionadoParaDetalle.superficie_m2 ? loteSeleccionadoParaDetalle.superficie_m2 + ' m²'
+                  : 'No registrada' }}</strong>
+              </div>
+            </div>
+
+            <!-- Propietarios -->
+            <div>
+              <h4
+                style="margin-bottom: 0.5rem; font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                Dueños / Comuneros Vinculados</h4>
+              <p *ngIf="loteSeleccionadoParaDetalle.propietariosList.length === 0" class="text-muted">No existen
+                comuneros vinculados a este lote. Está catalogado como "Sin dueño".</p>
+
+              <ul *ngIf="loteSeleccionadoParaDetalle.propietariosList.length > 0"
+                style="padding-left: 1.5rem; margin: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                <li *ngFor="let propietario of loteSeleccionadoParaDetalle.propietariosList">
+                  <strong>{{ propietario }}</strong>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Ubicación -->
+            <div>
+              <h4
+                style="margin-bottom: 0.5rem; font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                Georreferenciación</h4>
+
+              <div
+                *ngIf="loteSeleccionadoParaDetalle.latitud_aproximada && loteSeleccionadoParaDetalle.longitud_aproximada"
+                style="margin-bottom: 1rem;">
+                <div id="detalleMap"
+                  style="height: 200px; border-radius: var(--radius-md); border: 1px solid var(--border-color); z-index: 1;">
+                </div>
+              </div>
+
+              <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                <li><span class="text-muted">Coordenadas:</span> {{ loteSeleccionadoParaDetalle.latitud_aproximada ||
+                  'N/D' }}, {{ loteSeleccionadoParaDetalle.longitud_aproximada || 'N/D' }}</li>
+                <li><span class="text-muted">Margen de Error:</span> ±{{ loteSeleccionadoParaDetalle.radio_error_m || 5
+                  }} metros</li>
+                <li><span class="text-muted">Referencia Física:</span> {{
+                  loteSeleccionadoParaDetalle.referencia_ubicacion || 'Ninguna referencia ingresada' }}</li>
+              </ul>
+            </div>
+
+            <!-- Observaciones -->
+            <div *ngIf="loteSeleccionadoParaDetalle.observacion">
+              <h4
+                style="margin-bottom: 0.5rem; font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                Observaciones</h4>
+              <p style="white-space: pre-line; margin: 0;">{{ loteSeleccionadoParaDetalle.observacion }}</p>
+            </div>
+
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--outline" (click)="cerrarModalDetalleLote()">Cerrar</button>
+        </div>
+      </div>
+    </div>
 
     <!-- VISTA 2: ASISTENCIAS Y MINGAS -->
     <section *ngIf="tabActiva === 'ASISTENCIAS'" class="tab-view">
       <div class="card">
         <div class="card__header">
           <h3 class="card__title"><i class="ri-calendar-event-fill"></i> Control de Asistencia a Eventos</h3>
-          <!-- Botón único según el tab activo -->
-          <button class="btn btn--primary btn--sm">
-            <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
-          </button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn--secondary btn--sm" (click)="generarReporteEventosPdf()">
+              <i class="ri-file-pdf-line"></i> Reporte PDF
+            </button>
+            <button class="btn btn--primary btn--sm" (click)="abrirModalNuevoEvento()">
+              <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
+            </button>
+          </div>
         </div>
 
         <!-- Sub TABS -->
-        <div class="tabs-container" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
-          <button 
-            class="tab-btn" 
-            [class.active]="subTabEventos === 'ASAMBLEA'" 
+        <div class="tabs-container"
+          style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
+          <button class="tab-btn" [class.active]="subTabEventos === 'ASAMBLEA'"
             (click)="cambiarSubTabEventos('ASAMBLEA')"
             style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
             <i class="ri-group-line"></i> Asambleas
           </button>
-          <button 
-            class="tab-btn" 
-            [class.active]="subTabEventos === 'MINGA'" 
-            (click)="cambiarSubTabEventos('MINGA')"
+          <button class="tab-btn" [class.active]="subTabEventos === 'MINGA'" (click)="cambiarSubTabEventos('MINGA')"
             style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
             <i class="ri-tools-line"></i> Mingas Comunitarias
           </button>
@@ -180,9 +705,12 @@
           <div class="event-item card" *ngFor="let e of eventosFiltrados">
             <div class="event-item__header">
               <div>
-                <span class="badge" [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo }}</span>
+                <span class="badge"
+                  [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo
+                  }}</span>
                 <h4>{{ e.titulo }}</h4>
-                <p class="caption">Fecha: {{ e.fecha }} | Multa inasistencia: <strong>${{ e.multaAbsencia.toFixed(2) }}</strong></p>
+                <p class="caption">Fecha: {{ e.fecha }} | Multa inasistencia: <strong>${{ e.multaAbsencia.toFixed(2)
+                    }}</strong></p>
               </div>
               <div class="event-item__actions">
                 <span class="badge badge--success">{{ e.asistentes }} / {{ e.totalComuneros }} Asistentes</span>
@@ -192,8 +720,63 @@
               </div>
             </div>
           </div>
-          <div *ngIf="eventosFiltrados.length === 0" class="alert" style="text-align: center; color: var(--text-muted);">
+          <div *ngIf="eventosFiltrados.length === 0" class="alert"
+            style="text-align: center; color: var(--text-muted);">
             No hay {{ subTabEventos === 'ASAMBLEA' ? 'asambleas' : 'mingas' }} registradas.
+          </div>
+        </div>
+        
+        <!-- MODAL NUEVO EVENTO -->
+        <div class="modal-backdrop" *ngIf="modalEventoVisible">
+          <div class="card modal" style="max-width: 600px; width: 95%;">
+            <div class="modal__header">
+              <h3>Crear Nuevo Evento ({{ formEvento.tipo }})</h3>
+              <button class="btn-close" (click)="cerrarModalEvento()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+              <form (ngSubmit)="guardarEvento()" #eventoForm="ngForm">
+                <div class="form-group">
+                  <label>Título *</label>
+                  <input type="text" class="input" name="titulo" [(ngModel)]="formEvento.titulo" required placeholder="Ej: Asamblea General Ordinaria">
+                </div>
+                <div class="form-group">
+                  <label>Descripción / Orden del Día</label>
+                  <textarea class="input" name="descripcion" [(ngModel)]="formEvento.descripcion" rows="3"></textarea>
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Fecha *</label>
+                    <input type="date" class="input" name="fecha" [(ngModel)]="formEvento.fecha" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Hora de Inicio *</label>
+                    <input type="time" class="input" name="hora_inicio" [(ngModel)]="formEvento.hora_inicio" required>
+                  </div>
+                  <div class="form-group" style="grid-column: span 2;">
+                    <label>Lugar</label>
+                    <input type="text" class="input" name="lugar" [(ngModel)]="formEvento.lugar" placeholder="Ej: Casa Comunal Junta La Jones">
+                  </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                  <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer;">
+                    <input type="checkbox" name="genera_multa_ausencia" [(ngModel)]="formEvento.genera_multa_ausencia" style="width: 1rem; height: 1rem;">
+                    Genera Multa por Inasistencia
+                  </label>
+                  <div *ngIf="formEvento.genera_multa_ausencia" class="form-group" style="margin-top: 1rem;">
+                    <label>Valor de la Multa ($)</label>
+                    <input type="number" class="input" name="valor_multa" [(ngModel)]="formEvento.valor_multa" step="0.01" min="0">
+                  </div>
+                </div>
+                
+                <div class="modal__footer" style="margin-top: 1.5rem;">
+                  <button type="button" class="btn btn--outline" (click)="cerrarModalEvento()">Cancelar</button>
+                  <button type="submit" class="btn btn--primary" [disabled]="eventoForm.invalid">
+                    <i class="ri-save-line"></i> Guardar Evento
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -249,17 +832,14 @@
         </div>
 
         <!-- Sub TABS FINANZAS -->
-        <div class="tabs-container" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
-          <button 
-            class="tab-btn" 
-            [class.active]="subTabFinanzas === 'INGRESOS'" 
+        <div class="tabs-container"
+          style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
+          <button class="tab-btn" [class.active]="subTabFinanzas === 'INGRESOS'"
             (click)="cambiarSubTabFinanzas('INGRESOS')"
             style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
             <i class="ri-download-2-line"></i> Ingresos y Cobros
           </button>
-          <button 
-            class="tab-btn" 
-            [class.active]="subTabFinanzas === 'EGRESOS'" 
+          <button class="tab-btn" [class.active]="subTabFinanzas === 'EGRESOS'"
             (click)="cambiarSubTabFinanzas('EGRESOS')"
             style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
             <i class="ri-upload-2-line"></i> Egresos y Compras
@@ -273,16 +853,18 @@
             <div class="form-group" style="display: flex; gap: 0.5rem; align-items: flex-end;">
               <div style="flex: 1;">
                 <label>Cédula o Nombres</label>
-                <input type="text" class="form-control" placeholder="Buscar..." [(ngModel)]="comuneroBusqueda" (keyup.enter)="buscarObligaciones()" />
+                <input type="text" class="form-control" placeholder="Buscar..." [(ngModel)]="comuneroBusqueda"
+                  (keyup.enter)="buscarObligaciones()" />
               </div>
               <button class="btn btn--outline" (click)="buscarObligaciones()">Buscar</button>
             </div>
 
             <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);" />
-            
+
             <div *ngIf="obligacionesComunero.length > 0">
               <div class="alert alert--info" style="margin-bottom: 1rem;">
-                <i class="ri-information-line"></i> <strong>Importante:</strong> Según las reglas de la Junta, los cobros no pueden fraccionarse. Se debe cobrar la totalidad de la obligación.
+                <i class="ri-information-line"></i> <strong>Importante:</strong> Según las reglas de la Junta, los
+                cobros no pueden fraccionarse. Se debe cobrar la totalidad de la obligación.
               </div>
               <div class="form-group">
                 <label>Obligación Pendiente a Cobrar</label>
@@ -293,11 +875,13 @@
                 </select>
               </div>
               <button class="btn btn--primary btn--block" (click)="cobrarObligacion()">
-                <i class="ri-money-dollar-box-line"></i> Procesar Pago Completo (${{ obligacionSeleccionada?.valor || 0 }})
+                <i class="ri-money-dollar-box-line"></i> Procesar Pago Completo (${{ obligacionSeleccionada?.valor || 0
+                }})
               </button>
             </div>
-            
-            <div *ngIf="obligacionesComunero.length === 0" style="text-align: center; color: var(--text-muted); padding: 1rem 0;">
+
+            <div *ngIf="obligacionesComunero.length === 0"
+              style="text-align: center; color: var(--text-muted); padding: 1rem 0;">
               Busca a un comunero para listar sus deudas pendientes.
             </div>
           </div>
@@ -361,10 +945,13 @@
     </div>
     <div class="modal__body">
       <p><strong>Titular:</strong> {{ loteSeleccionadoMapa.nombres }} ({{ loteSeleccionadoMapa.cedula }})</p>
-      <p><strong>Sector:</strong> {{ loteSeleccionadoMapa.sector }} | <strong>Superficie:</strong> {{ loteSeleccionadoMapa.superficie }} m²</p>
-      <p><strong>Coordenadas GPS:</strong> Lat {{ loteSeleccionadoMapa.latitud }}, Lng {{ loteSeleccionadoMapa.longitud }}</p>
-      <p><strong>Precisión (Radio de Error):</strong> <span class="badge badge--warning">± {{ loteSeleccionadoMapa.radioError }} metros</span></p>
-      
+      <p><strong>Sector:</strong> {{ loteSeleccionadoMapa.sector }} | <strong>Superficie:</strong> {{
+        loteSeleccionadoMapa.superficie }} m²</p>
+      <p><strong>Coordenadas GPS:</strong> Lat {{ loteSeleccionadoMapa.latitud }}, Lng {{ loteSeleccionadoMapa.longitud
+        }}</p>
+      <p><strong>Precisión (Radio de Error):</strong> <span class="badge badge--warning">± {{
+          loteSeleccionadoMapa.radioError }} metros</span></p>
+
       <div class="map-placeholder">
         <i class="ri-earth-line map-bg-icon"></i>
         <div class="map-pin">
@@ -374,7 +961,8 @@
       </div>
     </div>
     <div class="modal__footer">
-      <button class="btn btn--secondary" (click)="abrirGoogleMaps(loteSeleccionadoMapa.latitud, loteSeleccionadoMapa.longitud)">
+      <button class="btn btn--secondary"
+        (click)="abrirGoogleMaps(loteSeleccionadoMapa.latitud, loteSeleccionadoMapa.longitud)">
         <i class="ri-google-fill"></i> Abrir en Google Maps Satelital
       </button>
       <button class="btn btn--outline" (click)="cerrarModalMapa()">Cerrar</button>
@@ -391,7 +979,8 @@
     </div>
     <div class="modal__body">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <input type="text" class="form-control" placeholder="Buscar comunero..." [(ngModel)]="filtroAsistencia" style="max-width: 300px;" />
+        <input type="text" class="form-control" placeholder="Buscar comunero..." [(ngModel)]="filtroAsistencia"
+          style="max-width: 300px;" />
         <button class="btn btn--outline btn--sm" (click)="marcarTodosAsistencia()">
           <i class="ri-check-double-line"></i> Marcar todos presentes
         </button>
@@ -418,7 +1007,8 @@
         </table>
       </div>
       <div class="alert alert--warning" style="margin-top: 1rem; font-size: 0.85rem;">
-        <i class="ri-error-warning-line"></i> Nota: Al finalizar el evento, el sistema asignará automáticamente la multa de ${{ eventoSeleccionado.multaAbsencia }} a los comuneros desmarcados (Ausentes).
+        <i class="ri-error-warning-line"></i> Nota: Al finalizar el evento, el sistema asignará automáticamente la multa
+        de ${{ eventoSeleccionado.multaAbsencia }} a los comuneros desmarcados (Ausentes).
       </div>
     </div>
     <div class="modal__footer">
@@ -480,7 +1070,8 @@
 
       <div class="form-group" style="margin-bottom: 1rem;">
         <label>Observación (Opcional)</label>
-        <textarea class="form-control" [(ngModel)]="nuevoTurno.observacion" rows="2" placeholder="Ej: Compra extra por $2.00"></textarea>
+        <textarea class="form-control" [(ngModel)]="nuevoTurno.observacion" rows="2"
+          placeholder="Ej: Compra extra por $2.00"></textarea>
       </div>
     </div>
     <div class="modal__footer">

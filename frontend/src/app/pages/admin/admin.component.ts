@@ -2,6 +2,25 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/services/admin.service';
+import * as L from 'leaflet';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// Para solucionar problema de iconos de Leaflet en Angular
+const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png';
+const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
+const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
+const iconDefault = L.icon({
+  iconRetinaUrl,
+  iconUrl,
+  shadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41]
+});
+L.Marker.prototype.options.icon = iconDefault;
 
 interface UsuarioAdmin {
   id: number;
@@ -55,11 +74,93 @@ export class AdminComponent implements OnInit {
     balanceAlDia: 0
   };
 
-  // Mocks de Usuarios por defecto inicializados en vacío
-  usuarios: UsuarioAdmin[] = [];
+  // --- VISTA 1: NÓMINA & LOTES ---
+  subTabUsuarios: 'COMUNEROS' | 'LOTES' = 'COMUNEROS';
+
+  // COMUNEROS
+  usuarios: any[] = [];
+  usuariosPaginaActual: number = 1;
+  usuariosTotalPaginas: number = 1;
+  usuariosTotalRegistros: number = 0;
+  usuariosBusqueda: string = '';
+  usuariosEstadoFiltro: string = '';
+
+  // Formulario de Comunero (Crear/Editar)
+  modalUsuarioVisible: boolean = false;
+  modoEdicionUsuario: boolean = false;
+
+  // Modal Lotes del Comunero
+  modalLotesComuneroVisible: boolean = false;
+  comuneroSeleccionadoParaLotes: any = null;
+  lotesDelComunero: any[] = [];
+
+  formUsuario = {
+    id: null as number | null,
+    cedula: '',
+    nombres: '',
+    apellidos: '',
+    direccion: '',
+    telefono: '',
+    celular: '',
+    email: '',
+    fecha_nacimiento: '',
+    estado: 'ACTIVO',
+    crearCuenta: false,
+    rol_id: 2, // 2 = USUARIO por defecto (asumiendo que 1 es ADMIN)
+    nuevaContrasena: ''
+  };
+
+  // LOTES
+  lotes: any[] = [];
+  sectores: any[] = [];
+  lotesBusqueda: string = '';
+  lotesSectorFiltro: number | null = null;
+
+  // Formulario Lote
+  modalLoteVisible: boolean = false;
+  formLote = {
+    sector_id: null as number | null,
+    codigo: '',
+    superficie_m2: null as number | null,
+    latitud_aproximada: '',
+    longitud_aproximada: '',
+    radio_error_m: 5,
+    referencia_ubicacion: '',
+    observacion: ''
+  };
+
+  private map: L.Map | null = null;
+  private marker: L.Marker | null = null;
+  
+  private detalleMap: L.Map | null = null;
+  private detalleMarker: L.Marker | null = null;
+
+  // Asignar Lote
+  modalVincularVisible: boolean = false;
+  comuneroSeleccionadoParaLote: any = null;
+  formVincular = {
+    lote_id: null as number | null,
+    tipo_relacion: 'PROPIETARIO',
+    porcentaje: 100.00
+  };
+
+  // Detalle de Lote
+  modalDetalleLoteVisible: boolean = false;
+  loteSeleccionadoParaDetalle: any = null;
 
   // Mocks de Eventos / Asistencias inicializados en vacío
   eventos: EventoAdmin[] = [];
+  modalEventoVisible: boolean = false;
+  formEvento = {
+    tipo: 'ASAMBLEA',
+    titulo: '',
+    descripcion: '',
+    fecha: '',
+    hora_inicio: '18:00',
+    lugar: 'Casa Comunal Junta La Jones',
+    genera_multa_ausencia: true,
+    valor_multa: 10.00
+  };
 
   // Turnos de agua
   turnos: any[] = [];
@@ -76,7 +177,21 @@ export class AdminComponent implements OnInit {
   constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
+    this.cargarSectores();
     this.cargarDatosBackend();
+    this.cargarUsuarios();
+  }
+
+  cargarSectores() {
+    this.adminService.getSectores().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.sectores = res.data;
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => console.error('Error cargando sectores', err)
+    });
   }
 
   cargarDatosBackend() {
@@ -94,30 +209,7 @@ export class AdminComponent implements OnInit {
       error: () => {}
     });
 
-    // Cargar comuneros desde la API
-    this.adminService.getPersonas().subscribe({
-      next: (res) => {
-        if (res && res.data && res.data.length > 0) {
-            this.usuarios = res.data.map((p: any) => ({
-              id: p.id,
-              cedula: p.cedula,
-              nombres: `${p.nombres} ${p.apellidos}`,
-              sector: p.direccion || 'Sector Las Jones',
-              loteCodigo: p.loteCodigo || 'Sin Lote',
-              loteId: p.loteId || null,
-              superficie: Number(p.superficie) || 0,
-              latitud: Number(p.latitud) || -1.33241, // Fallback si no tiene coordenadas
-              longitud: Number(p.longitud) || -78.51421,
-              radioError: Number(p.radioError) || 20,
-              estado: p.estado
-            }));
-            this.cdr.detectChanges();
-        }
-      },
-      error: () => {}
-    });
-
-    // Cargar eventos desde la API
+    // Cargar otros datos (eventos, turnos, etc.) que não están paginados
     this.adminService.getEventos().subscribe({
       next: (res) => {
         if (res && res.data) {
@@ -161,6 +253,311 @@ export class AdminComponent implements OnInit {
     this.tabActiva = tab;
   }
 
+  // --- LOGICA DE USUARIOS ---
+  cargarUsuarios() {
+    this.adminService.getPersonas(this.usuariosPaginaActual, 25, this.usuariosBusqueda, this.usuariosEstadoFiltro).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.usuarios = res.data;
+          
+          if (res.pagination) {
+            this.usuariosTotalRegistros = res.pagination.total;
+            this.usuariosTotalPaginas = Math.ceil(res.pagination.total / res.pagination.limit);
+          }
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => alert('Error al cargar comuneros.')
+    });
+  }
+
+  cambiarPaginaUsuarios(nuevaPagina: number) {
+    if (nuevaPagina >= 1 && nuevaPagina <= this.usuariosTotalPaginas) {
+      this.usuariosPaginaActual = nuevaPagina;
+      this.cargarUsuarios();
+    }
+  }
+
+  aplicarFiltroUsuarios() {
+    this.usuariosPaginaActual = 1; // Reset a primera pagina
+    this.cargarUsuarios();
+  }
+
+  abrirModalNuevoUsuario() {
+    this.modoEdicionUsuario = false;
+    this.formUsuario = {
+      id: null,
+      nombres: '',
+      apellidos: '',
+      cedula: '',
+      direccion: '',
+      telefono: '',
+      celular: '',
+      email: '',
+      fecha_nacimiento: '',
+      estado: 'ACTIVO',
+      crearCuenta: true,
+      rol_id: 3, // Default COMUNERO
+      nuevaContrasena: ''
+    };
+    this.modalUsuarioVisible = true;
+  }
+
+  abrirModalEditarUsuario(u: any) {
+    this.modoEdicionUsuario = true;
+    this.formUsuario = {
+      id: u.id,
+      nombres: u.nombres || '',
+      apellidos: u.apellidos || '',
+      cedula: u.cedula,
+      direccion: u.direccion || '',
+      telefono: u.telefono,
+      celular: u.celular,
+      email: u.email,
+      fecha_nacimiento: u.fecha_nacimiento,
+      estado: u.estado,
+      crearCuenta: false,
+      rol_id: 2,
+      nuevaContrasena: ''
+    };
+    this.modalUsuarioVisible = true;
+  }
+
+  cerrarModalUsuario() {
+    this.modalUsuarioVisible = false;
+  }
+
+  guardarUsuario() {
+    if (!this.formUsuario.cedula || !this.formUsuario.nombres || !this.formUsuario.apellidos) {
+      alert('Cédula, Nombres y Apellidos son obligatorios.');
+      return;
+    }
+
+    if (this.modoEdicionUsuario && this.formUsuario.id) {
+      this.adminService.updatePersona(this.formUsuario.id, this.formUsuario).subscribe({
+        next: (res) => {
+          alert('Comunero actualizado exitosamente.');
+          this.cerrarModalUsuario();
+          this.cargarUsuarios();
+        },
+        error: (err) => alert(err.error?.message || 'Error al actualizar comunero.')
+      });
+    } else {
+      this.adminService.createPersona(this.formUsuario).subscribe({
+        next: (res) => {
+          alert('Comunero registrado exitosamente.');
+          this.cerrarModalUsuario();
+          this.cargarUsuarios();
+        },
+        error: (err) => alert(err.error?.message || 'Error al registrar comunero.')
+      });
+    }
+  }
+
+  // ============== LOTES ==============
+
+  cambiarSubTabUsuarios(tab: 'COMUNEROS' | 'LOTES') {
+    this.subTabUsuarios = tab;
+    if (tab === 'LOTES') {
+      this.cargarLotes();
+    }
+  }
+
+  cargarLotes() {
+    this.adminService.getLotes(this.lotesSectorFiltro || undefined, this.lotesBusqueda).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.lotes = res.data;
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => console.error('Error cargando lotes', err)
+    });
+  }
+
+  aplicarFiltroLotes() {
+    this.cargarLotes();
+  }
+
+  abrirModalNuevoLote() {
+    this.formLote = { sector_id: null, codigo: '', superficie_m2: null, latitud_aproximada: '', longitud_aproximada: '', radio_error_m: 5, referencia_ubicacion: '', observacion: '' };
+    this.modalLoteVisible = true;
+    setTimeout(() => {
+      this.initMap();
+    }, 200);
+  }
+
+  cerrarModalLote() {
+    this.modalLoteVisible = false;
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+      this.marker = null;
+    }
+  }
+
+  private initMap() {
+    const mapElement = document.getElementById('loteMap');
+    if (!mapElement) return;
+
+    // Centro aproximado en Patate, Tungurahua
+    this.map = L.map('loteMap').setView([-1.3121, -78.5085], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.map);
+
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      
+      this.formLote.latitud_aproximada = lat.toFixed(6);
+      this.formLote.longitud_aproximada = lng.toFixed(6);
+
+      if (this.marker) {
+        this.marker.setLatLng(e.latlng);
+      } else {
+        this.marker = L.marker(e.latlng).addTo(this.map!);
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  guardarLote() {
+    if (!this.formLote.sector_id || !this.formLote.codigo) {
+      alert('El sector y el código son obligatorios.');
+      return;
+    }
+    this.adminService.createLote(this.formLote).subscribe({
+      next: (res) => {
+        alert('Lote creado exitosamente.');
+        this.cerrarModalLote();
+        this.cargarLotes();
+      },
+      error: (err) => alert(err.error?.message || 'Error al crear lote.')
+    });
+  }
+
+  // ============== VINCULAR LOTE ==============
+
+  abrirModalVincular(comunero: any) {
+    this.comuneroSeleccionadoParaLote = comunero;
+    this.formVincular = { lote_id: null, tipo_relacion: 'PROPIETARIO', porcentaje: 100.00 };
+    this.adminService.getLotes().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.lotes = res.data; 
+        }
+        this.modalVincularVisible = true;
+        this.cdr.detectChanges();
+      },
+      error: () => alert('Error al cargar lotes para vinculación.')
+    });
+  }
+
+  cerrarModalVincular() {
+    this.modalVincularVisible = false;
+    this.comuneroSeleccionadoParaLote = null;
+  }
+
+  guardarVinculo() {
+    if (!this.formVincular.lote_id) {
+      alert('Por favor selecciona un lote.');
+      return;
+    }
+    const payload = {
+      persona_id: this.comuneroSeleccionadoParaLote.id,
+      tipo_relacion: this.formVincular.tipo_relacion,
+      porcentaje: this.formVincular.porcentaje
+    };
+
+    this.adminService.vincularPersonaLote(this.formVincular.lote_id, payload).subscribe({
+      next: (res) => {
+        alert('Lote vinculado exitosamente.');
+        this.cerrarModalVincular();
+      },
+      error: (err) => alert(err.error?.message || 'Error al vincular el lote.')
+    });
+  }
+
+  // ============== LOTES DEL COMUNERO ==============
+  abrirModalLotesComunero(comunero: any) {
+    this.comuneroSeleccionadoParaLotes = comunero;
+    this.lotesDelComunero = [];
+    this.modalLotesComuneroVisible = true;
+
+    this.adminService.getLotes(undefined, undefined, comunero.id).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.lotesDelComunero = res.data;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => alert('Error al cargar los lotes del comunero.')
+    });
+  }
+
+  cerrarModalLotesComunero() {
+    this.modalLotesComuneroVisible = false;
+    this.comuneroSeleccionadoParaLotes = null;
+    this.lotesDelComunero = [];
+  }
+
+  // ============== DETALLE LOTE ==============
+  
+  abrirModalDetalleLote(lote: any) {
+    this.loteSeleccionadoParaDetalle = { ...lote };
+    
+    // Convertir el string separado por comas en un arreglo para mostrarlo como lista
+    this.loteSeleccionadoParaDetalle.propietariosList = lote.propietarios 
+      ? lote.propietarios.split(', ') 
+      : [];
+
+    this.modalDetalleLoteVisible = true;
+    
+    // Si el lote tiene coordenadas, inicializamos el mapa
+    if (lote.latitud_aproximada && lote.longitud_aproximada) {
+      setTimeout(() => {
+        this.initDetalleMap(parseFloat(lote.latitud_aproximada), parseFloat(lote.longitud_aproximada), lote.radio_error_m);
+      }, 200);
+    }
+  }
+
+  cerrarModalDetalleLote() {
+    this.modalDetalleLoteVisible = false;
+    this.loteSeleccionadoParaDetalle = null;
+    if (this.detalleMap) {
+      this.detalleMap.remove();
+      this.detalleMap = null;
+      this.detalleMarker = null;
+    }
+  }
+
+  private initDetalleMap(lat: number, lng: number, errorRadius: number = 5) {
+    const mapElement = document.getElementById('detalleMap');
+    if (!mapElement) return;
+
+    this.detalleMap = L.map('detalleMap').setView([lat, lng], 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.detalleMap);
+
+    this.detalleMarker = L.marker([lat, lng]).addTo(this.detalleMap);
+    
+    // Add a circle to represent the margin of error
+    if (errorRadius > 0) {
+      L.circle([lat, lng], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.2,
+        radius: errorRadius
+      }).addTo(this.detalleMap);
+    }
+  }
+
+  // ============== EVENTOS ==============
+
   cambiarSubTabEventos(subTab: 'ASAMBLEA' | 'MINGA') {
     this.subTabEventos = subTab;
   }
@@ -197,6 +594,66 @@ export class AdminComponent implements OnInit {
       presente: false
     }));
     this.modalAsistenciaVisible = true;
+  }
+
+  // Lógica de Crear Evento
+  abrirModalNuevoEvento() {
+    this.formEvento = {
+      tipo: this.subTabEventos, // Se adapta al tab actual (ASAMBLEA o MINGA)
+      titulo: '',
+      descripcion: '',
+      fecha: new Date().toISOString().split('T')[0],
+      hora_inicio: '18:00',
+      lugar: 'Casa Comunal Junta La Jones',
+      genera_multa_ausencia: true,
+      valor_multa: 10.00
+    };
+    this.modalEventoVisible = true;
+  }
+
+  cerrarModalEvento() {
+    this.modalEventoVisible = false;
+  }
+
+  guardarEvento() {
+    this.adminService.createEvento(this.formEvento).subscribe({
+      next: (res) => {
+        alert(`${this.formEvento.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga'} creada exitosamente.`);
+        this.cerrarModalEvento();
+        // Si tuviéramos un cargarEventos real que actualice la lista this.eventos, lo llamaríamos aquí.
+      },
+      error: (err) => {
+        alert(err.error?.message || 'Error al crear el evento');
+      }
+    });
+  }
+
+  generarReporteEventosPdf() {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Reporte de ${this.subTabEventos === 'ASAMBLEA' ? 'Asambleas' : 'Mingas'}`, 14, 20);
+    
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 28);
+    
+    const columns = ['Tipo', 'Título', 'Fecha', 'Multa ($)', 'Asistentes'];
+    const rows = this.eventosFiltrados.map(e => [
+      e.tipo,
+      e.titulo,
+      e.fecha,
+      e.multaAbsencia.toFixed(2),
+      `${e.asistentes} / ${e.totalComuneros}`
+    ]);
+    
+    autoTable(doc, {
+      head: [columns],
+      body: rows,
+      startY: 35,
+      theme: 'striped',
+      headStyles: { fillColor: [30, 64, 175] } // Var color-primary
+    });
+    
+    doc.save(`reporte_${this.subTabEventos.toLowerCase()}_${new Date().getTime()}.pdf`);
   }
 
   cerrarModalAsistencia() {

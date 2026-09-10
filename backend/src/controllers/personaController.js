@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const bcrypt = require('bcryptjs');
 
 /**
  * Validar estructura básica de Cédula Ecuatoriana (10 dígitos)
@@ -38,15 +39,8 @@ async function getPersonas(req, res, next) {
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     let sql = `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.direccion, p.telefono, p.celular, p.email, p.fecha_nacimiento, p.estado, p.created_at,
-                      (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count,
-                      l.id AS loteId, l.codigo AS loteCodigo, l.superficie_m2 AS superficie, l.latitud_aproximada AS latitud, l.longitud_aproximada AS longitud, l.radio_error_m AS radioError
+                      (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count
                FROM personas p
-               LEFT JOIN (
-                  SELECT persona_id, MIN(lote_id) as min_lote_id
-                  FROM persona_lotes
-                  GROUP BY persona_id
-               ) as pl_min ON pl_min.persona_id = p.id
-               LEFT JOIN lotes l ON l.id = pl_min.min_lote_id
                WHERE 1=1`;
     const params = [];
 
@@ -289,12 +283,14 @@ async function createPersona(req, res, next) {
 async function updatePersona(req, res, next) {
   try {
     const { id } = req.params;
-    const { nombres, apellidos, direccion, telefono, celular, email, fecha_nacimiento, estado } = req.body;
+    const { nombres, apellidos, direccion, telefono, celular, email, fecha_nacimiento, estado, nuevaContrasena } = req.body;
 
-    const [rows] = await db.query(`SELECT id FROM personas WHERE id = ?`, [id]);
+    const [rows] = await db.query(`SELECT id, cedula FROM personas WHERE id = ?`, [id]);
     if (rows.length === 0) {
       return res.status(404).json({ status: 'ERROR', message: 'Comunero no encontrado.' });
     }
+
+    const persona = rows[0];
 
     await db.query(
       `UPDATE personas
@@ -302,6 +298,22 @@ async function updatePersona(req, res, next) {
        WHERE id = ?`,
       [nombres, apellidos, direccion || null, telefono || null, celular || null, email || null, fecha_nacimiento || null, estado || 'ACTIVO', id]
     );
+
+    // Actualizar o crear contraseña si se proporciona
+    if (nuevaContrasena && nuevaContrasena.trim() !== '') {
+      const passwordHash = await bcrypt.hash(nuevaContrasena.trim(), 10);
+      
+      const [cuentas] = await db.query(`SELECT id FROM cuentas WHERE persona_id = ?`, [id]);
+      
+      if (cuentas.length > 0) {
+        await db.query(`UPDATE cuentas SET password_hash = ? WHERE persona_id = ?`, [passwordHash, id]);
+      } else {
+        await db.query(
+          `INSERT INTO cuentas (persona_id, username, password_hash, rol_id, estado, debe_cambiar_password) VALUES (?, ?, ?, (SELECT id FROM roles WHERE nombre = 'COMUNERO' LIMIT 1), 'ACTIVO', FALSE)`,
+          [id, persona.cedula, passwordHash]
+        );
+      }
+    }
 
     await registrarAuditoria({
       cuentaId: req.user ? req.user.cuentaId : null,

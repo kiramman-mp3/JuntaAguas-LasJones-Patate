@@ -18,12 +18,43 @@ export class AdminService {
     });
   }
 
-  getPersonas(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/personas`, { headers: this.getAuthHeaders() });
+  getPersonas(page: number = 1, limit: number = 25, busqueda: string = '', estado: string = ''): Observable<any> {
+    let url = `${this.baseUrl}/personas?page=${page}&limit=${limit}`;
+    if (busqueda) url += `&busqueda=${encodeURIComponent(busqueda)}`;
+    if (estado) url += `&estado=${encodeURIComponent(estado)}`;
+    return this.http.get(url, { headers: this.getAuthHeaders() });
   }
 
-  getLotes(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/lotes`, { headers: this.getAuthHeaders() });
+  createPersona(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/personas`, data, { headers: this.getAuthHeaders() });
+  }
+
+  updatePersona(id: number, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/personas/${id}`, data, { headers: this.getAuthHeaders() });
+  }
+
+  getPersona(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/personas/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  getLotes(sector_id?: number, busqueda?: string, persona_id?: number): Observable<any> {
+    let url = `${this.baseUrl}/lotes?`;
+    if (sector_id) url += `sector_id=${sector_id}&`;
+    if (busqueda) url += `busqueda=${encodeURIComponent(busqueda)}&`;
+    if (persona_id) url += `persona_id=${persona_id}&`;
+    return this.http.get(url, { headers: this.getAuthHeaders() });
+  }
+
+  createLote(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/lotes`, data, { headers: this.getAuthHeaders() });
+  }
+
+  vincularPersonaLote(loteId: number, data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/lotes/${loteId}/vincular-persona`, data, { headers: this.getAuthHeaders() });
+  }
+
+  getSectores(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/lotes/sectores`, { headers: this.getAuthHeaders() });
   }
 
   getTurnos(): Observable<any> {
@@ -36,6 +67,10 @@ export class AdminService {
 
   getEventos(): Observable<any> {
     return this.http.get(`${this.baseUrl}/eventos`, { headers: this.getAuthHeaders() });
+  }
+
+  createEvento(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos`, payload, { headers: this.getAuthHeaders() });
   }
 
   getEventoById(id: number): Observable<any> {

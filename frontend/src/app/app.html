@@ -8,9 +8,14 @@
     <ul class="main-nav__links">
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a></li>
       <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
+      <li *ngIf="authService.isLoggedIn()">
+        <a *ngIf="authService.getUser()?.rol === 'ADMIN' || authService.getUser()?.rol === 'SECRETARIO'" routerLink="/admin" routerLinkActive="active">Panel de Control</a>
+        <a *ngIf="authService.getUser()?.rol === 'USUARIO'" routerLink="/mi-cuenta" routerLinkActive="active">Mi cuenta</a>
+      </li>
     </ul>
     <div class="main-nav__actions">
-      <a routerLink="/login" class="btn btn--primary btn--sm"><i class="ri-login-circle-line"></i> Iniciar Sesión</a>
+      <a *ngIf="!authService.isLoggedIn()" routerLink="/login" class="btn btn--primary btn--sm"><i class="ri-login-circle-line"></i> Iniciar Sesión</a>
+      <a *ngIf="authService.isLoggedIn()" (click)="cerrarSesion()" style="cursor: pointer;" class="btn btn--primary btn--sm"><i class="ri-logout-circle-line"></i> Cerrar Sesión</a>
     </div>
   </div>
 </nav>

@@ -50,7 +50,7 @@ async function createSector(req, res, next) {
  */
 async function getLotes(req, res, next) {
   try {
-    const { sector_id, busqueda } = req.query;
+    const { sector_id, busqueda, persona_id } = req.query;
 
     let sql = `SELECT l.*, s.nombre AS sector_nombre,
                       (SELECT GROUP_CONCAT(CONCAT(p.nombres, ' ', p.apellidos, ' (', pl.tipo_relacion, ')') SEPARATOR ', ')
@@ -60,6 +60,11 @@ async function getLotes(req, res, next) {
                JOIN sectores s ON s.id = l.sector_id
                WHERE l.activo = TRUE`;
     const params = [];
+
+    if (persona_id) {
+      sql += ` AND EXISTS (SELECT 1 FROM persona_lotes pl WHERE pl.lote_id = l.id AND pl.persona_id = ?)`;
+      params.push(persona_id);
+    }
 
     if (sector_id) {
       sql += ` AND l.sector_id = ?`;
