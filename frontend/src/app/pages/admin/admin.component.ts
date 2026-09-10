@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/services/admin.service';
@@ -73,7 +73,7 @@ export class AdminComponent implements OnInit {
     observacion: ''
   };
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.cargarDatosBackend();
@@ -89,6 +89,7 @@ export class AdminComponent implements OnInit {
           this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || this.kpis.pendientesCobro;
           this.kpis.balanceAlDia = Number(res.balance.balanceAlDia) || this.kpis.balanceAlDia;
         }
+        this.cdr.detectChanges();
       },
       error: () => {}
     });
@@ -110,6 +111,7 @@ export class AdminComponent implements OnInit {
               radioError: Number(p.radioError) || 20,
               estado: p.estado
             }));
+            this.cdr.detectChanges();
         }
       },
       error: () => {}
@@ -128,6 +130,7 @@ export class AdminComponent implements OnInit {
             totalComuneros: Number(e.totalComuneros) || 0,
             multaAbsencia: Number(e.valor_multa)
           }));
+          this.cdr.detectChanges();
         }
       },
       error: () => {}
@@ -144,8 +147,10 @@ export class AdminComponent implements OnInit {
             dia: diasSemana[t.dia_semana] || 'Desconocido',
             horaInicio: t.hora_inicio,
             horaFin: t.hora_fin,
-            sector: t.sector_nombre || 'N/A'
+            sector: t.sector_nombre || 'N/A',
+            observacion: t.observacion || 'Ninguna'
           }));
+          this.cdr.detectChanges();
         }
       },
       error: () => {}
@@ -222,6 +227,7 @@ export class AdminComponent implements OnInit {
       next: () => {
         alert(`Asistencia guardada con éxito en el backend. Presentes: ${payload.filter(p => p.estado === 'PRESENTE').length}`);
         this.cerrarModalAsistencia();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         alert('Hubo un error al guardar las asistencias.');
@@ -273,6 +279,7 @@ export class AdminComponent implements OnInit {
               horaFin: t.hora_fin,
               sector: t.sector_nombre || 'N/A'
             }));
+            this.cdr.detectChanges();
           }
         });
       },
@@ -301,12 +308,14 @@ export class AdminComponent implements OnInit {
           if (this.obligacionesComunero.length > 0) {
             this.obligacionSeleccionada = this.obligacionesComunero[0]; // Selecciona la primera por defecto
           }
+          this.cdr.detectChanges();
         },
         error: () => alert('Error al buscar obligaciones.')
       });
     } else {
       alert('Comunero no encontrado.');
       this.obligacionesComunero = [];
+      this.cdr.detectChanges();
     }
   }
 

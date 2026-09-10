@@ -41,6 +41,7 @@ export class InicioComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error cargando eventos:', err);
+        this.cdr.detectChanges();
       }
     });
 
@@ -52,7 +53,8 @@ export class InicioComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error cargando sectores:', err);
+        console.error('Error al cargar sectores:', err);
+        this.cdr.detectChanges();
       }
     });
   }
