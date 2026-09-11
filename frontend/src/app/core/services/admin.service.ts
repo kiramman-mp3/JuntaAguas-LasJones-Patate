@@ -105,4 +105,21 @@ export class AdminService {
   registrarPago(payload: { persona_id: number; metodo: string; referencia?: string; observaciones?: string; obligacionesIds: number[] }): Observable<any> {
     return this.http.post(`${this.baseUrl}/financiero/pagos`, payload, { headers: this.getAuthHeaders() });
   }
+
+  getPagos(personaId?: number): Observable<any> {
+    const url = personaId ? `${this.baseUrl}/financiero/pagos?persona_id=${personaId}` : `${this.baseUrl}/financiero/pagos`;
+    return this.http.get(url, { headers: this.getAuthHeaders() });
+  }
+
+  anularPago(pagoId: number, motivo: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/financiero/pagos/${pagoId}/anular`, { motivo }, { headers: this.getAuthHeaders() });
+  }
+
+  getEgresos(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/financiero/egresos`, { headers: this.getAuthHeaders() });
+  }
+
+  registrarEgreso(payload: { fecha?: string; concepto: string; descripcion?: string; numero_factura?: string; valor: number; proveedor_id?: number }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/financiero/egresos`, payload, { headers: this.getAuthHeaders() });
+  }
 }

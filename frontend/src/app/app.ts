@@ -13,7 +13,11 @@ import { AuthService } from './core/services/auth.service';
 export class App {
   title = 'Junta de Agua La Jones';
 
-  constructor(public authService: AuthService, private router: Router) {}
+  constructor(public authService: AuthService, public router: Router) {}
+
+  get esRutaAdmin(): boolean {
+    return this.router.url.startsWith('/admin');
+  }
 
   cerrarSesion() {
     this.authService.logout();

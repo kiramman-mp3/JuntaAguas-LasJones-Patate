@@ -389,3 +389,37 @@ select.input {
     transform: translateY(0);
   }
 }
+
+/* ESTILOS DE IMPRESIÓN PARA COMPROBANTES DE PAGO */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .modal-backdrop,
+  .modal-backdrop * {
+    visibility: visible !important;
+  }
+
+  .modal-backdrop {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+    backdrop-filter: none !important;
+  }
+
+  .modal-content {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

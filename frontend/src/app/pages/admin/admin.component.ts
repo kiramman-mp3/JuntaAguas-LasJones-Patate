@@ -54,9 +54,9 @@ interface EventoAdmin {
   styleUrls: ['./admin.component.scss']
 })
 export class AdminComponent implements OnInit {
-  tabActiva: 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS' = 'USUARIOS';
+  tabActiva: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS' = 'DASHBOARD';
   subTabEventos: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
-  subTabFinanzas: 'INGRESOS' | 'EGRESOS' = 'INGRESOS';
+  subTabFinanzas: 'INGRESOS' | 'HISTORIAL' | 'EGRESOS' = 'INGRESOS';
   modalMapaVisible: boolean = false;
   loteSeleccionadoMapa: UsuarioAdmin | null = null;
   
@@ -241,6 +241,8 @@ export class AdminComponent implements OnInit {
     this.cargarSectores();
     this.cargarDatosBackend();
     this.cargarUsuarios();
+    this.cargarHistorialPagos();
+    this.cargarHistorialEgresos();
   }
 
   cargarSectores() {
@@ -317,8 +319,12 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  cambiarTab(tab: 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS') {
+  cambiarTab(tab: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS') {
     this.tabActiva = tab;
+    if (tab === 'DASHBOARD' || tab === 'FINANZAS') {
+      this.cargarComunerosFinanzas();
+      this.cargarHistorialPagos();
+    }
   }
 
   // --- LOGICA DE USUARIOS ---
@@ -630,8 +636,11 @@ export class AdminComponent implements OnInit {
     this.subTabEventos = subTab;
   }
 
-  cambiarSubTabFinanzas(subTab: 'INGRESOS' | 'EGRESOS') {
+  cambiarSubTabFinanzas(subTab: 'INGRESOS' | 'HISTORIAL' | 'EGRESOS') {
     this.subTabFinanzas = subTab;
+    if (subTab === 'HISTORIAL') {
+      this.cargarHistorialPagos();
+    }
   }
 
   get eventosFiltrados() {
@@ -1081,53 +1090,460 @@ export class AdminComponent implements OnInit {
   }
 
   // Lógica Finanzas
-  comuneroBusqueda: string = '';
+  Number = Number;
+  modalCobroVisible: boolean = false;
+  todosLosComunerosFinanzas: any[] = [];
+  comuneroFiltroFinanzas: string = '';
+  comuneroSeleccionadoFinanzas: any = null;
   obligacionesComunero: any[] = [];
-  obligacionSeleccionada: any = null;
+  obligacionesSeleccionadasIds: number[] = [];
+  valorRecibidoFinanzas: number | null = null;
+  comprobanteModalVisible: boolean = false;
+  comprobanteActual: any = null;
+  historialPagos: any[] = [];
+  historialFiltroBusqueda: string = '';
 
-  buscarObligaciones() {
-    if (!this.comuneroBusqueda) {
-      this.obligacionesComunero = [];
+  // Lógica de Egresos
+  modalEgresoVisible: boolean = false;
+  historialEgresos: any[] = [];
+  historialEgresosFiltroBusqueda: string = '';
+  nuevoEgreso: any = {
+    fecha: new Date().toISOString().substring(0, 10),
+    concepto: '',
+    proveedor: '',
+    ruc: '',
+    numero_factura: '',
+    valor: null,
+    descripcion: ''
+  };
+
+  formatValor(val: any): string {
+    return Number(val || 0).toFixed(2);
+  }
+
+  formatReciboNo(id: any): string {
+    return `REC-${String(id || 0).padStart(6, '0')}`;
+  }
+
+  formatEgresoNo(id: any): string {
+    return `EGR-${String(id || 0).padStart(6, '0')}`;
+  }
+
+  abrirModalCobro() {
+    this.modalCobroVisible = true;
+    this.comuneroFiltroFinanzas = '';
+    this.comuneroSeleccionadoFinanzas = null;
+    this.obligacionesComunero = [];
+    this.obligacionesSeleccionadasIds = [];
+    this.valorRecibidoFinanzas = null;
+    this.cargarComunerosFinanzas();
+  }
+
+  cerrarModalCobro() {
+    this.modalCobroVisible = false;
+    this.comuneroSeleccionadoFinanzas = null;
+  }
+
+  abrirModalEgreso() {
+    this.modalEgresoVisible = true;
+    this.nuevoEgreso = {
+      fecha: new Date().toISOString().substring(0, 10),
+      concepto: '',
+      proveedor: '',
+      ruc: '',
+      numero_factura: '',
+      valor: null,
+      descripcion: ''
+    };
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalEgreso() {
+    this.modalEgresoVisible = false;
+    this.cdr.detectChanges();
+  }
+
+  cargarComunerosFinanzas() {
+    this.adminService.getPersonas(1, 1000).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.todosLosComunerosFinanzas = res.data;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  cargarHistorialPagos() {
+    this.adminService.getPagos().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.historialPagos = res.data;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  cargarHistorialEgresos() {
+    this.adminService.getEgresos().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.historialEgresos = res.data;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  get historialEgresosFiltrado(): any[] {
+    if (!this.historialEgresosFiltroBusqueda.trim()) {
+      return this.historialEgresos;
+    }
+    const term = this.historialEgresosFiltroBusqueda.toLowerCase();
+    return this.historialEgresos.filter(e =>
+      (e.concepto && e.concepto.toLowerCase().includes(term)) ||
+      (e.proveedor_nombre && e.proveedor_nombre.toLowerCase().includes(term)) ||
+      (e.numero_factura && e.numero_factura.toLowerCase().includes(term)) ||
+      (e.registrado_por_usuario && e.registrado_por_usuario.toLowerCase().includes(term)) ||
+      (e.id && `egr-${e.id}`.toLowerCase().includes(term))
+    );
+  }
+
+  guardarEgreso() {
+    if (!this.nuevoEgreso.concepto || !this.nuevoEgreso.concepto.trim()) {
+      alert('Por favor ingresa el concepto o motivo del egreso.');
       return;
     }
-    const term = this.comuneroBusqueda.toLowerCase();
-    const comunero = this.usuarios.find(u => u.cedula === term || u.nombres.toLowerCase().includes(term));
-    if (comunero) {
-      this.adminService.getObligaciones(comunero.id).subscribe({
-        next: (res) => {
-          this.obligacionesComunero = res.data.filter((o: any) => o.estado === 'PENDIENTE');
-          if (this.obligacionesComunero.length > 0) {
-            this.obligacionSeleccionada = this.obligacionesComunero[0]; // Selecciona la primera por defecto
-          }
-          this.cdr.detectChanges();
-        },
-        error: () => alert('Error al buscar obligaciones.')
-      });
-    } else {
-      alert('Comunero no encontrado.');
-      this.obligacionesComunero = [];
-      this.cdr.detectChanges();
+    if (!this.nuevoEgreso.valor || Number(this.nuevoEgreso.valor) <= 0) {
+      alert('Por favor ingresa un monto válido mayor a cero.');
+      return;
     }
+
+    const payload = {
+      fecha: this.nuevoEgreso.fecha || new Date().toISOString().substring(0, 10),
+      concepto: this.nuevoEgreso.concepto.trim(),
+      descripcion: this.nuevoEgreso.descripcion ? this.nuevoEgreso.descripcion.trim() : null,
+      numero_factura: this.nuevoEgreso.numero_factura ? this.nuevoEgreso.numero_factura.trim() : null,
+      valor: Number(this.nuevoEgreso.valor)
+    };
+
+    this.adminService.registrarEgreso(payload).subscribe({
+      next: (res: any) => {
+        this.modalEgresoVisible = false;
+        this.cdr.detectChanges();
+        this.cargarHistorialEgresos();
+        this.cargarDatosBackend();
+        alert(res.message || 'Egreso registrado exitosamente.');
+      },
+      error: (err) => alert(err.error?.message || 'Error al registrar el egreso.')
+    });
+  }
+
+  get comunerosFiltradosFinanzas(): any[] {
+    const lista = this.todosLosComunerosFinanzas.length > 0 ? this.todosLosComunerosFinanzas : this.usuarios;
+    if (!this.comuneroFiltroFinanzas.trim()) {
+      return lista;
+    }
+    const term = this.comuneroFiltroFinanzas.toLowerCase();
+    return lista.filter(u =>
+      (u.nombres && u.nombres.toLowerCase().includes(term)) ||
+      (u.cedula && u.cedula.toLowerCase().includes(term))
+    );
+  }
+
+  get historialPagosFiltrado(): any[] {
+    if (!this.historialFiltroBusqueda.trim()) {
+      return this.historialPagos;
+    }
+    const term = this.historialFiltroBusqueda.toLowerCase();
+    return this.historialPagos.filter(p =>
+      (p.comunero_nombre && p.comunero_nombre.toLowerCase().includes(term)) ||
+      (p.cedula && p.cedula.toLowerCase().includes(term)) ||
+      (p.id && `rec-${p.id}`.toLowerCase().includes(term)) ||
+      (p.registrado_por_usuario && p.registrado_por_usuario.toLowerCase().includes(term))
+    );
+  }
+
+  anularPagoDesdeHistorial(pago: any) {
+    if (pago.observacion && pago.observacion.includes('[ANULADO:')) {
+      alert('Este pago ya se encuentra anulado.');
+      return;
+    }
+
+    const motivo = prompt(`Ingresa el motivo de anulación para el pago No. REC-${String(pago.id).padStart(6, '0')}:`);
+    if (!motivo || !motivo.trim()) return;
+
+    this.adminService.anularPago(pago.id, motivo.trim()).subscribe({
+      next: (res: any) => {
+        alert(res.message || 'Pago anulado exitosamente.');
+        this.cargarHistorialPagos();
+        this.cargarDatosBackend();
+        if (this.comuneroSeleccionadoFinanzas) {
+          this.seleccionarComuneroFinanzas(this.comuneroSeleccionadoFinanzas);
+        }
+      },
+      error: (err) => alert(err.error?.message || 'Error al anular el pago.')
+    });
+  }
+
+  reimprimirPDFDesdeHistorial(pago: any) {
+    this.comprobanteActual = {
+      comprobanteNo: `REC-${String(pago.id).padStart(6, '0')}`,
+      fechaHora: new Date(pago.fecha_pago).toLocaleString(),
+      comuneroNombre: pago.comunero_nombre,
+      comuneroCedula: pago.cedula,
+      detalles: [
+        {
+          concepto: 'Cobro de Rubro / Obligación',
+          periodo: 'Registrado',
+          valor: Number(pago.valor_total)
+        }
+      ],
+      total: Number(pago.valor_total),
+      valorRecibido: Number(pago.valor_total),
+      cambio: 0
+    };
+    this.imprimirPDFComprobante();
+  }
+
+  seleccionarComuneroFinanzas(comunero: any) {
+    this.comuneroSeleccionadoFinanzas = comunero;
+    this.obligacionesComunero = [];
+    this.obligacionesSeleccionadasIds = [];
+    this.valorRecibidoFinanzas = null;
+    this.cdr.detectChanges();
+
+    if (!comunero) return;
+
+    this.adminService.getObligaciones(comunero.id).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.obligacionesComunero = res.data.filter((o: any) => o.estado === 'PENDIENTE');
+          this.obligacionesSeleccionadasIds = this.obligacionesComunero.map(o => o.id);
+        } else {
+          this.obligacionesComunero = [];
+          this.obligacionesSeleccionadasIds = [];
+        }
+        this.cdr.detectChanges();
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error al consultar obligaciones', err);
+        alert('Error al consultar obligaciones del comunero.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  isObligacionSeleccionada(id: number): boolean {
+    return this.obligacionesSeleccionadasIds.includes(id);
+  }
+
+  toggleObligacionSeleccionada(id: number) {
+    if (this.isObligacionSeleccionada(id)) {
+      this.obligacionesSeleccionadasIds = this.obligacionesSeleccionadasIds.filter(item => item !== id);
+    } else {
+      this.obligacionesSeleccionadasIds = [...this.obligacionesSeleccionadasIds, id];
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleSeleccionarTodasObligaciones(event: any) {
+    if (event.target.checked) {
+      this.obligacionesSeleccionadasIds = this.obligacionesComunero.map(o => o.id);
+    } else {
+      this.obligacionesSeleccionadasIds = [];
+    }
+    this.cdr.detectChanges();
+  }
+
+  get totalAPagarFinanzas(): number {
+    return this.obligacionesComunero
+      .filter(o => this.obligacionesSeleccionadasIds.includes(o.id))
+      .reduce((sum, o) => sum + Number(o.valor || 0), 0);
+  }
+
+  get cambioCalculado(): number {
+    if (!this.valorRecibidoFinanzas || this.valorRecibidoFinanzas < this.totalAPagarFinanzas) {
+      return 0;
+    }
+    return Number((this.valorRecibidoFinanzas - this.totalAPagarFinanzas).toFixed(2));
   }
 
   cobrarObligacion() {
-    if (!this.obligacionSeleccionada) return;
-    
-    // Regla de Negocio: Se cobra la totalidad del valor. No se permiten abonos.
+    if (!this.comuneroSeleccionadoFinanzas || this.obligacionesSeleccionadasIds.length === 0) {
+      alert('Por favor selecciona al menos una obligación a cobrar.');
+      return;
+    }
+
+    const total = this.totalAPagarFinanzas;
+    if (this.valorRecibidoFinanzas === null || this.valorRecibidoFinanzas < total) {
+      alert(`El valor recibido debe ser mayor o igual al total a pagar ($${total.toFixed(2)}).`);
+      return;
+    }
+
+    const obligacionesACobrar = this.obligacionesComunero.filter(o => this.obligacionesSeleccionadasIds.includes(o.id));
+
     const payload = {
-      persona_id: this.obligacionSeleccionada.persona_id,
+      persona_id: this.comuneroSeleccionadoFinanzas.id,
       metodo: 'EFECTIVO',
-      obligacionesIds: [this.obligacionSeleccionada.id],
-      observaciones: 'Pago completo procesado desde panel administrativo.'
+      obligacionesIds: this.obligacionesSeleccionadasIds,
+      observaciones: 'Pago procesado desde panel administrativo.'
     };
 
     this.adminService.registrarPago(payload).subscribe({
-      next: () => {
-        alert('Pago registrado exitosamente.');
-        this.cargarDatosBackend(); // Recargar balance
-        this.buscarObligaciones(); // Recargar lista del usuario
+      next: (res: any) => {
+        // Armar datos del comprobante para imprimir
+        this.comprobanteActual = {
+          comprobanteNo: res.pagoId ? `REC-${String(res.pagoId).padStart(6, '0')}` : `REC-${Date.now()}`,
+          fechaHora: new Date().toLocaleString(),
+          comuneroNombre: this.comuneroSeleccionadoFinanzas.nombres,
+          comuneroCedula: this.comuneroSeleccionadoFinanzas.cedula,
+          detalles: obligacionesACobrar.map(o => ({
+            concepto: o.concepto_nombre || o.concepto || 'Cobro de Rubro',
+            periodo: o.periodo_anio ? `${o.periodo_anio}${o.periodo_mes ? ' - Mes ' + o.periodo_mes : ''}` : 'N/A',
+            valor: Number(o.valor)
+          })),
+          total: total,
+          valorRecibido: Number(this.valorRecibidoFinanzas),
+          cambio: this.cambioCalculado
+        };
+
+        this.comprobanteModalVisible = true;
+        this.modalCobroVisible = false;
+        this.cargarDatosBackend(); // Actualizar finanzas/balance
+        this.cargarHistorialPagos(); // Recargar historial de cobros
+        this.seleccionarComuneroFinanzas(this.comuneroSeleccionadoFinanzas); // Recargar obligaciones pendientes
       },
-      error: (err) => alert(err.error?.message || 'Error al procesar pago.')
+      error: (err) => alert(err.error?.message || 'Error al procesar el pago.')
     });
+  }
+
+  cerrarModalComprobante() {
+    this.comprobanteModalVisible = false;
+    this.comprobanteActual = null;
+  }
+
+  imprimirPDFComprobante() {
+    if (!this.comprobanteActual) return;
+    const c = this.comprobanteActual;
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a5'
+    });
+
+    // Encabezado en Blanco y Negro
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(0, 0, 0);
+    doc.text('JUNTA DE AGUA Y RIEGO "LA JONES"', 74, 15, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text('Patate - Tungurahua - Ecuador', 74, 20, { align: 'center' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`COMPROBANTE DE PAGO ${c.comprobanteNo}`, 74, 27, { align: 'center' });
+
+    // Línea separadora
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.4);
+    doc.line(15, 30, 133, 30);
+
+    // Ficha Comunero
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Comunero Titular:', 15, 36);
+    doc.setFont('helvetica', 'normal');
+    doc.text(c.comuneroNombre, 45, 36);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Cédula / RUC:', 15, 42);
+    doc.setFont('helvetica', 'normal');
+    doc.text(c.comuneroCedula, 45, 42);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fecha / Hora:', 15, 48);
+    doc.setFont('helvetica', 'normal');
+    doc.text(c.fechaHora, 45, 48);
+
+    // Tabla de Detalles (Blanco y Negro)
+    const tableData = c.detalles.map((d: any) => [
+      d.concepto,
+      d.periodo,
+      `$${d.valor.toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+      startY: 53,
+      head: [['Concepto', 'Periodo', 'Valor']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, lineColor: [0, 0, 0], lineWidth: 0.2 },
+      bodyStyles: { textColor: [0, 0, 0], fontSize: 8.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 23, halign: 'right' }
+      },
+      margin: { left: 15, right: 15 }
+    });
+
+    const finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 8 : 100;
+
+    // Resumen de Valores en Blanco y Negro
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL COBRADO:', 75, finalY);
+    doc.text(`$${c.total.toFixed(2)}`, 133, finalY, { align: 'right' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('VALOR RECIBIDO:', 75, finalY + 5);
+    doc.text(`$${c.valorRecibido.toFixed(2)}`, 133, finalY + 5, { align: 'right' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('CAMBIO ENTREGADO:', 75, finalY + 10);
+    doc.text(`$${c.cambio.toFixed(2)}`, 133, finalY + 10, { align: 'right' });
+
+    // Pie de página
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Gracias por mantener al día sus aportes para el fortalecimiento de nuestra Junta de Agua.', 74, finalY + 22, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('CAJA GENERAL - JUNTA LA JONES', 74, finalY + 27, { align: 'center' });
+
+    // Auto Imprimir directo el PDF generado
+    doc.autoPrint();
+    const pdfBlobUrl = doc.output('bloburl');
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.src = pdfBlobUrl.toString();
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      }, 100);
+    };
   }
 }

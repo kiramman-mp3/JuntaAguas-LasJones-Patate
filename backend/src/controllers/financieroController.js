@@ -234,7 +234,8 @@ async function registrarPago(req, res, next) {
 
       await connection.query(
         `INSERT INTO pago_detalles (pago_id, obligacion_id, valor_pagado)
-         VALUES (?, ?, ?)`,
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE pago_id = VALUES(pago_id), valor_pagado = VALUES(valor_pagado)`,
         [pagoId, ob.id, ob.valor]
       );
     }
@@ -431,6 +432,72 @@ async function getBalanceReport(req, res, next) {
   }
 }
 
+/**
+ * Anular un pago previamente registrado
+ */
+async function anularPago(req, res, next) {
+  const connection = await db.getConnection();
+  try {
+    const { id } = req.params;
+    const { motivo } = req.body;
+
+    if (!motivo) {
+      return res.status(400).json({ status: 'ERROR', message: 'Se requiere motivo de anulación.' });
+    }
+
+    await connection.beginTransaction();
+
+    // 1. Obtener pago
+    const [pagos] = await connection.query(`SELECT * FROM pagos WHERE id = ? FOR UPDATE`, [id]);
+    if (pagos.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ status: 'ERROR', message: 'Pago no encontrado.' });
+    }
+
+    const pago = pagos[0];
+
+    if (pago.observacion && pago.observacion.includes('[ANULADO:')) {
+      await connection.rollback();
+      return res.status(400).json({ status: 'ERROR', message: 'Este pago ya ha sido anulado previamente.' });
+    }
+
+    // 2. Obtener obligaciones asociadas en pago_detalles
+    const [detalles] = await connection.query(`SELECT obligacion_id FROM pago_detalles WHERE pago_id = ?`, [id]);
+
+    // 3. Restaurar las obligaciones a estado 'PENDIENTE'
+    for (const d of detalles) {
+      await connection.query(`UPDATE obligaciones SET estado = 'PENDIENTE' WHERE id = ?`, [d.obligacion_id]);
+    }
+
+    // 4. Eliminar registros de pago_detalles para liberar las obligaciones
+    await connection.query(`DELETE FROM pago_detalles WHERE pago_id = ?`, [id]);
+
+    // 5. Marcar pago como anulado en observaciones
+    const obsActual = pago.observacion || '';
+    const obsNueva = `${obsActual} [ANULADO: ${motivo}]`.trim();
+    await connection.query(`UPDATE pagos SET observacion = ? WHERE id = ?`, [id]);
+
+    await connection.commit();
+
+    await registrarAuditoria({
+      cuentaId: req.user.cuentaId,
+      accion: 'ANULAR',
+      entidad: 'pagos',
+      entidadId: id,
+      ip: req.ip,
+      detalle: { pagoId: id, motivo, valorTotal: pago.valor_total }
+    });
+
+    return res.json({ status: 'OK', message: 'Pago anulado exitosamente y obligaciones devueltas a estado PENDIENTE.' });
+
+  } catch (error) {
+    await connection.rollback();
+    next(error);
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   getConceptos,
   createTarifa,
@@ -438,6 +505,7 @@ module.exports = {
   createObligacionManual,
   anularObligacion,
   registrarPago,
+  anularPago,
   getPagos,
   getEgresos,
   createEgreso,
