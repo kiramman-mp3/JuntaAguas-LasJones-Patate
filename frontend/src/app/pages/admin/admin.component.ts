@@ -169,15 +169,42 @@ export class AdminComponent implements OnInit {
   turnosBusqueda: string = '';
   turnosDiaFiltro: string = '';
   turnosTipoFiltro: string = '';
+  vistaTurnosModo: 'TABLA' | 'CALENDARIO' = 'TABLA';
   modalTurnoVisible: boolean = false;
+  modalEditarTurnoVisible: boolean = false;
+  modalDetalleTurnoVisible: boolean = false;
+  turnoSeleccionadoParaDetalle: any = null;
+  turnoEnEdicion: any = null;
+  lotesDisponiblesTurno: any[] = [];
+  busquedaComuneroTurnoModal: string = '';
+  usuariosTurnoModal: any[] = [];
   nuevoTurno = {
     persona_id: null as number | null,
+    lote_id: null as number | null,
     dia_semana: 1,
     hora_inicio: '08:00',
     hora_fin: '10:00',
     tipo: 'REGULAR',
+    costo: 5.00,
     observacion: ''
   };
+
+  get usuariosTurnoModalFiltrados() {
+    if (!this.busquedaComuneroTurnoModal.trim()) {
+      return this.usuariosTurnoModal;
+    }
+    const term = this.busquedaComuneroTurnoModal.toLowerCase().trim();
+    return this.usuariosTurnoModal.filter(u =>
+      (u.nombres && u.nombres.toLowerCase().includes(term)) ||
+      (u.apellidos && u.apellidos.toLowerCase().includes(term)) ||
+      (u.cedula && u.cedula.toLowerCase().includes(term))
+    );
+  }
+
+  get comuneroSeleccionadoTurno() {
+    if (!this.nuevoTurno.persona_id) return null;
+    return this.usuariosTurnoModal.find(u => Number(u.id) === Number(this.nuevoTurno.persona_id)) || null;
+  }
 
   get turnosFiltrados() {
     let filtrados = this.turnos;
@@ -200,6 +227,12 @@ export class AdminComponent implements OnInit {
     }
 
     return filtrados;
+  }
+
+  getTurnosPorDia(diaNum: number) {
+    const diasNombres = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const diaNombre = diasNombres[diaNum];
+    return this.turnosFiltrados.filter(t => Number(t.dia_semana) === diaNum || t.dia === diaNombre);
   }
 
   constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
@@ -859,12 +892,159 @@ export class AdminComponent implements OnInit {
 
   // Lógica Turnos
   abrirModalTurno() {
-    this.nuevoTurno = { persona_id: null, dia_semana: 1, hora_inicio: '08:00', hora_fin: '10:00', tipo: 'REGULAR', observacion: '' };
+    this.busquedaComuneroTurnoModal = '';
+    this.nuevoTurno = {
+      persona_id: null,
+      lote_id: null,
+      dia_semana: 1,
+      hora_inicio: '08:00',
+      hora_fin: '10:00',
+      tipo: 'REGULAR',
+      costo: 5.00,
+      observacion: ''
+    };
+    this.lotesDisponiblesTurno = [];
     this.modalTurnoVisible = true;
+
+    // Cargar la lista completa de comuneros para el panel de selección derecha
+    this.adminService.getPersonas(1, 1000).subscribe({
+      next: (res) => {
+        this.usuariosTurnoModal = res.data || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al cargar comuneros para modal de turno', err)
+    });
+  }
+
+  seleccionarComuneroTurnoModal(u: any) {
+    this.nuevoTurno.persona_id = u.id;
+    this.cdr.detectChanges();
+    this.onPersonaChangeInTurno();
+  }
+
+  onPersonaChangeInTurno() {
+    this.nuevoTurno.lote_id = null;
+    this.lotesDisponiblesTurno = [];
+    this.cdr.detectChanges();
+
+    if (!this.nuevoTurno.persona_id) return;
+
+    this.adminService.getLotes(undefined, undefined, this.nuevoTurno.persona_id).subscribe({
+      next: (res) => {
+        this.lotesDisponiblesTurno = res.data || [];
+        if (this.lotesDisponiblesTurno.length > 0) {
+          this.nuevoTurno.lote_id = this.lotesDisponiblesTurno[0].id;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error cargando lotes del comunero', err)
+    });
   }
 
   cerrarModalTurno() {
     this.modalTurnoVisible = false;
+  }
+
+  cargarTurnos() {
+    this.adminService.getTurnos().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+          this.turnos = res.data.map((t: any) => ({
+            id: t.id,
+            lote: t.lote_codigo || 'N/A',
+            lote_id: t.lote_id,
+            persona_id: t.persona_id,
+            usuario: t.comunero_nombre,
+            dia: diasSemana[t.dia_semana] || 'Desconocido',
+            dia_semana: t.dia_semana,
+            horaInicio: t.hora_inicio,
+            horaFin: t.hora_fin,
+            sector: t.sector_nombre || 'N/A',
+            tipo: t.tipo || 'REGULAR',
+            observacion: t.observacion || ''
+          }));
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  verDetalleTurno(turno: any) {
+    this.turnoSeleccionadoParaDetalle = { ...turno };
+    this.modalDetalleTurnoVisible = true;
+  }
+
+  cerrarModalDetalleTurno() {
+    this.modalDetalleTurnoVisible = false;
+    this.turnoSeleccionadoParaDetalle = null;
+  }
+
+  abrirModalEditarTurno(turno: any) {
+    this.turnoEnEdicion = {
+      id: turno.id,
+      persona_id: turno.persona_id,
+      lote_id: turno.lote_id,
+      usuario: turno.usuario,
+      lote: turno.lote,
+      dia_semana: turno.dia_semana || 1,
+      hora_inicio: turno.horaInicio || '08:00',
+      hora_fin: turno.horaFin || '10:00',
+      tipo: turno.tipo || 'REGULAR',
+      observacion: turno.observacion || ''
+    };
+    this.modalEditarTurnoVisible = true;
+  }
+
+  cerrarModalEditarTurno() {
+    this.modalEditarTurnoVisible = false;
+    this.turnoEnEdicion = null;
+  }
+
+  guardarEdicionTurno() {
+    if (!this.turnoEnEdicion) return;
+
+    if (!this.turnoEnEdicion.dia_semana || !this.turnoEnEdicion.hora_inicio || !this.turnoEnEdicion.hora_fin) {
+      alert('El día y las horas de inicio y fin son obligatorios.');
+      return;
+    }
+
+    if (this.turnoEnEdicion.hora_inicio >= this.turnoEnEdicion.hora_fin) {
+      alert('La hora de inicio debe ser menor a la hora de finalización.');
+      return;
+    }
+
+    const payload = {
+      persona_id: this.turnoEnEdicion.persona_id,
+      lote_id: this.turnoEnEdicion.lote_id,
+      dia_semana: this.turnoEnEdicion.dia_semana,
+      hora_inicio: this.turnoEnEdicion.hora_inicio,
+      hora_fin: this.turnoEnEdicion.hora_fin,
+      tipo: this.turnoEnEdicion.tipo,
+      observacion: this.turnoEnEdicion.observacion
+    };
+
+    this.adminService.actualizarTurno(this.turnoEnEdicion.id, payload).subscribe({
+      next: (res: any) => {
+        alert(res.message || 'Turno actualizado correctamente.');
+        this.cerrarModalEditarTurno();
+        this.cargarTurnos();
+      },
+      error: (err: any) => alert(err.error?.message || 'Error al actualizar el turno.')
+    });
+  }
+
+  eliminarTurno(turno: any) {
+    if (confirm(`¿Está seguro de eliminar el turno asignado a "${turno.usuario}" (${turno.dia} ${turno.horaInicio} - ${turno.horaFin})?`)) {
+      this.adminService.eliminarTurno(turno.id).subscribe({
+        next: (res: any) => {
+          alert(res.message || 'Turno eliminado con éxito.');
+          this.cargarTurnos();
+        },
+        error: (err: any) => alert(err.error?.message || 'Error al eliminar el turno.')
+      });
+    }
   }
 
   guardarTurno() {
@@ -873,36 +1053,26 @@ export class AdminComponent implements OnInit {
       return;
     }
     
-    const comunero = this.usuarios.find(u => Number(u.id) === Number(this.nuevoTurno.persona_id));
-    if (!comunero || !comunero.loteId) {
-      alert('El comunero seleccionado no tiene un lote asociado.');
+    if (!this.nuevoTurno.lote_id) {
+      alert('Debe seleccionar un lote para asignar el turno.');
       return;
     }
 
-    const payload = {
-      ...this.nuevoTurno,
-      lote_id: comunero.loteId
-    };
+    if (!this.nuevoTurno.hora_inicio || !this.nuevoTurno.hora_fin) {
+      alert('Debe especificar las horas de inicio y fin.');
+      return;
+    }
 
-    this.adminService.asignarTurno(payload).subscribe({
-      next: () => {
-        alert('Turno de agua asignado con éxito.');
+    if (this.nuevoTurno.hora_inicio >= this.nuevoTurno.hora_fin) {
+      alert('La hora de inicio debe ser menor a la hora de finalización.');
+      return;
+    }
+
+    this.adminService.asignarTurno(this.nuevoTurno).subscribe({
+      next: (res: any) => {
+        alert(res.message || 'Turno de agua asignado con éxito.');
         this.cerrarModalTurno();
-        // Recargar turnos
-        this.adminService.getTurnos().subscribe(res => {
-          if (res && res.data) {
-            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            this.turnos = res.data.map((t: any) => ({
-              lote: t.lote_codigo || 'N/A',
-              usuario: t.comunero_nombre,
-              dia: diasSemana[t.dia_semana] || 'Desconocido',
-              horaInicio: t.hora_inicio,
-              horaFin: t.hora_fin,
-              sector: t.sector_nombre || 'N/A'
-            }));
-            this.cdr.detectChanges();
-          }
-        });
+        this.cargarTurnos();
       },
       error: (err) => {
         alert(err.error?.message || 'Error al asignar el turno.');

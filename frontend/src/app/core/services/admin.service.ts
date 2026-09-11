@@ -65,6 +65,14 @@ export class AdminService {
     return this.http.post(`${this.baseUrl}/turnos`, payload, { headers: this.getAuthHeaders() });
   }
 
+  actualizarTurno(id: number, payload: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/turnos/${id}`, payload, { headers: this.getAuthHeaders() });
+  }
+
+  eliminarTurno(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/turnos/${id}`, { headers: this.getAuthHeaders() });
+  }
+
   getEventos(): Observable<any> {
     return this.http.get(`${this.baseUrl}/eventos`, { headers: this.getAuthHeaders() });
   }

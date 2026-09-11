@@ -120,7 +120,8 @@
           </div>
 
           <!-- Bottom Row: Tabs and Filters inside a toolbar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
 
             <!-- Tabs -->
             <div class="tab-pills" style="display: flex; gap: 0.5rem;">
@@ -145,8 +146,8 @@
                   [(ngModel)]="usuariosBusqueda" (ngModelChange)="aplicarFiltroUsuarios()"
                   style="padding-left: 2rem; width: 260px;">
               </div>
-              <select class="input input--sm" [(ngModel)]="usuariosEstadoFiltro" (ngModelChange)="aplicarFiltroUsuarios()"
-                style="width: 140px;">
+              <select class="input input--sm" [(ngModel)]="usuariosEstadoFiltro"
+                (ngModelChange)="aplicarFiltroUsuarios()" style="width: 140px;">
                 <option value="">Todos</option>
                 <option value="ACTIVO">Activos</option>
                 <option value="INACTIVO">Inactivos</option>
@@ -224,13 +225,13 @@
                       u.estado }}</span>
                   </td>
                   <td>
-                    <div style="display: flex; gap: 0.5rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
                       <button class="btn btn--outline btn--sm" (click)="abrirModalEditarUsuario(u)"
-                        title="Editar Comunero">
+                        title="Editar Comunero" style="width: 100%; justify-content: center;">
                         <i class="ri-edit-line"></i> Editar Comunero
                       </button>
                       <button class="btn btn--outline btn--sm" (click)="abrirModalVincular(u)"
-                        title="Asignar Terreno al Comunero">
+                        title="Asignar Terreno al Comunero" style="width: 100%; justify-content: center;">
                         <i class="ri-map-pin-add-line"></i> Asignar Terreno
                       </button>
                     </div>
@@ -662,10 +663,11 @@
     <section *ngIf="tabActiva === 'ASISTENCIAS'" class="tab-view">
       <div class="card">
         <div class="card__header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0;">
-          
+
           <!-- Top Row: Title and Main Actions -->
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <h3 class="card__title" style="margin: 0; font-size: 1.3rem;"><i class="ri-calendar-event-fill" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Control de Asistencia a Eventos</h3>
+            <h3 class="card__title" style="margin: 0; font-size: 1.3rem;"><i class="ri-calendar-event-fill"
+                style="color: var(--color-primary); margin-right: 0.5rem;"></i> Control de Asistencia a Eventos</h3>
             <div style="display: flex; gap: 0.75rem;">
               <button class="btn btn--primary" (click)="abrirModalNuevoEvento()">
                 <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
@@ -674,14 +676,19 @@
           </div>
 
           <!-- Bottom Row: Tabs and Filters inside a toolbar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
-            
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+
             <!-- Tabs -->
             <div class="tab-pills" style="display: flex; gap: 0.5rem;">
-              <button class="btn btn--sm" [ngClass]="subTabEventos === 'ASAMBLEA' ? 'btn--primary' : 'btn--outline'" (click)="cambiarSubTabEventos('ASAMBLEA')" style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
+              <button class="btn btn--sm" [ngClass]="subTabEventos === 'ASAMBLEA' ? 'btn--primary' : 'btn--outline'"
+                (click)="cambiarSubTabEventos('ASAMBLEA')"
+                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
                 <i class="ri-group-line"></i> Asambleas
               </button>
-              <button class="btn btn--sm" [ngClass]="subTabEventos === 'MINGA' ? 'btn--primary' : 'btn--outline'" (click)="cambiarSubTabEventos('MINGA')" style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
+              <button class="btn btn--sm" [ngClass]="subTabEventos === 'MINGA' ? 'btn--primary' : 'btn--outline'"
+                (click)="cambiarSubTabEventos('MINGA')"
+                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
                 <i class="ri-tools-line"></i> Mingas Comunitarias
               </button>
             </div>
@@ -690,9 +697,11 @@
             <div class="filters" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
               <div style="position: relative; display: flex; align-items: center;">
                 <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
-                <input type="text" class="input input--sm" placeholder="Buscar evento..." [(ngModel)]="eventosBusqueda" (ngModelChange)="aplicarFiltroEventos()" style="padding-left: 2rem; width: 260px;">
+                <input type="text" class="input input--sm" placeholder="Buscar evento..." [(ngModel)]="eventosBusqueda"
+                  (ngModelChange)="aplicarFiltroEventos()" style="padding-left: 2rem; width: 260px;">
               </div>
-              <select class="input input--sm" [(ngModel)]="eventosEstadoFiltro" (ngModelChange)="aplicarFiltroEventos()" style="width: 140px;">
+              <select class="input input--sm" [(ngModel)]="eventosEstadoFiltro" (ngModelChange)="aplicarFiltroEventos()"
+                style="width: 140px;">
                 <option value="">Todos</option>
                 <option value="FUTURO">Próximos</option>
                 <option value="PASADO">Ya pasaron</option>
@@ -706,9 +715,12 @@
             <div class="event-item__header">
               <div>
                 <span class="badge"
-                  [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo }}</span>
-                <span class="badge badge--danger" *ngIf="esEventoPasado(e.fecha)" style="margin-left: 0.5rem; background-color: var(--color-danger); color: white;">Ya pasó</span>
-                <span class="badge badge--success" *ngIf="!esEventoPasado(e.fecha)" style="margin-left: 0.5rem; background-color: var(--color-success); color: white;">Próximo</span>
+                  [ngClass]="{'badge--primary': e.tipo === 'ASAMBLEA', 'badge--warning': e.tipo === 'MINGA'}">{{ e.tipo
+                  }}</span>
+                <span class="badge badge--danger" *ngIf="esEventoPasado(e.fecha)"
+                  style="margin-left: 0.5rem; background-color: var(--color-danger); color: white;">Ya pasó</span>
+                <span class="badge badge--success" *ngIf="!esEventoPasado(e.fecha)"
+                  style="margin-left: 0.5rem; background-color: var(--color-success); color: white;">Próximo</span>
                 <h4 style="margin-top: 0.5rem;">{{ e.titulo }}</h4>
                 <p class="caption">Fecha: {{ e.fecha }} | Multa inasistencia: <strong>${{ e.multaAbsencia.toFixed(2)
                     }}</strong></p>
@@ -726,7 +738,7 @@
             No hay {{ subTabEventos === 'ASAMBLEA' ? 'asambleas' : 'mingas' }} registradas.
           </div>
         </div>
-        
+
         <!-- MODAL NUEVO EVENTO -->
         <div class="modal-backdrop" *ngIf="modalEventoVisible">
           <div class="card modal" style="max-width: 600px; width: 95%;">
@@ -738,11 +750,14 @@
               <form (ngSubmit)="guardarEvento()" #eventoForm="ngForm">
                 <div class="form-group">
                   <label>Título *</label>
-                  <input type="text" class="input" name="titulo" [(ngModel)]="formEvento.titulo" required placeholder="Ej: Asamblea General Ordinaria">
+                  <input type="text" class="input" name="titulo" [(ngModel)]="formEvento.titulo" required
+                    placeholder="Ej: Asamblea General Ordinaria">
                 </div>
                 <div class="form-group">
-                  <label>{{ formEvento.tipo === 'ASAMBLEA' ? 'Puntos a tratar en la reunión' : 'Descripción de actividades' }}</label>
-                  <textarea class="input" name="descripcion" [(ngModel)]="formEvento.descripcion" rows="4" [placeholder]="formEvento.tipo === 'ASAMBLEA' ? 'Ej:\n1. Lectura del acta anterior\n2. Informe económico\n3. Asuntos varios' : 'Describa las actividades de la minga...'"></textarea>
+                  <label>{{ formEvento.tipo === 'ASAMBLEA' ? 'Puntos a tratar en la reunión' : 'Descripción de
+                    actividades' }}</label>
+                  <textarea class="input" name="descripcion" [(ngModel)]="formEvento.descripcion" rows="4"
+                    [placeholder]="formEvento.tipo === 'ASAMBLEA' ? 'Ej:\n1. Lectura del acta anterior\n2. Informe económico\n3. Asuntos varios' : 'Describa las actividades de la minga...'"></textarea>
                 </div>
                 <div class="grid-2">
                   <div class="form-group">
@@ -755,21 +770,25 @@
                   </div>
                   <div class="form-group" style="grid-column: span 2;">
                     <label>Lugar</label>
-                    <input type="text" class="input" name="lugar" [(ngModel)]="formEvento.lugar" placeholder="Ej: Casa Comunal Junta La Jones">
+                    <input type="text" class="input" name="lugar" [(ngModel)]="formEvento.lugar"
+                      placeholder="Ej: Casa Comunal Junta La Jones">
                   </div>
                 </div>
-                
-                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+
+                <div
+                  style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                   <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer;">
-                    <input type="checkbox" name="genera_multa_ausencia" [(ngModel)]="formEvento.genera_multa_ausencia" style="width: 1rem; height: 1rem;">
+                    <input type="checkbox" name="genera_multa_ausencia" [(ngModel)]="formEvento.genera_multa_ausencia"
+                      style="width: 1rem; height: 1rem;">
                     Genera Multa por Inasistencia
                   </label>
                   <div *ngIf="formEvento.genera_multa_ausencia" class="form-group" style="margin-top: 1rem;">
                     <label>Valor de la Multa ($)</label>
-                    <input type="number" class="input" name="valor_multa" [(ngModel)]="formEvento.valor_multa" step="0.01" min="0">
+                    <input type="number" class="input" name="valor_multa" [(ngModel)]="formEvento.valor_multa"
+                      step="0.01" min="0">
                   </div>
                 </div>
-                
+
                 <div class="modal__footer" style="margin-top: 1.5rem;">
                   <button type="button" class="btn btn--outline" (click)="cerrarModalEvento()">Cancelar</button>
                   <button type="submit" class="btn btn--primary" [disabled]="eventoForm.invalid">
@@ -787,16 +806,38 @@
     <section *ngIf="tabActiva === 'TURNOS'" class="tab-view">
       <div class="card">
         <div class="card__header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0;">
-          
-          <!-- Top Row: Title and Actions -->
+
+          <!-- Top Row: Title, Mode Switcher and Actions -->
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <h3 class="card__title" style="margin: 0; font-size: 1.3rem;">
-              <i class="ri-drop-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Turnos Semanales de Agua
+              <i class="ri-drop-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Turnos Semanales
+              de Agua
             </h3>
-            <div style="display: flex; gap: 0.75rem;">
+
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <!-- View Mode Toggle -->
+              <div
+                style="display: flex; background: var(--bg-surface-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px;">
+                <button class="btn btn--sm"
+                  [style.background]="vistaTurnosModo === 'TABLA' ? 'var(--color-primary, #2563eb)' : 'transparent'"
+                  [style.color]="vistaTurnosModo === 'TABLA' ? '#ffffff' : 'var(--text-muted)'"
+                  (click)="vistaTurnosModo = 'TABLA'"
+                  style="border: none; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;">
+                  <i class="ri-table-line"></i> Vista Tabla
+                </button>
+                <button class="btn btn--sm"
+                  [style.background]="vistaTurnosModo === 'CALENDARIO' ? 'var(--color-primary, #2563eb)' : 'transparent'"
+                  [style.color]="vistaTurnosModo === 'CALENDARIO' ? '#ffffff' : 'var(--text-muted)'"
+                  (click)="vistaTurnosModo = 'CALENDARIO'"
+                  style="border: none; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;">
+                  <i class="ri-calendar-event-line"></i> Calendario Semanal
+                </button>
+              </div>
+
               <span class="badge badge--primary" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;">
                 <i class="ri-calendar-check-line"></i> {{ turnos.length }} turnos registrados
               </span>
+
               <button class="btn btn--primary" (click)="abrirModalTurno()">
                 <i class="ri-add-circle-line"></i> Asignar Turno
               </button>
@@ -804,14 +845,15 @@
           </div>
 
           <!-- Bottom Row: Filters -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 0 -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 0 -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
 
             <!-- Search -->
-            <div style="position: relative; display: flex; align-items: center; flex: 1; min-width: 200px; max-width: 320px;">
+            <div
+              style="position: relative; display: flex; align-items: center; flex: 1; min-width: 200px; max-width: 320px;">
               <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
               <input type="text" class="input input--sm" placeholder="Buscar por comunero, lote o sector..."
-                [(ngModel)]="turnosBusqueda"
-                style="padding-left: 2rem; width: 100%;">
+                [(ngModel)]="turnosBusqueda" style="padding-left: 2rem; width: 100%;">
             </div>
 
             <!-- Selects -->
@@ -835,8 +877,8 @@
           </div>
         </div>
 
-        <!-- Table -->
-        <div class="table-container">
+        <!-- MODO 1: TABLA -->
+        <div class="table-container" *ngIf="vistaTurnosModo === 'TABLA'">
           <table class="table-custom">
             <thead>
               <tr>
@@ -846,7 +888,7 @@
                 <th>Día</th>
                 <th>Horario</th>
                 <th>Tipo</th>
-                <th>Observación</th>
+                <th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -855,24 +897,44 @@
                 <td><strong>{{ t.usuario }}</strong></td>
                 <td>{{ t.sector }}</td>
                 <td>
-                  <span class="badge" style="background: var(--bg-surface-hover); color: var(--text-color); font-weight: 600;">
+                  <span class="badge"
+                    style="background: var(--bg-surface-hover); color: var(--text-color); font-weight: 600;">
                     {{ t.dia }}
                   </span>
                 </td>
                 <td>
-                  <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
-                    <i class="ri-play-circle-line" style="color: var(--color-success);"></i> {{ t.horaInicio }}
-                    <span style="color: var(--text-muted); margin: 0 0.25rem;">→</span>
-                    <i class="ri-stop-circle-line" style="color: var(--color-danger);"></i> {{ t.horaFin }}
-                  </span>
+                  <div style="display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem;">
+                    <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                      <i class="ri-play-circle-line" style="color: var(--color-success);"></i> {{ t.horaInicio }}
+                    </span>
+                    <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                      <i class="ri-stop-circle-line" style="color: var(--color-danger);"></i> {{ t.horaFin }}
+                    </span>
+                  </div>
                 </td>
                 <td>
                   <span class="badge" [ngClass]="t.tipo === 'REGULAR' ? 'badge--success' : 'badge--warning'">
                     {{ t.tipo }}
                   </span>
                 </td>
-                <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  {{ t.observacion || '—' }}
+                <td style="text-align: center;">
+                  <div style="display: flex; flex-direction: column; align-items: center; gap: 0.4rem; width: 100%;">
+                    <button class="btn btn--sm btn--outline" (click)="verDetalleTurno(t)"
+                      title="Ver detalles del turno de agua"
+                      style="padding: 0.35rem 0.65rem; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem; width: 100%;">
+                      <i class="ri-eye-line text-primary"></i> Ver más detalles
+                    </button>
+                    <div style="display: flex; gap: 0.4rem; width: 100%; justify-content: center;">
+                      <button class="btn btn--sm btn--outline" (click)="abrirModalEditarTurno(t)" title="Editar turno"
+                        style="padding: 0.35rem 0.55rem; flex: 1; display: inline-flex; justify-content: center; align-items: center;">
+                        <i class="ri-edit-line text-primary"></i>
+                      </button>
+                      <button class="btn btn--sm btn--outline" (click)="eliminarTurno(t)" title="Eliminar turno"
+                        style="padding: 0.35rem 0.55rem; color: var(--color-danger, #ef4444); flex: 1; display: inline-flex; justify-content: center; align-items: center;">
+                        <i class="ri-delete-bin-line text-danger"></i>
+                      </button>
+                    </div>
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="turnosFiltrados.length === 0">
@@ -884,6 +946,98 @@
             </tbody>
           </table>
         </div>
+
+        <!-- MODO 2: CALENDARIO SEMANAL -->
+        <div *ngIf="vistaTurnosModo === 'CALENDARIO'" style="padding: 1.25rem 0 0 0;">
+          <div
+            style="display: grid; grid-template-columns: repeat(7, minmax(165px, 1fr)); gap: 0.85rem; overflow-x: auto; min-width: 1180px; padding-bottom: 0.75rem;">
+
+            <!-- Columnas de Lunes (1) a Domingo (7) -->
+            <div *ngFor="let diaNum of [1, 2, 3, 4, 5, 6, 7]"
+              style="background: var(--bg-surface-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; min-height: 440px; overflow: hidden;">
+
+              <!-- Cabecera de Día -->
+              <div
+                style="padding: 0.75rem; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); text-align: center;">
+                <strong style="display: block; font-size: 0.92rem; color: var(--text-color); margin-bottom: 0.15rem;">
+                  {{ ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][diaNum] }}
+                </strong>
+                <span class="badge badge--info" style="font-size: 0.68rem; padding: 0.15rem 0.45rem;">
+                  {{ getTurnosPorDia(diaNum).length }} {{ getTurnosPorDia(diaNum).length === 1 ? 'turno' : 'turnos' }}
+                </span>
+              </div>
+
+              <!-- Lista de Tarjetas de Turnos del Día -->
+              <div
+                style="flex: 1; padding: 0.6rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem;">
+
+                <div *ngFor="let t of getTurnosPorDia(diaNum)" (click)="verDetalleTurno(t)"
+                  [style.borderLeftColor]="t.tipo === 'REGULAR' ? 'var(--color-primary, #2563eb)' : '#f59e0b'"
+                  style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color); border-left-width: 4px; border-radius: 8px; padding: 0.75rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.03);"
+                  onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.08)'"
+                  onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.03)'">
+
+                  <!-- Horario & Badge Tipo -->
+                  <div
+                    style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.4rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.78rem; font-weight: 700;">
+                      <span style="color: var(--color-success, #10b981); display: inline-flex; align-items: center; gap: 0.25rem;">
+                        <i class="ri-play-circle-line" style="font-size: 0.85rem;"></i> {{ t.horaInicio }}
+                      </span>
+                      <span style="color: var(--color-danger, #ef4444); display: inline-flex; align-items: center; gap: 0.25rem;">
+                        <i class="ri-stop-circle-line" style="font-size: 0.85rem;"></i> {{ t.horaFin }}
+                      </span>
+                    </div>
+                    <span class="badge" [ngClass]="t.tipo === 'REGULAR' ? 'badge--success' : 'badge--warning'"
+                      style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">
+                      {{ t.tipo === 'REGULAR' ? 'REG' : 'EXTRA' }}
+                    </span>
+                  </div>
+
+                  <!-- Comunero Titular -->
+                  <div
+                    style="font-size: 0.85rem; font-weight: 700; color: var(--text-color); margin: 0.35rem 0 0.4rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"
+                    title="{{ t.usuario }}">
+                    {{ t.usuario }}
+                  </div>
+
+                  <!-- Lote Beneficiario & Acciones -->
+                  <div
+                    style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; gap: 0.25rem; margin-top: 0.4rem; padding-top: 0.35rem; border-top: 1px dashed var(--border-color);">
+                    <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ t.lote }}">
+                      <i class="ri-landscape-line" style="color: var(--color-primary);"></i> {{ t.lote }}
+                    </span>
+                    <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                      <button class="btn btn--sm" (click)="$event.stopPropagation(); abrirModalEditarTurno(t)"
+                        title="Editar turno"
+                        style="padding: 0.2rem 0.4rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-surface); cursor: pointer;">
+                        <i class="ri-edit-line text-primary"></i>
+                      </button>
+                      <button class="btn btn--sm" (click)="$event.stopPropagation(); eliminarTurno(t)"
+                        title="Eliminar turno"
+                        style="padding: 0.2rem 0.4rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--color-danger); cursor: pointer;">
+                        <i class="ri-delete-bin-line text-danger"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Día sin turnos -->
+                <div *ngIf="getTurnosPorDia(diaNum).length === 0"
+                  style="text-align: center; padding: 2.5rem 0.25rem; color: var(--text-muted); font-size: 0.78rem;">
+                  <i class="ri-moon-clear-line"
+                    style="font-size: 1.4rem; opacity: 0.3; display: block; margin-bottom: 0.25rem;"></i>
+                  Sin turnos
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1038,12 +1192,15 @@
 
 <!-- MODAL ASISTENCIA MASIVA -->
 <div class="modal-backdrop" *ngIf="modalAsistenciaVisible && eventoSeleccionado">
-  <div class="modal card" style="max-width: 720px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
-    
+  <div class="modal card"
+    style="max-width: 720px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+
     <!-- Header fijo -->
     <div class="modal__header" style="border-bottom: 2px solid var(--border-color); flex-shrink: 0;">
       <div>
-        <h4 style="margin: 0; font-size: 1.15rem;"><i class="ri-checkbox-multiple-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Asistencia: {{ eventoSeleccionado.titulo }}</h4>
+        <h4 style="margin: 0; font-size: 1.15rem;"><i class="ri-checkbox-multiple-line"
+            style="color: var(--color-primary); margin-right: 0.5rem;"></i> Asistencia: {{ eventoSeleccionado.titulo }}
+        </h4>
         <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted);">
           {{ eventoSeleccionado.fecha }} · {{ eventoSeleccionado.tipo }}
         </p>
@@ -1052,7 +1209,8 @@
     </div>
 
     <!-- Toolbar fijo -->
-    <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); flex-shrink: 0; background: var(--bg-surface-hover);">
+    <div
+      style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); flex-shrink: 0; background: var(--bg-surface-hover);">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
         <div style="position: relative; display: flex; align-items: center; flex: 1; min-width: 200px;">
           <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
@@ -1081,11 +1239,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let u of usuariosAsistenciaFiltrados" 
-              [style.background]="u.presente ? 'rgba(34, 197, 94, 0.08)' : 'transparent'"
-              style="transition: background 0.2s ease;">
+          <tr *ngFor="let u of usuariosAsistenciaFiltrados"
+            [style.background]="u.presente ? 'rgba(34, 197, 94, 0.08)' : 'transparent'"
+            style="transition: background 0.2s ease;">
             <td style="text-align: center;">
-              <input type="checkbox" [(ngModel)]="u.presente" 
+              <input type="checkbox" [(ngModel)]="u.presente"
                 style="width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: var(--color-primary);" />
             </td>
             <td style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem;">{{ u.cedula }}</td>
@@ -1102,8 +1260,10 @@
     </div>
 
     <!-- Footer fijo -->
-    <div style="border-top: 2px solid var(--border-color); padding: 1rem 1.5rem; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
-      <div *ngIf="eventoSeleccionado.multaAbsencia > 0" style="font-size: 0.8rem; color: #d97706; display: flex; align-items: center; gap: 0.4rem;">
+    <div
+      style="border-top: 2px solid var(--border-color); padding: 1rem 1.5rem; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
+      <div *ngIf="eventoSeleccionado.multaAbsencia > 0"
+        style="font-size: 0.8rem; color: #d97706; display: flex; align-items: center; gap: 0.4rem;">
         <i class="ri-error-warning-line"></i>
         <span>Multa por inasistencia: <strong>${{ eventoSeleccionado.multaAbsencia.toFixed(2) }}</strong></span>
       </div>
@@ -1120,63 +1280,349 @@
 
 <!-- MODAL ASIGNAR TURNO -->
 <div class="modal-backdrop" *ngIf="modalTurnoVisible">
-  <div class="modal card card--glass" style="max-width: 500px; width: 100%;">
-    <div class="modal__header">
-      <h4><i class="ri-time-fill text-primary"></i> Asignar Turno de Agua</h4>
+  <div class="card modal"
+    style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+
+    <!-- Modal Header -->
+    <div class="modal__header" style="flex-shrink: 0; padding: 1.25rem 1.5rem; margin-bottom: 0;">
+      <h3 style="margin: 0;">Asignar Turno de Riego</h3>
       <button class="btn-close" (click)="cerrarModalTurno()"><i class="ri-close-line"></i></button>
     </div>
-    <div class="modal__body">
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label>Comunero Asociado</label>
-        <select class="form-control" [(ngModel)]="nuevoTurno.persona_id">
-          <option [ngValue]="null">Seleccione un comunero...</option>
-          <option *ngFor="let u of usuarios" [value]="u.id">{{ u.cedula }} - {{ u.nombres }}</option>
-        </select>
-      </div>
 
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label>Tipo de Turno</label>
-        <select class="form-control" [(ngModel)]="nuevoTurno.tipo">
-          <option value="REGULAR">REGULAR (Semanal Fijo)</option>
-          <option value="ADICIONAL">ADICIONAL (Comprado Extra)</option>
-        </select>
-      </div>
+    <!-- Modal Body Split Layout -->
+    <div class="modal-body"
+      style="padding: 1.25rem 1.5rem; display: grid; grid-template-columns: 1fr 340px; gap: 1.25rem; flex: 1; overflow-y: auto;">
 
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label>Día de la Semana</label>
-        <select class="form-control" [(ngModel)]="nuevoTurno.dia_semana">
-          <option [value]="1">Lunes</option>
-          <option [value]="2">Martes</option>
-          <option [value]="3">Miércoles</option>
-          <option [value]="4">Jueves</option>
-          <option [value]="5">Viernes</option>
-          <option [value]="6">Sábado</option>
-          <option [value]="7">Domingo</option>
-        </select>
-      </div>
+      <!-- IZQUIERDA: Formulario -->
+      <div style="display: flex; flex-direction: column; gap: 0.85rem;">
 
-      <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-        <div class="form-group" style="flex: 1;">
-          <label>Hora Inicio</label>
-          <input type="time" class="form-control" [(ngModel)]="nuevoTurno.hora_inicio" />
+        <!-- Comunero Seleccionado Preview -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Comunero / Titular *</label>
+          <div *ngIf="comuneroSeleccionadoTurno"
+            style="padding: 0.75rem 1rem; background: var(--color-primary-light, rgba(2, 132, 199, 0.08)); border-radius: var(--radius-md); border: 1px solid var(--color-primary, #0284c7); display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div
+                style="width: 38px; height: 38px; border-radius: 50%; background: var(--color-primary, #0284c7); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
+                <i class="ri-user-fill" style="font-size: 1.1rem;"></i>
+              </div>
+              <div>
+                <strong style="display: block; font-size: 0.92rem; color: var(--text-main);">{{
+                  comuneroSeleccionadoTurno.nombres }} {{ comuneroSeleccionadoTurno.apellidos }}</strong>
+                <span style="font-size: 0.78rem; color: var(--text-muted);"><i class="ri-id-card-line"></i> CI: {{
+                  comuneroSeleccionadoTurno.cedula }}</span>
+              </div>
+            </div>
+            <span class="badge badge--success" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;"><i
+                class="ri-check-line"></i> SELECCIONADO</span>
+          </div>
+
+          <div *ngIf="!comuneroSeleccionadoTurno"
+            style="padding: 0.85rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px dashed var(--border-color); text-align: center; color: var(--text-muted); font-size: 0.88rem;">
+            <i class="ri-user-search-line" style="font-size: 1.2rem; vertical-align: middle; margin-right: 0.3rem;"></i>
+            Seleccione un comunero en la lista de la derecha 👉
+          </div>
         </div>
-        <div class="form-group" style="flex: 1;">
-          <label>Hora Fin</label>
-          <input type="time" class="form-control" [(ngModel)]="nuevoTurno.hora_fin" />
+
+        <!-- Lote Beneficiario -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Lote Beneficiario *</label>
+          <select class="input" [(ngModel)]="nuevoTurno.lote_id" [disabled]="!nuevoTurno.persona_id">
+            <option [ngValue]="null">
+              {{ !nuevoTurno.persona_id ? 'Seleccione primero un comunero...' : (lotesDisponiblesTurno.length === 0 ?
+              'Sin lotes asignados a este comunero' : 'Seleccionar Lote...') }}
+            </option>
+            <option *ngFor="let l of lotesDisponiblesTurno" [ngValue]="l.id">
+              {{ l.codigo }} - Sector: {{ l.sector_nombre || l.sector || 'General' }} ({{ l.superficie_m2 ?
+              l.superficie_m2 + ' m²' : 'S/S' }})
+            </option>
+          </select>
+          <small *ngIf="nuevoTurno.persona_id && lotesDisponiblesTurno.length === 0"
+            style="color: var(--warning-color, #eab308); margin-top: 0.25rem; display: block;">
+            <i class="ri-alert-line"></i> El comunero no posee lotes registrados.
+          </small>
+        </div>
+
+        <!-- Tipo & Costo -->
+        <div class="grid-2">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Tipo de Turno *</label>
+            <select class="input" [(ngModel)]="nuevoTurno.tipo">
+              <option value="REGULAR">REGULAR (Semanal Fijo)</option>
+              <option value="ADICIONAL">ADICIONAL (Comprado Extra)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Costo / Tarifa ($)</label>
+            <input type="number" step="0.50" min="0" class="input" [(ngModel)]="nuevoTurno.costo" placeholder="0.00">
+          </div>
+        </div>
+
+        <!-- Día & Horarios -->
+        <div class="grid-2">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Día de la Semana *</label>
+            <select class="input" [(ngModel)]="nuevoTurno.dia_semana">
+              <option [value]="1">Lunes</option>
+              <option [value]="2">Martes</option>
+              <option [value]="3">Miércoles</option>
+              <option [value]="4">Jueves</option>
+              <option [value]="5">Viernes</option>
+              <option [value]="6">Sábado</option>
+              <option [value]="7">Domingo</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div>
+              <label>Hora Inicio *</label>
+              <input type="time" class="input" [(ngModel)]="nuevoTurno.hora_inicio">
+            </div>
+            <div>
+              <label>Hora Fin *</label>
+              <input type="time" class="input" [(ngModel)]="nuevoTurno.hora_fin">
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner Genera Cobro Automático -->
+        <div *ngIf="nuevoTurno.tipo === 'ADICIONAL' || (nuevoTurno.costo && nuevoTurno.costo > 0)"
+          style="padding: 0.75rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <label
+            style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--color-primary, #0284c7); font-size: 0.88rem;">
+            <i class="ri-information-line"></i> Cobro Generado Automáticamente
+          </label>
+          <p style="margin: 0.25rem 0 0 0; font-size: 0.82rem; color: var(--text-muted);">
+            Se generará automáticamente una deuda/cobro pendiente por <strong>${{ (nuevoTurno.costo || 5) |
+              number:'1.2-2' }}</strong> en la cuenta del comunero.
+          </p>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Observaciones (Opcional)</label>
+          <textarea class="input" [(ngModel)]="nuevoTurno.observacion" rows="2"
+            placeholder="Ej: Compra extra de turno de agua de riego..."></textarea>
+        </div>
+
+      </div>
+
+      <!-- DERECHA: Lista y Búsqueda de Comuneros -->
+      <div
+        style="padding: 0.85rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 460px;">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+          <label style="margin: 0; font-weight: 600; font-size: 0.9rem;">Buscar Comunero</label>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">{{ usuariosTurnoModalFiltrados.length }}
+            disponibles</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.65rem;">
+          <input type="text" class="input" placeholder="Buscar por nombre o cédula..."
+            [(ngModel)]="busquedaComuneroTurnoModal" style="font-size: 0.85rem; padding: 0.45rem 0.75rem;">
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 2px;">
+
+          <div *ngFor="let u of usuariosTurnoModalFiltrados" (click)="seleccionarComuneroTurnoModal(u)"
+            [style.border-color]="nuevoTurno.persona_id === u.id ? 'var(--color-primary, #0284c7)' : 'var(--border-color)'"
+            [style.background]="nuevoTurno.persona_id === u.id ? 'var(--color-primary-light, rgba(2, 132, 199, 0.12))' : 'var(--bg-surface)'"
+            style="padding: 0.6rem 0.8rem; border-radius: var(--radius-md); border-width: 2px; border-style: solid; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: space-between;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5rem;">
+              <strong
+                style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main, #0f172a); text-overflow: ellipsis; overflow: hidden;">
+                {{ u.nombres }} {{ u.apellidos }}
+              </strong>
+              <small style="color: var(--text-muted);"><i class="ri-id-card-line"></i> CI: {{ u.cedula }}</small>
+            </div>
+            <i *ngIf="nuevoTurno.persona_id === u.id" class="ri-check-line"
+              style="font-size: 1.15rem; font-weight: bold; color: var(--color-primary, #0284c7); flex-shrink: 0;"></i>
+          </div>
+
+          <div *ngIf="usuariosTurnoModalFiltrados.length === 0"
+            style="text-align: center; padding: 2rem 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+            No se encontraron comuneros que coincidan.
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal__footer"
+      style="margin-top: 0; padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); flex-shrink: 0; display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button type="button" class="btn btn--outline" (click)="cerrarModalTurno()">Cancelar</button>
+      <button type="button" class="btn btn--primary" (click)="guardarTurno()"
+        [disabled]="!nuevoTurno.persona_id || !nuevoTurno.lote_id">
+        <i class="ri-save-line"></i> Guardar Turno
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL EDITAR TURNO -->
+<div class="modal-backdrop" *ngIf="modalEditarTurnoVisible && turnoEnEdicion">
+  <div class="card modal" style="max-width: 550px; width: 95%;">
+    <div class="modal__header">
+      <h3>Editar Turno de Riego</h3>
+      <button class="btn-close" (click)="cerrarModalEditarTurno()"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal-body">
+      <div
+        style="padding: 0.75rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+        <strong style="display: block; font-size: 0.9rem;">Comunero: {{ turnoEnEdicion.usuario }}</strong>
+        <span style="font-size: 0.82rem; color: var(--text-muted);">Lote: {{ turnoEnEdicion.lote }}</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Tipo de Turno *</label>
+          <select class="input" [(ngModel)]="turnoEnEdicion.tipo">
+            <option value="REGULAR">REGULAR (Semanal Fijo)</option>
+            <option value="ADICIONAL">ADICIONAL (Comprado Extra)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Día de la Semana *</label>
+          <select class="input" [(ngModel)]="turnoEnEdicion.dia_semana">
+            <option [value]="1">Lunes</option>
+            <option [value]="2">Martes</option>
+            <option [value]="3">Miércoles</option>
+            <option [value]="4">Jueves</option>
+            <option [value]="5">Viernes</option>
+            <option [value]="6">Sábado</option>
+            <option [value]="7">Domingo</option>
+          </select>
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label>Observación (Opcional)</label>
-        <textarea class="form-control" [(ngModel)]="nuevoTurno.observacion" rows="2"
-          placeholder="Ej: Compra extra por $2.00"></textarea>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Hora Inicio *</label>
+          <input type="time" class="input" [(ngModel)]="turnoEnEdicion.hora_inicio">
+        </div>
+        <div class="form-group">
+          <label>Hora Fin *</label>
+          <input type="time" class="input" [(ngModel)]="turnoEnEdicion.hora_fin">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Observaciones (Opcional)</label>
+        <textarea class="input" [(ngModel)]="turnoEnEdicion.observacion" rows="2"
+          placeholder="Observaciones del turno..."></textarea>
+      </div>
+
+      <div class="modal__footer" style="margin-top: 1.5rem;">
+        <button type="button" class="btn btn--outline" (click)="cerrarModalEditarTurno()">Cancelar</button>
+        <button type="button" class="btn btn--primary" (click)="guardarEdicionTurno()">
+          <i class="ri-save-line"></i> Guardar Cambios
+        </button>
       </div>
     </div>
-    <div class="modal__footer">
-      <button class="btn btn--primary" (click)="guardarTurno()">
-        <i class="ri-save-line"></i> Asignar Turno
-      </button>
-      <button class="btn btn--outline" (click)="cerrarModalTurno()">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL DETALLE DE TURNO DE AGUA -->
+<div class="modal-backdrop" *ngIf="modalDetalleTurnoVisible && turnoSeleccionadoParaDetalle">
+  <div class="card modal" style="max-width: 580px; width: 95%;">
+    <div class="modal__header">
+      <h3 style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+        <i class="ri-time-line text-primary"></i> Detalle del Turno de Agua
+      </h3>
+      <button class="btn-close" (click)="cerrarModalDetalleTurno()"><i class="ri-close-line"></i></button>
+    </div>
+
+    <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+
+      <!-- Comunero Titular Card -->
+      <div
+        style="padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div
+            style="width: 44px; height: 44px; border-radius: 50%; background: var(--primary-color, #2563eb); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; flex-shrink: 0;">
+            <i class="ri-user-fill"></i>
+          </div>
+          <div>
+            <span
+              style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px;">Comunero
+              Beneficiario</span>
+            <strong style="display: block; font-size: 1rem; color: var(--text-color); margin-top: 0.1rem;">{{
+              turnoSeleccionadoParaDetalle.usuario }}</strong>
+          </div>
+        </div>
+        <span class="badge"
+          [ngClass]="turnoSeleccionadoParaDetalle.tipo === 'REGULAR' ? 'badge--success' : 'badge--warning'"
+          style="font-size: 0.8rem; padding: 0.35rem 0.7rem;">
+          {{ turnoSeleccionadoParaDetalle.tipo }}
+        </span>
+      </div>
+
+      <!-- Grid de Información del Turno -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+        <!-- Lote -->
+        <div
+          style="padding: 0.85rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <small style="color: var(--text-muted); display: block; margin-bottom: 0.2rem; font-weight: 600;">LOTE
+            BENEFICIARIO</small>
+          <div
+            style="font-size: 0.95rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="ri-landscape-line text-primary"></i> {{ turnoSeleccionadoParaDetalle.lote }}
+          </div>
+        </div>
+
+        <!-- Sector -->
+        <div
+          style="padding: 0.85rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <small style="color: var(--text-muted); display: block; margin-bottom: 0.2rem; font-weight: 600;">SECTOR DE
+            RIEGO</small>
+          <div
+            style="font-size: 0.95rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="ri-map-pin-line text-primary"></i> {{ turnoSeleccionadoParaDetalle.sector }}
+          </div>
+        </div>
+
+        <!-- Día asignado -->
+        <div
+          style="padding: 0.85rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <small style="color: var(--text-muted); display: block; margin-bottom: 0.2rem; font-weight: 600;">DÍA
+            PROGRAMADO</small>
+          <div
+            style="font-size: 0.95rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="ri-calendar-event-line text-primary"></i> {{ turnoSeleccionadoParaDetalle.dia }}
+          </div>
+        </div>
+
+        <!-- Horario asignado -->
+        <div
+          style="padding: 0.85rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <small style="color: var(--text-muted); display: block; margin-bottom: 0.2rem; font-weight: 600;">HORARIO DE
+            RIEGO</small>
+          <div
+            style="font-size: 0.9rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 0.3rem;">
+            <i class="ri-time-line text-primary"></i> {{ turnoSeleccionadoParaDetalle.horaInicio }} → {{
+            turnoSeleccionadoParaDetalle.horaFin }}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Observaciones -->
+      <div
+        style="padding: 0.85rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <small style="color: var(--text-muted); display: block; margin-bottom: 0.3rem; font-weight: 600;">OBSERVACIONES
+          / NOTAS</small>
+        <p style="margin: 0; font-size: 0.88rem; color: var(--text-color); line-height: 1.4;">
+          {{ turnoSeleccionadoParaDetalle.observacion || 'Sin observaciones registradas para este turno.' }}
+        </p>
+      </div>
+
+      <div class="modal__footer" style="margin-top: 0.5rem;">
+        <button type="button" class="btn btn--outline" (click)="cerrarModalDetalleTurno()">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>

@@ -1,6 +1,8 @@
 .admin-layout {
   display: flex;
+  width: 100%;
   min-height: calc(100vh - 70px);
+  align-items: stretch;
 
   @media (max-width: 900px) {
     flex-direction: column;
@@ -9,6 +11,10 @@
 
 .sidebar {
   width: 260px;
+  min-width: 260px;
+  max-width: 260px;
+  flex-shrink: 0;
+  box-sizing: border-box;
   background: var(--bg-surface);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -22,6 +28,8 @@
 
   @media (max-width: 900px) {
     width: 100%;
+    min-width: 100%;
+    max-width: 100%;
     position: relative;
     top: 0;
     height: auto;
@@ -44,11 +52,13 @@
       align-items: center;
       justify-content: center;
       font-size: 1.5rem;
+      flex-shrink: 0;
     }
 
     h3 {
       font-size: 1.1rem;
       margin: 0;
+      white-space: nowrap;
     }
   }
 
@@ -73,9 +83,13 @@
       cursor: pointer;
       text-align: left;
       transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
 
       i {
         font-size: 1.2rem;
+        flex-shrink: 0;
       }
 
       &:hover {
@@ -108,24 +122,36 @@
       align-items: center;
       justify-content: center;
       font-size: 1.25rem;
+      flex-shrink: 0;
     }
 
     strong {
       display: block;
       font-size: 0.9rem;
+      white-space: nowrap;
     }
 
     small {
       color: var(--text-muted);
       font-size: 0.75rem;
+      white-space: nowrap;
     }
   }
 }
 
 .main-content {
   flex: 1;
+  min-width: 0;
+  width: calc(100% - 260px);
+  box-sizing: border-box;
   padding: 2rem;
   background: var(--bg-app);
+  overflow-x: hidden;
+
+  @media (max-width: 900px) {
+    width: 100%;
+    padding: 1rem;
+  }
 }
 
 .top-header {
@@ -133,6 +159,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  width: 100%;
 
   h2 {
     font-size: 1.5rem;
@@ -144,9 +171,12 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2rem;
+  width: 100%;
 }
 
 .tab-view {
+  width: 100%;
+  box-sizing: border-box;
   animation: fadeIn 0.3s ease;
 }
 
