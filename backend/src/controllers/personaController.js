@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const bcrypt = require('bcryptjs');
 
 /**
  * Validar estructura básica de Cédula Ecuatoriana (10 dígitos)
@@ -244,7 +245,21 @@ async function createPersona(req, res, next) {
     const personaId = result.insertId;
 
     // Crear cuenta opcional si se especifica
-    if (crearCuenta && rol_id) {
+    if (crearCuenta) {
+      let roleId = rol_id;
+      if (roleId) {
+        const [roleCheck] = await db.query(`SELECT id FROM roles WHERE id = ?`, [roleId]);
+        if (roleCheck.length === 0) {
+          roleId = null;
+        }
+      }
+      if (!roleId) {
+        const [defaultRole] = await db.query(
+          `SELECT id FROM roles WHERE codigo = 'USUARIO' OR codigo = 'COMUNERO' OR nombre LIKE '%Comunero%' ORDER BY id ASC LIMIT 1`
+        );
+        roleId = defaultRole.length > 0 ? defaultRole[0].id : 2;
+      }
+
       const bcrypt = require('bcryptjs');
       const tempPassword = cleanCedula; // Contraseña por defecto igual a la cédula
       const passwordHash = await bcrypt.hash(tempPassword, 10);
@@ -252,7 +267,7 @@ async function createPersona(req, res, next) {
       await db.query(
         `INSERT INTO cuentas (persona_id, rol_id, password_hash, debe_cambiar_password, creada_por_cuenta_id)
          VALUES (?, ?, ?, TRUE, ?)`,
-        [personaId, rol_id, passwordHash, req.user ? req.user.cuentaId : null]
+        [personaId, roleId, passwordHash, req.user ? req.user.cuentaId : null]
       );
     }
 
@@ -282,12 +297,14 @@ async function createPersona(req, res, next) {
 async function updatePersona(req, res, next) {
   try {
     const { id } = req.params;
-    const { nombres, apellidos, direccion, telefono, celular, email, fecha_nacimiento, estado } = req.body;
+    const { nombres, apellidos, direccion, telefono, celular, email, fecha_nacimiento, estado, nuevaContrasena } = req.body;
 
-    const [rows] = await db.query(`SELECT id FROM personas WHERE id = ?`, [id]);
+    const [rows] = await db.query(`SELECT id, cedula FROM personas WHERE id = ?`, [id]);
     if (rows.length === 0) {
       return res.status(404).json({ status: 'ERROR', message: 'Comunero no encontrado.' });
     }
+
+    const persona = rows[0];
 
     await db.query(
       `UPDATE personas
@@ -295,6 +312,22 @@ async function updatePersona(req, res, next) {
        WHERE id = ?`,
       [nombres, apellidos, direccion || null, telefono || null, celular || null, email || null, fecha_nacimiento || null, estado || 'ACTIVO', id]
     );
+
+    // Actualizar o crear contraseña si se proporciona
+    if (nuevaContrasena && nuevaContrasena.trim() !== '') {
+      const passwordHash = await bcrypt.hash(nuevaContrasena.trim(), 10);
+      
+      const [cuentas] = await db.query(`SELECT id FROM cuentas WHERE persona_id = ?`, [id]);
+      
+      if (cuentas.length > 0) {
+        await db.query(`UPDATE cuentas SET password_hash = ? WHERE persona_id = ?`, [passwordHash, id]);
+      } else {
+        await db.query(
+          `INSERT INTO cuentas (persona_id, username, password_hash, rol_id, estado, debe_cambiar_password) VALUES (?, ?, ?, COALESCE((SELECT id FROM roles WHERE codigo = 'USUARIO' OR codigo = 'COMUNERO' OR nombre LIKE '%Comunero%' ORDER BY id ASC LIMIT 1), 2), 'ACTIVO', FALSE)`,
+          [id, persona.cedula, passwordHash]
+        );
+      }
+    }
 
     await registrarAuditoria({
       cuentaId: req.user ? req.user.cuentaId : null,
@@ -311,10 +344,23 @@ async function updatePersona(req, res, next) {
   }
 }
 
+/**
+ * Obtener estadísticas públicas
+ */
+async function getStatsPublicos(req, res, next) {
+  try {
+    const [rows] = await db.query(`SELECT COUNT(*) as total FROM personas WHERE estado = 'ACTIVO'`);
+    return res.json({ status: 'OK', stats: { totalComuneros: rows[0].total } });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getPersonas,
   getPersonaById,
   consultaPublicaPorCedula,
   createPersona,
-  updatePersona
+  updatePersona,
+  getStatsPublicos
 };

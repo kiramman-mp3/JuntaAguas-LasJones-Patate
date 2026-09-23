@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ConsultaService, DeudaItem } from '../../core/services/consulta.service';
@@ -27,7 +27,8 @@ export class MiCuentaComponent implements OnInit {
   constructor(
     private consultaService: ConsultaService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -50,6 +51,7 @@ export class MiCuentaComponent implements OnInit {
         if (res && res.resultado) {
           this.resultado = res.resultado;
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.cargando = false;
@@ -58,6 +60,7 @@ export class MiCuentaComponent implements OnInit {
         } else {
           this.errorMensaje = 'Error al cargar los datos. Intente más tarde.';
         }
+        this.cdr.detectChanges();
       }
     });
   }

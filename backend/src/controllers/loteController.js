@@ -6,8 +6,23 @@ const { registrarAuditoria } = require('../services/auditService');
  */
 async function getSectores(req, res, next) {
   try {
-    const [sectores] = await db.query(`SELECT * FROM sectores WHERE activo = TRUE ORDER BY nombre ASC`);
-    return res.json({ status: 'OK', data: sectores });
+    const sql = `
+      SELECT s.*, 
+             (SELECT COUNT(*) FROM lotes l WHERE l.sector_id = s.id) AS lotesCount
+      FROM sectores s 
+      WHERE s.activo = TRUE 
+      ORDER BY s.nombre ASC
+    `;
+    const [sectores] = await db.query(sql);
+    
+    // Asignamos un canal simulado y caudal basado en los lotes si la BD no los tiene nativamente
+    const data = sectores.map(s => ({
+      ...s,
+      canal: s.descripcion || `Canal Matriz ${s.nombre.charAt(0)}`,
+      caudal: `${(s.lotesCount * 0.4).toFixed(1)} L/s`
+    }));
+
+    return res.json({ status: 'OK', data });
   } catch (error) {
     next(error);
   }
@@ -35,7 +50,7 @@ async function createSector(req, res, next) {
  */
 async function getLotes(req, res, next) {
   try {
-    const { sector_id, busqueda } = req.query;
+    const { sector_id, busqueda, persona_id } = req.query;
 
     let sql = `SELECT l.*, s.nombre AS sector_nombre,
                       (SELECT GROUP_CONCAT(CONCAT(p.nombres, ' ', p.apellidos, ' (', pl.tipo_relacion, ')') SEPARATOR ', ')
@@ -45,6 +60,11 @@ async function getLotes(req, res, next) {
                JOIN sectores s ON s.id = l.sector_id
                WHERE l.activo = TRUE`;
     const params = [];
+
+    if (persona_id) {
+      sql += ` AND EXISTS (SELECT 1 FROM persona_lotes pl WHERE pl.lote_id = l.id AND pl.persona_id = ?)`;
+      params.push(persona_id);
+    }
 
     if (sector_id) {
       sql += ` AND l.sector_id = ?`;

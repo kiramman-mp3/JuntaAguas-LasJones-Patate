@@ -55,4 +55,8 @@ export class ConsultaService {
   getEventoDetalle(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/eventos/${id}`);
   }
+
+  getSectores(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/lotes/sectores`);
+  }
 }

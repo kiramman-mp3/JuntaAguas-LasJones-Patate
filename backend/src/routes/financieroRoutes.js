@@ -134,6 +134,7 @@ router.post('/obligaciones/:id/anular', verificarToken, verificarRol(['ADMIN', '
  */
 router.get('/pagos', verificarToken, financieroController.getPagos);
 router.post('/pagos', verificarToken, verificarRol(['ADMIN', 'TESORERO']), financieroController.registrarPago);
+router.post('/pagos/:id/anular', verificarToken, verificarRol(['ADMIN', 'TESORERO']), financieroController.anularPago);
 
 /**
  * @openapi

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -24,7 +24,7 @@ export class LoginComponent {
   nuevaPassword2: string = '';
   exitoMensaje: string = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router, private cdr: ChangeDetectorRef) {}
 
   iniciarSesion() {
     if (!this.usuario || !this.password) {
@@ -46,12 +46,14 @@ export class LoginComponent {
              this.redirigirPorRol(res.user.rol);
           }
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.cargando = false;
         if (err.error && err.error.message) {
           this.errorMensaje = err.error.message;
         }
+        this.cdr.detectChanges();
       }
     });
   }
@@ -85,10 +87,12 @@ export class LoginComponent {
          setTimeout(() => {
            this.redirigirPorRol(user.rol);
          }, 1500);
+         this.cdr.detectChanges();
       },
       error: (err) => {
          this.cargando = false;
          this.errorMensaje = err.error?.message || 'Error al cambiar contraseña.';
+         this.cdr.detectChanges();
       }
     });
   }

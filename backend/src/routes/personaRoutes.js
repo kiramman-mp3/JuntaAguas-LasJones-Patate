@@ -60,6 +60,17 @@ router.get('/consulta/:cedula', verificarToken, personaController.consultaPublic
  *     responses:
  *       201: { description: Comunero registrado exitosamente. }
  */
+/**
+ * @openapi
+ * /personas/stats:
+ *   get:
+ *     tags: [Comuneros (Personas)]
+ *     summary: ENDPOINT PÚBLICO - Obtener estadísticas de comuneros
+ *     responses:
+ *       200: { description: Estadísticas de comuneros. }
+ */
+router.get('/stats', personaController.getStatsPublicos);
+
 router.get('/', verificarToken, personaController.getPersonas);
 router.post('/', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), personaController.createPersona);
 

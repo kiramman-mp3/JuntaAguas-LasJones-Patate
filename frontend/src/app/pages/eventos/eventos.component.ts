@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConsultaService } from '../../core/services/consulta.service';
 import { ActasService } from '../../core/services/actas.service';
@@ -16,7 +16,7 @@ export class EventosComponent implements OnInit {
   tabActivo: 'FUTUROS' | 'PASADOS' = 'FUTUROS';
   cargandoActa: boolean = false;
 
-  constructor(private consultaService: ConsultaService, private actasService: ActasService) {}
+  constructor(private consultaService: ConsultaService, private actasService: ActasService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.consultaService.getEventosPublicos().subscribe({
@@ -35,9 +35,13 @@ export class EventosComponent implements OnInit {
               this.eventosPasados.push(ev);
             }
           });
+          this.cdr.detectChanges();
         }
       },
-      error: (err) => console.error('Error al cargar eventos', err)
+      error: (err) => {
+        console.error('Error al cargar eventos', err);
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -53,11 +57,13 @@ export class EventosComponent implements OnInit {
         if (res.status === 'OK') {
            this.actasService.generarActaPDF(res.evento, res.puntos || [], res.asistenciaStats);
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.cargandoActa = false;
         console.error('Error al descargar acta', err);
         alert('No se pudo descargar el acta del evento.');
+        this.cdr.detectChanges();
       }
     });
   }
