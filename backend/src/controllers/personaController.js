@@ -245,7 +245,21 @@ async function createPersona(req, res, next) {
     const personaId = result.insertId;
 
     // Crear cuenta opcional si se especifica
-    if (crearCuenta && rol_id) {
+    if (crearCuenta) {
+      let roleId = rol_id;
+      if (roleId) {
+        const [roleCheck] = await db.query(`SELECT id FROM roles WHERE id = ?`, [roleId]);
+        if (roleCheck.length === 0) {
+          roleId = null;
+        }
+      }
+      if (!roleId) {
+        const [defaultRole] = await db.query(
+          `SELECT id FROM roles WHERE codigo = 'USUARIO' OR codigo = 'COMUNERO' OR nombre LIKE '%Comunero%' ORDER BY id ASC LIMIT 1`
+        );
+        roleId = defaultRole.length > 0 ? defaultRole[0].id : 2;
+      }
+
       const bcrypt = require('bcryptjs');
       const tempPassword = cleanCedula; // Contraseña por defecto igual a la cédula
       const passwordHash = await bcrypt.hash(tempPassword, 10);
@@ -253,7 +267,7 @@ async function createPersona(req, res, next) {
       await db.query(
         `INSERT INTO cuentas (persona_id, rol_id, password_hash, debe_cambiar_password, creada_por_cuenta_id)
          VALUES (?, ?, ?, TRUE, ?)`,
-        [personaId, rol_id, passwordHash, req.user ? req.user.cuentaId : null]
+        [personaId, roleId, passwordHash, req.user ? req.user.cuentaId : null]
       );
     }
 
@@ -309,7 +323,7 @@ async function updatePersona(req, res, next) {
         await db.query(`UPDATE cuentas SET password_hash = ? WHERE persona_id = ?`, [passwordHash, id]);
       } else {
         await db.query(
-          `INSERT INTO cuentas (persona_id, username, password_hash, rol_id, estado, debe_cambiar_password) VALUES (?, ?, ?, (SELECT id FROM roles WHERE nombre = 'COMUNERO' LIMIT 1), 'ACTIVO', FALSE)`,
+          `INSERT INTO cuentas (persona_id, username, password_hash, rol_id, estado, debe_cambiar_password) VALUES (?, ?, ?, COALESCE((SELECT id FROM roles WHERE codigo = 'USUARIO' OR codigo = 'COMUNERO' OR nombre LIKE '%Comunero%' ORDER BY id ASC LIMIT 1), 2), 'ACTIVO', FALSE)`,
           [id, persona.cedula, passwordHash]
         );
       }

@@ -126,12 +126,42 @@ async function createTurno(req, res, next) {
 
       const obsTexto = `Generado automáticamente por asignación de Turno Adicional (${diaTexto} ${hora_inicio}-${hora_fin}, Lote ${loteCodigo})${observacion ? ' - ' + observacion : ''}`;
 
-      const [resObligacion] = await db.query(
-        `INSERT INTO obligaciones (persona_id, concepto_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado, observacion)
-         VALUES (?, ?, ?, ?, CURDATE(), ?, 'AUTOMATICA', 'PENDIENTE', ?)`,
-        [persona_id, conceptoId, anio, mes, montoTurno, obsTexto]
+      // Verificar si ya existe una obligación para este comunero, concepto y período (año/mes)
+      const [existingObl] = await db.query(
+        `SELECT id, valor, observacion, estado FROM obligaciones 
+         WHERE persona_id = ? AND concepto_id = ? AND periodo_anio = ? AND periodo_mes = ?`,
+        [persona_id, conceptoId, anio, mes]
       );
-      obligacionId = resObligacion.insertId;
+
+      if (existingObl.length > 0) {
+        const obl = existingObl[0];
+        if (obl.estado === 'PENDIENTE') {
+          // Si la obligación existe y está pendiente, acumular el valor y concatenar la observación
+          const nuevoValor = Number(obl.valor) + montoTurno;
+          const nuevaObs = `${obl.observacion || ''} | ${obsTexto}`;
+          await db.query(
+            `UPDATE obligaciones SET valor = ?, observacion = ? WHERE id = ?`,
+            [nuevoValor, nuevaObs, obl.id]
+          );
+          obligacionId = obl.id;
+        } else {
+          // Si la obligación ya fue PAGADA o ANULADA, crear una nueva sin periodo_mes para no violar el UNIQUE KEY
+          const [resObligacion] = await db.query(
+            `INSERT INTO obligaciones (persona_id, concepto_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado, observacion)
+             VALUES (?, ?, ?, NULL, CURDATE(), ?, 'AUTOMATICA', 'PENDIENTE', ?)`,
+            [persona_id, conceptoId, anio, montoTurno, obsTexto]
+          );
+          obligacionId = resObligacion.insertId;
+        }
+      } else {
+        // Primera obligación del período, insertar normalmente
+        const [resObligacion] = await db.query(
+          `INSERT INTO obligaciones (persona_id, concepto_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado, observacion)
+           VALUES (?, ?, ?, ?, CURDATE(), ?, 'AUTOMATICA', 'PENDIENTE', ?)`,
+          [persona_id, conceptoId, anio, mes, montoTurno, obsTexto]
+        );
+        obligacionId = resObligacion.insertId;
+      }
     }
 
     await registrarAuditoria({

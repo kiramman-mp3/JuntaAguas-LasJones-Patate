@@ -371,7 +371,7 @@ export class AdminComponent implements OnInit {
       fecha_nacimiento: '',
       estado: 'ACTIVO',
       crearCuenta: true,
-      rol_id: 3, // Default COMUNERO
+      rol_id: 2, // 2 = USUARIO (Comunero)
       nuevaContrasena: ''
     };
     this.modalUsuarioVisible = true;
