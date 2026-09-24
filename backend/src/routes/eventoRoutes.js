@@ -11,6 +11,8 @@ router.post('/', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoCo
 router.post('/:id/puntos', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.savePuntosAsamblea);
 router.post('/:id/asistencias', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.registrarAsistencias);
 router.get('/:id/asistencias', verificarToken, eventoController.getAsistencias);
-router.post('/:id/finalizar', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.finalizarEventoYGenerarMultas);
+router.post('/:id/documentos', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.guardarDocumentoEvento);
+router.get('/:id/documentos', eventoController.getDocumentosEvento);
 
 module.exports = router;
+

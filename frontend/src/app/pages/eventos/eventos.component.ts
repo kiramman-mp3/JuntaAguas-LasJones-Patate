@@ -49,13 +49,33 @@ export class EventosComponent implements OnInit {
     this.tabActivo = tab;
   }
 
-  descargarActa(id: number) {
+  abrirPdf(url: string) {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
+    window.open(fullUrl, '_blank');
+  }
+
+  descargarConvocatoria(ev: any) {
+    if (ev.convocatoria_firmada_url) {
+      this.abrirPdf(ev.convocatoria_firmada_url);
+    } else {
+      this.actasService.generarConvocatoriaPDF(ev);
+    }
+  }
+
+  descargarActa(evParam: any) {
+    const id = typeof evParam === 'number' ? evParam : evParam.id;
     this.cargandoActa = true;
     this.consultaService.getEventoDetalle(id).subscribe({
       next: (res) => {
         this.cargandoActa = false;
         if (res.status === 'OK') {
-           this.actasService.generarActaPDF(res.evento, res.puntos || [], res.asistenciaStats);
+          const ev = res.evento;
+          if (ev.acta_firmada_url) {
+            this.abrirPdf(ev.acta_firmada_url);
+          } else {
+            this.actasService.generarActaPDF(res.evento, res.puntos || [], res.asistenciaStats);
+          }
         }
         this.cdr.detectChanges();
       },

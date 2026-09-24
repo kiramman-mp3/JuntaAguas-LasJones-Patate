@@ -22,7 +22,8 @@ function generateCedula(i) {
 async function sembrarDatosPrueba() {
   console.log('[DB Seed] Conectando a MySQL para sembrar datos CAÓTICOS...');
 
-  const host = process.env.DB_HOST || 'localhost';
+  const host = process.env.DB_HOST || '127.0.0.1';
+  const port = parseInt(process.env.DB_PORT || '3306');
   const user = process.env.DB_USER || 'root';
   const password = process.env.DB_PASSWORD || '';
   const database = process.env.DB_NAME || 'junta_las_jones';
@@ -30,7 +31,8 @@ async function sembrarDatosPrueba() {
   let connection;
 
   try {
-    connection = await mysql.createConnection({ host, user, password, database, multipleStatements: true });
+    connection = await mysql.createConnection({ host, port, user, password, database, multipleStatements: true });
+
     console.log(`[DB Seed] Conectado exitosamente a la base de datos '${database}'.`);
 
     const passwordHash = await bcrypt.hash('123456', 10);
@@ -118,7 +120,8 @@ async function sembrarDatosPrueba() {
         fecha.setDate(fecha.getDate() + (5 * (i - 5))); // Futuro
       }
       const dateStr = fecha.toISOString().split('T')[0];
-      const estado = i <= 5 ? 'REALIZADO' : 'PROGRAMADO';
+      const estado = i <= 5 ? 'REALIZADO' : 'CONVOCADO';
+
       eventosData.push(`(${i}, '${tipo}', '${tipo} General ${i}', '${dateStr}', '08:00:00', TRUE, 20.00, '${estado}', 1)`);
     }
     await connection.query(`INSERT INTO eventos (id, tipo, titulo, fecha, hora_inicio, genera_multa_ausencia, valor_multa, estado, created_by_cuenta_id) VALUES ${eventosData.join(',')} ON DUPLICATE KEY UPDATE id=id`);
@@ -152,7 +155,7 @@ async function sembrarDatosPrueba() {
       for (let mes = 1; mes <= 3; mes++) {
         const pagada = Math.random() > 0.3; // 70% de probabilidad de estar pagada
         const estado = pagada ? 'PAGADA' : 'PENDIENTE';
-        obligacionesData.push(`(${oblId}, ${pId}, ${conceptoAgua.id}, NULL, 5.00, 2024, ${mes}, '${estado}')`);
+        obligacionesData.push(`(${oblId}, ${pId}, ${conceptoAgua.id}, NULL, 5.00, 2024, ${mes}, '${estado}', '2024-0${mes}-01')`);
         
         if (pagada) {
           pagosData.push(`(${pagoId}, ${pId}, 5.00, 'EFECTIVO', '2024-0${mes}-15', 1)`);
@@ -167,7 +170,7 @@ async function sembrarDatosPrueba() {
       for (const a of ausentes) {
         const pagada = Math.random() > 0.5;
         const estado = pagada ? 'PAGADA' : 'PENDIENTE';
-        obligacionesData.push(`(${oblId}, ${pId}, ${conceptoAsamblea.id}, ${a.evento_id}, 20.00, 2024, NULL, '${estado}')`);
+        obligacionesData.push(`(${oblId}, ${pId}, ${conceptoAsamblea.id}, ${a.evento_id}, 20.00, 2024, NULL, '${estado}', '2024-05-01')`);
         if (pagada) {
           pagosData.push(`(${pagoId}, ${pId}, 20.00, 'TRANSFERENCIA', '2024-05-15', 1)`);
           pagoDetallesData.push(`(${pagoId}, ${oblId}, 20.00)`);
@@ -178,8 +181,9 @@ async function sembrarDatosPrueba() {
     }
 
     for (let i = 0; i < obligacionesData.length; i += chunkSize) {
-      await connection.query(`INSERT INTO obligaciones (id, persona_id, concepto_id, evento_id, valor, periodo_anio, periodo_mes, estado) VALUES ${obligacionesData.slice(i, i + chunkSize).join(',')} ON DUPLICATE KEY UPDATE id=id`);
+      await connection.query(`INSERT INTO obligaciones (id, persona_id, concepto_id, evento_id, valor, periodo_anio, periodo_mes, estado, fecha_emision) VALUES ${obligacionesData.slice(i, i + chunkSize).join(',')} ON DUPLICATE KEY UPDATE id=id`);
     }
+
     
     if (pagosData.length > 0) {
       for (let i = 0; i < pagosData.length; i += chunkSize) {

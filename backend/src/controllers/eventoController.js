@@ -1,16 +1,73 @@
+const fs = require('fs');
+const path = require('path');
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+
+async function asegurarTablaDocumentos() {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS documentos_evento (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        evento_id BIGINT NOT NULL,
+        tipo ENUM('CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO') NOT NULL,
+        estado ENUM('GENERADO', 'FIRMADO') NOT NULL DEFAULT 'GENERADO',
+        nombre_archivo VARCHAR(255) NOT NULL DEFAULT 'documento.pdf',
+        contenido_base64 LONGTEXT,
+        ruta_archivo_firmado LONGTEXT,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB;
+    `);
+
+    try {
+      await db.query(`ALTER TABLE documentos_evento ADD COLUMN contenido_base64 LONGTEXT`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    try {
+      await db.query(`ALTER TABLE documentos_evento ADD COLUMN nombre_archivo VARCHAR(255) DEFAULT 'documento.pdf'`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    try {
+      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN ruta_archivo_firmado LONGTEXT`);
+    } catch (e) { /* Ignorar error */ }
+
+    try {
+      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN nombre_archivo_generado VARCHAR(255) NULL`);
+    } catch (e) { /* Ignorar error */ }
+
+    try {
+      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN ruta_archivo_generado VARCHAR(500) NULL`);
+    } catch (e) { /* Ignorar error */ }
+
+    try {
+      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN fecha_generacion DATETIME NULL`);
+    } catch (e) { /* Ignorar error */ }
+
+    try {
+      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN generado_por_cuenta_id BIGINT NULL`);
+    } catch (e) { /* Ignorar error */ }
+
+  } catch (err) {
+    console.error('Error asegurando tabla documentos_evento:', err);
+  }
+}
 
 /**
  * Listar eventos (Asambleas y Mingas)
  */
 async function getEventos(req, res, next) {
   try {
+    await asegurarTablaDocumentos();
     const { tipo, estado, desde, hasta } = req.query;
 
     let sql = `SELECT e.*, CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
                       (SELECT COUNT(*) FROM asistencias a WHERE a.evento_id = e.id AND a.estado = 'PRESENTE') AS asistentes,
-                      (SELECT COUNT(*) FROM personas p2 WHERE p2.estado = 'ACTIVO') AS totalComuneros
+                      (SELECT COUNT(*) FROM personas p2 WHERE p2.estado = 'ACTIVO') AS totalComuneros,
+                      (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_url,
+                      (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_nombre,
+                      (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_url,
+                      (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre
                FROM eventos e
                LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
                LEFT JOIN personas p ON p.id = c.persona_id
@@ -68,7 +125,15 @@ async function getEventoById(req, res, next) {
   try {
     const { id } = req.params;
 
-    const [eventos] = await db.query(`SELECT * FROM eventos WHERE id = ?`, [id]);
+    const [eventos] = await db.query(
+      `SELECT e.*,
+              (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_url,
+              (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_nombre,
+              (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_url,
+              (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre
+       FROM eventos e WHERE e.id = ?`,
+      [id]
+    );
     if (eventos.length === 0) {
       return res.status(404).json({ status: 'ERROR', message: 'Evento no encontrado.' });
     }
@@ -314,6 +379,103 @@ async function finalizarEventoYGenerarMultas(req, res, next) {
   }
 }
 
+/**
+ * Guardar o actualizar un documento PDF (firmado) para un evento
+ */
+async function guardarDocumentoEvento(req, res, next) {
+  try {
+    await asegurarTablaDocumentos();
+    const { id } = req.params;
+    const { tipo, nombre_archivo, contenido_base64, estado } = req.body;
+
+    if (!tipo || !contenido_base64) {
+      return res.status(400).json({ status: 'ERROR', message: 'El tipo y el contenido del documento son requeridos.' });
+    }
+
+    const docNombre = nombre_archivo || `${tipo}_Firmado.pdf`;
+
+    // Guardar archivo físico en el servidor (disco)
+    const base64Clean = contenido_base64.replace(/^data:application\/pdf;base64,/, '').replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Clean, 'base64');
+
+    const uploadsDir = path.join(__dirname, '../../uploads/documentos');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const safeFileName = `${tipo.toLowerCase()}_evento_${id}_${Date.now()}.pdf`;
+    const filePathOnDisk = path.join(uploadsDir, safeFileName);
+    fs.writeFileSync(filePathOnDisk, buffer);
+
+    const relativeUrl = `/uploads/documentos/${safeFileName}`;
+
+    const [existente] = await db.query(
+      `SELECT id, ruta_archivo_firmado FROM documentos_evento WHERE evento_id = ? AND tipo = ?`,
+      [id, tipo]
+    );
+
+    const cuentaId = req.user ? req.user.cuentaId : 1;
+
+    if (existente.length > 0) {
+      // Eliminar el archivo físico anterior del disco para no acumular basura
+      const oldUrl = existente[0].ruta_archivo_firmado;
+      if (oldUrl && oldUrl.startsWith('/uploads/')) {
+        const oldFilePathOnDisk = path.join(__dirname, '../../', oldUrl);
+        if (fs.existsSync(oldFilePathOnDisk)) {
+          try {
+            fs.unlinkSync(oldFilePathOnDisk);
+          } catch (err) {
+            console.error('Error al eliminar archivo previo del servidor:', err);
+          }
+        }
+      }
+
+      await db.query(
+        `UPDATE documentos_evento 
+         SET nombre_archivo = ?, ruta_archivo_firmado = ?, ruta_archivo_generado = ?, estado = ?, updated_at = NOW()
+         WHERE evento_id = ? AND tipo = ?`,
+        [docNombre, relativeUrl, relativeUrl, estado || 'FIRMADO', id, tipo]
+      );
+    } else {
+      await db.query(
+        `INSERT INTO documentos_evento (evento_id, tipo, estado, nombre_archivo, ruta_archivo_firmado, nombre_archivo_generado, ruta_archivo_generado, fecha_generacion, generado_por_cuenta_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+        [id, tipo, estado || 'FIRMADO', docNombre, relativeUrl, docNombre, relativeUrl, cuentaId]
+      );
+    }
+
+    await registrarAuditoria({
+      cuentaId: req.user ? req.user.cuentaId : 1,
+      accion: 'CREAR',
+      entidad: 'documentos_evento',
+      entidadId: parseInt(id),
+      ip: req.ip,
+      detalle: { tipo, nombre_archivo: docNombre, url: relativeUrl }
+    });
+
+    return res.json({ status: 'OK', message: 'Documento firmado guardado exitosamente en el servidor.', url: relativeUrl });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Obtener los documentos de un evento
+ */
+async function getDocumentosEvento(req, res, next) {
+  try {
+    await asegurarTablaDocumentos();
+    const { id } = req.params;
+    const [docs] = await db.query(
+      `SELECT id, evento_id, tipo, estado, nombre_archivo, contenido_base64, updated_at FROM documentos_evento WHERE evento_id = ?`,
+      [id]
+    );
+    return res.json({ status: 'OK', data: docs });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getEventos,
   getEventosPublicos,
@@ -322,5 +484,8 @@ module.exports = {
   savePuntosAsamblea,
   registrarAsistencias,
   getAsistencias,
-  finalizarEventoYGenerarMultas
+  finalizarEventoYGenerarMultas,
+  guardarDocumentoEvento,
+  getDocumentosEvento
 };
+

@@ -2,9 +2,12 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/services/admin.service';
+import { ActasService } from '../../core/services/actas.service';
+import { ConsultaService } from '../../core/services/consulta.service';
 import * as L from 'leaflet';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
 
 // Para solucionar problema de iconos de Leaflet en Angular
 const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png';
@@ -39,11 +42,19 @@ interface UsuarioAdmin {
 interface EventoAdmin {
   id: number;
   tipo: 'ASAMBLEA' | 'MINGA';
+  subtipo_asamblea?: string;
   titulo: string;
   fecha: string;
+  hora_inicio?: string;
+  lugar?: string;
+  estado?: string;
   asistentes: number;
   totalComuneros: number;
   multaAbsencia: number;
+  convocatoria_firmada_url?: string;
+  convocatoria_firmada_nombre?: string;
+  acta_firmada_url?: string;
+  acta_firmada_nombre?: string;
 }
 
 @Component({
@@ -155,14 +166,17 @@ export class AdminComponent implements OnInit {
   modalEventoVisible: boolean = false;
   formEvento = {
     tipo: 'ASAMBLEA',
+    subtipo_asamblea: 'ORDINARIA' as 'ORDINARIA' | 'EXTRAORDINARIA',
     titulo: '',
     descripcion: '',
     fecha: '',
     hora_inicio: '18:00',
     lugar: 'Casa Comunal Junta La Jones',
+    puntos_orden_dia: [] as string[],
     genera_multa_ausencia: true,
     valor_multa: 10.00
   };
+
 
   // Turnos de agua
   turnos: any[] = [];
@@ -235,7 +249,12 @@ export class AdminComponent implements OnInit {
     return this.turnosFiltrados.filter(t => Number(t.dia_semana) === diaNum || t.dia === diaNombre);
   }
 
-  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private adminService: AdminService,
+    private consultaService: ConsultaService,
+    private actasService: ActasService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.cargarSectores();
@@ -265,17 +284,67 @@ export class AdminComponent implements OnInit {
             id: e.id,
             tipo: e.tipo,
             titulo: e.titulo,
-            fecha: new Date(e.fecha).toLocaleDateString(),
+            subtipo_asamblea: e.subtipo_asamblea || 'ORDINARIA',
+            fecha: e.fecha ? (typeof e.fecha === 'string' ? e.fecha.split('T')[0] : new Date(e.fecha).toISOString().split('T')[0]) : '',
+            hora_inicio: e.hora_inicio,
+            lugar: e.lugar,
+            estado: e.estado,
             asistentes: Number(e.asistentes) || 0,
             totalComuneros: Number(e.totalComuneros) || 0,
-            multaAbsencia: Number(e.valor_multa)
+            multaAbsencia: Number(e.valor_multa) || 0,
+            convocatoria_firmada_url: e.convocatoria_firmada_url,
+            convocatoria_firmada_nombre: e.convocatoria_firmada_nombre,
+            acta_firmada_url: e.acta_firmada_url,
+            acta_firmada_nombre: e.acta_firmada_nombre
           }));
+          this.aplicarFiltroEventos();
           this.cdr.detectChanges();
         }
       },
       error: () => {}
     });
   }
+
+  descargarConvocatoriaPdfParaFirmar(e: any) {
+    this.generarConvocatoriaPdf(e);
+  }
+
+  descargarActaPdfParaFirmar(e: any) {
+    this.consultaService.getEventoDetalle(e.id).subscribe({
+      next: (res) => {
+        if (res.status === 'OK') {
+          this.actasService.generarActaPDF(res.evento, res.puntos || [], res.asistenciaStats);
+        }
+      },
+      error: () => alert('Error al cargar datos del acta.')
+    });
+  }
+
+  subirDocumentoFirmado(e: any, tipo: 'CONVOCATORIA' | 'ACTA' | 'MINGA', fileInput: HTMLInputElement) {
+    if (!fileInput.files || fileInput.files.length === 0) return;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      this.consultaService.subirDocumentoEvento(e.id, tipo, file.name, base64).subscribe({
+        next: (res) => {
+          if (res.status === 'OK') {
+            alert(`¡Documento (${tipo}) firmado subido exitosamente en el servidor!`);
+            this.cargarEventos();
+          }
+        },
+        error: (err) => alert('Error al subir el documento firmado.')
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  descargarDocumentoGuardado(url?: string, filename?: string) {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
+    window.open(fullUrl, '_blank');
+  }
+
 
   cargarDatosBackend() {
     // Cargar balance financiero en tiempo real desde la API
@@ -771,11 +840,18 @@ export class AdminComponent implements OnInit {
   abrirModalNuevoEvento() {
     this.formEvento = {
       tipo: this.subTabEventos, // Se adapta al tab actual (ASAMBLEA o MINGA)
-      titulo: '',
+      subtipo_asamblea: 'ORDINARIA',
+      titulo: this.subTabEventos === 'ASAMBLEA' ? 'ASAMBLEA GENERAL DE USUARIOS' : 'MINGA COMUNITARIA',
       descripcion: '',
       fecha: new Date().toISOString().split('T')[0],
       hora_inicio: '18:00',
       lugar: 'Casa Comunal Junta La Jones',
+      puntos_orden_dia: [
+        'Constatación del cuórum',
+        'Lectura del acta anterior',
+        'Informe del Presidente y Tesorero',
+        'Varios'
+      ],
       genera_multa_ausencia: true,
       valor_multa: 10.00
     };
@@ -786,13 +862,141 @@ export class AdminComponent implements OnInit {
     this.modalEventoVisible = false;
   }
 
+  agregarPuntoOrdenDia() {
+    if (!this.formEvento.puntos_orden_dia) {
+      this.formEvento.puntos_orden_dia = [];
+    }
+    const len = this.formEvento.puntos_orden_dia.length;
+    if (len > 0 && this.formEvento.puntos_orden_dia[len - 1].toLowerCase() === 'varios') {
+      this.formEvento.puntos_orden_dia.splice(len - 1, 0, '');
+    } else {
+      this.formEvento.puntos_orden_dia.push('');
+    }
+  }
+
+  eliminarPuntoOrdenDia(index: number) {
+    if (this.formEvento.puntos_orden_dia && this.formEvento.puntos_orden_dia.length > 2) {
+      this.formEvento.puntos_orden_dia.splice(index, 1);
+    }
+  }
+
+  trackByIndex(index: number, item: any): any {
+    return index;
+  }
+
+  // --- WHATSAPP WEB MANAGEMENT ---
+  modalWhatsAppVisible: boolean = false;
+  whatsAppStatus: { status: string; statusMessage: string; isReady: boolean; qrCodeDataUrl: string } | null = null;
+  cargandoWhatsApp: boolean = false;
+  whatsAppPollInterval: any = null;
+
+  abrirModalWhatsApp() {
+    this.modalWhatsAppVisible = true;
+    this.consultarEstadoWhatsApp();
+    this.iniciarPollingWhatsApp();
+  }
+
+  cerrarModalWhatsApp() {
+    this.modalWhatsAppVisible = false;
+    this.detenerPollingWhatsApp();
+  }
+
+  iniciarPollingWhatsApp() {
+    this.detenerPollingWhatsApp();
+    this.consultarEstadoWhatsApp(true);
+    this.whatsAppPollInterval = setInterval(() => {
+      if (this.modalWhatsAppVisible) {
+        this.consultarEstadoWhatsApp(true);
+      } else {
+        this.detenerPollingWhatsApp();
+      }
+    }, 1500);
+  }
+
+
+  detenerPollingWhatsApp() {
+    if (this.whatsAppPollInterval) {
+      clearInterval(this.whatsAppPollInterval);
+      this.whatsAppPollInterval = null;
+    }
+  }
+
+  consultarEstadoWhatsApp(silencioso: boolean = false) {
+    if (!silencioso && !this.whatsAppStatus) {
+      this.cargandoWhatsApp = true;
+    }
+    this.adminService.getWhatsAppStatus().subscribe({
+      next: (res) => {
+        this.whatsAppStatus = res.data;
+        this.cargandoWhatsApp = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cargandoWhatsApp = false;
+      }
+    });
+  }
+
+  reiniciarWhatsApp() {
+    this.cargandoWhatsApp = true;
+    this.adminService.initWhatsApp().subscribe({
+      next: (res) => {
+        this.whatsAppStatus = res.data;
+        this.cargandoWhatsApp = false;
+        this.consultarEstadoWhatsApp();
+      },
+      error: () => {
+        this.cargandoWhatsApp = false;
+      }
+    });
+  }
+
+  cerrarSesionWhatsApp() {
+    if (!confirm('¿Está seguro de cerrar la sesión de WhatsApp?')) return;
+    this.cargandoWhatsApp = true;
+    this.adminService.logoutWhatsApp().subscribe({
+      next: () => {
+        this.consultarEstadoWhatsApp();
+      },
+      error: () => {
+        this.cargandoWhatsApp = false;
+      }
+    });
+  }
+
+
   guardarEvento() {
+    const esMinga = this.formEvento.tipo === 'MINGA';
+
+    if (!esMinga && Array.isArray(this.formEvento.puntos_orden_dia)) {
+      this.formEvento.descripcion = this.formEvento.puntos_orden_dia
+        .filter((p: string) => p && p.trim())
+        .map((p: string, idx: number) => `${idx + 1}. ${p.trim()}`)
+        .join('\n');
+    }
+
     this.adminService.createEvento(this.formEvento).subscribe({
       next: (res) => {
-        alert(`${this.formEvento.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga'} creada exitosamente. Descargando convocatoria...`);
-        this.generarConvocatoriaPdf(this.formEvento);
+        const eventoId = res.eventoId;
         this.cerrarModalEvento();
         this.cargarEventos();
+
+        if (esMinga) {
+          // NO se genera PDF para Mingas. Se envía mensaje por whatsapp-web.js
+          alert('Minga creada exitosamente. Enviando convocatoria por WhatsApp Web a los comuneros...');
+          this.adminService.notificarMingaWhatsApp(eventoId).subscribe({
+            next: (whRes) => {
+              alert(whRes.message || 'Convocatoria a Minga enviada por WhatsApp exitosamente.');
+            },
+            error: (whErr) => {
+              alert(whErr.error?.message || 'Minga registrada. Nota: Vincule la sesión de WhatsApp Web mediante el botón "WhatsApp Web" en el panel para envíos automáticos.');
+            }
+          });
+        } else {
+          // Para Asamblea se sigue generando el PDF oficial de convocatoria
+          alert('Asamblea creada exitosamente. Descargando Convocatoria Oficial en PDF...');
+          this.generarConvocatoriaPdf(this.formEvento);
+        }
       },
       error: (err) => {
         alert(err.error?.message || 'Error al crear el evento');
@@ -802,63 +1006,98 @@ export class AdminComponent implements OnInit {
 
   generarConvocatoriaPdf(evento: any) {
     const doc = new jsPDF();
-    
-    // Encabezado
-    doc.setFontSize(18);
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Encabezado Oficial Centrado
+    doc.setFontSize(15);
     doc.setFont('helvetica', 'bold');
-    doc.text(`CONVOCATORIA A ${evento.tipo === 'ASAMBLEA' ? 'ASAMBLEA GENERAL' : 'MINGA COMUNITARIA'}`, 105, 20, { align: 'center' });
-    
-    doc.setFontSize(12);
+    doc.text('JUNTA DE RIEGO LA JONES - PATATE', pageWidth / 2, 20, { align: 'center' });
+
+    doc.setFontSize(13);
+    doc.text('CONVOCATORIA A ASAMBLEA GENERAL', pageWidth / 2, 28, { align: 'center' });
+
+    const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
+    doc.setFontSize(11);
+    doc.text(subtipo === 'ORDINARIA' ? 'ORDINARIA' : 'EXTRAORDINARIA', pageWidth / 2, 35, { align: 'center' });
+
+    // Puntos del Orden del Día
+    const puntos = Array.isArray(evento.puntos_orden_dia) && evento.puntos_orden_dia.length > 0
+      ? evento.puntos_orden_dia.filter((p: string) => p && p.trim())
+      : ['Constatación del cuórum', 'Lectura del acta anterior', 'Varios'];
+
+    // Construir tabla exacta al formato oficial
+    const tableBody: any[] = [
+      [
+        { content: 'Estimados usuarios, reciban un cordial saludo.', colSpan: 2, styles: { fontStyle: 'normal', cellPadding: 3 } }
+      ],
+      [
+        { content: 'Convocatoria', styles: { fontStyle: 'normal' } },
+        { content: 'Por orden del señor Presidente de la Junta, se convoca a Asamblea General de usuarios con el siguiente detalle:' }
+      ],
+      [
+        { content: 'Lugar', styles: { fontStyle: 'normal' } },
+        { content: evento.lugar || 'Casa Comunal Junta La Jones' }
+      ],
+      [
+        { content: 'Fecha', styles: { fontStyle: 'normal' } },
+        { content: evento.fecha }
+      ],
+      [
+        { content: 'Hora', styles: { fontStyle: 'normal' } },
+        { content: evento.hora_inicio }
+      ],
+      [
+        { content: 'ORDEN DEL DÍA', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [217, 238, 216], textColor: [0, 0, 0] } }
+      ]
+    ];
+
+    puntos.forEach((p: string, idx: number) => {
+      tableBody.push([
+        { content: `${idx + 1}.`, styles: { fontStyle: 'normal', halign: 'left' } },
+        { content: p.trim() }
+      ]);
+    });
+
+    autoTable(doc, {
+      startY: 42,
+      head: [['DETALLE', 'INFORMACIÓN']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [217, 238, 216],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      columnStyles: {
+        0: { cellWidth: 45 },
+        1: { cellWidth: 125 }
+      },
+      styles: {
+        fontSize: 10,
+        textColor: [0, 0, 0],
+        lineColor: [50, 50, 50],
+        lineWidth: 0.2
+      },
+      margin: { left: 20, right: 20 }
+    });
+
+    const finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 25 : 200;
+
+    // Firma al pie
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text('Junta Administradora de Agua Potable "Las Jones"', 105, 28, { align: 'center' });
-    
-    doc.line(20, 35, 190, 35);
-    
-    // Cuerpo
-    doc.setFontSize(12);
-    doc.text('Por medio del presente, se convoca a todos los comuneros al siguiente evento:', 20, 50);
-    
+    doc.text('Atentamente,', pageWidth / 2, finalY, { align: 'center' });
+
     doc.setFont('helvetica', 'bold');
-    doc.text(`Título:`, 20, 65);
+    doc.text('SECRETARIO/A', pageWidth / 2, finalY + 25, { align: 'center' });
+
     doc.setFont('helvetica', 'normal');
-    doc.text(evento.titulo, 45, 65);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Fecha:`, 20, 75);
-    doc.setFont('helvetica', 'normal');
-    doc.text(evento.fecha, 45, 75);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Hora:`, 100, 75);
-    doc.setFont('helvetica', 'normal');
-    doc.text(evento.hora_inicio, 115, 75);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Lugar:`, 20, 85);
-    doc.setFont('helvetica', 'normal');
-    doc.text(evento.lugar || 'Casa Comunal Junta La Jones', 45, 85);
-    
-    if (evento.genera_multa_ausencia) {
-      doc.setFont('helvetica', 'italic');
-      doc.setTextColor(200, 0, 0); // Rojo oscuro para énfasis
-      doc.text(`* Nota: La inasistencia a este evento generará una multa automática de $${evento.valor_multa.toFixed(2)}.`, 20, 100);
-      doc.setTextColor(0, 0, 0);
-    }
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text(evento.tipo === 'ASAMBLEA' ? 'Puntos a tratar en la reunión:' : 'Descripción de actividades:', 20, 115);
-    doc.setFont('helvetica', 'normal');
-    
-    const splitDesc = doc.splitTextToSize(evento.descripcion || 'Sin detalles adicionales.', 170);
-    doc.text(splitDesc, 20, 125);
-    
-    // Firma
-    doc.line(65, 220, 145, 220);
-    doc.setFont('helvetica', 'bold');
-    doc.text('LA DIRECTIVA', 105, 230, { align: 'center' });
-    
-    doc.save(`Convocatoria_${evento.tipo}_${evento.fecha}.pdf`);
+    doc.text('Junta de Riego La Jones - Patate', pageWidth / 2, finalY + 32, { align: 'center' });
+
+    doc.save(`Convocatoria_Asamblea_${subtipo}_${evento.fecha}.pdf`);
   }
+
 
   cerrarModalAsistencia() {
     this.modalAsistenciaVisible = false;

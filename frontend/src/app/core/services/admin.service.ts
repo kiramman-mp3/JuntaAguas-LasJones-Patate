@@ -122,4 +122,22 @@ export class AdminService {
   registrarEgreso(payload: { fecha?: string; concepto: string; descripcion?: string; numero_factura?: string; valor: number; proveedor_id?: number }): Observable<any> {
     return this.http.post(`${this.baseUrl}/financiero/egresos`, payload, { headers: this.getAuthHeaders() });
   }
+
+  // --- SERVICIOS WHATSAPP WEB ---
+  getWhatsAppStatus(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/whatsapp/status`, { headers: this.getAuthHeaders() });
+  }
+
+  initWhatsApp(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/whatsapp/init`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  logoutWhatsApp(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/whatsapp/logout`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  notificarMingaWhatsApp(eventoId: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/whatsapp/notificar-minga`, { eventoId }, { headers: this.getAuthHeaders() });
+  }
 }
+
