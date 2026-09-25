@@ -52,9 +52,9 @@ ON DUPLICATE KEY UPDATE estado=VALUES(estado);
 -- Hash bcrypt de "1800000001": $2b$10$X5ygXbM5qU.1NTz3v4.TiOLVRBSQ8u.aiqT1S3gFq2Vu6mFBqTf0a
 -- ==============================================================================
 INSERT INTO cuentas (persona_id, rol_id, password_hash, debe_cambiar_password, estado) VALUES
-(1, 1, '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', FALSE, 'ACTIVA'),
-(2, 2, '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', TRUE, 'ACTIVA'),
-(3, 2, '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', TRUE, 'ACTIVA')
+(1, 1, '$2a$10$O/fKwjoSZVq8DP8d24O5fuO/RpohuNFPMrtjYacQFae23uV9uPEDu', FALSE, 'ACTIVA'),
+(2, 2, '$2a$10$O/fKwjoSZVq8DP8d24O5fuO/RpohuNFPMrtjYacQFae23uV9uPEDu', TRUE, 'ACTIVA'),
+(3, 2, '$2a$10$O/fKwjoSZVq8DP8d24O5fuO/RpohuNFPMrtjYacQFae23uV9uPEDu', TRUE, 'ACTIVA')
 ON DUPLICATE KEY UPDATE estado=VALUES(estado);
 
 -- ==============================================================================
