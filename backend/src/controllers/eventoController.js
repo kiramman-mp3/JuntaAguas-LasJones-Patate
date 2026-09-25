@@ -67,7 +67,9 @@ async function getEventos(req, res, next) {
                       (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_url,
                       (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_nombre,
                       (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_url,
-                      (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre
+                      (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre,
+                      (SELECT ruta_archivo_generado FROM documentos_evento d WHERE d.evento_id = e.id AND d.nombre_archivo = 'Lista_Asistencia_Generada.pdf' LIMIT 1) AS lista_asistencia_url,
+                      (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'OTRO' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS lista_asistencia_firmada_url
                FROM eventos e
                LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
                LEFT JOIN personas p ON p.id = c.persona_id
@@ -130,7 +132,9 @@ async function getEventoById(req, res, next) {
               (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_url,
               (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_nombre,
               (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_url,
-              (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre
+              (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre,
+              (SELECT ruta_archivo_generado FROM documentos_evento d WHERE d.evento_id = e.id AND d.nombre_archivo = 'Lista_Asistencia_Generada.pdf' LIMIT 1) AS lista_asistencia_url,
+              (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'OTRO' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS lista_asistencia_firmada_url
        FROM eventos e WHERE e.id = ?`,
       [id]
     );
@@ -192,6 +196,60 @@ async function createEvento(req, res, next) {
     );
 
     const eventoId = result.insertId;
+
+    // Generar PDF de Asistencia
+    try {
+      const PDFDocument = require('pdfkit');
+      const docsDir = path.join(__dirname, '../../uploads/documentos');
+      if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
+
+      const safeFileName = `lista_asistencia_${eventoId}_${Date.now()}.pdf`;
+      const filePathOnDisk = path.join(docsDir, safeFileName);
+      const relativeUrl = `/uploads/documentos/${safeFileName}`;
+
+      const doc = new PDFDocument({ margin: 50 });
+      const stream = fs.createWriteStream(filePathOnDisk);
+      doc.pipe(stream);
+
+      // Cabecera
+      doc.fontSize(18).text(`Lista de Asistencia - ${tipo}`, { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(12).text(`Título: ${titulo}`);
+      doc.text(`Fecha: ${fecha} | Hora: ${hora_inicio}`);
+      doc.text(`Lugar: ${lugar || 'Casa Comunal Junta La Jones'}`);
+      doc.moveDown(2);
+
+      const [personas] = await db.query(`SELECT cedula, nombres, apellidos FROM personas WHERE estado = 'ACTIVO' ORDER BY apellidos ASC`);
+
+      let yPosition = doc.y;
+      doc.fontSize(10);
+      doc.text('Nº', 50, yPosition, { bold: true });
+      doc.text('Cédula', 80, yPosition, { bold: true });
+      doc.text('Nombres y Apellidos', 150, yPosition, { bold: true });
+      doc.text('Firma', 400, yPosition, { bold: true });
+      doc.moveTo(50, yPosition + 15).lineTo(550, yPosition + 15).stroke();
+      
+      yPosition += 25;
+      personas.forEach((p, i) => {
+        if (yPosition > 700) { doc.addPage(); yPosition = 50; }
+        doc.text((i + 1).toString(), 50, yPosition);
+        doc.text(p.cedula, 80, yPosition);
+        doc.text(`${p.apellidos} ${p.nombres}`, 150, yPosition);
+        doc.moveTo(400, yPosition + 10).lineTo(550, yPosition + 10).stroke();
+        yPosition += 30;
+      });
+      doc.end();
+
+      await new Promise(resolve => stream.on('finish', resolve));
+
+      await db.query(
+        `INSERT INTO documentos_evento (evento_id, tipo, estado, nombre_archivo, ruta_archivo_generado, fecha_generacion, generado_por_cuenta_id)
+         VALUES (?, ?, ?, ?, ?, NOW(), ?)`,
+        [eventoId, 'OTRO', 'GENERADO', 'Lista_Asistencia_Generada.pdf', relativeUrl, req.user.cuentaId]
+      );
+    } catch (pdfError) {
+      console.error('Error generando PDF de asistencia:', pdfError);
+    }
 
     await registrarAuditoria({
       cuentaId: req.user.cuentaId,
@@ -392,10 +450,11 @@ async function guardarDocumentoEvento(req, res, next) {
       return res.status(400).json({ status: 'ERROR', message: 'El tipo y el contenido del documento son requeridos.' });
     }
 
-    const docNombre = nombre_archivo || `${tipo}_Firmado.pdf`;
+    const extension = nombre_archivo ? path.extname(nombre_archivo).toLowerCase() : '.pdf';
+    const docNombre = nombre_archivo || `${tipo}_Firmado${extension}`;
 
     // Guardar archivo físico en el servidor (disco)
-    const base64Clean = contenido_base64.replace(/^data:application\/pdf;base64,/, '').replace(/^data:image\/\w+;base64,/, '');
+    const base64Clean = contenido_base64.replace(/^data:[a-zA-Z0-9\/\-\+]+;base64,/, '');
     const buffer = Buffer.from(base64Clean, 'base64');
 
     const uploadsDir = path.join(__dirname, '../../uploads/documentos');
@@ -403,7 +462,7 @@ async function guardarDocumentoEvento(req, res, next) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const safeFileName = `${tipo.toLowerCase()}_evento_${id}_${Date.now()}.pdf`;
+    const safeFileName = `${tipo.toLowerCase()}_evento_${id}_${Date.now()}${extension}`;
     const filePathOnDisk = path.join(uploadsDir, safeFileName);
     fs.writeFileSync(filePathOnDisk, buffer);
 

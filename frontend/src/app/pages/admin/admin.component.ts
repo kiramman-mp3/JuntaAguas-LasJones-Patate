@@ -55,6 +55,8 @@ interface EventoAdmin {
   convocatoria_firmada_nombre?: string;
   acta_firmada_url?: string;
   acta_firmada_nombre?: string;
+  lista_asistencia_url?: string;
+  lista_asistencia_firmada_url?: string;
 }
 
 @Component({
@@ -295,7 +297,9 @@ export class AdminComponent implements OnInit {
             convocatoria_firmada_url: e.convocatoria_firmada_url,
             convocatoria_firmada_nombre: e.convocatoria_firmada_nombre,
             acta_firmada_url: e.acta_firmada_url,
-            acta_firmada_nombre: e.acta_firmada_nombre
+            acta_firmada_nombre: e.acta_firmada_nombre,
+            lista_asistencia_url: e.lista_asistencia_url,
+            lista_asistencia_firmada_url: e.lista_asistencia_firmada_url
           }));
           this.aplicarFiltroEventos();
           this.cdr.detectChanges();
@@ -320,7 +324,7 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  subirDocumentoFirmado(e: any, tipo: 'CONVOCATORIA' | 'ACTA' | 'MINGA', fileInput: HTMLInputElement) {
+  subirDocumentoFirmado(e: any, tipo: 'CONVOCATORIA' | 'ACTA' | 'MINGA' | 'OTRO', fileInput: HTMLInputElement) {
     if (!fileInput.files || fileInput.files.length === 0) return;
     const file = fileInput.files[0];
     const reader = new FileReader();
@@ -329,7 +333,25 @@ export class AdminComponent implements OnInit {
       this.consultaService.subirDocumentoEvento(e.id, tipo, file.name, base64).subscribe({
         next: (res) => {
           if (res.status === 'OK') {
-            alert(`¡Documento (${tipo}) firmado subido exitosamente en el servidor!`);
+            // Actualizar la URL en el objeto del evento inmediatamente (sin esperar recarga)
+            const serverUrl = res.url ? `http://localhost:3000${res.url}` : null;
+            if (serverUrl) {
+              if (tipo === 'CONVOCATORIA') {
+                e.convocatoria_firmada_url = serverUrl;
+                e.convocatoria_firmada_nombre = file.name;
+              } else if (tipo === 'ACTA') {
+                e.acta_firmada_url = serverUrl;
+                e.acta_firmada_nombre = file.name;
+              } else {
+                // MINGA u OTRO → lista de asistencia firmada
+                e.lista_asistencia_firmada_url = serverUrl;
+              }
+              // Abrir el documento recién subido en una nueva pestaña
+              window.open(serverUrl, '_blank');
+            }
+            // Limpiar el input de archivo para permitir volver a subir
+            fileInput.value = '';
+            this.cdr.detectChanges();
             this.cargarEventos();
           }
         },
@@ -715,18 +737,12 @@ export class AdminComponent implements OnInit {
   get eventosFiltrados() {
     let filtrados = this.eventos.filter(e => e.tipo === this.subTabEventos);
     
+    // REQUERIMIENTO: Mostrar solo eventos próximos, no pasados
+    filtrados = filtrados.filter(e => !this.esEventoPasado(e.fecha));
+
     if (this.eventosBusqueda.trim()) {
       const termino = this.eventosBusqueda.toLowerCase();
       filtrados = filtrados.filter(e => e.titulo.toLowerCase().includes(termino));
-    }
-    
-    if (this.eventosEstadoFiltro) {
-      filtrados = filtrados.filter(e => {
-        const pasado = this.esEventoPasado(e.fecha);
-        if (this.eventosEstadoFiltro === 'FUTURO') return !pasado;
-        if (this.eventosEstadoFiltro === 'PASADO') return pasado;
-        return true;
-      });
     }
     
     return filtrados;

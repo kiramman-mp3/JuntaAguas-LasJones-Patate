@@ -11,7 +11,6 @@
     "seed": "node src/utils/seedDb.js",
     "start:whatsapp": "node src/utils/seedWhatsAppDb.js && nodemon src/index.js",
     "db:reset": "node src/utils/cleanDb.js && npm run init-db && npm run seed-db",
-
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -21,6 +20,7 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.9.7",
+    "pdfkit": "^0.20.2",
     "qrcode": "^1.5.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
