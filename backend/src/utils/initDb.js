@@ -9,21 +9,24 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 async function inicializarBaseDeDatos() {
   console.log('[DB Init] Conectando al servidor MySQL...');
 
-  const host = process.env.DB_HOST || 'localhost';
-  const user = process.env.DB_USER || 'root';
-  const password = process.env.DB_PASSWORD || '';
-  const database = process.env.DB_NAME || 'junta_las_jones';
+    const host = process.env.DB_HOST || '127.0.0.1';
+    const port = parseInt(process.env.DB_PORT || '3306');
+    const user = process.env.DB_USER || 'root';
+    const password = process.env.DB_PASSWORD || '';
+    const database = process.env.DB_NAME || 'junta_las_jones';
 
-  let connection;
+    let connection;
 
-  try {
-    // 1. Conectar al servidor MySQL (sin especificar la base de datos inicialmente)
-    connection = await mysql.createConnection({
-      host,
-      user,
-      password,
-      multipleStatements: true
-    });
+    try {
+      // 1. Conectar al servidor MySQL (sin especificar la base de datos inicialmente)
+      connection = await mysql.createConnection({
+        host,
+        port,
+        user,
+        password,
+        multipleStatements: true
+      });
+
 
     console.log(`[DB Init] Conexión establecida con MySQL en ${host}.`);
 

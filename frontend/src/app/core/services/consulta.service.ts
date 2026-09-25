@@ -59,4 +59,18 @@ export class ConsultaService {
   getSectores(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/lotes/sectores`);
   }
+
+  subirDocumentoEvento(id: number, tipo: string, nombre_archivo: string, contenido_base64: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/eventos/${id}/documentos`, {
+      tipo,
+      nombre_archivo,
+      contenido_base64,
+      estado: 'FIRMADO'
+    }, this.getAuthHeaders());
+  }
+
+  getDocumentosEvento(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/eventos/${id}/documentos`);
+  }
 }
+

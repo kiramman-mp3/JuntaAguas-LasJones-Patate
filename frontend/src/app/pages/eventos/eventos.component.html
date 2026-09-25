@@ -50,6 +50,17 @@
             <i class="ri-map-pin-2-line"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
           </div>
         </div>
+
+        <!-- ACCIONES PDF -->
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
+          <button class="btn btn--outline btn--sm" style="width: 100%; text-align: center;" (click)="descargarConvocatoria(item)">
+            <i class="ri-file-pdf-2-line"></i>
+            {{ item.convocatoria_firmada_url ? 'Ver Convocatoria Firmada (PDF)' : 'Ver Convocatoria Oficial (PDF)' }}
+          </button>
+          <button *ngIf="item.acta_firmada_url" class="btn btn--primary btn--sm" style="width: 100%; text-align: center;" (click)="abrirPdf(item.acta_firmada_url)">
+            <i class="ri-file-text-line"></i> Ver Acta Firmada (PDF)
+          </button>
+        </div>
       </div>
       
       <div *ngIf="eventosFuturos.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
@@ -72,9 +83,15 @@
             <i class="ri-calendar-event-line"></i> <span><strong>Realizado el:</strong> {{ item.fecha | date:'mediumDate' }}</span>
           </div>
         </div>
-        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-          <button class="btn btn--outline btn--sm" style="width: 100%;" (click)="descargarActa(item.id)" [disabled]="cargandoActa">
-            <i class="ri-file-download-line"></i> Descargar Acta / Resoluciones
+
+        <!-- ACCIONES PDF -->
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
+          <button *ngIf="item.convocatoria_firmada_url" class="btn btn--outline btn--sm" style="width: 100%;" (click)="abrirPdf(item.convocatoria_firmada_url)">
+            <i class="ri-file-pdf-line"></i> Ver Convocatoria Firmada
+          </button>
+          <button class="btn btn--primary btn--sm" style="width: 100%;" (click)="descargarActa(item)" [disabled]="cargandoActa">
+            <i class="ri-file-download-line"></i>
+            {{ item.acta_firmada_url ? 'Ver Acta Firmada (PDF)' : 'Descargar Acta / Resoluciones (PDF)' }}
           </button>
         </div>
       </div>
