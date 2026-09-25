@@ -387,9 +387,24 @@ async function getBalanceReport(req, res, next) {
   try {
     const { desde, hasta } = req.query;
 
-    let sqlIngresos = `SELECT COALESCE(SUM(valor_total), 0) AS total_ingresos FROM pagos WHERE 1=1`;
+    let sqlIngresos = `SELECT COALESCE(SUM(valor_total), 0) AS total_ingresos FROM pagos WHERE 1=1 AND (observacion IS NULL OR observacion NOT LIKE '%[ANULADO:%')`;
     let sqlEgresos = `SELECT COALESCE(SUM(valor), 0) AS total_egresos FROM egresos WHERE 1=1`;
     let sqlPendientes = `SELECT COALESCE(SUM(valor), 0) AS total_pendientes FROM obligaciones WHERE estado = 'PENDIENTE'`;
+
+    let sqlResumenMensual = `
+      SELECT 
+        DATE_FORMAT(fecha, '%Y-%m') as mes,
+        SUM(ingresos) as ingresos,
+        SUM(egresos) as egresos
+      FROM (
+        SELECT fecha_pago as fecha, valor_total as ingresos, 0 as egresos FROM pagos WHERE 1=1 AND (observacion IS NULL OR observacion NOT LIKE '%[ANULADO:%')
+        UNION ALL
+        SELECT fecha as fecha, 0 as ingresos, valor as egresos FROM egresos WHERE 1=1
+      ) as t
+      GROUP BY DATE_FORMAT(fecha, '%Y-%m')
+      ORDER BY mes DESC
+      LIMIT 12
+    `;
 
     const paramsIngresos = [];
     const paramsEgresos = [];
@@ -410,6 +425,7 @@ async function getBalanceReport(req, res, next) {
     const [ingresosRes] = await db.query(sqlIngresos, paramsIngresos);
     const [egresosRes] = await db.query(sqlEgresos, paramsEgresos);
     const [pendientesRes] = await db.query(sqlPendientes);
+    const [resumenMensual] = await db.query(sqlResumenMensual);
 
     const totalIngresos = Number(ingresosRes[0].total_ingresos);
     const totalEgresos = Number(egresosRes[0].total_egresos);
@@ -424,7 +440,8 @@ async function getBalanceReport(req, res, next) {
         totalPendientes,
         balanceAlDia,
         fechaReporte: new Date().toISOString()
-      }
+      },
+      resumenMensual
     });
 
   } catch (error) {

@@ -86,6 +86,7 @@ export class AdminComponent implements OnInit {
     egresosMes: 0,
     balanceAlDia: 0
   };
+  resumenMensual: any[] = [];
 
   // --- VISTA 1: NÓMINA & LOTES ---
   subTabUsuarios: 'COMUNEROS' | 'LOTES' = 'COMUNEROS';
@@ -377,6 +378,9 @@ export class AdminComponent implements OnInit {
           this.kpis.egresosMes = Number(res.balance.totalEgresos) || this.kpis.egresosMes;
           this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || this.kpis.pendientesCobro;
           this.kpis.balanceAlDia = Number(res.balance.balanceAlDia) || this.kpis.balanceAlDia;
+        }
+        if (res && res.resumenMensual) {
+          this.resumenMensual = res.resumenMensual;
         }
         this.cdr.detectChanges();
       },
@@ -1384,18 +1388,19 @@ export class AdminComponent implements OnInit {
     return `EGR-${String(id || 0).padStart(6, '0')}`;
   }
 
-  abrirModalCobro() {
-    this.modalCobroVisible = true;
+  prepararNuevoCobro() {
+    this.cambiarTab('FINANZAS');
+    this.cambiarSubTabFinanzas('INGRESOS');
     this.comuneroFiltroFinanzas = '';
     this.comuneroSeleccionadoFinanzas = null;
     this.obligacionesComunero = [];
+    this.pagosComunero = [];
     this.obligacionesSeleccionadasIds = [];
     this.valorRecibidoFinanzas = null;
     this.cargarComunerosFinanzas();
   }
 
   cerrarModalCobro() {
-    this.modalCobroVisible = false;
     this.comuneroSeleccionadoFinanzas = null;
   }
 
@@ -1565,9 +1570,12 @@ export class AdminComponent implements OnInit {
     this.imprimirPDFComprobante();
   }
 
+  pagosComunero: any[] = [];
+
   seleccionarComuneroFinanzas(comunero: any) {
     this.comuneroSeleccionadoFinanzas = comunero;
     this.obligacionesComunero = [];
+    this.pagosComunero = [];
     this.obligacionesSeleccionadasIds = [];
     this.valorRecibidoFinanzas = null;
     this.cdr.detectChanges();
@@ -1578,9 +1586,11 @@ export class AdminComponent implements OnInit {
       next: (res) => {
         if (res && res.data) {
           this.obligacionesComunero = res.data.filter((o: any) => o.estado === 'PENDIENTE');
+          this.pagosComunero = res.data.filter((o: any) => o.estado === 'PAGADA');
           this.obligacionesSeleccionadasIds = this.obligacionesComunero.map(o => o.id);
         } else {
           this.obligacionesComunero = [];
+          this.pagosComunero = [];
           this.obligacionesSeleccionadasIds = [];
         }
         this.cdr.detectChanges();
