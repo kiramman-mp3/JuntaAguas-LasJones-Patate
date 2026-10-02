@@ -289,7 +289,7 @@ async function savePuntosAsamblea(req, res, next) {
 
     const connection = await db.getConnection();
     try {
-      await connection.beginTransaction();
+      await connection.query('BEGIN');
 
       // Reemplazar puntos
       await connection.query(`DELETE FROM puntos_asamblea WHERE evento_id = ?`, [id]);
@@ -302,11 +302,11 @@ async function savePuntosAsamblea(req, res, next) {
         );
       }
 
-      await connection.commit();
+      await connection.query('COMMIT');
       connection.release();
       return res.json({ status: 'OK', message: 'Puntos del orden del día guardados correctamente.' });
     } catch (txError) {
-      await connection.rollback();
+      await connection.query('ROLLBACK');
       connection.release();
       throw txError;
     }
@@ -470,13 +470,15 @@ async function guardarDocumentoEvento(req, res, next) {
     const buffer = Buffer.from(base64Clean, 'base64');
 
     const uploadsDir = path.join(__dirname, '../../uploads/documentos');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+    try {
+      await fsPromises.access(uploadsDir);
+    } catch {
+      await fsPromises.mkdir(uploadsDir, { recursive: true });
     }
 
     const safeFileName = `${tipo.toLowerCase()}_evento_${id}_${Date.now()}${extension}`;
     const filePathOnDisk = path.join(uploadsDir, safeFileName);
-    fs.writeFileSync(filePathOnDisk, buffer);
+    await fsPromises.writeFile(filePathOnDisk, buffer);
 
     const relativeUrl = `/uploads/documentos/${safeFileName}`;
 
@@ -492,11 +494,13 @@ async function guardarDocumentoEvento(req, res, next) {
       const oldUrl = existente[0].ruta_archivo_firmado;
       if (oldUrl && oldUrl.startsWith('/uploads/')) {
         const oldFilePathOnDisk = path.join(__dirname, '../../', oldUrl);
-        if (fs.existsSync(oldFilePathOnDisk)) {
+        if (oldFilePathOnDisk) {
           try {
-            fs.unlinkSync(oldFilePathOnDisk);
+            await fsPromises.unlink(oldFilePathOnDisk);
           } catch (err) {
-            console.error('Error al eliminar archivo previo del servidor:', err);
+            if (err.code !== 'ENOENT') {
+              console.error('Error al eliminar archivo previo del servidor:', err);
+            }
           }
         }
       }
@@ -542,7 +546,6 @@ async function descargarPDFAsistencia(req, res, next) {
     }
     const evento = eventos[0];
 
-    const PDFDocument = require('pdfkit');
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
     res.setHeader('Content-Type', 'application/pdf');

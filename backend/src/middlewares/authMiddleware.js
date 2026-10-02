@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 if (!process.env.JWT_SECRET) {
-  throw new Error('FATAL ERROR: JWT_SECRET is not defined in environment variables.');
+  throw new Error('FATAL: JWT_SECRET environment variable is missing');
 }
 
 /**
@@ -21,7 +21,7 @@ function verificarToken(req, res, next) {
     req.user = decoded; // { cuentaId, personaId, cedula, rol, usuario }
     next();
   } catch (error) {
-    return res.status(403).json({ status: 'ERROR', message: 'Token inválido o expirado.' });
+    return res.status(401).json({ status: 'ERROR', message: 'Token JWT inválido o no autorizado.' });
   }
 }
 
