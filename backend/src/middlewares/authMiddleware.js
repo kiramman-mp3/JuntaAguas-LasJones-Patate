@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('FATAL ERROR: JWT_SECRET is not defined in environment variables.');
+}
+
 /**
  * Middleware para verificar token JWT en peticiones protegidas
  */
@@ -13,7 +17,7 @@ function verificarToken(req, res, next) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key_junta_las_jones_2026');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded; // { cuentaId, personaId, cedula, rol, usuario }
     next();
   } catch (error) {
@@ -29,7 +33,7 @@ function tokenOpcional(req, res, next) {
   if (authHeader) {
     const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
     try {
-      req.user = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key_junta_las_jones_2026');
+      req.user = jwt.verify(token, process.env.JWT_SECRET);
     } catch (e) {
       req.user = null;
     }

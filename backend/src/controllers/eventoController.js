@@ -1,7 +1,9 @@
 const fs = require('fs');
+const fsPromises = require('fs/promises');
 const path = require('path');
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const PDFDocument = require('pdfkit');
 
 async function asegurarTablaDocumentos() {
   try {
@@ -199,9 +201,8 @@ async function createEvento(req, res, next) {
 
     // Generar PDF de Asistencia
     try {
-      const PDFDocument = require('pdfkit');
       const docsDir = path.join(__dirname, '../../uploads/documentos');
-      if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
+      await fsPromises.mkdir(docsDir, { recursive: true });
 
       const safeFileName = `lista_asistencia_${eventoId}_${Date.now()}.pdf`;
       const filePathOnDisk = path.join(docsDir, safeFileName);
@@ -286,18 +287,29 @@ async function savePuntosAsamblea(req, res, next) {
       return res.status(400).json({ status: 'ERROR', message: 'Formato de puntos inválido.' });
     }
 
-    // Reemplazar puntos
-    await db.query(`DELETE FROM puntos_asamblea WHERE evento_id = ?`, [id]);
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
 
-    for (const p of puntos) {
-      await db.query(
-        `INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion)
-         VALUES (?, ?, ?, ?, ?)`,
-        [id, p.orden, p.punto_tratar, p.tratado || null, p.resolucion || null]
-      );
+      // Reemplazar puntos
+      await connection.query(`DELETE FROM puntos_asamblea WHERE evento_id = ?`, [id]);
+
+      for (const p of puntos) {
+        await connection.query(
+          `INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion)
+           VALUES (?, ?, ?, ?, ?)`,
+          [id, p.orden, p.punto_tratar, p.tratado || null, p.resolucion || null]
+        );
+      }
+
+      await connection.commit();
+      connection.release();
+      return res.json({ status: 'OK', message: 'Puntos del orden del día guardados correctamente.' });
+    } catch (txError) {
+      await connection.rollback();
+      connection.release();
+      throw txError;
     }
-
-    return res.json({ status: 'OK', message: 'Puntos del orden del día guardados correctamente.' });
   } catch (error) {
     next(error);
   }
@@ -519,17 +531,95 @@ async function guardarDocumentoEvento(req, res, next) {
 }
 
 /**
- * Obtener los documentos de un evento
+ * Generar y descargar documento PDF con todas las personas registradas para firma de asistencia
  */
+async function descargarPDFAsistencia(req, res, next) {
+  try {
+    const { id } = req.params;
+    const [eventos] = await db.query(`SELECT * FROM eventos WHERE id = ?`, [id]);
+    if (eventos.length === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'Evento no encontrado.' });
+    }
+    const evento = eventos[0];
+
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="Lista_Asistencia_${evento.tipo}_${id}.pdf"`);
+
+    doc.pipe(res);
+
+    // Titulo de la Junta
+    doc.fillColor('#0284c7').fontSize(16).text('JUNTA DE AGUA Y RIEGO LA JONES (PATATE)', { align: 'center' });
+    doc.fillColor('#333333').fontSize(12).text(`HOJA DE ASISTENCIA PARA REGISTRO Y FIRMAS - ${evento.tipo}`, { align: 'center' });
+    doc.moveDown(0.5);
+
+    // Metadata del Evento
+    const fechaFormatted = new Date(evento.fecha).toLocaleDateString('es-EC');
+    doc.fontSize(10).fillColor('#000000');
+    doc.text(`Evento: ${evento.titulo}`);
+    doc.text(`Fecha: ${fechaFormatted} | Hora: ${evento.hora_inicio || '08:00'}`);
+    doc.text(`Lugar: ${evento.lugar || 'Casa Comunal Junta La Jones'}`);
+    if (evento.genera_multa_ausencia) {
+      doc.text(`Multa por Inasistencia: $${Number(evento.valor_multa).toFixed(2)}`);
+    }
+    doc.moveDown(0.8);
+
+    const [personas] = await db.query(
+      `SELECT cedula, nombres, apellidos FROM personas WHERE estado = 'ACTIVO' ORDER BY apellidos ASC, nombres ASC`
+    );
+
+    // Encabezado de la Tabla
+    let y = doc.y;
+    doc.rect(40, y, 515, 20).fill('#e2e8f0');
+    doc.fillColor('#0f172a').fontSize(9);
+    doc.text('Nº', 45, y + 5, { width: 30 });
+    doc.text('Cédula', 80, y + 5, { width: 80 });
+    doc.text('Apellidos y Nombres (Comunero)', 165, y + 5, { width: 220 });
+    doc.text('Firma / Huella Evidencia', 390, y + 5, { width: 150 });
+    
+    y += 22;
+
+    personas.forEach((p, index) => {
+      if (y > 750) {
+        doc.addPage();
+        y = 40;
+        // Repetir encabezado en nueva página
+        doc.rect(40, y, 515, 20).fill('#e2e8f0');
+        doc.fillColor('#0f172a').fontSize(9);
+        doc.text('Nº', 45, y + 5, { width: 30 });
+        doc.text('Cédula', 80, y + 5, { width: 80 });
+        doc.text('Apellidos y Nombres (Comunero)', 165, y + 5, { width: 220 });
+        doc.text('Firma / Huella Evidencia', 390, y + 5, { width: 150 });
+        y += 22;
+      }
+
+      doc.fillColor('#333333').fontSize(9);
+      doc.text((index + 1).toString(), 45, y + 4, { width: 30 });
+      doc.text(p.cedula, 80, y + 4, { width: 80 });
+      doc.text(`${p.apellidos} ${p.nombres}`, 165, y + 4, { width: 220 });
+      
+      // Línea de firma
+      doc.moveTo(390, y + 16).lineTo(540, y + 16).stroke('#cbd5e1');
+
+      // Línea divisoria de fila
+      doc.moveTo(40, y + 20).lineTo(555, y + 20).stroke('#f1f5f9');
+      y += 22;
+    });
+
+    doc.end();
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getDocumentosEvento(req, res, next) {
   try {
-    await asegurarTablaDocumentos();
     const { id } = req.params;
-    const [docs] = await db.query(
-      `SELECT id, evento_id, tipo, estado, nombre_archivo, contenido_base64, updated_at FROM documentos_evento WHERE evento_id = ?`,
-      [id]
-    );
-    return res.json({ status: 'OK', data: docs });
+    const db = require('../../database');
+    const [documentos] = await db.query('SELECT * FROM documentos_evento WHERE evento_id = ?', [id]);
+    return res.json({ status: 'OK', data: documentos });
   } catch (error) {
     next(error);
   }
@@ -545,6 +635,7 @@ module.exports = {
   getAsistencias,
   finalizarEventoYGenerarMultas,
   guardarDocumentoEvento,
-  getDocumentosEvento
+  getDocumentosEvento,
+  descargarPDFAsistencia
 };
 

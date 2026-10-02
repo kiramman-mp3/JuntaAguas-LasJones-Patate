@@ -53,9 +53,12 @@ async function getLotes(req, res, next) {
     const { sector_id, busqueda, persona_id } = req.query;
 
     let sql = `SELECT l.*, s.nombre AS sector_nombre,
-                      (SELECT GROUP_CONCAT(CONCAT(p.nombres, ' ', p.apellidos, ' (', pl.tipo_relacion, ')') SEPARATOR ', ')
+                      (SELECT CONCAT(p.nombres, ' ', p.apellidos, ' (C.I. ', p.cedula, ')')
                        FROM persona_lotes pl JOIN personas p ON p.id = pl.persona_id
-                       WHERE pl.lote_id = l.id) AS propietarios
+                       WHERE pl.lote_id = l.id LIMIT 1) AS propietario,
+                      (SELECT CONCAT(p.nombres, ' ', p.apellidos)
+                       FROM persona_lotes pl JOIN personas p ON p.id = pl.persona_id
+                       WHERE pl.lote_id = l.id LIMIT 1) AS propietarios
                FROM lotes l
                JOIN sectores s ON s.id = l.sector_id
                WHERE l.activo = TRUE`;
@@ -87,7 +90,7 @@ async function getLotes(req, res, next) {
 }
 
 /**
- * Crear lote y asociar a comunero
+ * Crear lote y asociar a comunero (Titular Único)
  */
 async function createLote(req, res, next) {
   try {
@@ -106,9 +109,11 @@ async function createLote(req, res, next) {
     const loteId = result.insertId;
 
     if (persona_id) {
+      // Garantizar que solo tenga 1 dueño registrado
+      await db.query(`DELETE FROM persona_lotes WHERE lote_id = ?`, [loteId]);
       await db.query(
-        `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, fecha_desde)
-         VALUES (?, ?, ?, CURDATE())`,
+        `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde)
+         VALUES (?, ?, ?, 100.00, CURDATE())`,
         [persona_id, loteId, tipo_relacion || 'PROPIETARIO']
       );
     }
@@ -129,24 +134,26 @@ async function createLote(req, res, next) {
 }
 
 /**
- * Vincular persona a lote existente
+ * Vincular persona a lote existente (Legalmente un terreno solo tendrá 1 dueño)
  */
 async function linkPersonaLote(req, res, next) {
   try {
     const { loteId } = req.params;
-    const { persona_id, tipo_relacion, porcentaje } = req.body;
+    const { persona_id, tipo_relacion } = req.body;
 
     if (!persona_id) {
       return res.status(400).json({ status: 'ERROR', message: 'ID de comunero requerido.' });
     }
 
+    // Como legalmente un terreno solo puede tener un dueño, se reemplaza la titularidad previa
+    await db.query(`DELETE FROM persona_lotes WHERE lote_id = ?`, [loteId]);
     await db.query(
       `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde)
-       VALUES (?, ?, ?, ?, CURDATE())`,
-      [persona_id, loteId, tipo_relacion || 'PROPIETARIO', porcentaje || 100.00]
+       VALUES (?, ?, ?, 100.00, CURDATE())`,
+      [persona_id, loteId, tipo_relacion || 'PROPIETARIO']
     );
 
-    return res.json({ status: 'OK', message: 'Comunero vinculado al lote exitosamente.' });
+    return res.json({ status: 'OK', message: 'Titularidad asignada correctamente. El lote ahora pertenece al comunero seleccionado.' });
   } catch (error) {
     next(error);
   }

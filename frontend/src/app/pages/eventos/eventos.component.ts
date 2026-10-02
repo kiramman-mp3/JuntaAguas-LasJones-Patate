@@ -11,9 +11,9 @@ import { ActasService } from '../../core/services/actas.service';
   styleUrls: ['./eventos.component.scss']
 })
 export class EventosComponent implements OnInit {
-  eventosFuturos: any[] = [];
-  eventosPasados: any[] = [];
-  tabActivo: 'FUTUROS' | 'PASADOS' = 'FUTUROS';
+  asambleasFuturas: any[] = [];
+  mingasFuturas: any[] = [];
+  tabActivo: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
   cargandoActa: boolean = false;
 
   constructor(private consultaService: ConsultaService, private actasService: ActasService, private cdr: ChangeDetectorRef) {}
@@ -25,14 +25,18 @@ export class EventosComponent implements OnInit {
           const hoy = new Date();
           hoy.setHours(0, 0, 0, 0);
 
-          res.data.forEach((ev: any) => {
+          const eventos = res.data || res.eventos || [];
+          eventos.forEach((ev: any) => {
             const fechaEv = new Date(ev.fecha);
             fechaEv.setHours(0, 0, 0, 0);
 
-            if (fechaEv >= hoy) {
-              this.eventosFuturos.push(ev);
-            } else {
-              this.eventosPasados.push(ev);
+            // Solo mostrar próximos eventos
+            if (fechaEv >= hoy && ev.estado !== 'CANCELADO') {
+              if (ev.tipo === 'MINGA') {
+                this.mingasFuturas.push(ev);
+              } else {
+                this.asambleasFuturas.push(ev);
+              }
             }
           });
           this.cdr.detectChanges();
@@ -45,7 +49,7 @@ export class EventosComponent implements OnInit {
     });
   }
 
-  setTab(tab: 'FUTUROS' | 'PASADOS') {
+  setTab(tab: 'ASAMBLEA' | 'MINGA') {
     this.tabActivo = tab;
   }
 
@@ -63,28 +67,13 @@ export class EventosComponent implements OnInit {
     }
   }
 
-  descargarActa(evParam: any) {
-    const id = typeof evParam === 'number' ? evParam : evParam.id;
-    this.cargandoActa = true;
-    this.consultaService.getEventoDetalle(id).subscribe({
-      next: (res) => {
-        this.cargandoActa = false;
-        if (res.status === 'OK') {
-          const ev = res.evento;
-          if (ev.acta_firmada_url) {
-            this.abrirPdf(ev.acta_firmada_url);
-          } else {
-            this.actasService.generarActaPDF(res.evento, res.puntos || [], res.asistenciaStats);
-          }
-        }
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.cargandoActa = false;
-        console.error('Error al descargar acta', err);
-        alert('No se pudo descargar el acta del evento.');
-        this.cdr.detectChanges();
-      }
-    });
+  descargarListaAsistencia(ev: any) {
+    if (ev.lista_asistencia_firmada_url) {
+      this.abrirPdf(ev.lista_asistencia_firmada_url);
+    } else if (ev.lista_asistencia_url) {
+      this.abrirPdf(ev.lista_asistencia_url);
+    } else {
+      window.open(`http://localhost:3000/api/eventos/${ev.id}/pdf-asistencia`, '_blank');
+    }
   }
 }

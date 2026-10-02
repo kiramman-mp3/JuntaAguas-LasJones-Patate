@@ -3,36 +3,36 @@
   <section class="section-events" id="eventos">
     <div class="section-header">
       <div>
-        <span class="badge badge--info"><i class="ri-notification-3-line"></i> Anuncios Oficiales</span>
+        <span class="badge badge--info"><i class="ri-notification-3-line"></i> Próximos Eventos Oficiales</span>
         <h2>Tablón de Asambleas y Mingas</h2>
       </div>
-      <span class="caption">Información de eventos y actas resolutivas</span>
+      <span class="caption">Consulte los próximos eventos comunitarios programados</span>
     </div>
 
     <!-- TABS -->
     <div class="tabs-container" style="margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
       <button 
         class="tab-btn" 
-        [class.active]="tabActivo === 'FUTUROS'" 
-        (click)="setTab('FUTUROS')"
+        [class.active]="tabActivo === 'ASAMBLEA'" 
+        (click)="setTab('ASAMBLEA')"
         style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
-        <i class="ri-calendar-event-line"></i> Próximos Eventos
+        <i class="ri-user-voice-line"></i> Próximas Asambleas
       </button>
       <button 
         class="tab-btn" 
-        [class.active]="tabActivo === 'PASADOS'" 
-        (click)="setTab('PASADOS')"
+        [class.active]="tabActivo === 'MINGA'" 
+        (click)="setTab('MINGA')"
         style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
-        <i class="ri-history-line"></i> Eventos Pasados y Actas
+        <i class="ri-tools-line"></i> Próximas Mingas
       </button>
     </div>
 
-    <!-- EVENTOS FUTUROS -->
-    <div class="events-grid" *ngIf="tabActivo === 'FUTUROS'">
-      <div class="card event-card" *ngFor="let item of eventosFuturos">
+    <!-- TAB: ASAMBLEAS PROXIMAS -->
+    <div class="events-grid" *ngIf="tabActivo === 'ASAMBLEA'">
+      <div class="card event-card" *ngFor="let item of asambleasFuturas">
         <div class="event-card__header">
-          <span class="badge" [ngClass]="{'badge--primary': item.tipo === 'ASAMBLEA', 'badge--warning': item.tipo === 'MINGA'}">
-            {{ item.tipo }}
+          <span class="badge badge--primary">
+            ASAMBLEA
           </span>
           <span class="small font-bold text-danger" *ngIf="item.genera_multa_ausencia">
             <i class="ri-error-warning-line"></i> Multa: ${{ item.valor_multa }}
@@ -57,47 +57,57 @@
             <i class="ri-file-pdf-2-line"></i>
             {{ item.convocatoria_firmada_url ? 'Ver Convocatoria Firmada (PDF)' : 'Ver Convocatoria Oficial (PDF)' }}
           </button>
-          <button *ngIf="item.acta_firmada_url" class="btn btn--primary btn--sm" style="width: 100%; text-align: center;" (click)="abrirPdf(item.acta_firmada_url)">
-            <i class="ri-file-text-line"></i> Ver Acta Firmada (PDF)
+          <button class="btn btn--secondary btn--sm" style="width: 100%; text-align: center;" (click)="descargarListaAsistencia(item)">
+            <i class="ri-file-download-line"></i>
+            {{ item.lista_asistencia_firmada_url ? 'Ver Lista de Asistencia Firmada (PDF)' : 'Descargar Lista de Asistencia para Firmar (PDF)' }}
           </button>
         </div>
       </div>
       
-      <div *ngIf="eventosFuturos.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
-        No hay próximos eventos programados.
+      <div *ngIf="asambleasFuturas.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+        No hay próximas asambleas programadas.
       </div>
     </div>
 
-    <!-- EVENTOS PASADOS -->
-    <div class="events-grid" *ngIf="tabActivo === 'PASADOS'">
-      <div class="card event-card" *ngFor="let item of eventosPasados" style="border-left: 4px solid var(--text-muted);">
+    <!-- TAB: MINGAS PROXIMAS -->
+    <div class="events-grid" *ngIf="tabActivo === 'MINGA'">
+      <div class="card event-card" *ngFor="let item of mingasFuturas">
         <div class="event-card__header">
-          <span class="badge badge--secondary">
-            {{ item.tipo }}
+          <span class="badge badge--warning">
+            MINGA
           </span>
-          <span class="small" style="color: var(--text-muted);"><i class="ri-check-double-line"></i> Finalizado</span>
+          <span class="small font-bold text-danger" *ngIf="item.genera_multa_ausencia">
+            <i class="ri-error-warning-line"></i> Multa: ${{ item.valor_multa }}
+          </span>
         </div>
-        <h3 class="event-card__title" style="color: var(--text-muted);">{{ item.titulo }}</h3>
-        <div class="event-card__details" style="opacity: 0.8;">
+        <h3 class="event-card__title">{{ item.titulo }}</h3>
+        <div class="event-card__details">
           <div class="detail-item">
-            <i class="ri-calendar-event-line"></i> <span><strong>Realizado el:</strong> {{ item.fecha | date:'mediumDate' }}</span>
+            <i class="ri-calendar-event-line"></i> <span><strong>Fecha:</strong> {{ item.fecha | date:'mediumDate' }}</span>
+          </div>
+          <div class="detail-item">
+            <i class="ri-time-line"></i> <span><strong>Hora:</strong> {{ item.hora_inicio }}</span>
+          </div>
+          <div class="detail-item">
+            <i class="ri-map-pin-2-line"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
           </div>
         </div>
 
         <!-- ACCIONES PDF -->
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
-          <button *ngIf="item.convocatoria_firmada_url" class="btn btn--outline btn--sm" style="width: 100%;" (click)="abrirPdf(item.convocatoria_firmada_url)">
-            <i class="ri-file-pdf-line"></i> Ver Convocatoria Firmada
+          <button class="btn btn--outline btn--sm" style="width: 100%; text-align: center;" (click)="descargarConvocatoria(item)">
+            <i class="ri-file-pdf-2-line"></i>
+            {{ item.convocatoria_firmada_url ? 'Ver Convocatoria Firmada (PDF)' : 'Ver Convocatoria Oficial (PDF)' }}
           </button>
-          <button class="btn btn--primary btn--sm" style="width: 100%;" (click)="descargarActa(item)" [disabled]="cargandoActa">
+          <button class="btn btn--secondary btn--sm" style="width: 100%; text-align: center;" (click)="descargarListaAsistencia(item)">
             <i class="ri-file-download-line"></i>
-            {{ item.acta_firmada_url ? 'Ver Acta Firmada (PDF)' : 'Descargar Acta / Resoluciones (PDF)' }}
+            {{ item.lista_asistencia_firmada_url ? 'Ver Lista de Asistencia Firmada (PDF)' : 'Descargar Lista para Firmar (PDF)' }}
           </button>
         </div>
       </div>
 
-      <div *ngIf="eventosPasados.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
-        No hay eventos pasados registrados.
+      <div *ngIf="mingasFuturas.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+        No hay próximas mingas programadas.
       </div>
     </div>
   </section>
