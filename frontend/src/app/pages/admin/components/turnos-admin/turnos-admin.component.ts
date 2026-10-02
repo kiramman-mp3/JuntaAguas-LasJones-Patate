@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
@@ -21,9 +21,10 @@ export class TurnosAdminComponent implements OnInit {
 
     if (this.turnosBusqueda.trim()) {
       const termino = this.turnosBusqueda.toLowerCase();
-      filtrados = filtrados.filter(t => 
-        (t.usuario && t.usuario.toLowerCase().includes(termino)) || 
-        (t.lote && t.lote.toLowerCase().includes(termino))
+      filtrados = filtrados.filter(t =>
+        (t.usuario && t.usuario.toLowerCase().includes(termino)) ||
+        (t.lote && t.lote.toLowerCase().includes(termino)) ||
+        (t.sector && t.sector.toLowerCase().includes(termino))
       );
     }
 
@@ -64,6 +65,7 @@ export class TurnosAdminComponent implements OnInit {
 
   usuariosTurnoModal: any[] = [];
   busquedaComuneroTurnoModal: string = '';
+  comuneroSeleccionadoTurno: any = null;
   lotesDisponiblesTurno: any[] = [];
 
   diasSemana = [
@@ -76,20 +78,29 @@ export class TurnosAdminComponent implements OnInit {
     { valor: 7, label: 'Domingo' }
   ];
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargarTurnos();
   }
 
   cargarTurnos() {
+    const diasNombres = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     this.adminService.getTurnos().subscribe({
       next: (res: any) => {
-        if (res.status === 'OK' && res.data) {
+        if (res && res.data) {
           this.turnos = res.data.map((t: any) => ({
             ...t,
-            dia_semana_nombre: this.diasSemana.find(d => d.valor === t.dia_semana)?.label || t.dia_semana
+            // Aliases para compatibilidad con el template y filtros
+            usuario: t.comunero_nombre || `${t.nombres || ''} ${t.apellidos || ''}`.trim(),
+            lote: t.lote_codigo || 'N/A',
+            sector: t.sector_nombre || 'N/A',
+            dia: diasNombres[t.dia_semana] || String(t.dia_semana),
+            horaInicio: t.hora_inicio,
+            horaFin: t.hora_fin,
+            dia_semana_nombre: this.diasSemana.find(d => d.valor === t.dia_semana)?.label || diasNombres[t.dia_semana]
           }));
+          this.cdr.detectChanges();
         }
       },
       error: (err: any) => console.error('Error al cargar turnos:', err)
@@ -123,6 +134,7 @@ export class TurnosAdminComponent implements OnInit {
     this.adminService.getPersonas(1, 1000).subscribe({
       next: (res: any) => {
         this.usuariosTurnoModal = res.data || [];
+        this.cdr.detectChanges();
       },
       error: (err: any) => console.error('Error al cargar comuneros para modal de turno', err)
     });
@@ -133,6 +145,7 @@ export class TurnosAdminComponent implements OnInit {
   }
 
   seleccionarComuneroTurnoModal(u: any) {
+    this.comuneroSeleccionadoTurno = u;
     this.nuevoTurno.persona_id = u.id;
     this.busquedaComuneroTurnoModal = `${u.nombres} ${u.apellidos} - ${u.cedula}`;
     this.onPersonaChangeInTurno();
@@ -150,6 +163,7 @@ export class TurnosAdminComponent implements OnInit {
         if (this.lotesDisponiblesTurno.length > 0) {
           this.nuevoTurno.lote_id = this.lotesDisponiblesTurno[0].id;
         }
+        this.cdr.detectChanges();
       }
     });
   }

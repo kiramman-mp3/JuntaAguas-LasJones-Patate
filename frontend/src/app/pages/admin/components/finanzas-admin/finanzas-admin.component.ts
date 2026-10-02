@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
@@ -12,9 +12,9 @@ import autoTable from 'jspdf-autotable';
   templateUrl: './finanzas-admin.component.html'
 })
 export class FinanzasAdminComponent implements OnInit {
-  @Input() kpis: any = { recaudadoMes: 0, egresosMes: 0, balanceAlDia: 0 };
-  @Input() resumenMensual: any[] = [];
-  @Input() usuarios: any[] = [];
+  // KPIs propios — se cargan internamente
+  kpis: any = { recaudadoMes: 0, egresosMes: 0, balanceAlDia: 0, pendientesCobro: 0 };
+  resumenMensual: any[] = [];
   @Output() dataChanged = new EventEmitter<void>();
 
   // Lógica Finanzas
@@ -53,9 +53,28 @@ export class FinanzasAdminComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.cargarKpis();
     this.cargarComunerosFinanzas();
     this.cargarHistorialPagos();
     this.cargarHistorialEgresos();
+  }
+
+  cargarKpis() {
+    this.adminService.getBalance().subscribe({
+      next: (res: any) => {
+        if (res && res.balance) {
+          this.kpis.recaudadoMes   = Number(res.balance.totalIngresos)   || 0;
+          this.kpis.egresosMes     = Number(res.balance.totalEgresos)    || 0;
+          this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || 0;
+          this.kpis.balanceAlDia   = Number(res.balance.balanceAlDia)    || 0;
+        }
+        if (res && res.resumenMensual) {
+          this.resumenMensual = res.resumenMensual;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
   }
 
   // --- MÉTODOS DE FORMATO ---
@@ -218,13 +237,14 @@ export class FinanzasAdminComponent implements OnInit {
   }
 
   get comunerosFiltradosFinanzas(): any[] {
-    const lista = this.todosLosComunerosFinanzas.length > 0 ? this.todosLosComunerosFinanzas : this.usuarios;
+    const lista = this.todosLosComunerosFinanzas;
     if (!this.comuneroFiltroFinanzas.trim()) {
       return lista;
     }
     const term = this.comuneroFiltroFinanzas.toLowerCase();
-    return lista.filter(u =>
+    return lista.filter((u: any) =>
       (u.nombres && u.nombres.toLowerCase().includes(term)) ||
+      (u.apellidos && u.apellidos.toLowerCase().includes(term)) ||
       (u.cedula && u.cedula.toLowerCase().includes(term))
     );
   }

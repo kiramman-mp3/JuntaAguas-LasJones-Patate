@@ -613,3 +613,275 @@ h4,
 }
 
 @import 'leaflet/dist/leaflet.css';
+
+/* ==============================================================================
+   MODALES — OVERLAY + CONTENIDO
+   ============================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeInBackdrop 0.2s ease;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Sobreescribir el hover de .card dentro del modal para que no haga lift */
+  &:hover {
+    transform: none;
+    box-shadow: var(--shadow-lg);
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+
+    h3, h4 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-surface-hover);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    flex-shrink: 0;
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+@keyframes slideUpModal {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Botón de cierre (X) */
+.btn-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--bg-surface-hover);
+    color: var(--color-danger);
+  }
+}
+
+/* ==============================================================================
+   INPUTS / SELECT / TEXTAREA
+   ============================================================================== */
+
+.input {
+  width: 100%;
+  padding: 0.6rem 0.875rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  appearance: auto;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+
+  &:disabled,
+  &[disabled] {
+    background: var(--bg-surface-hover);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  &--sm {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.825rem;
+  }
+}
+
+/* ==============================================================================
+   GRIDS DE FORMULARIO
+   ============================================================================== */
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1.25rem;
+
+  @media (max-width: 580px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 1.25rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================================================================
+   ALERTAS / NOTIFICACIONES INLINE
+   ============================================================================== */
+
+.alert {
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface-hover);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+
+  &--info {
+    background: var(--color-primary-light);
+    border-color: rgba(2, 132, 199, 0.25);
+    color: #075985;
+  }
+
+  &--success {
+    background: #d1fae5;
+    border-color: rgba(16, 185, 129, 0.25);
+    color: #065f46;
+  }
+
+  &--warning {
+    background: #fef3c7;
+    border-color: rgba(245, 158, 11, 0.25);
+    color: #92400e;
+  }
+
+  &--danger {
+    background: #fee2e2;
+    border-color: rgba(239, 68, 68, 0.25);
+    color: #991b1b;
+  }
+}
+
+/* ==============================================================================
+   MAPA PLACEHOLDER (para modal de mapa sin Leaflet)
+   ============================================================================== */
+
+.map-placeholder {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  .map-bg-icon {
+    position: absolute;
+    font-size: 8rem;
+    color: rgba(2, 132, 199, 0.08);
+    pointer-events: none;
+  }
+
+  .map-pin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    z-index: 1;
+
+    i {
+      font-size: 2.5rem;
+      color: var(--color-danger);
+      filter: drop-shadow(0 2px 4px rgba(239,68,68,0.4));
+    }
+  }
+}
+
+/* ==============================================================================
+   TAB VIEW (sección de contenido de tabs)
+   ============================================================================== */
+
+.tab-view {
+  animation: fadeInTab 0.2s ease;
+}
+
+@keyframes fadeInTab {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Texto genérico de colores */
+.text-muted   { color: var(--text-muted); }
+.text-primary { color: var(--color-primary); }
+.text-success { color: var(--color-success); }
+.text-danger  { color: var(--color-danger); }

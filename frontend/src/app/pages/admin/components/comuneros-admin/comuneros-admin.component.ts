@@ -2,13 +2,13 @@ import { Component, OnInit, Output, EventEmitter, ChangeDetectorRef } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
-import { LotesMapComponent } from '../lotes-map/lotes-map.component';
 import * as L from 'leaflet';
+
 
 @Component({
   selector: 'app-comuneros-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, LotesMapComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './comuneros-admin.component.html',
   styleUrls: []
 })
@@ -122,6 +122,19 @@ export class ComunerosAdminComponent implements OnInit {
   ngOnInit() {
     this.cargarUsuarios();
     this.cargarLotes();
+    this.cargarSectores();
+  }
+
+  cargarSectores() {
+    this.adminService.getSectores().subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.sectores = res.data;
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => console.error('Error cargando sectores', err)
+    });
   }
 
 // --- LOGICA DE USUARIOS ---
