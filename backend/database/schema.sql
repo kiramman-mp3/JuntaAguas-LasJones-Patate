@@ -114,13 +114,13 @@ CREATE TABLE IF NOT EXISTS lotes (
     INDEX idx_lotes_ubicacion_aproximada (latitud_aproximada, longitud_aproximada)
 ) ENGINE=InnoDB COMMENT='Catálogo de terrenos y lotes con ubicación aproximada';
 
--- 8. Relación Persona - Lotes (Propiedad / Usufructo M:N)
+-- 8. Relación Persona - Lotes (Titularidad Única: Legalmente un terreno solo tendrá 1 dueño)
 CREATE TABLE IF NOT EXISTS persona_lotes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     persona_id BIGINT NOT NULL,
-    lote_id BIGINT NOT NULL,
-    tipo_relacion ENUM('PROPIETARIO', 'COPROPIETARIO', 'REPRESENTANTE') NOT NULL DEFAULT 'PROPIETARIO',
-    porcentaje DECIMAL(5, 2),
+    lote_id BIGINT NOT NULL UNIQUE,
+    tipo_relacion ENUM('PROPIETARIO', 'REPRESENTANTE') NOT NULL DEFAULT 'PROPIETARIO',
+    porcentaje DECIMAL(5, 2) DEFAULT 100.00,
     fecha_desde DATE,
     fecha_hasta DATE,
     observacion VARCHAR(255),
@@ -128,8 +128,8 @@ CREATE TABLE IF NOT EXISTS persona_lotes (
     FOREIGN KEY (lote_id) REFERENCES lotes(id) ON DELETE CASCADE,
     INDEX idx_persona_lotes_relacion (persona_id, lote_id, fecha_desde),
     INDEX idx_persona_lotes_persona (persona_id),
-    INDEX idx_persona_lotes_lote (lote_id)
-) ENGINE=InnoDB COMMENT='Titularidad, copropiedad y representación de lotes';
+    CONSTRAINT uq_lote_dueno_unico UNIQUE (lote_id)
+) ENGINE=InnoDB COMMENT='Titularidad única de lotes por comunero (1 terreno = 1 dueño)';
 
 -- 9. Turnos y Horarios de Agua de Riego
 CREATE TABLE IF NOT EXISTS turnos_riego (
