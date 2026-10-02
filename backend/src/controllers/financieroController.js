@@ -492,7 +492,7 @@ async function anularPago(req, res, next) {
     // 5. Marcar pago como anulado en observaciones
     const obsActual = pago.observacion || '';
     const obsNueva = `${obsActual} [ANULADO: ${motivo}]`.trim();
-    await connection.query(`UPDATE pagos SET observacion = ? WHERE id = ?`, [id]);
+    await connection.query(`UPDATE pagos SET observacion = ? WHERE id = ?`, [obsNueva, id]);
 
     await connection.commit();
 

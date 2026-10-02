@@ -323,8 +323,9 @@ async function updatePersona(req, res, next) {
         await db.query(`UPDATE cuentas SET password_hash = ? WHERE persona_id = ?`, [passwordHash, id]);
       } else {
         await db.query(
-          `INSERT INTO cuentas (persona_id, username, password_hash, rol_id, estado, debe_cambiar_password) VALUES (?, ?, ?, COALESCE((SELECT id FROM roles WHERE codigo = 'USUARIO' OR codigo = 'COMUNERO' OR nombre LIKE '%Comunero%' ORDER BY id ASC LIMIT 1), 2), 'ACTIVO', FALSE)`,
-          [id, persona.cedula, passwordHash]
+          `INSERT INTO cuentas (persona_id, password_hash, rol_id, estado, debe_cambiar_password)
+           VALUES (?, ?, COALESCE((SELECT id FROM roles WHERE codigo = 'USUARIO' LIMIT 1), 2), 'ACTIVO', FALSE)`,
+          [id, passwordHash]
         );
       }
     }
