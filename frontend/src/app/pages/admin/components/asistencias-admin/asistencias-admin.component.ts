@@ -9,6 +9,7 @@ import * as L from 'leaflet';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MingasAdminComponent } from '../mingas-admin/mingas-admin.component';
+import { environment } from '../../../../../environments/environment';
 
 
 // Para solucionar problema de iconos de Leaflet en Angular
@@ -182,7 +183,7 @@ export class AsistenciasAdminComponent implements OnInit {
         next: (res: any) => {
           if (res.status === 'OK') {
             // Actualizar la URL en el objeto del evento inmediatamente (sin esperar recarga)
-            const serverUrl = res.url ? `http://localhost:3000${res.url}` : null;
+            const serverUrl = res.url ? `${environment.serverUrl}${res.url}` : null;
             if (serverUrl) {
               if (tipo === 'CONVOCATORIA') {
                 e.convocatoria_firmada_url = serverUrl;
@@ -211,7 +212,7 @@ export class AsistenciasAdminComponent implements OnInit {
 
   descargarDocumentoGuardado(url?: string, filename?: string) {
     if (!url) return;
-    const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${environment.serverUrl}${url}`;
     window.open(fullUrl, '_blank');
   }
 
