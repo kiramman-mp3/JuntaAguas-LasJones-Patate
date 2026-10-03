@@ -8,6 +8,7 @@ import { ConsultaService } from '../../../../core/services/consulta.service';
 import * as L from 'leaflet';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { MingasAdminComponent } from '../mingas-admin/mingas-admin.component';
 
 
 // Para solucionar problema de iconos de Leaflet en Angular
@@ -63,7 +64,7 @@ interface EventoAdmin {
 @Component({
   selector: 'app-asistencias-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule,],
+  imports: [CommonModule, FormsModule, MingasAdminComponent],
   templateUrl: './asistencias-admin.component.html',
   styleUrls: ['../../admin.component.scss']
 })

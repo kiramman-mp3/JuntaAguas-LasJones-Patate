@@ -72,5 +72,15 @@ export class ConsultaService {
   getDocumentosEvento(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/eventos/${id}/documentos`);
   }
+
+  descargarListaAsistencia(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/eventos/${id}/pdf-asistencia`, {
+      ...this.getAuthHeaders(), responseType: 'blob'
+    });
+  }
+
+  urlDocumento(ruta: string): string {
+    return ruta.startsWith('/uploads/') ? `${this.apiUrl.replace(/\/api\/?$/, '')}${ruta}` : ruta;
+  }
 }
 

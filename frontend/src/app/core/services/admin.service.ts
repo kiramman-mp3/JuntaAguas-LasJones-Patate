@@ -49,6 +49,12 @@ export class AdminService {
     return this.http.post(`${this.baseUrl}/lotes`, data, { headers: this.getAuthHeaders() });
   }
 
+  sugerirCodigoLote(sectorId: number): Observable<{ status: string; data: { codigo: string } }> {
+    return this.http.get<{ status: string; data: { codigo: string } }>(
+      `${this.baseUrl}/lotes/sugerir-codigo?sector_id=${sectorId}`, { headers: this.getAuthHeaders() }
+    );
+  }
+
   vincularPersonaLote(loteId: number, data: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/lotes/${loteId}/vincular-persona`, data, { headers: this.getAuthHeaders() });
   }
@@ -73,8 +79,9 @@ export class AdminService {
     return this.http.delete(`${this.baseUrl}/turnos/${id}`, { headers: this.getAuthHeaders() });
   }
 
-  getEventos(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/eventos`, { headers: this.getAuthHeaders() });
+  getEventos(tipo?: 'ASAMBLEA' | 'MINGA'): Observable<any> {
+    const filtro = tipo ? `?tipo=${tipo}` : '';
+    return this.http.get(`${this.baseUrl}/eventos${filtro}`, { headers: this.getAuthHeaders() });
   }
 
   createEvento(payload: any): Observable<any> {
@@ -91,6 +98,22 @@ export class AdminService {
 
   getAsistencias(eventoId: number): Observable<any> {
     return this.http.get(`${this.baseUrl}/eventos/${eventoId}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
+  cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/estado`, { estado }, { headers: this.getAuthHeaders() });
+  }
+
+  finalizarMinga(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/finalizar`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  getAsistenciasMinga(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/mingas/${id}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
+  registrarAsistenciasMinga(id: number, asistencias: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
   }
 
   getBalance(): Observable<any> {

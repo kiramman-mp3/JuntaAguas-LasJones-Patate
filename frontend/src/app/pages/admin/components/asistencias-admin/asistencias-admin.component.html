@@ -8,7 +8,7 @@
         <h3 class="card__title" style="margin: 0; font-size: 1.3rem;"><i class="ri-calendar-event-fill"
             style="color: var(--color-primary); margin-right: 0.5rem;"></i> Control de Asistencia a Eventos</h3>
         <div style="display: flex; gap: 0.75rem;">
-          <button class="btn btn--primary" (click)="abrirModalNuevoEvento()">
+          <button *ngIf="subTabEventos === 'ASAMBLEA'" class="btn btn--primary" (click)="abrirModalNuevoEvento()">
             <i class="ri-add-circle-line"></i> Crear {{ subTabEventos === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
           </button>
         </div>
@@ -31,7 +31,7 @@
         </div>
 
         <!-- Filters Eventos -->
-        <div class="filters" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <div *ngIf="subTabEventos === 'ASAMBLEA'" class="filters" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
           <div style="position: relative; display: flex; align-items: center;">
             <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
             <input type="text" class="input input--sm" placeholder="Buscar evento..." [(ngModel)]="eventosBusqueda"
@@ -41,7 +41,9 @@
       </div>
     </div>
 
-    <div class="events-list">
+    <app-mingas-admin *ngIf="subTabEventos === 'MINGA'" (conectarWhatsApp)="abrirModalWhatsApp()"></app-mingas-admin>
+
+    <div class="events-list" *ngIf="subTabEventos === 'ASAMBLEA'">
       <div class="event-item card" *ngFor="let e of eventosFiltrados"
         style="padding: 1.25rem; margin-bottom: 1.25rem; border: 1px solid var(--border-color);">
         <div class="event-item__header"

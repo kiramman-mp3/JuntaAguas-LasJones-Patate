@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const eventoController = require('../controllers/eventoController');
+const mingaController = require('../controllers/mingaController');
 const { verificarToken, verificarRol } = require('../middlewares/authMiddleware');
 
 router.get('/', eventoController.getEventos);
@@ -9,7 +10,7 @@ router.get('/:id', eventoController.getEventoById);
 
 router.post('/', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.createEvento);
 router.post('/:id/puntos', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.savePuntosAsamblea);
-router.post('/:id/asistencias', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.registrarAsistencias);
+router.post('/:id/asistencias', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), mingaController.encaminarAsistencias, eventoController.registrarAsistencias);
 router.get('/:id/asistencias', verificarToken, eventoController.getAsistencias);
 router.get('/:id/pdf-asistencia', eventoController.descargarPDFAsistencia);
 router.post('/:id/documentos', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.guardarDocumentoEvento);
