@@ -37,6 +37,12 @@
             <input type="text" class="input input--sm" placeholder="Buscar evento..." [(ngModel)]="eventosBusqueda"
               (ngModelChange)="aplicarFiltroEventos()" style="padding-left: 2rem; width: 260px;">
           </div>
+          <select class="input input--sm" [(ngModel)]="eventosPeriodo" (ngModelChange)="aplicarFiltroEventos()"
+            aria-label="Filtrar asambleas por fecha" style="width: auto;">
+            <option value="TODAS">Todas las fechas</option>
+            <option value="PROXIMAS">Hoy y próximas</option>
+            <option value="ANTERIORES">Anteriores</option>
+          </select>
         </div>
       </div>
     </div>

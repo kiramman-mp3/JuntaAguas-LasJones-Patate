@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-inicio',
@@ -19,7 +20,7 @@ export class InicioComponent implements OnInit {
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    this.http.get<any>('http://localhost:3000/api/personas/stats').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/personas/stats`).subscribe({
       next: (res) => {
         if (res && res.stats) {
           this.totalComuneros = res.stats.totalComuneros;
@@ -32,7 +33,7 @@ export class InicioComponent implements OnInit {
       }
     });
 
-    this.http.get<any>('http://localhost:3000/api/eventos/publicos').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/eventos/publicos`).subscribe({
       next: (res) => {
         if (res && res.eventos) {
           this.proximosEventos = res.eventos;
@@ -45,7 +46,7 @@ export class InicioComponent implements OnInit {
       }
     });
 
-    this.http.get<any>('http://localhost:3000/api/lotes/sectores').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/lotes/sectores`).subscribe({
       next: (res) => {
         if (res && res.data) {
           this.sectores = res.data;

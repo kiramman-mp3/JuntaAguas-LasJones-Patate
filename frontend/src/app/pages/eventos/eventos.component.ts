@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConsultaService } from '../../core/services/consulta.service';
 import { ActasService } from '../../core/services/actas.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-eventos',
@@ -55,7 +56,7 @@ export class EventosComponent implements OnInit {
 
   abrirPdf(url: string) {
     if (!url) return;
-    const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${environment.serverUrl}${url}`;
     window.open(fullUrl, '_blank');
   }
 
@@ -73,7 +74,7 @@ export class EventosComponent implements OnInit {
     } else if (ev.lista_asistencia_url) {
       this.abrirPdf(ev.lista_asistencia_url);
     } else {
-      window.open(`http://localhost:3000/api/eventos/${ev.id}/pdf-asistencia`, '_blank');
+      window.open(`${environment.apiUrl}/eventos/${ev.id}/pdf-asistencia`, '_blank');
     }
   }
 }

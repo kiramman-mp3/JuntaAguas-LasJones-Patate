@@ -150,7 +150,7 @@ export class ComunerosAdminComponent implements OnInit {
           
           if (res.pagination) {
             this.usuariosTotalRegistros = res.pagination.total;
-            this.usuariosTotalPaginas = Math.ceil(res.pagination.total / res.pagination.limit);
+            this.usuariosTotalPaginas = Math.max(1, Math.ceil(res.pagination.total / res.pagination.limit));
           }
           this.cdr.detectChanges();
         }

@@ -38,29 +38,29 @@ async function getPersonas(req, res, next) {
     const { busqueda, estado, page = 1, limit = 50 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    let sql = `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.direccion, p.telefono, p.celular, p.email, p.fecha_nacimiento, p.estado, p.created_at,
-                      (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count
-               FROM personas p
-               WHERE 1=1`;
-    const params = [];
+    // Filtros compartidos por la consulta de datos y la del total (paginación)
+    let where = ` WHERE 1=1`;
+    const filtroParams = [];
 
     if (estado) {
-      sql += ` AND p.estado = ?`;
-      params.push(estado);
+      where += ` AND p.estado = ?`;
+      filtroParams.push(estado);
     }
 
     if (busqueda) {
-      sql += ` AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ?)`;
+      where += ` AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ?)`;
       const term = `%${busqueda.trim()}%`;
-      params.push(term, term, term);
+      filtroParams.push(term, term, term);
     }
 
-    sql += ` ORDER BY p.apellidos ASC, p.nombres ASC LIMIT ? OFFSET ?`;
-    params.push(parseInt(limit), parseInt(offset));
+    const sql = `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.direccion, p.telefono, p.celular, p.email, p.fecha_nacimiento, p.estado, p.created_at,
+                      (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count
+               FROM personas p` + where +
+               ` ORDER BY p.apellidos ASC, p.nombres ASC LIMIT ? OFFSET ?`;
 
-    const [personas] = await db.query(sql, params);
+    const [personas] = await db.query(sql, [...filtroParams, parseInt(limit), parseInt(offset)]);
 
-    const [totalRows] = await db.query(`SELECT COUNT(*) AS total FROM personas`);
+    const [totalRows] = await db.query(`SELECT COUNT(*) AS total FROM personas p` + where, filtroParams);
 
     return res.json({
       status: 'OK',

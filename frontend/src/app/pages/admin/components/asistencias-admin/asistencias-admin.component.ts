@@ -9,6 +9,7 @@ import * as L from 'leaflet';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MingasAdminComponent } from '../mingas-admin/mingas-admin.component';
+import { environment } from '../../../../../environments/environment';
 
 
 // Para solucionar problema de iconos de Leaflet en Angular
@@ -95,6 +96,8 @@ export class AsistenciasAdminComponent implements OnInit {
   // Mocks de Eventos / Asistencias inicializados en vacío
   eventos: EventoAdmin[] = [];
   eventosBusqueda: string = '';
+  // Mismo criterio que el filtro de fechas de Mingas (mingas-admin)
+  eventosPeriodo: 'TODAS' | 'PROXIMAS' | 'ANTERIORES' = 'TODAS';
   eventosEstadoFiltro: string = '';
   modalEventoVisible: boolean = false;
   formEvento = {
@@ -182,7 +185,7 @@ export class AsistenciasAdminComponent implements OnInit {
         next: (res: any) => {
           if (res.status === 'OK') {
             // Actualizar la URL en el objeto del evento inmediatamente (sin esperar recarga)
-            const serverUrl = res.url ? `http://localhost:3000${res.url}` : null;
+            const serverUrl = res.url ? `${environment.serverUrl}${res.url}` : null;
             if (serverUrl) {
               if (tipo === 'CONVOCATORIA') {
                 e.convocatoria_firmada_url = serverUrl;
@@ -211,7 +214,7 @@ export class AsistenciasAdminComponent implements OnInit {
 
   descargarDocumentoGuardado(url?: string, filename?: string) {
     if (!url) return;
-    const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${environment.serverUrl}${url}`;
     window.open(fullUrl, '_blank');
   }
 
@@ -265,8 +268,11 @@ export class AsistenciasAdminComponent implements OnInit {
   get eventosFiltrados() {
     let filtrados = this.eventos.filter(e => e.tipo === this.subTabEventos);
 
-    // REQUERIMIENTO: Mostrar solo eventos práximos, no pasados
-    filtrados = filtrados.filter(e => !this.esEventoPasado(e.fecha));
+    // Los eventos pasados se conservan para consultar el historial (I11, F02)
+    if (this.eventosPeriodo !== 'TODAS') {
+      const verAnteriores = this.eventosPeriodo === 'ANTERIORES';
+      filtrados = filtrados.filter(e => this.esEventoPasado(e.fecha) === verAnteriores);
+    }
 
     if (this.eventosBusqueda.trim()) {
       const termino = this.eventosBusqueda.toLowerCase();
@@ -300,7 +306,11 @@ export class AsistenciasAdminComponent implements OnInit {
     // La forma mÃ¡s segura en TS sin librerías: 
     const partes = fechaStr.split(/[\/\-]/);
     let fechaObj: Date;
-    if (partes.length === 3) {
+    if (partes.length === 3 && partes[0].length === 4) {
+      // ISO YYYY-MM-DD (formato de cargarEventos): construir en hora local,
+      // new Date('YYYY-MM-DD') lo toma como UTC y en Ecuador resta un día
+      fechaObj = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+    } else if (partes.length === 3) {
       // heurística simple: si el Ãºltimo tiene 4 digitos es año
       if (partes[2].length === 4) {
         // Puede ser DD/MM/YYYY o MM/DD/YYYY. Asumiremos que Date.parse o new Date de MM/DD/YYYY funciona en general
