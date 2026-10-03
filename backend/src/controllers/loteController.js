@@ -13,8 +13,7 @@ async function sugerirCodigo(req, res, next) {
       return res.status(404).json({ status: 'ERROR', message: 'El sector seleccionado no existe o está inactivo.' });
     }
     // Incluye lotes inactivos: sus códigos también están sujetos al UNIQUE global.
-    const [lotesSector] = await db.query('SELECT codigo FROM lotes WHERE sector_id = ?', [sectorId]);
-    const prefijo = prefijoSector(sectores[0].nombre, lotesSector.map(l => l.codigo));
+    const prefijo = prefijoSector(sectores[0].nombre);
     const [codigos] = await db.query('SELECT codigo FROM lotes WHERE codigo LIKE ?', [`${prefijo}-%`]);
     let consecutivo = 0;
     for (const lote of codigos) {

@@ -46,12 +46,18 @@ const falloInesperado = (error) => {
   throw error;
 };
 
-test("conserva el prefijo predominante del sector y normaliza letras", () => {
+test("conserva el prefijo fijo del sector aunque cambie el catastro y normaliza letras", () => {
   assert.equal(
-    codigos.prefijoSector("La Jones Alto", ["LJA-001", "LJA-002", "OLD-003"]),
+    codigos.prefijoSector("La Jones Alto", ["OLD-001", "OLD-002", "OLD-003"]),
     "LJA",
   );
   assert.equal(codigos.prefijoSector("Árbol del río"), "ADR");
+  assert.equal(codigos.prefijoSector("Sector Las Jones Alto"), "LJA");
+  assert.equal(codigos.prefijoSector("La Jones Baja"), "LJB");
+  assert.equal(codigos.prefijoSector("Sector Las Jones Centro"), "LJC");
+  assert.equal(codigos.prefijoSector("El Tambo"), "ELT");
+  assert.equal(codigos.prefijoSector("Los Cuyes"), "LCU");
+  assert.equal(codigos.prefijoSector("Sector Árbol del río"), "ADR");
   assert.equal(codigos.normalizarCodigo(" lja-001 "), "LJA-001");
   assert.equal(codigos.FORMATO_CODIGO_LOTE.test("LJA-1000"), true);
   assert.equal(codigos.FORMATO_CODIGO_LOTE.test("LJA-1"), false);

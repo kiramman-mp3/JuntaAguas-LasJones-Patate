@@ -5,26 +5,23 @@ function normalizarCodigo(codigo) {
   return typeof codigo === "string" ? codigo.trim().toUpperCase() : "";
 }
 
-function prefijoSector(nombre, codigos = []) {
-  const frecuencias = new Map();
-  for (const codigo of codigos) {
-    const normalizado = normalizarCodigo(codigo);
-    if (FORMATO_CODIGO_LOTE.test(normalizado)) {
-      const prefijo = normalizado.slice(0, 3);
-      frecuencias.set(prefijo, (frecuencias.get(prefijo) || 0) + 1);
-    }
-  }
-  if (frecuencias.size) {
-    return [...frecuencias].sort(
-      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
-    )[0][0];
-  }
+// Alias de los dos catálogos semilla. No depende de IDs ni del número de lotes.
+const PREFIJOS_SECTOR = Object.freeze({
+  'LA JONES ALTA': 'LJA', 'LA JONES ALTO': 'LJA', 'LAS JONES ALTO': 'LJA',
+  'LA JONES BAJA': 'LJB', 'LA JONES BAJO': 'LJB', 'LAS JONES BAJO': 'LJB',
+  'LAS JONES CENTRO': 'LJC', 'EL TAMBO': 'ELT', 'LOS CUYES': 'LCU',
+});
+
+function prefijoSector(nombre) {
   const palabras =
     nombre
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toUpperCase()
+      .replace(/^SECTOR\s+/, '')
       .match(/[A-Z]+/g) || [];
+  const fijo = PREFIJOS_SECTOR[palabras.join(' ')];
+  if (fijo) return fijo;
   const iniciales =
     palabras.length > 1
       ? palabras.map((p) => p[0]).join("")
