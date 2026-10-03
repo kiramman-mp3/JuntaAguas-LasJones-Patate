@@ -81,15 +81,19 @@ async function getLotes(req, res, next) {
   try {
     const { sector_id, busqueda, persona_id } = req.query;
 
-    let sql = `SELECT l.*, s.nombre AS sector_nombre,
-                      (SELECT CONCAT(p.nombres, ' ', p.apellidos, ' (C.I. ', p.cedula, ')')
-                       FROM persona_lotes pl JOIN personas p ON p.id = pl.persona_id
-                       WHERE pl.lote_id = l.id LIMIT 1) AS propietario,
-                      (SELECT CONCAT(p.nombres, ' ', p.apellidos)
-                       FROM persona_lotes pl JOIN personas p ON p.id = pl.persona_id
-                       WHERE pl.lote_id = l.id LIMIT 1) AS propietarios
+    let sql = `SELECT l.id, l.sector_id, l.codigo, l.superficie_m2, l.ancho_m, l.largo_m,
+                      l.latitud_aproximada, l.longitud_aproximada, l.radio_error_m,
+                      l.referencia_ubicacion, l.observacion, l.activo, l.created_at,
+                      s.nombre AS sector_nombre,
+                      pl.tipo_relacion, pl.porcentaje,
+                      p.id AS propietario_id, p.cedula AS propietario_cedula,
+                      CONCAT(p.nombres, ' ', p.apellidos) AS propietario_nombre,
+                      CASE WHEN p.id IS NOT NULL THEN CONCAT(p.nombres, ' ', p.apellidos, ' (C.I. ', p.cedula, ')') ELSE 'Sin propietario asignado' END AS propietario,
+                      CONCAT(p.nombres, ' ', p.apellidos) AS propietarios
                FROM lotes l
                JOIN sectores s ON s.id = l.sector_id
+               LEFT JOIN persona_lotes pl ON pl.lote_id = l.id
+               LEFT JOIN personas p ON p.id = pl.persona_id
                WHERE l.activo = TRUE`;
     const params = [];
 
