@@ -5,7 +5,10 @@ const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
 const PDFDocument = require('pdfkit');
 
+let tablaDocumentosAsegurada = false;
+
 async function asegurarTablaDocumentos() {
+  if (tablaDocumentosAsegurada) return;
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS documentos_evento (
@@ -50,6 +53,7 @@ async function asegurarTablaDocumentos() {
       await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN generado_por_cuenta_id BIGINT NULL`);
     } catch (e) { /* Ignorar error */ }
 
+    tablaDocumentosAsegurada = true;
   } catch (err) {
     console.error('Error asegurando tabla documentos_evento:', err);
   }
@@ -63,7 +67,10 @@ async function getEventos(req, res, next) {
     await asegurarTablaDocumentos();
     const { tipo, estado, desde, hasta } = req.query;
 
-    let sql = `SELECT e.*, CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
+    let sql = `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin,
+                      e.lugar, e.estado, e.requiere_asistencia, e.genera_multa_ausencia, e.valor_multa,
+                      e.created_by_cuenta_id, e.created_at,
+                      CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
                       (SELECT COUNT(*) FROM asistencias a WHERE a.evento_id = e.id AND a.estado = 'PRESENTE') AS asistentes,
                       (SELECT COUNT(*) FROM personas p2 WHERE p2.estado = 'ACTIVO') AS totalComuneros,
                       (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_url,
