@@ -174,7 +174,10 @@ async function anularObligacion(req, res, next) {
 async function registrarPago(req, res, next) {
   const connection = await db.getConnection();
   try {
-    const { persona_id, metodo, referencia, observacion, obligacionesIds } = req.body;
+    const { persona_id, metodo, referencia, observacion, observaciones, obligacionesIds } = req.body;
+    const textoObservacion = (observacion !== undefined && observacion !== null && String(observacion).trim() !== '')
+      ? String(observacion).trim()
+      : ((observaciones !== undefined && observaciones !== null && String(observaciones).trim() !== '') ? String(observaciones).trim() : null);
 
     if (!persona_id || !Array.isArray(obligacionesIds) || obligacionesIds.length === 0) {
       return res.status(400).json({ status: 'ERROR', message: 'Se requiere ID del comunero y al menos una obligación a pagar.' });
@@ -223,7 +226,7 @@ async function registrarPago(req, res, next) {
     const [resPago] = await connection.query(
       `INSERT INTO pagos (persona_id, fecha_pago, valor_total, metodo, referencia, observacion, registrado_por_cuenta_id)
        VALUES (?, NOW(), ?, ?, ?, ?, ?)`,
-      [persona_id, valorTotalCalculado, metodo || 'EFECTIVO', referencia || null, observacion || null, req.user.cuentaId]
+      [persona_id, valorTotalCalculado, metodo || 'EFECTIVO', referencia || null, textoObservacion, req.user.cuentaId]
     );
 
     const pagoId = resPago.insertId;
@@ -248,7 +251,7 @@ async function registrarPago(req, res, next) {
       entidad: 'pagos',
       entidadId: pagoId,
       ip: req.ip,
-      detalle: { persona_id, valorTotalCalculado, obligacionesIds }
+      detalle: { persona_id, valorTotalCalculado, obligacionesIds, observacion: textoObservacion }
     });
 
     return res.status(201).json({
