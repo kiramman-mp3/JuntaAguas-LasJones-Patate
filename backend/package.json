@@ -11,7 +11,7 @@
     "seed": "node src/utils/seedDb.js",
     "start:whatsapp": "node src/utils/seedWhatsAppDb.js && nodemon src/index.js",
     "db:reset": "node src/utils/cleanDb.js && npm run init-db && npm run seed-db",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
