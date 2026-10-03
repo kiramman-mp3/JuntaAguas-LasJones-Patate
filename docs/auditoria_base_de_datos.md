@@ -72,5 +72,22 @@ Tras inspeccionar las queries SQL de los controladores, se detectaron las siguie
 
 1. **Fase 1:** Depurar las tablas completamente huérfanas de directiva (`cargos_directiva`, `miembros_directiva`) que no tienen lógica ni controladores.
 2. **Fase 2:** Eliminar la dependencia residual de `proveedores` en `egresos` (incorporando proveedor como campo descriptivo directo en egresos si se requiere o retirando el `LEFT JOIN`).
-3. **Fase 3:** Retirar las columnas muertas (`tarifa_id`, `imagen_url`, `fecha_hasta`) en `schema.sql` y scripts de inicialización.
+3. **Fase 3:** Retirar las columnas muertas (`tarifa_id`, `imagen_url`, `fecha_hasta`, `proveedor_externo_id`, `documento_evento_id`) en `schema.sql` y scripts de inicialización.
 4. **Fase 4:** Validar que la inicialización limpia (`init-db`, `seed-db`) y la suite completa de pruebas unitarias se ejecuten al 100%.
+
+---
+
+## 5. Resultados de la Depuración
+
+- **Total de Tablas Reducido:** De 25 tablas a **22 tablas relacionales activas**.
+- **Entidades Eliminadas:**
+  - `cargos_directiva`: Removida por redundancia con el sistema de roles RBAC.
+  - `miembros_directiva`: Removida por ausencia de lógica y vistas de consumo.
+  - `proveedores`: Removida en favor de atributos informativos directos en la tabla `egresos`.
+- **Columnas Depuradas:**
+  - `lotes.imagen_url`
+  - `persona_lotes.fecha_hasta`
+  - `obligaciones.tarifa_id`
+  - `envios_convocatoria.proveedor_externo_id`
+  - `envios_convocatoria.documento_evento_id`
+- **Impacto:** Menor sobrecarga en el motor InnoDB, simplificación de claves foráneas, eliminación de JOINS muertos y consistencia total con los controladores de backend y vistas de Angular.
