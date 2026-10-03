@@ -309,20 +309,19 @@ async function getPagos(req, res, next) {
  */
 async function getEgresos(req, res, next) {
   try {
-    const { desde, hasta, proveedor_id } = req.query;
+    const { desde, hasta, proveedor } = req.query;
 
-    let sql = `SELECT e.*, prv.nombre AS proveedor_nombre, prv.identificacion AS proveedor_ruc,
+    let sql = `SELECT e.*, e.proveedor AS proveedor_nombre, e.ruc_proveedor AS proveedor_ruc,
                       CONCAT(reg_per.nombres, ' ', reg_per.apellidos) AS registrado_por_usuario
                FROM egresos e
-               LEFT JOIN proveedores prv ON prv.id = e.proveedor_id
                LEFT JOIN cuentas c ON c.id = e.registrado_por_cuenta_id
                LEFT JOIN personas reg_per ON reg_per.id = c.persona_id
                WHERE 1=1`;
     const params = [];
 
-    if (proveedor_id) {
-      sql += ` AND e.proveedor_id = ?`;
-      params.push(proveedor_id);
+    if (proveedor) {
+      sql += ` AND e.proveedor LIKE ?`;
+      params.push(`%${proveedor}%`);
     }
     if (desde) {
       sql += ` AND e.fecha >= ?`;
@@ -347,7 +346,7 @@ async function getEgresos(req, res, next) {
  */
 async function createEgreso(req, res, next) {
   try {
-    const { proveedor_id, fecha, concepto, descripcion, numero_factura, archivo_factura, valor } = req.body;
+    const { proveedor, ruc_proveedor, fecha, concepto, descripcion, numero_factura, archivo_factura, valor } = req.body;
 
     if (!fecha || !concepto || valor === undefined) {
       return res.status(400).json({ status: 'ERROR', message: 'Fecha, concepto y valor son requeridos.' });
@@ -358,9 +357,9 @@ async function createEgreso(req, res, next) {
     }
 
     const [result] = await db.query(
-      `INSERT INTO egresos (proveedor_id, fecha, concepto, descripcion, numero_factura, archivo_factura, valor, registrado_por_cuenta_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [proveedor_id || null, fecha, concepto.trim(), descripcion || null, numero_factura || null, archivo_factura || null, valor, req.user.cuentaId]
+      `INSERT INTO egresos (proveedor, ruc_proveedor, fecha, concepto, descripcion, numero_factura, archivo_factura, valor, registrado_por_cuenta_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [proveedor || null, ruc_proveedor || null, fecha, concepto.trim(), descripcion || null, numero_factura || null, archivo_factura || null, valor, req.user.cuentaId]
     );
 
     const egresoId = result.insertId;

@@ -58,27 +58,7 @@ CREATE TABLE IF NOT EXISTS cuentas (
     FOREIGN KEY (creada_por_cuenta_id) REFERENCES cuentas(id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Credenciales de autenticación y estado de acceso por usuario';
 
--- 4. Catálogo de Cargos de la Directiva
-CREATE TABLE IF NOT EXISTS cargos_directiva (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) UNIQUE NOT NULL,
-    orden SMALLINT,
-    activo BOOLEAN NOT NULL DEFAULT TRUE
-) ENGINE=InnoDB COMMENT='Cargos directivos (Presidente, Vicepresidente, Tesorero, etc.)';
 
--- 5. Histórico de Miembros de la Directiva
-CREATE TABLE IF NOT EXISTS miembros_directiva (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    persona_id BIGINT NOT NULL,
-    cargo_id BIGINT NOT NULL,
-    fecha_inicio DATE NOT NULL,
-    fecha_fin DATE,
-    estado ENUM('VIGENTE', 'FINALIZADO') NOT NULL DEFAULT 'VIGENTE',
-    observacion VARCHAR(255),
-    FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE,
-    FOREIGN KEY (cargo_id) REFERENCES cargos_directiva(id),
-    INDEX idx_directiva_periodo (persona_id, cargo_id, fecha_inicio)
-) ENGINE=InnoDB COMMENT='Historial de períodos directivos de la Junta';
 
 -- ==============================================================================
 -- DOMINIO 2: LOTES Y RIEGO
@@ -345,24 +325,13 @@ CREATE TABLE IF NOT EXISTS pago_detalles (
     CONSTRAINT uq_pago_obligacion UNIQUE (pago_id, obligacion_id)
 ) ENGINE=InnoDB COMMENT='Relación entre un pago y las obligaciones canceladas completamente';
 
--- 20. Registro de Proveedores
-CREATE TABLE IF NOT EXISTS proveedores (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    identificacion VARCHAR(20),
-    nombre VARCHAR(200) NOT NULL,
-    telefono VARCHAR(30),
-    direccion VARCHAR(255),
-    email VARCHAR(150),
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
-    INDEX idx_proveedores_identificacion (identificacion)
-) ENGINE=InnoDB COMMENT='Proveedores o terceros asociados a egresos';
-
--- 21. Egresos y Gastos
+-- 19. Egresos y Gastos
 CREATE TABLE IF NOT EXISTS egresos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    proveedor_id BIGINT,
     fecha DATE NOT NULL,
     concepto VARCHAR(200) NOT NULL,
+    proveedor VARCHAR(150),
+    ruc_proveedor VARCHAR(30),
     descripcion TEXT,
     numero_factura VARCHAR(100),
     archivo_factura VARCHAR(500),
@@ -370,10 +339,8 @@ CREATE TABLE IF NOT EXISTS egresos (
     registrado_por_cuenta_id BIGINT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id) ON DELETE SET NULL,
     FOREIGN KEY (registrado_por_cuenta_id) REFERENCES cuentas(id),
-    INDEX idx_egresos_fecha (fecha),
-    INDEX idx_egresos_proveedor (proveedor_id)
+    INDEX idx_egresos_fecha (fecha)
 ) ENGINE=InnoDB COMMENT='Registro de gastos, compras y egresos de la Junta';
 
 -- ==============================================================================
@@ -460,16 +427,6 @@ INSERT INTO roles (codigo, nombre, descripcion) VALUES
 ('ADMIN', 'Administrador del Sistema', 'Acceso total a todos los módulos y configuración'),
 ('USUARIO', 'Comunero / Usuario de Riego', 'Acceso a la consulta pública y su portal personal')
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
-
--- Cargos Directivos
-INSERT INTO cargos_directiva (nombre, orden) VALUES
-('Presidente', 1),
-('Vicepresidente', 2),
-('Tesorero', 3),
-('Secretario', 4),
-('Primer Vocal', 5),
-('Segundo Vocal', 6)
-ON DUPLICATE KEY UPDATE orden=VALUES(orden);
 
 -- Conceptos de Cobro
 INSERT INTO conceptos_cobro (codigo, nombre, descripcion) VALUES

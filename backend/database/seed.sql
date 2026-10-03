@@ -57,14 +57,6 @@ INSERT INTO cuentas (persona_id, rol_id, password_hash, debe_cambiar_password, e
 (3, 2, '$2a$10$O/fKwjoSZVq8DP8d24O5fuO/RpohuNFPMrtjYacQFae23uV9uPEDu', TRUE, 'ACTIVA')
 ON DUPLICATE KEY UPDATE estado=VALUES(estado);
 
--- ==============================================================================
--- MIEMBROS DE LA DIRECTIVA
--- ==============================================================================
-INSERT INTO miembros_directiva (persona_id, cargo_id, fecha_inicio, estado) VALUES
-(1, 1, '2024-01-15', 'VIGENTE'),
-(2, 3, '2024-01-15', 'VIGENTE'),
-(3, 4, '2024-01-15', 'VIGENTE')
-ON DUPLICATE KEY UPDATE estado=VALUES(estado);
 
 -- ==============================================================================
 -- LOTES
