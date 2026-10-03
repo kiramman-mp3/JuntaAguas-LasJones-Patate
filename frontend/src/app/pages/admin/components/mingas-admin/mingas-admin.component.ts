@@ -10,7 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize, forkJoin } from 'rxjs';
+import { finalize, switchMap, EMPTY } from 'rxjs';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 
@@ -125,6 +125,10 @@ export class MingasAdminComponent implements OnInit {
     return this.asistencias.filter((a) => a.estado === 'PRESENTE').length;
   }
 
+  get totalPendientes() {
+    return this.asistencias.filter(a => a.estado === 'PENDIENTE' || (a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())).length;
+  }
+
   get asistenciaCerrada() {
     return this.seleccionada?.estado === 'REALIZADO' || this.seleccionada?.estado === 'CANCELADO';
   }
@@ -146,10 +150,18 @@ export class MingasAdminComponent implements OnInit {
 
   finalizarMinga(minga: Minga) {
     if (this.actualizandoId !== null || this.enviandoId !== null || ['REALIZADO', 'CANCELADO'].includes(minga.estado)) return;
-    if (!confirm(`¿Finalizar "${minga.titulo}"? Se cerrará la asistencia y se registrarán las multas por ausencias, si aplican.`)) return;
     this.actualizandoId = minga.id;
     this.error = '';
-    this.admin.finalizarMinga(minga.id).pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
+    this.admin.getAsistenciasMinga(minga.id).pipe(switchMap(res => {
+      const r = res.resumen;
+      if (!r.total || r.pendientes) {
+        this.error = `Complete y guarde la asistencia antes de finalizar. Pendientes: ${r.pendientes}.`;
+        return EMPTY;
+      }
+      const multa = minga.genera_multa_ausencia ? ` Se registrarán multas únicamente para las ${r.ausentes} ausencias.` : ' No se generarán multas.';
+      if (!confirm(`¿Finalizar "${minga.titulo}"? Asistencia guardada: ${r.presentes} presentes, ${r.ausentes} ausentes y ${r.justificados} justificados.${multa} La asistencia quedará cerrada.`)) return EMPTY;
+      return this.admin.finalizarMinga(minga.id);
+    }), takeUntilDestroyed(this.destroyRef), finalize(() => {
       this.actualizandoId = null;
       this.cdr.markForCheck();
     })).subscribe({
@@ -296,10 +308,7 @@ export class MingasAdminComponent implements OnInit {
     this.errorAsistencia = '';
     this.asistenciaDisponible = false;
     this.cargandoAsistencia = true;
-    forkJoin({
-      personas: this.admin.getPersonas(1, 9999, '', 'ACTIVO'),
-      registros: this.admin.getAsistencias(minga.id),
-    })
+    this.admin.getAsistenciasMinga(minga.id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
@@ -308,19 +317,11 @@ export class MingasAdminComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: ({ personas, registros }) => {
+        next: (res) => {
           if (this.seleccionada?.id !== minga.id) return;
-          const previos = new Map<number, any>(
-            (registros.data || []).map((a: any) => [Number(a.persona_id), a]),
-          );
+          this.seleccionada.estado = res.estado;
           this.asistenciaDisponible = true;
-          this.asistencias = (personas.data || []).map((p: any) => ({
-            persona_id: Number(p.id),
-            nombre: `${p.apellidos} ${p.nombres}`,
-            cedula: p.cedula,
-            estado: previos.get(Number(p.id))?.estado || 'PENDIENTE',
-            motivo_justificacion: previos.get(Number(p.id))?.motivo_justificacion || '',
-          }));
+          this.asistencias = res.data || [];
         },
         error: () =>
           (this.errorAsistencia =

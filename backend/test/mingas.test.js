@@ -19,6 +19,7 @@ function entorno({ evento = {}, query } = {}) {
       if (sql.includes('FROM eventos e')) return [[minga]];
       if (sql.includes('FROM conceptos_cobro')) return [[{ id: 3 }]];
       if (sql.includes('FROM obligaciones')) return [[]];
+      if (sql.includes('FROM personas p')) return [[{ persona_id: 10, estado: 'AUSENTE', motivo_justificacion: '' }]];
       if (sql.includes('FROM asistencias')) return [[{ persona_id: 10 }]];
       return [{ affectedRows: 1 }];
     }
@@ -117,4 +118,40 @@ test('el contrato anterior de Asambleas conserva su controlador', async () => {
   await e.api.encaminarAsistencias(e.req, e.res, () => { continua = true; });
   assert.equal(continua, true);
   assert.deepEqual(e.operaciones, []);
+});
+
+
+test('impide finalizar con personas sin registrar o justificaciones incompletas', async () => {
+  for (const persona of [{ persona_id: 11, estado: 'PENDIENTE', motivo_justificacion: '' },
+    { persona_id: 11, estado: 'JUSTIFICADO', motivo_justificacion: ' ' }]) {
+    const e = entorno({ query: sql => sql.includes('FROM personas p') ? [[persona]] : undefined });
+    await e.api.finalizar(e.req, e.res, siguiente);
+    assert.equal(e.res.statusCode, 409);
+    assert.equal(e.res.body.resumen.pendientes, 1);
+    assert.ok(!e.operaciones.some(o => o.sql?.includes('INSERT') || o.sql?.startsWith('UPDATE')));
+  }
+});
+
+test('solo multa ausentes, conserva justificados y devuelve el padrón completo', async () => {
+  const personas = [
+    { persona_id: 10, estado: 'AUSENTE', motivo_justificacion: '' },
+    { persona_id: 11, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
+    { persona_id: 12, estado: 'PRESENTE', motivo_justificacion: '' },
+  ];
+  const e = entorno({ query: sql => sql.includes('FROM personas p') ? [personas] : undefined });
+  await e.api.getAsistencias(e.req, e.res, siguiente);
+  assert.equal(e.res.body.data.length, 3);
+  assert.equal(e.res.body.resumen.justificados, 1);
+  await e.api.finalizar(e.req, e.res, siguiente);
+  assert.equal(e.res.body.multasGeneradas, 1);
+  const inserciones = e.operaciones.filter(o => o.sql?.includes('INSERT INTO obligaciones'));
+  assert.equal(inserciones.length, 1);
+  assert.equal(inserciones[0].params[0], 10);
+});
+
+test('rechaza personas ajenas al padrón antes de guardar', async () => {
+  const e = entorno(); e.req.body.asistencias = [{ persona_id: 99, estado: 'PRESENTE' }];
+  await e.api.registrarAsistencias(e.req, e.res, siguiente);
+  assert.equal(e.res.statusCode, 400);
+  assert.ok(!e.operaciones.some(o => o.sql?.includes('INSERT')));
 });

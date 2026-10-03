@@ -28,6 +28,31 @@ function exigirAbierta(minga) {
   }
 }
 
+async function obtenerPadron(connection, minga) {
+  const [personas] = await connection.query(
+    `SELECT p.id AS persona_id, CONCAT(p.apellidos, ' ', p.nombres) AS nombre, p.cedula,
+       COALESCE(a.estado, 'PENDIENTE') AS estado,
+       COALESCE(a.motivo_justificacion, '') AS motivo_justificacion
+     FROM personas p LEFT JOIN asistencias a ON a.persona_id = p.id AND a.evento_id = ?
+     WHERE p.estado = 'ACTIVO' OR a.id IS NOT NULL ORDER BY p.apellidos, p.nombres FOR UPDATE`, [minga.id]
+  );
+  const resumen = { total: personas.length, presentes: 0, ausentes: 0, justificados: 0, pendientes: 0 };
+  for (const persona of personas) {
+    if (persona.estado === 'PRESENTE') resumen.presentes++;
+    else if (persona.estado === 'AUSENTE') resumen.ausentes++;
+    else if (persona.estado === 'JUSTIFICADO' && persona.motivo_justificacion.trim()) resumen.justificados++;
+    else resumen.pendientes++;
+  }
+  return { personas, resumen };
+}
+
+async function getAsistencias(req, res, next) {
+  return transaccion(req, res, next, async (connection, minga) => {
+    const { personas, resumen } = await obtenerPadron(connection, minga);
+    return { data: personas, resumen, estado: minga.estado };
+  });
+}
+
 // Todas las escrituras de este módulo adquieren primero el mismo bloqueo de evento.
 async function transaccion(req, res, next, operacion) {
   let connection;
@@ -75,6 +100,10 @@ async function finalizar(req, res, next) {
     }
     exigirAbierta(minga);
     if (!Number(minga.iniciada)) throw errorHttp(409, 'Solo se puede finalizar una minga cuya fecha y hora de inicio ya hayan llegado.');
+    const { personas, resumen } = await obtenerPadron(connection, minga);
+    if (!resumen.total || resumen.pendientes) {
+      throw errorHttp(409, 'Complete y guarde la asistencia de todos los comuneros antes de finalizar.', { resumen });
+    }
     let multasGeneradas = 0;
     if (minga.genera_multa_ausencia) {
       const valor = Number(minga.valor_multa);
@@ -85,9 +114,7 @@ async function finalizar(req, res, next) {
         'SELECT persona_id FROM obligaciones WHERE evento_id = ? AND concepto_id = ?', [minga.id, conceptos[0].id]
       );
       const yaMultadas = new Set(registradas.map(o => Number(o.persona_id)));
-      const [ausentes] = await connection.query(
-        "SELECT persona_id FROM asistencias WHERE evento_id = ? AND estado = 'AUSENTE' FOR UPDATE", [minga.id]
-      );
+      const ausentes = personas.filter(p => p.estado === 'AUSENTE');
       for (const ausente of ausentes) {
         if (yaMultadas.has(Number(ausente.persona_id))) continue;
         // El evento identifica la multa. NULL en mes evita que la clave de cuotas
@@ -127,6 +154,11 @@ async function registrarAsistencias(req, res, next) {
       }
       ids.add(id);
     }
+    const { personas } = await obtenerPadron(connection, minga);
+    const permitidos = new Set(personas.map(p => Number(p.persona_id)));
+    if ([...ids].some(id => !permitidos.has(id))) {
+      throw errorHttp(400, 'La lista contiene personas que no pertenecen al registro de esta minga.');
+    }
     for (const a of asistencias) {
       await connection.query(
         `INSERT INTO asistencias (evento_id, persona_id, estado, hora_registro, motivo_justificacion, registrado_por_cuenta_id)
@@ -149,4 +181,4 @@ async function encaminarAsistencias(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { cambiarEstado, finalizar, registrarAsistencias, encaminarAsistencias };
+module.exports = { cambiarEstado, finalizar, registrarAsistencias, encaminarAsistencias, getAsistencias };

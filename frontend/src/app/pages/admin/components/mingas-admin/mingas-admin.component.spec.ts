@@ -40,6 +40,13 @@ describe('Gestión de Mingas', () => {
       getAsistencias: vi.fn(() =>
         of({ data: [{ persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' }] }),
       ),
+      getAsistenciasMinga: vi.fn(() => of({
+        estado: 'BORRADOR', resumen: { total: 2, presentes: 0, ausentes: 0, justificados: 1, pendientes: 1 },
+        data: [
+          { persona_id: 1, nombre: 'Pérez Ana', cedula: '1800000001', estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
+          { persona_id: 2, nombre: 'Mora Luis', cedula: '1800000002', estado: 'PENDIENTE', motivo_justificacion: '' },
+        ],
+      })),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
       registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
       cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
@@ -114,7 +121,7 @@ describe('Gestión de Mingas', () => {
   });
 
   it('no guarda una asistencia vacía cuando falla la carga de registros previos', () => {
-    admin.getAsistencias.mockReturnValue(throwError(() => new Error('Sin conexión')));
+    admin.getAsistenciasMinga.mockReturnValue(throwError(() => new Error('Sin conexión')));
     component.abrirAsistencia(minga);
     component.guardarAsistencia();
     expect(component.errorAsistencia).toBeTruthy();
@@ -152,10 +159,27 @@ describe('Gestión de Mingas', () => {
   });
 
   it('impide modificar una asistencia finalizada desde la interfaz', () => {
+    admin.getAsistenciasMinga.mockReturnValue(of({ estado: 'REALIZADO', data: [] }));
     component.abrirAsistencia({ ...minga, estado: 'REALIZADO' });
     component.guardarAsistencia();
     expect(component.asistenciaCerrada).toBe(true);
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
+  });
+
+  it('no finaliza cuando hay asistentes pendientes en el backend', () => {
+    component.finalizarMinga({ ...minga });
+    expect(admin.finalizarMinga).not.toHaveBeenCalled();
+    expect(component.error).toContain('Pendientes: 1');
+    expect(component.actualizandoId).toBeNull();
+  });
+
+  it('confirma el resumen guardado antes de finalizar', () => {
+    admin.getAsistenciasMinga.mockReturnValue(of({ resumen: { total: 2, presentes: 1, ausentes: 1, justificados: 0, pendientes: 0 } }));
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    component.finalizarMinga({ ...minga });
+    expect(admin.finalizarMinga).toHaveBeenCalledWith(1);
+    expect(confirmar.mock.calls[0][0]).toContain('1 ausentes');
+    confirmar.mockRestore();
   });
 
   it('muestra acciones propias de Minga sin subtipo ni actas', () => {

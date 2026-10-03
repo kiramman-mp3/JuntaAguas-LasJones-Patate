@@ -108,6 +108,10 @@ export class AdminService {
     return this.http.post(`${this.baseUrl}/mingas/${id}/finalizar`, {}, { headers: this.getAuthHeaders() });
   }
 
+  getAsistenciasMinga(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/mingas/${id}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
   registrarAsistenciasMinga(id: number, asistencias: any[]): Observable<any> {
     return this.http.post(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
   }
