@@ -27,6 +27,7 @@ export class FinanzasAdminComponent implements OnInit {
   obligacionesComunero: any[] = [];
   obligacionesSeleccionadasIds: number[] = [];
   valorRecibidoFinanzas: number | null = null;
+  observacionCobro: string = '';
   comprobanteModalVisible: boolean = false;
   comprobanteActual: any = null;
   historialPagos: any[] = [];
@@ -320,12 +321,14 @@ export class FinanzasAdminComponent implements OnInit {
     }
 
     const obligacionesACobrar = this.obligacionesComunero.filter(o => this.obligacionesSeleccionadasIds.includes(o.id));
+    const textoObs = this.observacionCobro?.trim() || 'Pago procesado desde panel administrativo.';
 
     const payload = {
       persona_id: this.comuneroSeleccionadoFinanzas.id,
       metodo: 'EFECTIVO',
       obligacionesIds: this.obligacionesSeleccionadasIds,
-      observaciones: 'Pago procesado desde panel administrativo.'
+      observacion: textoObs,
+      observaciones: textoObs
     };
 
     this.adminService.registrarPago(payload).subscribe({
@@ -343,9 +346,11 @@ export class FinanzasAdminComponent implements OnInit {
           })),
           total: total,
           valorRecibido: Number(this.valorRecibidoFinanzas),
-          cambio: this.cambioCalculado
+          cambio: this.cambioCalculado,
+          observacion: textoObs
         };
 
+        this.observacionCobro = '';
         this.comprobanteModalVisible = true;
         this.modalCobroVisible = false;
         this.dataChanged.emit();
@@ -487,13 +492,20 @@ export class FinanzasAdminComponent implements OnInit {
     doc.text('CAMBIO ENTREGADO:', 75, finalY + 10);
     doc.text(`$${c.cambio.toFixed(2)}`, 133, finalY + 10, { align: 'right' });
 
+    if (c.observacion) {
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Obs: ${c.observacion}`, 15, finalY + 16, { maxWidth: 118 });
+    }
+
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(80, 80, 80);
-    doc.text('Gracias por mantener al día sus aportes para el fortalecimiento de nuestra Junta de Agua.', 74, finalY + 22, { align: 'center' });
+    doc.text('Gracias por mantener al día sus aportes para el fortalecimiento de nuestra Junta de Agua.', 74, finalY + 23, { align: 'center' });
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('CAJA GENERAL - JUNTA LA JONES', 74, finalY + 27, { align: 'center' });
+    doc.text('CAJA GENERAL - JUNTA LA JONES', 74, finalY + 28, { align: 'center' });
 
     doc.autoPrint();
     const pdfBlobUrl = doc.output('bloburl');

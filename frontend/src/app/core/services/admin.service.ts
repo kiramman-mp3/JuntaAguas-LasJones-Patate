@@ -126,8 +126,12 @@ export class AdminService {
     return this.http.get(url, { headers: this.getAuthHeaders() });
   }
 
-  registrarPago(payload: { persona_id: number; metodo: string; referencia?: string; observaciones?: string; obligacionesIds: number[] }): Observable<any> {
-    return this.http.post(`${this.baseUrl}/financiero/pagos`, payload, { headers: this.getAuthHeaders() });
+  registrarPago(payload: { persona_id: number; metodo: string; referencia?: string; observacion?: string; observaciones?: string; obligacionesIds: number[] }): Observable<any> {
+    const body = {
+      ...payload,
+      observacion: payload.observacion || payload.observaciones || 'Pago procesado desde panel administrativo.'
+    };
+    return this.http.post(`${this.baseUrl}/financiero/pagos`, body, { headers: this.getAuthHeaders() });
   }
 
   getPagos(personaId?: number): Observable<any> {
