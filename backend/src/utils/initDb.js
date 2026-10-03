@@ -49,9 +49,9 @@ async function inicializarBaseDeDatos() {
 
     console.log('----------------------------------------------------------------------');
     console.log(`✅ [DB Init] ¡ÉXITO! La base de datos '${database}' ha sido inicializada.`);
-    console.log('   - 25 tablas relacionales creadas y estructuradas.');
+    console.log('   - 22 tablas relacionales creadas y optimizadas.');
     console.log('   - Claves foráneas, índices y restricciones aplicadas.');
-    console.log('   - Datos semilla para Roles, Cargos y Conceptos insertados.');
+    console.log('   - Datos semilla para Roles y Conceptos insertados.');
     console.log('----------------------------------------------------------------------');
 
   } catch (error) {
