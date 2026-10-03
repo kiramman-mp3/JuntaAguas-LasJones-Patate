@@ -251,6 +251,13 @@
 
               </div>
 
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-color); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">
+                  Observación del Pago (Opcional)
+                </label>
+                <input type="text" class="input input--sm" placeholder="Ej: Pago en ventanilla / Recibo manual" [(ngModel)]="observacionCobro" style="width: 100%; font-size: 0.85rem;" />
+              </div>
+
               <div *ngIf="valorRecibidoFinanzas !== null && valorRecibidoFinanzas < totalAPagarFinanzas" class="alert alert--warning" style="padding: 0.4rem 0.75rem; font-size: 0.78rem; margin: 0;">
                 <i class="ri-alert-line"></i> El valor recibido es menor al total a pagar.
               </div>
@@ -486,8 +493,13 @@
         </div>
       </div>
 
+      <!-- Observación del Pago -->
+      <div *ngIf="comprobanteActual.observacion" style="margin-top: 1rem; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; font-size: 0.8rem; color: #475569;">
+        <strong style="color: #0f172a;">Observación:</strong> {{ comprobanteActual.observacion }}
+      </div>
+
       <!-- Pie de página de validez -->
-      <div style="margin-top: 2rem; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 1rem; font-size: 0.75rem; color: #64748b;">
+      <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 1rem; font-size: 0.75rem; color: #64748b;">
         <p style="margin: 0;">Gracias por mantener al día sus aportes para el fortalecimiento de nuestra Junta de Agua.</p>
         <p style="margin: 0.25rem 0 0 0; font-weight: 700;">CAJA GENERAL - JUNTA LA JONES</p>
       </div>
