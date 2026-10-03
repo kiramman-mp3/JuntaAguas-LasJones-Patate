@@ -59,6 +59,7 @@ export class MingasAdminComponent implements OnInit {
   guardando = false;
   errorFormulario = '';
   enviandoId: number | null = null;
+  actualizandoId: number | null = null;
   subiendoId: number | null = null;
   descargandoId: number | null = null;
   seleccionada: Minga | null = null;
@@ -122,6 +123,39 @@ export class MingasAdminComponent implements OnInit {
 
   get totalPresentes() {
     return this.asistencias.filter((a) => a.estado === 'PRESENTE').length;
+  }
+
+  get asistenciaCerrada() {
+    return this.seleccionada?.estado === 'REALIZADO' || this.seleccionada?.estado === 'CANCELADO';
+  }
+
+  cambiarEstado(minga: Minga, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO', desdeEnvio = false) {
+    if (this.actualizandoId !== null || (!desdeEnvio && this.enviandoId !== null)) return;
+    if (estado === 'CANCELADO' && !confirm(`¿Cancelar la minga "${minga.titulo}"? Su asistencia quedará cerrada y no se generarán multas.`)) return;
+    this.actualizandoId = minga.id;
+    this.error = '';
+    this.admin.cambiarEstadoMinga(minga.id, estado).pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
+      this.actualizandoId = null;
+      this.cdr.markForCheck();
+    })).subscribe({
+      next: res => { minga.estado = res.estado; if (!desdeEnvio) this.mensaje = res.message; this.cargar(); },
+      error: err => this.error = (desdeEnvio ? 'La convocatoria se envió, pero no se pudo actualizar el estado. ' : '')
+        + (err.error?.message || 'No se pudo actualizar la minga.')
+    });
+  }
+
+  finalizarMinga(minga: Minga) {
+    if (this.actualizandoId !== null || this.enviandoId !== null || ['REALIZADO', 'CANCELADO'].includes(minga.estado)) return;
+    if (!confirm(`¿Finalizar "${minga.titulo}"? Se cerrará la asistencia y se registrarán las multas por ausencias, si aplican.`)) return;
+    this.actualizandoId = minga.id;
+    this.error = '';
+    this.admin.finalizarMinga(minga.id).pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
+      this.actualizandoId = null;
+      this.cdr.markForCheck();
+    })).subscribe({
+      next: res => { minga.estado = res.estado; this.mensaje = res.message; this.cargar(); },
+      error: err => this.error = err.error?.message || 'No se pudo finalizar la minga.'
+    });
   }
 
   estadoTexto(estado: string) {
@@ -222,7 +256,7 @@ export class MingasAdminComponent implements OnInit {
   }
 
   enviarConvocatoria(minga: Minga) {
-    if (this.enviandoId !== null || minga.estado === 'CANCELADO' || minga.estado === 'REALIZADO')
+    if (this.enviandoId !== null || this.actualizandoId !== null || minga.estado === 'CANCELADO' || minga.estado === 'REALIZADO')
       return;
     if (
       !confirm(
@@ -243,7 +277,10 @@ export class MingasAdminComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: (res) => (this.mensaje = res.message || 'Convocatoria enviada.'),
+        next: (res) => {
+          this.mensaje = res.message || 'Convocatoria enviada.';
+          if (Number(res.enviados) > 0 && minga.estado !== 'CONVOCADO') this.cambiarEstado(minga, 'CONVOCADO', true);
+        },
         error: (err) =>
           (this.error =
             err.error?.message ||
@@ -292,6 +329,7 @@ export class MingasAdminComponent implements OnInit {
   }
 
   marcarPresentes() {
+    if (this.asistenciaCerrada) return;
     // Respeta las justificaciones previamente registradas.
     this.asistenciasFiltradas
       .filter((a) => a.estado !== 'JUSTIFICADO')
@@ -301,6 +339,7 @@ export class MingasAdminComponent implements OnInit {
   guardarAsistencia() {
     if (
       !this.seleccionada ||
+      this.asistenciaCerrada ||
       this.guardandoAsistencia ||
       this.cargandoAsistencia ||
       !this.asistenciaDisponible ||
@@ -322,7 +361,7 @@ export class MingasAdminComponent implements OnInit {
     }));
     this.guardandoAsistencia = true;
     this.admin
-      .registrarAsistencias(minga.id, payload)
+      .registrarAsistenciasMinga(minga.id, payload)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {

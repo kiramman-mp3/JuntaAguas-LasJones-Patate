@@ -74,7 +74,7 @@
         <button
           class="btn btn--outline"
           (click)="enviarConvocatoria(m)"
-          [disabled]="enviandoId !== null || m.estado === 'CANCELADO' || m.estado === 'REALIZADO'"
+          [disabled]="enviandoId !== null || actualizandoId !== null || m.estado === 'CANCELADO' || m.estado === 'REALIZADO'"
           title="Enviar la convocatoria por WhatsApp a comuneros activos"
         >
           <i class="ri-whatsapp-line" aria-hidden="true"></i>
@@ -85,8 +85,22 @@
           (click)="abrirAsistencia(m)"
           [disabled]="m.estado === 'CANCELADO'"
         >
-          <i class="ri-checkbox-circle-line" aria-hidden="true"></i> Registrar asistencia
+          <i class="ri-checkbox-circle-line" aria-hidden="true"></i> {{ m.estado === 'REALIZADO' ? 'Ver asistencia' : 'Registrar asistencia' }}
         </button>
+        <ng-container *ngIf="m.estado !== 'CANCELADO' && m.estado !== 'REALIZADO'">
+          <button *ngIf="m.estado === 'BORRADOR'" class="btn btn--outline" (click)="cambiarEstado(m, 'PROGRAMADO')" [disabled]="actualizandoId !== null || enviandoId !== null">
+            <i class="ri-calendar-check-line" aria-hidden="true"></i> Programar
+          </button>
+          <button *ngIf="m.estado !== 'CONVOCADO'" class="btn btn--outline" (click)="cambiarEstado(m, 'CONVOCADO')" [disabled]="actualizandoId !== null || enviandoId !== null">
+            <i class="ri-megaphone-line" aria-hidden="true"></i> Marcar convocada
+          </button>
+          <button class="btn btn--outline" (click)="finalizarMinga(m)" [disabled]="actualizandoId !== null || enviandoId !== null">
+            <i class="ri-check-double-line" aria-hidden="true"></i> Finalizar minga
+          </button>
+          <button class="btn btn--outline" (click)="cambiarEstado(m, 'CANCELADO')" [disabled]="actualizandoId !== null || enviandoId !== null">
+            <i class="ri-close-circle-line" aria-hidden="true"></i> Cancelar minga
+          </button>
+        </ng-container>
       </div>
       <div class="documents">
         <div>
@@ -280,7 +294,7 @@
         <button
           class="btn btn--outline btn--sm"
           (click)="marcarPresentes()"
-          [disabled]="guardandoAsistencia"
+          [disabled]="guardandoAsistencia || asistenciaCerrada"
         >
           Marcar visibles presentes
         </button>
@@ -308,7 +322,7 @@
                 <select
                   class="input"
                   [(ngModel)]="a.estado"
-                  [disabled]="guardandoAsistencia"
+                  [disabled]="guardandoAsistencia || asistenciaCerrada"
                   [attr.aria-label]="'Asistencia de ' + a.nombre"
                 >
                   <option value="PENDIENTE">Pendiente</option>
@@ -322,7 +336,7 @@
                   *ngIf="a.estado === 'JUSTIFICADO'"
                   class="input"
                   [(ngModel)]="a.motivo_justificacion"
-                  [disabled]="guardandoAsistencia"
+                  [disabled]="guardandoAsistencia || asistenciaCerrada"
                   maxlength="255"
                   placeholder="Motivo de justificación"
                   [attr.aria-label]="'Motivo de ' + a.nombre"
@@ -348,6 +362,7 @@
         Cerrar
       </button>
       <button
+        *ngIf="!asistenciaCerrada"
         class="btn btn--primary"
         (click)="guardarAsistencia()"
         [disabled]="guardandoAsistencia || cargandoAsistencia || !asistencias.length"

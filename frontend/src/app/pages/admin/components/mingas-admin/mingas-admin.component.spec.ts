@@ -41,6 +41,9 @@ describe('Gestión de Mingas', () => {
         of({ data: [{ persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' }] }),
       ),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
+      registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
+      cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
+      finalizarMinga: vi.fn(() => of({ estado: 'REALIZADO', message: 'Finalizada' })),
       notificarMingaWhatsApp: vi.fn(() => of({ message: 'Enviado' })),
     };
     consulta = {
@@ -94,7 +97,7 @@ describe('Gestión de Mingas', () => {
   it('conserva justificaciones y deja sin marcar como pendiente', () => {
     component.abrirAsistencia(minga);
     component.guardarAsistencia();
-    expect(admin.registrarAsistencias).toHaveBeenCalledWith(1, [
+    expect(admin.registrarAsistenciasMinga).toHaveBeenCalledWith(1, [
       { persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
       { persona_id: 2, estado: 'PENDIENTE', motivo_justificacion: null },
     ]);
@@ -104,10 +107,10 @@ describe('Gestión de Mingas', () => {
     component.abrirAsistencia(minga);
     component.asistencias[0].motivo_justificacion = '';
     component.guardarAsistencia();
-    expect(admin.registrarAsistencias).not.toHaveBeenCalled();
+    expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
     component.asistencias[0].motivo_justificacion = 'Trabajo';
     component.guardarAsistencia();
-    expect(admin.registrarAsistencias).toHaveBeenCalledOnce();
+    expect(admin.registrarAsistenciasMinga).toHaveBeenCalledOnce();
   });
 
   it('no guarda una asistencia vacía cuando falla la carga de registros previos', () => {
@@ -115,7 +118,7 @@ describe('Gestión de Mingas', () => {
     component.abrirAsistencia(minga);
     component.guardarAsistencia();
     expect(component.errorAsistencia).toBeTruthy();
-    expect(admin.registrarAsistencias).not.toHaveBeenCalled();
+    expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
   it('evita el doble envío mientras la convocatoria está en curso', () => {
@@ -138,6 +141,21 @@ describe('Gestión de Mingas', () => {
     } as unknown as HTMLInputElement);
     expect(component.error).toContain('PDF');
     expect(consulta.subirDocumentoEvento).not.toHaveBeenCalled();
+  });
+
+  it('marca convocada después de un envío exitoso', () => {
+    admin.notificarMingaWhatsApp.mockReturnValue(of({ enviados: 2, message: 'Enviado' }));
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    component.enviarConvocatoria({ ...minga });
+    expect(admin.cambiarEstadoMinga).toHaveBeenCalledWith(1, 'CONVOCADO');
+    confirmar.mockRestore();
+  });
+
+  it('impide modificar una asistencia finalizada desde la interfaz', () => {
+    component.abrirAsistencia({ ...minga, estado: 'REALIZADO' });
+    component.guardarAsistencia();
+    expect(component.asistenciaCerrada).toBe(true);
+    expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
   it('muestra acciones propias de Minga sin subtipo ni actas', () => {

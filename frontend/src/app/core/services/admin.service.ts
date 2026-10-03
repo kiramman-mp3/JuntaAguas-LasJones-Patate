@@ -100,6 +100,18 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/eventos/${eventoId}/asistencias`, { headers: this.getAuthHeaders() });
   }
 
+  cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/estado`, { estado }, { headers: this.getAuthHeaders() });
+  }
+
+  finalizarMinga(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/finalizar`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  registrarAsistenciasMinga(id: number, asistencias: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
+  }
+
   getBalance(): Observable<any> {
     return this.http.get(`${this.baseUrl}/financiero/balance`, { headers: this.getAuthHeaders() });
   }
