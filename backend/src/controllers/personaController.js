@@ -90,9 +90,11 @@ async function getPersonaById(req, res, next) {
 
     const persona = rows[0];
 
-    // Obtener lotes vinculados
+    // Obtener lotes vinculados con campos especificos
     const [lotes] = await db.query(
-      `SELECT l.*, s.nombre AS sector_nombre, pl.tipo_relacion, pl.porcentaje
+      `SELECT l.id, l.sector_id, l.codigo, l.superficie_m2, l.ancho_m, l.largo_m,
+              l.latitud_aproximada, l.longitud_aproximada, l.referencia_ubicacion,
+              s.nombre AS sector_nombre, pl.tipo_relacion, pl.porcentaje
        FROM persona_lotes pl
        JOIN lotes l ON l.id = pl.lote_id
        JOIN sectores s ON s.id = l.sector_id
@@ -100,19 +102,22 @@ async function getPersonaById(req, res, next) {
       [id]
     );
 
-    // Obtener turnos de agua
+    // Obtener turnos de agua optimizados
     const [turnos] = await db.query(
-      `SELECT t.*, l.codigo AS lote_codigo, s.nombre AS sector_nombre
+      `SELECT t.id, t.dia_semana, t.hora_inicio, t.hora_fin, t.tipo, t.estado, t.observacion,
+              l.codigo AS lote_codigo, s.nombre AS sector_nombre
        FROM turnos_riego t
        LEFT JOIN lotes l ON l.id = t.lote_id
        LEFT JOIN sectores s ON s.id = l.sector_id
-       WHERE t.persona_id = ? AND t.estado = 'ACTIVO'`,
+       WHERE t.persona_id = ? AND t.estado = 'ACTIVO'
+       ORDER BY t.dia_semana ASC, t.hora_inicio ASC`,
       [id]
     );
 
-    // Obtener obligaciones pendientes
+    // Obtener obligaciones pendientes optimizadas
     const [obligaciones] = await db.query(
-      `SELECT o.*, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre
+      `SELECT o.id, o.periodo_anio, o.periodo_mes, o.fecha_emision, o.fecha_vencimiento,
+              o.valor, o.estado, o.observacion, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre
        FROM obligaciones o
        JOIN conceptos_cobro c ON c.id = o.concepto_id
        WHERE o.persona_id = ? AND o.estado = 'PENDIENTE'
