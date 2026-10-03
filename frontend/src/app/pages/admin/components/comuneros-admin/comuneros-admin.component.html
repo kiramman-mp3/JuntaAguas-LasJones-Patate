@@ -311,22 +311,33 @@
   <div class="card modal" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
     <div class="modal__header">
       <h3>Registrar Nuevo Lote</h3>
-      <button class="btn-close" (click)="cerrarModalLote()"><i class="ri-close-line"></i></button>
+      <button class="btn-close" (click)="cerrarModalLote()" [disabled]="guardandoLote" aria-label="Cerrar registro de lote"><i class="ri-close-line"></i></button>
     </div>
     <div class="modal-body">
       <form (ngSubmit)="guardarLote()" #loteForm="ngForm">
         <div class="grid-2">
           <div class="form-group">
             <label>Sector *</label>
-            <select class="input" name="sector" [(ngModel)]="formLote.sector_id" required>
+            <select class="input" name="sector" [(ngModel)]="formLote.sector_id" (ngModelChange)="cambiarSectorLote()" [disabled]="guardandoLote" required>
               <option [ngValue]="null">Seleccione un sector...</option>
               <option *ngFor="let s of sectores" [ngValue]="s.id">{{ s.nombre }}</option>
             </select>
           </div>
           <div class="form-group">
             <label>Código Interno Lote *</label>
-            <input type="text" class="input" name="codigo" [(ngModel)]="formLote.codigo" required
-              placeholder="Ej: LZN-001">
+            <input type="text" class="input" name="codigo" [(ngModel)]="formLote.codigo"
+              (ngModelChange)="normalizarCodigoLote($event)" required pattern="[A-Z]{3}-[0-9]{3,8}"
+              maxlength="12" [disabled]="sugiriendoCodigoLote || guardandoLote" #codigoLote="ngModel"
+              aria-describedby="ayudaCodigoLote" placeholder="Ej: LJA-001">
+            <button type="button" class="btn btn--outline btn--sm" style="margin-top: 0.5rem;"
+              (click)="sugerirCodigoLote()" [disabled]="!formLote.sector_id || sugiriendoCodigoLote || guardandoLote">
+              <i [class]="sugiriendoCodigoLote ? 'ri-loader-4-line' : 'ri-magic-line'"></i>
+              {{ sugiriendoCodigoLote ? 'Consultando...' : 'Sugerir código' }}
+            </button>
+            <small id="ayudaCodigoLote" class="text-muted" style="display: block; margin-top: 0.5rem;">
+              Seleccione un sector. Formato: tres letras, guion y al menos tres dígitos. Puede editar la sugerencia.
+            </small>
+            <small *ngIf="codigoLote.invalid && codigoLote.touched" role="alert">Ingrese un código como LJA-001 (máximo ocho dígitos).</small>
           </div>
           <div class="form-group">
             <label>Superficie (metros)</label>
@@ -375,9 +386,10 @@
         </div>
 
         <div class="modal__footer">
-          <button type="button" class="btn btn--outline" (click)="cerrarModalLote()">Cancelar</button>
-          <button type="submit" class="btn btn--primary" [disabled]="loteForm.invalid">
-            <i class="ri-save-line"></i> Guardar Lote
+          <p *ngIf="errorLote" class="text-danger" role="alert">{{ errorLote }}</p>
+          <button type="button" class="btn btn--outline" (click)="cerrarModalLote()" [disabled]="guardandoLote">Cancelar</button>
+          <button type="submit" class="btn btn--primary" [disabled]="loteForm.invalid || guardandoLote || sugiriendoCodigoLote">
+            <i class="ri-save-line"></i> {{ guardandoLote ? 'Guardando...' : 'Guardar Lote' }}
           </button>
         </div>
       </form>

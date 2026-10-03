@@ -1,5 +1,35 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const { FORMATO_CODIGO_LOTE, normalizarCodigo, prefijoSector } = require('../utils/loteCodigo');
+
+async function sugerirCodigo(req, res, next) {
+  try {
+    const sectorId = Number(req.query.sector_id);
+    if (!Number.isSafeInteger(sectorId) || sectorId <= 0) {
+      return res.status(400).json({ status: 'ERROR', message: 'Seleccione un sector válido para sugerir el código.' });
+    }
+    const [sectores] = await db.query('SELECT nombre FROM sectores WHERE id = ? AND activo = TRUE', [sectorId]);
+    if (!sectores.length) {
+      return res.status(404).json({ status: 'ERROR', message: 'El sector seleccionado no existe o está inactivo.' });
+    }
+    // Incluye lotes inactivos: sus códigos también están sujetos al UNIQUE global.
+    const [lotesSector] = await db.query('SELECT codigo FROM lotes WHERE sector_id = ?', [sectorId]);
+    const prefijo = prefijoSector(sectores[0].nombre, lotesSector.map(l => l.codigo));
+    const [codigos] = await db.query('SELECT codigo FROM lotes WHERE codigo LIKE ?', [`${prefijo}-%`]);
+    let consecutivo = 0;
+    for (const lote of codigos) {
+      const codigo = normalizarCodigo(lote.codigo);
+      if (FORMATO_CODIGO_LOTE.test(codigo)) consecutivo = Math.max(consecutivo, Number(codigo.slice(4)));
+    }
+    if (consecutivo >= 99999999) {
+      return res.status(409).json({ status: 'ERROR', message: 'Se agotaron los códigos para este prefijo.' });
+    }
+    const codigo = `${prefijo}-${String(consecutivo + 1).padStart(3, '0')}`;
+    return res.json({ status: 'OK', data: { codigo } });
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * Obtener catálogo de sectores
@@ -100,10 +130,19 @@ async function createLote(req, res, next) {
       return res.status(400).json({ status: 'ERROR', message: 'Sector y Código del Lote son campos obligatorios.' });
     }
 
+    const codigoNormalizado = normalizarCodigo(codigo);
+    if (!FORMATO_CODIGO_LOTE.test(codigoNormalizado)) {
+      return res.status(400).json({ status: 'ERROR', message: 'El código debe tener tres letras y de tres a ocho dígitos separados por un guion. Ejemplo: LJA-001.' });
+    }
+    const [existentes] = await db.query('SELECT id FROM lotes WHERE codigo = ?', [codigoNormalizado]);
+    if (existentes.length) {
+      return res.status(409).json({ status: 'ERROR', message: 'Este código de lote ya está registrado. Solicite otra sugerencia o ingrese un código diferente.' });
+    }
+
     const [result] = await db.query(
       `INSERT INTO lotes (sector_id, codigo, superficie_m2, ancho_m, largo_m, latitud_aproximada, longitud_aproximada, radio_error_m, referencia_ubicacion, observacion)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [sector_id, codigo.trim(), superficie_m2 || null, ancho_m || null, largo_m || null, latitud_aproximada || null, longitud_aproximada || null, radio_error_m || null, referencia_ubicacion || null, observacion || null]
+      [sector_id, codigoNormalizado, superficie_m2 || null, ancho_m || null, largo_m || null, latitud_aproximada || null, longitud_aproximada || null, radio_error_m || null, referencia_ubicacion || null, observacion || null]
     );
 
     const loteId = result.insertId;
@@ -124,11 +163,15 @@ async function createLote(req, res, next) {
       entidad: 'lotes',
       entidadId: loteId,
       ip: req.ip,
-      detalle: { codigo, sector_id, latitud_aproximada, longitud_aproximada }
+      detalle: { codigo: codigoNormalizado, sector_id, latitud_aproximada, longitud_aproximada }
     });
 
     return res.status(201).json({ status: 'OK', message: 'Lote georreferenciado creado correctamente.', loteId });
   } catch (error) {
+    // La restricción UNIQUE cubre la carrera entre sugerir/comprobar y el INSERT.
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ status: 'ERROR', message: 'Este código de lote acaba de ser registrado. Solicite otra sugerencia.' });
+    }
     next(error);
   }
 }
@@ -160,6 +203,7 @@ async function linkPersonaLote(req, res, next) {
 }
 
 module.exports = {
+  sugerirCodigo,
   getSectores,
   createSector,
   getLotes,

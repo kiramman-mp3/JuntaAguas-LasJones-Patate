@@ -1,0 +1,359 @@
+<section class="mingas" aria-label="Gestión de mingas">
+  <div class="toolbar">
+    <div>
+      <h3><i class="ri-tools-line" aria-hidden="true"></i> Mingas comunitarias</h3>
+      <p>Organice el trabajo, convoque a los comuneros y registre su asistencia.</p>
+    </div>
+    <button class="btn btn--primary" (click)="abrirNueva()">
+      <i class="ri-add-line" aria-hidden="true"></i> Nueva minga
+    </button>
+  </div>
+  <div class="toolbar filters">
+    <label
+      >Buscar minga
+      <input class="input" type="search" [(ngModel)]="busqueda" placeholder="Actividad o lugar"
+    /></label>
+    <label
+      >Fecha
+      <select class="input" [(ngModel)]="periodo">
+        <option value="TODAS">Todas las fechas</option>
+        <option value="PROXIMAS">Hoy y próximas</option>
+        <option value="ANTERIORES">Anteriores</option>
+      </select></label
+    >
+    <button class="btn btn--outline" (click)="cargar()" [disabled]="cargando">
+      <i class="ri-refresh-line" aria-hidden="true"></i> Actualizar
+    </button>
+    <button class="btn btn--outline" (click)="conectarWhatsApp.emit()">
+      <i class="ri-whatsapp-line" aria-hidden="true"></i> Conectar WhatsApp
+    </button>
+  </div>
+  <p *ngIf="mensaje" class="notice success" role="status">{{ mensaje }}</p>
+  <p *ngIf="error" class="notice danger" role="alert">{{ error }}</p>
+  <p *ngIf="cargando" class="empty" role="status">Cargando mingas...</p>
+  <p *ngIf="!cargando && !error && mingasFiltradas.length === 0" class="empty">
+    {{
+      mingas.length
+        ? 'No hay mingas que coincidan con la búsqueda y la fecha.'
+        : 'Todavía no hay mingas registradas. Cree la primera minga.'
+    }}
+  </p>
+  <div class="minga-list" *ngIf="!cargando">
+    <article class="minga-card" *ngFor="let m of mingasFiltradas">
+      <div class="toolbar">
+        <div>
+          <span
+            class="status"
+            [class.cancelada]="m.estado === 'CANCELADO'"
+            [class.realizada]="m.estado === 'REALIZADO'"
+            >{{ estadoTexto(m.estado) }}</span
+          >
+          <h4>{{ m.titulo }}</h4>
+        </div>
+        <span class="attendance-count"
+          ><i class="ri-group-line" aria-hidden="true"></i> {{ m.asistentes }} /
+          {{ m.totalComuneros }} presentes</span
+        >
+      </div>
+      <dl class="details">
+        <div>
+          <dt>Fecha y hora</dt>
+          <dd>{{ m.fecha | date: 'dd/MM/yyyy' }} · {{ m.hora_inicio }}</dd>
+        </div>
+        <div>
+          <dt>Lugar</dt>
+          <dd>{{ m.lugar || 'Sin lugar registrado' }}</dd>
+        </div>
+        <div>
+          <dt>Multa por ausencia</dt>
+          <dd>{{ m.genera_multa_ausencia ? (m.valor_multa | currency: 'USD') : 'No aplica' }}</dd>
+        </div>
+      </dl>
+      <p class="activities" *ngIf="m.descripcion">{{ m.descripcion }}</p>
+      <div class="actions">
+        <button
+          class="btn btn--outline"
+          (click)="enviarConvocatoria(m)"
+          [disabled]="enviandoId !== null || m.estado === 'CANCELADO' || m.estado === 'REALIZADO'"
+          title="Enviar la convocatoria por WhatsApp a comuneros activos"
+        >
+          <i class="ri-whatsapp-line" aria-hidden="true"></i>
+          {{ enviandoId === m.id ? 'Enviando...' : 'Convocar por WhatsApp' }}
+        </button>
+        <button
+          class="btn btn--primary"
+          (click)="abrirAsistencia(m)"
+          [disabled]="m.estado === 'CANCELADO'"
+        >
+          <i class="ri-checkbox-circle-line" aria-hidden="true"></i> Registrar asistencia
+        </button>
+      </div>
+      <div class="documents">
+        <div>
+          <strong
+            ><i class="ri-file-list-3-line" aria-hidden="true"></i> Lista de asistencia</strong
+          >
+          <span class="document-state">{{
+            m.lista_asistencia_firmada_url ? 'Firmada cargada' : 'Pendiente de documento firmado'
+          }}</span>
+        </div>
+        <div class="actions">
+          <button
+            class="btn btn--outline btn--sm"
+            (click)="descargarLista(m)"
+            [disabled]="descargandoId !== null"
+          >
+            <i class="ri-download-line" aria-hidden="true"></i>
+            {{ descargandoId === m.id ? 'Descargando...' : 'Descargar para firmar' }}
+          </button>
+          <button
+            class="btn btn--outline btn--sm"
+            (click)="archivoFirmado.click()"
+            [disabled]="subiendoId !== null"
+            [title]="
+              m.lista_asistencia_firmada_url
+                ? 'Reemplazar la lista firmada existente'
+                : 'Subir PDF, JPG o PNG firmado (máximo 10 MB)'
+            "
+          >
+            <i class="ri-upload-2-line" aria-hidden="true"></i>
+            {{
+              subiendoId === m.id
+                ? 'Subiendo...'
+                : m.lista_asistencia_firmada_url
+                  ? 'Reemplazar firmado'
+                  : 'Subir firmado'
+            }}
+          </button>
+          <input
+            type="file"
+            hidden
+            #archivoFirmado
+            accept="application/pdf,image/jpeg,image/png"
+            (change)="subirLista(m, archivoFirmado)"
+          />
+          <button
+            *ngIf="m.lista_asistencia_firmada_url"
+            class="btn btn--outline btn--sm"
+            (click)="verLista(m)"
+          >
+            <i class="ri-eye-line" aria-hidden="true"></i> Ver firmado
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<div class="modal-backdrop" *ngIf="modalNueva">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloNuevaMinga">
+    <div class="toolbar">
+      <h3 id="tituloNuevaMinga">Nueva minga comunitaria</h3>
+      <button
+        class="btn btn--outline btn--sm"
+        (click)="modalNueva = false"
+        [disabled]="guardando"
+        aria-label="Cerrar nueva minga"
+      >
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    <form #mingaForm="ngForm" (ngSubmit)="guardarNueva()">
+      <fieldset [disabled]="guardando">
+        <label
+          >Actividad / título *<input
+            class="input"
+            name="titulo"
+            [(ngModel)]="formulario.titulo"
+            required
+            maxlength="200"
+            placeholder="Limpieza del canal principal"
+        /></label>
+        <label
+          >Trabajo a realizar *<textarea
+            class="input"
+            name="descripcion"
+            [(ngModel)]="formulario.descripcion"
+            required
+            rows="3"
+            placeholder="Detalle las actividades y las herramientas necesarias"
+          ></textarea>
+        </label>
+        <div class="form-grid">
+          <label
+            >Fecha *<input
+              class="input"
+              type="date"
+              name="fecha"
+              [(ngModel)]="formulario.fecha"
+              required
+          /></label>
+          <label
+            >Hora de inicio *<input
+              class="input"
+              type="time"
+              name="hora"
+              [(ngModel)]="formulario.hora_inicio"
+              required
+          /></label>
+        </div>
+        <label
+          >Lugar de encuentro *<input
+            class="input"
+            name="lugar"
+            [(ngModel)]="formulario.lugar"
+            required
+            maxlength="255"
+            placeholder="Punto de encuentro de los comuneros"
+        /></label>
+        <label class="check"
+          ><input
+            type="checkbox"
+            name="aplicaMulta"
+            [(ngModel)]="formulario.genera_multa_ausencia"
+          />
+          Aplica multa por ausencia</label
+        >
+        <label *ngIf="formulario.genera_multa_ausencia"
+          >Valor de la multa ($) *<input
+            class="input"
+            type="number"
+            name="multa"
+            [(ngModel)]="formulario.valor_multa"
+            min="0.01"
+            step="0.01"
+            required
+        /></label>
+      </fieldset>
+      <p class="notice danger" *ngIf="errorFormulario" role="alert">{{ errorFormulario }}</p>
+      <p class="help">Después de guardar podrá enviar la convocatoria por WhatsApp.</p>
+      <div class="actions footer">
+        <button
+          type="button"
+          class="btn btn--outline"
+          (click)="modalNueva = false"
+          [disabled]="guardando"
+        >
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn--primary" [disabled]="mingaForm.invalid || guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar minga' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<div class="modal-backdrop" *ngIf="seleccionada">
+  <section
+    class="modal modal-wide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloAsistenciaMinga"
+  >
+    <div class="toolbar">
+      <div>
+        <h3 id="tituloAsistenciaMinga">Asistencia a minga</h3>
+        <p>{{ seleccionada.titulo }}</p>
+      </div>
+      <button
+        class="btn btn--outline btn--sm"
+        (click)="seleccionada = null"
+        [disabled]="guardandoAsistencia || cargandoAsistencia"
+        aria-label="Cerrar asistencia"
+      >
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    <p *ngIf="cargandoAsistencia" role="status">Cargando comuneros y asistencias registradas...</p>
+    <p *ngIf="errorAsistencia" class="notice danger" role="alert">{{ errorAsistencia }}</p>
+    <ng-container *ngIf="!cargandoAsistencia && asistencias.length">
+      <div class="toolbar filters">
+        <label
+          >Buscar comunero
+          <input
+            class="input"
+            type="search"
+            [(ngModel)]="buscarComunero"
+            placeholder="Nombre o cédula"
+        /></label>
+        <button
+          class="btn btn--outline btn--sm"
+          (click)="marcarPresentes()"
+          [disabled]="guardandoAsistencia"
+        >
+          Marcar visibles presentes
+        </button>
+        <span>{{ totalPresentes }} presentes de {{ asistencias.length }}</span>
+      </div>
+      <p class="help">
+        Los registros sin marcar permanecen pendientes. Seleccione Ausente o Justificado cuando
+        corresponda.
+      </p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Comunero</th>
+              <th>Asistencia</th>
+              <th>Justificación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of asistenciasFiltradas">
+              <td>
+                {{ a.nombre }}<small>{{ a.cedula }}</small>
+              </td>
+              <td>
+                <select
+                  class="input"
+                  [(ngModel)]="a.estado"
+                  [disabled]="guardandoAsistencia"
+                  [attr.aria-label]="'Asistencia de ' + a.nombre"
+                >
+                  <option value="PENDIENTE">Pendiente</option>
+                  <option value="PRESENTE">Presente</option>
+                  <option value="AUSENTE">Ausente</option>
+                  <option value="JUSTIFICADO">Justificado</option>
+                </select>
+              </td>
+              <td>
+                <input
+                  *ngIf="a.estado === 'JUSTIFICADO'"
+                  class="input"
+                  [(ngModel)]="a.motivo_justificacion"
+                  [disabled]="guardandoAsistencia"
+                  maxlength="255"
+                  placeholder="Motivo de justificación"
+                  [attr.aria-label]="'Motivo de ' + a.nombre"
+                /><span *ngIf="a.estado !== 'JUSTIFICADO'">—</span>
+              </td>
+            </tr>
+            <tr *ngIf="!asistenciasFiltradas.length">
+              <td colspan="3">No hay comuneros que coincidan con la búsqueda.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+    <p *ngIf="!cargandoAsistencia && !errorAsistencia && !asistencias.length">
+      No hay comuneros activos para registrar asistencia.
+    </p>
+    <div class="actions footer">
+      <button
+        class="btn btn--outline"
+        (click)="seleccionada = null"
+        [disabled]="guardandoAsistencia || cargandoAsistencia"
+      >
+        Cerrar
+      </button>
+      <button
+        class="btn btn--primary"
+        (click)="guardarAsistencia()"
+        [disabled]="guardandoAsistencia || cargandoAsistencia || !asistencias.length"
+      >
+        {{ guardandoAsistencia ? 'Guardando...' : 'Guardar asistencia' }}
+      </button>
+    </div>
+  </section>
+</div>

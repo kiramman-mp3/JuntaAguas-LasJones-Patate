@@ -85,6 +85,10 @@ export class ComunerosAdminComponent implements OnInit {
 
   // Formulario Lote
   modalLoteVisible: boolean = false;
+  sugiriendoCodigoLote = false;
+  guardandoLote = false;
+  errorLote = '';
+  private solicitudCodigoLote = 0;
   formLote = {
     sector_id: null as number | null,
     codigo: '',
@@ -267,6 +271,9 @@ export class ComunerosAdminComponent implements OnInit {
   
 
   abrirModalNuevoLote() {
+    this.solicitudCodigoLote++;
+    this.errorLote = '';
+    this.sugiriendoCodigoLote = false;
     this.formLote = { sector_id: null, codigo: '', superficie_m2: null, latitud_aproximada: '', longitud_aproximada: '', radio_error_m: 5, referencia_ubicacion: '', observacion: '' };
     this.modalLoteVisible = true;
     setTimeout(() => {
@@ -275,6 +282,9 @@ export class ComunerosAdminComponent implements OnInit {
   }
 
   cerrarModalLote() {
+    if (this.guardandoLote) return;
+    this.solicitudCodigoLote++;
+    this.sugiriendoCodigoLote = false;
     this.modalLoteVisible = false;
     if (this.map) {
       this.map.remove();
@@ -310,18 +320,63 @@ export class ComunerosAdminComponent implements OnInit {
     });
   }
 
+  cambiarSectorLote() {
+    this.solicitudCodigoLote++;
+    this.sugiriendoCodigoLote = false;
+    this.errorLote = '';
+  }
+
+  normalizarCodigoLote(codigo: string) {
+    this.formLote.codigo = codigo.trim().toUpperCase();
+    this.errorLote = '';
+  }
+
+  sugerirCodigoLote() {
+    if (!this.formLote.sector_id || this.sugiriendoCodigoLote || this.guardandoLote) return;
+    const solicitud = ++this.solicitudCodigoLote;
+    this.sugiriendoCodigoLote = true;
+    this.errorLote = '';
+    this.adminService.sugerirCodigoLote(this.formLote.sector_id).subscribe({
+      next: res => {
+        if (solicitud !== this.solicitudCodigoLote || !this.modalLoteVisible) return;
+        this.formLote.codigo = res.data.codigo;
+        this.sugiriendoCodigoLote = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        if (solicitud !== this.solicitudCodigoLote || !this.modalLoteVisible) return;
+        this.errorLote = err.error?.message || 'No se pudo sugerir un código. Intente nuevamente.';
+        this.sugiriendoCodigoLote = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   guardarLote() {
+    if (this.guardandoLote || this.sugiriendoCodigoLote) return;
+    this.errorLote = '';
     if (!this.formLote.sector_id || !this.formLote.codigo) {
-      alert('El sector y el código son obligatorios.');
+      this.errorLote = 'El sector y el código son obligatorios.';
       return;
     }
+    this.formLote.codigo = this.formLote.codigo.trim().toUpperCase();
+    if (!/^[A-Z]{3}-\d{3,8}$/.test(this.formLote.codigo)) {
+      this.errorLote = 'Use tres letras y de tres a ocho dígitos, por ejemplo LJA-001.';
+      return;
+    }
+    this.guardandoLote = true;
     this.adminService.createLote(this.formLote).subscribe({
       next: (res) => {
+        this.guardandoLote = false;
         alert('Lote creado exitosamente.');
         this.cerrarModalLote();
         this.cargarLotes();
       },
-      error: (err) => alert(err.error?.message || 'Error al crear lote.')
+      error: (err) => {
+        this.guardandoLote = false;
+        this.errorLote = err.error?.message || 'Error al crear lote.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
