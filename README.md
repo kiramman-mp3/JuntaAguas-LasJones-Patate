@@ -6,7 +6,7 @@ Sistema web integral desarrollado para la administración eficiente, gestión fi
 
 ## 🚀 Tecnologías Utilizadas
 
-- **Frontend:** Angular 17+, TypeScript, SCSS, RxJS, Leaflet (Mapas interactivas).
+- **Frontend:** Angular 22, TypeScript, SCSS, RxJS, Leaflet (Mapas interactivas).
 - **Backend:** Node.js, Express, JWT, CORS, Dotenv.
 - **Base de Datos:** MySQL (Relacional, InnoDB, Utf8mb4).
 
@@ -62,7 +62,7 @@ JuntaAguas-LasJones-Patate/
 ## ⚡ Instalación y Configuración Local
 
 ### Prerrequisitos
-- **Node.js:** v18.x o superior
+- **Node.js:** v24.15 o superior (requerido por Angular 22). Guía detallada en [`INSTRUCCIONES.md`](INSTRUCCIONES.md)
 - **MySQL Server:** v8.0 o superior (o MariaDB equivalent)
 - **Angular CLI:** `npm install -g @angular/cli`
 
