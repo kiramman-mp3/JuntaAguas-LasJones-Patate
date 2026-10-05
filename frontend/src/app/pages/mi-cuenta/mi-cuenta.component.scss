@@ -11,10 +11,25 @@
 .search-header {
   padding: 2rem 2.5rem;
   margin-bottom: 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 
   h2 {
     color: var(--text-main);
   }
+
+  @media (max-width: 520px) {
+    padding: 1.5rem;
+  }
+}
+
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .search-results {
@@ -116,11 +131,4 @@
   }
 }
 
-.spin {
-  animation: spin 1s linear infinite;
-  display: inline-block;
-}
-
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
+/* La animación .spin ahora es global (styles.scss) */

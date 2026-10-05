@@ -275,7 +275,7 @@
 <!-- ========================================================================= -->
 <!-- MODAL: NUEVA ASAMBLEA                                                     -->
 <!-- ========================================================================= -->
-<div class="modal-backdrop" *ngIf="modalNueva">
+<div appModalA11y class="modal-backdrop" *ngIf="modalNueva">
   <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="modalNuevaTitle">
     <div class="modal__header">
       <h3 id="modalNuevaTitle"><i class="ri-add-circle-fill"></i> Convocatoria a Nueva Asamblea General</h3>
@@ -408,7 +408,7 @@
 <!-- ========================================================================= -->
 <!-- MODAL: GESTIÓN DE MÚLTIPLES ACTAS POR ASAMBLEA (F07)                       -->
 <!-- ========================================================================= -->
-<div class="modal-backdrop" *ngIf="modalActas && asambleaSeleccionada">
+<div appModalA11y class="modal-backdrop" *ngIf="modalActas && asambleaSeleccionada">
   <div class="modal modal--wide card" role="dialog" aria-modal="true" aria-labelledby="modalActasTitle">
     <div class="modal__header">
       <div>
@@ -564,7 +564,7 @@
 <!-- ========================================================================= -->
 <!-- MODAL: ASISTENCIA DIGITAL MASIVA                                          -->
 <!-- ========================================================================= -->
-<div class="modal-backdrop" *ngIf="modalAsistencia && asambleaSeleccionada">
+<div appModalA11y class="modal-backdrop" *ngIf="modalAsistencia && asambleaSeleccionada">
   <div class="modal modal--wide card" role="dialog" aria-modal="true" aria-labelledby="modalAsistenciaTitle">
     <div class="modal__header">
       <div>
@@ -731,7 +731,7 @@
 <!-- ========================================================================= -->
 <!-- MODAL: VISOR Y VALIDACIÓN DE DOCUMENTO FIRMADO                            -->
 <!-- ========================================================================= -->
-<div class="modal-backdrop" *ngIf="modalValidacionDoc && docParaValidar">
+<div appModalA11y class="modal-backdrop" *ngIf="modalValidacionDoc && docParaValidar">
   <div class="modal card" role="dialog" aria-modal="true" style="max-width: 650px;">
     <div class="modal__header">
       <h3><i class="ri-shield-check-fill" style="color: #10b981;"></i> Validación de Documento Firmado</h3>

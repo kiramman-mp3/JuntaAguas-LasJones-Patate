@@ -38,6 +38,9 @@
             ],
             "styles": [
               "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/remixicon/fonts/remixicon.css",
+              "node_modules/@fontsource/outfit/latin.css",
+              "node_modules/@fontsource/inter/latin.css",
               "src/styles.scss"
             ]
           },

@@ -3,7 +3,7 @@
   <div class="hero__overlay"></div>
   <div class="hero__container">
     <div class="hero__content">
-      <span class="badge badge--info mb-3"><i class="ri-calendar-event-line"></i> Junta La Jones</span>
+      <span class="badge badge--info mb-3"><i aria-hidden="true" class="ri-calendar-event-line"></i> Junta La Jones</span>
       <h1 class="hero__title">
         Gestión del Agua de Riego y Servicios Comunitarios
       </h1>
@@ -16,7 +16,7 @@
       <div class="card card--glass">
         <div class="preview-header">
           <div class="preview-icon">
-            <i class="ri-water-flash-fill"></i>
+            <i aria-hidden="true" class="ri-water-flash-fill"></i>
           </div>
           <div>
             <h4>Canal de Riego La Jones</h4>
@@ -44,11 +44,11 @@
   <div class="quick-search-section container">
     <div class="search-banner card card--glass hover-effect">
       <div class="search-banner__text">
-        <h3><i class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus obligaciones?</h3>
+        <h3><i aria-hidden="true" class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus obligaciones?</h3>
         <p>Inicia sesión para consultar tus pagos pendientes de agua de riego, asistencia a mingas y asambleas.</p>
       </div>
       <a routerLink="/login" class="btn btn--secondary btn--lg">
-        <i class="ri-user-settings-line"></i> Inicia sesión para verificarlas
+        <i aria-hidden="true" class="ri-user-settings-line"></i> Inicia sesión para verificarlas
       </a>
     </div>
   </div>
@@ -59,7 +59,7 @@
   <div class="container">
     <div class="section-header">
       <div>
-        <span class="badge badge--warning"><i class="ri-notification-3-line"></i> Avisos Importantes</span>
+        <span class="badge badge--warning"><i aria-hidden="true" class="ri-notification-3-line"></i> Avisos Importantes</span>
         <h2>Próximas Mingas y Asambleas</h2>
       </div>
     </div>
@@ -69,11 +69,11 @@
           <span class="badge" [ngClass]="ev.tipo === 'ASAMBLEA' ? 'badge--info' : 'badge--success'">
             {{ ev.tipo }}
           </span>
-          <span class="event-date"><i class="ri-calendar-2-line"></i> {{ ev.fecha | date:'longDate' }}</span>
+          <span class="event-date"><i aria-hidden="true" class="ri-calendar-2-line"></i> {{ ev.fecha | date:'longDate' }}</span>
         </div>
         <h3>{{ ev.titulo }}</h3>
-        <p class="event-time"><i class="ri-time-line"></i> Hora de inicio: {{ ev.hora_inicio }}</p>
-        <p class="event-location"><i class="ri-map-pin-line"></i> {{ ev.lugar }}</p>
+        <p class="event-time"><i aria-hidden="true" class="ri-time-line"></i> Hora de inicio: {{ ev.hora_inicio }}</p>
+        <p class="event-location"><i aria-hidden="true" class="ri-map-pin-line"></i> {{ ev.lugar }}</p>
       </div>
     </div>
   </div>
@@ -84,7 +84,7 @@
   <div class="container">
     <div class="section-header">
       <div>
-        <span class="badge badge--success"><i class="ri-map-2-line"></i> Geografía y Riego</span>
+        <span class="badge badge--success"><i aria-hidden="true" class="ri-map-2-line"></i> Geografía y Riego</span>
         <h2>Sectores y Distribución de Agua</h2>
       </div>
     </div>
@@ -92,7 +92,7 @@
     <div class="sectors-grid">
       <div class="card sector-card" *ngFor="let s of sectores">
         <div class="sector-card__icon">
-          <i class="ri-drop-line"></i>
+          <i aria-hidden="true" class="ri-drop-line"></i>
         </div>
         <h3>{{ s.nombre }}</h3>
         <p class="caption">Abastecimiento: {{ s.canal }}</p>

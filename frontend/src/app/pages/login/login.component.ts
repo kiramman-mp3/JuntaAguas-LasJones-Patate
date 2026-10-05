@@ -1,7 +1,7 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -17,6 +17,8 @@ export class LoginComponent {
   mostrarPassword: boolean = false;
   cargando: boolean = false;
   errorMensaje: string = '';
+  recordarSesion: boolean = true;
+  mostrarAyudaPassword: boolean = false;
   
   // Flujo de cambio de contraseña
   requiereCambioPassword: boolean = false;
@@ -24,7 +26,7 @@ export class LoginComponent {
   nuevaPassword2: string = '';
   exitoMensaje: string = '';
 
-  constructor(private authService: AuthService, private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
 
   iniciarSesion() {
     if (!this.usuario || !this.password) {
@@ -59,6 +61,11 @@ export class LoginComponent {
   }
 
   redirigirPorRol(rol: string) {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl) {
+      this.router.navigateByUrl(returnUrl);
+      return;
+    }
     if (rol === 'ADMIN' || rol === 'SECRETARIO') {
       this.router.navigate(['/admin']);
     } else {
@@ -99,5 +106,9 @@ export class LoginComponent {
 
   togglePassword() {
     this.mostrarPassword = !this.mostrarPassword;
+  }
+
+  alternarAyudaPassword() {
+    this.mostrarAyudaPassword = !this.mostrarAyudaPassword;
   }
 }

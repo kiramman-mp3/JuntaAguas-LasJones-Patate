@@ -10,6 +10,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MingasAdminComponent } from '../mingas-admin/mingas-admin.component';
 import { AsambleasAdminComponent } from '../asambleas-admin/asambleas-admin.component';
+import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { DialogService } from '../../../../core/services/dialog.service';
 import { environment } from '../../../../../environments/environment';
 
 
@@ -66,7 +69,7 @@ interface EventoAdmin {
 @Component({
   selector: 'app-asistencias-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, MingasAdminComponent, AsambleasAdminComponent],
+  imports: [CommonModule, FormsModule, MingasAdminComponent, AsambleasAdminComponent, ModalA11yDirective],
   templateUrl: './asistencias-admin.component.html',
   styleUrls: ['../../admin.component.scss']
 })
@@ -119,7 +122,9 @@ export class AsistenciasAdminComponent implements OnInit {
     private adminService: AdminService,
     private consultaService: ConsultaService,
     private actasService: ActasService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notify: NotificationService,
+    private dialog: DialogService
   ) { }
 
   cargarDashboard() { }
@@ -172,7 +177,7 @@ export class AsistenciasAdminComponent implements OnInit {
           this.actasService.generarActaPDF(res.evento, res.puntos || [], res.asistenciaStats);
         }
       },
-      error: () => alert('Error al cargar datos del acta.')
+      error: () => this.notify.error('Error al cargar datos del acta.')
     });
   }
 
@@ -198,7 +203,7 @@ export class AsistenciasAdminComponent implements OnInit {
                 // MINGA u OTRO â†’ lista de asistencia firmada
                 e.lista_asistencia_firmada_url = serverUrl;
               }
-              // Abrir el documento reciÃ©n subido en una nueva pestaña
+              // Abrir el documento recién subido en una nueva pestaña
               window.open(serverUrl, '_blank');
             }
             // Limpiar el input de archivo para permitir volver a subir
@@ -207,7 +212,7 @@ export class AsistenciasAdminComponent implements OnInit {
 
           }
         },
-        error: (err: any) => alert('Error al subir el documento firmado.')
+        error: (err: any) => this.notify.error('Error al subir el documento firmado.')
       });
     };
     reader.readAsDataURL(file);
@@ -238,7 +243,7 @@ export class AsistenciasAdminComponent implements OnInit {
       error: () => { }
     });
 
-    // Cargar otros datos (eventos, turnos, etc.) que nÃ£o estÃ£o paginados
+    // Cargar otros datos (eventos, turnos, etc.) que no están paginados
 
 
 
@@ -284,7 +289,7 @@ export class AsistenciasAdminComponent implements OnInit {
   }
 
   aplicarFiltroEventos() {
-    // La reactividad angular actualiza eventosFiltrados automÃ¡ticamente,
+    // La reactividad angular actualiza eventosFiltrados automáticamente,
     // pero podemos forzar deteccián de cambios si es necesario.
     this.cdr.detectChanges();
   }
@@ -295,16 +300,16 @@ export class AsistenciasAdminComponent implements OnInit {
     // Tratamos de parsear la fecha. En el backend se guarda como fecha o string ISO
     // Si viene en formato local (DD/MM/YYYY) hay que tener cuidado, 
     // pero this.eventos se mapeá como new Date(e.fecha).toLocaleDateString()
-    // Es mÃ¡s seguro comparar con el objeto date o convertir a un formato estÃ¡ndar.
-    // Como lo guardamos como local string, parsearlo puede ser complicado segÃºn el locale.
-    // Vamos a parsear desde las partes asumiendo un formato estÃ¡ndar local o ISO.
+    // Es más seguro comparar con el objeto date o convertir a un formato estándar.
+    // Como lo guardamos como local string, parsearlo puede ser complicado según el locale.
+    // Vamos a parsear desde las partes asumiendo un formato estándar local o ISO.
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
     // Intentar convertir la cadena de fecha local a un objeto Date
     // Si la cadena es "MM/DD/YYYY" o "DD/MM/YYYY" depende del locale del sistema.
-    // La forma mÃ¡s segura en TS sin librerías: 
+    // La forma más segura en TS sin librerías: 
     const partes = fechaStr.split(/[\/\-]/);
     let fechaObj: Date;
     if (partes.length === 3 && partes[0].length === 4) {
@@ -312,15 +317,15 @@ export class AsistenciasAdminComponent implements OnInit {
       // new Date('YYYY-MM-DD') lo toma como UTC y en Ecuador resta un día
       fechaObj = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
     } else if (partes.length === 3) {
-      // heurística simple: si el Ãºltimo tiene 4 digitos es año
+      // heurística simple: si el último tiene 4 digitos es año
       if (partes[2].length === 4) {
         // Puede ser DD/MM/YYYY o MM/DD/YYYY. Asumiremos que Date.parse o new Date de MM/DD/YYYY funciona en general
-        // O mejor, construimos manualmente si sabemos que es DD/MM/YYYY (comÃºn en latam)
+        // O mejor, construimos manualmente si sabemos que es DD/MM/YYYY (común en latam)
         const dia = parseInt(partes[0], 10);
         const mes = parseInt(partes[1], 10) - 1;
         const anio = parseInt(partes[2], 10);
-        // Si dia > 12 definitivamente es DD/MM. Si es ambiguo, new Date(anio, mes, dia) usarÃ¡ el formato DD/MM
-        // De hecho, toLocaleDateString() comÃºnmente en español es D/M/YYYY
+        // Si dia > 12 definitivamente es DD/MM. Si es ambiguo, new Date(anio, mes, dia) usará el formato DD/MM
+        // De hecho, toLocaleDateString() comúnmente en español es D/M/YYYY
         fechaObj = new Date(anio, mes, dia);
       } else {
         fechaObj = new Date(fechaStr);
@@ -350,7 +355,7 @@ export class AsistenciasAdminComponent implements OnInit {
   // Lágica Asistencia
   abrirModalAsistencia(evento: EventoAdmin) {
     this.eventoSeleccionado = evento;
-    // Cargar TODOS los comuneros (limit alto) para la asistencia, no solo la pÃ¡gina actual
+    // Cargar TODOS los comuneros (limit alto) para la asistencia, no solo la página actual
     this.adminService.getPersonas(1, 9999, '', 'ACTIVO').subscribe({
       next: (res: any) => {
         if (res && res.data) {
@@ -387,7 +392,7 @@ export class AsistenciasAdminComponent implements OnInit {
           });
         }
       },
-      error: () => alert('Error al cargar comuneros para asistencia.')
+      error: () => this.notify.error('Error al cargar comuneros para asistencia.')
     });
   }
 
@@ -506,8 +511,14 @@ export class AsistenciasAdminComponent implements OnInit {
     });
   }
 
-  cerrarSesionWhatsApp() {
-    if (!confirm('Â¿EstÃ¡ seguro de cerrar la sesián de WhatsApp?')) return;
+  async cerrarSesionWhatsApp() {
+    const confirmado = await this.dialog.confirmar({
+      tipo: 'DANGER',
+      titulo: 'Cerrar sesión de WhatsApp',
+      mensaje: '¿Está seguro de cerrar la sesión de WhatsApp?',
+      textoConfirmar: 'Cerrar sesión'
+    });
+    if (!confirmado) return;
     this.cargandoWhatsApp = true;
     this.adminService.logoutWhatsApp().subscribe({
       next: () => {
@@ -538,23 +549,23 @@ export class AsistenciasAdminComponent implements OnInit {
 
         if (esMinga) {
           // NO se genera PDF para Mingas. Se envía mensaje por whatsapp-web.js
-          alert('Minga creada exitosamente. Enviando convocatoria por WhatsApp Web a los comuneros...');
+          this.notify.info('Minga creada exitosamente. Enviando convocatoria por WhatsApp Web a los comuneros...');
           this.adminService.notificarMingaWhatsApp(eventoId).subscribe({
             next: (whRes: any) => {
-              alert(whRes.message || 'Convocatoria a Minga enviada por WhatsApp exitosamente.');
+              this.notify.success(whRes.message || 'Convocatoria a Minga enviada por WhatsApp exitosamente.');
             },
             error: (whErr: any) => {
-              alert(whErr.error?.message || 'Minga registrada. Nota: Vincule la sesián de WhatsApp Web mediante el botán "WhatsApp Web" en el panel para envíos automÃ¡ticos.');
+              this.notify.warning(whErr.error?.message || 'Minga registrada. Nota: Vincule la sesión de WhatsApp Web mediante el botón "WhatsApp Web" en el panel para envíos automáticos.');
             }
           });
         } else {
           // Para Asamblea se sigue generando el PDF oficial de convocatoria
-          alert('Asamblea creada exitosamente. Descargando Convocatoria Oficial en PDF...');
+          this.notify.info('Asamblea creada exitosamente. Descargando Convocatoria Oficial en PDF...');
           this.generarConvocatoriaPdf(this.formEvento);
         }
       },
       error: (err: any) => {
-        alert(err.error?.message || 'Error al crear el evento');
+        this.notify.error(err.error?.message || 'Error al crear el evento');
       }
     });
   }
@@ -602,7 +613,7 @@ export class AsistenciasAdminComponent implements OnInit {
         { content: evento.hora_inicio }
       ],
       [
-        { content: 'ORDEN DEL DÃA', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [217, 238, 216], textColor: [0, 0, 0] } }
+        { content: 'ORDEN DEL DÍA', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [217, 238, 216], textColor: [0, 0, 0] } }
       ]
     ];
 
@@ -615,7 +626,7 @@ export class AsistenciasAdminComponent implements OnInit {
 
     autoTable(doc, {
       startY: 42,
-      head: [['DETALLE', 'INFORMACIÃ“N']],
+      head: [['DETALLE', 'INFORMACIÓN']],
       body: tableBody,
       theme: 'grid',
       headStyles: {
@@ -681,13 +692,13 @@ export class AsistenciasAdminComponent implements OnInit {
     this.adminService.registrarAsistencias(this.eventoSeleccionado.id, payload).subscribe({
       next: () => {
         const presentes = payload.filter(p => p.estado === 'PRESENTE').length;
-        alert(`Asistencia guardada exitosamente. Presentes: ${presentes} de ${payload.length}`);
+        this.notify.success(`Asistencia guardada exitosamente. Presentes: ${presentes} de ${payload.length}`);
         this.cerrarModalAsistencia();
         // Actualizar conteo en la lista
         this.cdr.detectChanges();
       },
       error: (err: any) => {
-        alert('Hubo un error al guardar las asistencias.');
+        this.notify.error('Hubo un error al guardar las asistencias.');
         console.error(err);
       }
     });

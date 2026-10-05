@@ -3,110 +3,112 @@
   <section class="section-events" id="eventos">
     <div class="section-header">
       <div>
-        <span class="badge badge--info"><i class="ri-notification-3-line"></i> Próximos Eventos Oficiales</span>
+        <span class="badge badge--info"><i class="ri-notification-3-line" aria-hidden="true"></i> Próximos Eventos Oficiales</span>
         <h2>Tablón de Asambleas y Mingas</h2>
       </div>
       <span class="caption">Consulte los próximos eventos comunitarios programados</span>
     </div>
 
     <!-- TABS -->
-    <div class="tabs-container" style="margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 1rem;">
-      <button 
-        class="tab-btn" 
-        [class.active]="tabActivo === 'ASAMBLEA'" 
-        (click)="setTab('ASAMBLEA')"
-        style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
-        <i class="ri-user-voice-line"></i> Próximas Asambleas
+    <div class="tabs-container" role="tablist" aria-label="Tipo de evento">
+      <button
+        type="button"
+        class="tab-btn"
+        role="tab"
+        id="tab-asamblea"
+        [attr.aria-selected]="tabActivo === 'ASAMBLEA'"
+        [class.active]="tabActivo === 'ASAMBLEA'"
+        (click)="setTab('ASAMBLEA')">
+        <i class="ri-user-voice-line" aria-hidden="true"></i> Próximas Asambleas
       </button>
-      <button 
-        class="tab-btn" 
-        [class.active]="tabActivo === 'MINGA'" 
-        (click)="setTab('MINGA')"
-        style="padding: 0.75rem 1.5rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-color); border-bottom: 3px solid transparent;">
-        <i class="ri-tools-line"></i> Próximas Mingas
+      <button
+        type="button"
+        class="tab-btn"
+        role="tab"
+        id="tab-minga"
+        [attr.aria-selected]="tabActivo === 'MINGA'"
+        [class.active]="tabActivo === 'MINGA'"
+        (click)="setTab('MINGA')">
+        <i class="ri-tools-line" aria-hidden="true"></i> Próximas Mingas
       </button>
     </div>
 
     <!-- TAB: ASAMBLEAS PROXIMAS -->
-    <div class="events-grid" *ngIf="tabActivo === 'ASAMBLEA'">
+    <div class="events-grid" role="tabpanel" aria-labelledby="tab-asamblea" *ngIf="tabActivo === 'ASAMBLEA'">
       <div class="card event-card" *ngFor="let item of asambleasFuturas">
         <div class="event-card__header">
-          <span class="badge badge--primary">
-            ASAMBLEA
-          </span>
+          <span class="badge badge--primary">ASAMBLEA</span>
           <span class="small font-bold text-danger" *ngIf="item.genera_multa_ausencia">
-            <i class="ri-error-warning-line"></i> Multa: ${{ item.valor_multa }}
+            <i class="ri-error-warning-line" aria-hidden="true"></i> Multa: {{ item.valor_multa | currency:'USD' }}
           </span>
         </div>
         <h3 class="event-card__title">{{ item.titulo }}</h3>
         <div class="event-card__details">
           <div class="detail-item">
-            <i class="ri-calendar-event-line"></i> <span><strong>Fecha:</strong> {{ item.fecha | date:'mediumDate' }}</span>
+            <i class="ri-calendar-event-line" aria-hidden="true"></i> <span><strong>Fecha:</strong> {{ item.fecha | date:'mediumDate' }}</span>
           </div>
           <div class="detail-item">
-            <i class="ri-time-line"></i> <span><strong>Hora:</strong> {{ item.hora_inicio }}</span>
+            <i class="ri-time-line" aria-hidden="true"></i> <span><strong>Hora:</strong> {{ item.hora_inicio }}</span>
           </div>
           <div class="detail-item">
-            <i class="ri-map-pin-2-line"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
+            <i class="ri-map-pin-2-line" aria-hidden="true"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
           </div>
         </div>
 
         <!-- ACCIONES PDF -->
-        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
-          <button class="btn btn--outline btn--sm" style="width: 100%; text-align: center;" (click)="descargarConvocatoria(item)">
-            <i class="ri-file-pdf-2-line"></i>
+        <div class="event-card__actions">
+          <button type="button" class="btn btn--outline btn--sm btn-block" (click)="descargarConvocatoria(item)">
+            <i class="ri-file-pdf-2-line" aria-hidden="true"></i>
             {{ item.convocatoria_firmada_url ? 'Ver Convocatoria Firmada (PDF)' : 'Ver Convocatoria Oficial (PDF)' }}
           </button>
-          <button class="btn btn--secondary btn--sm" style="width: 100%; text-align: center;" (click)="descargarListaAsistencia(item)">
-            <i class="ri-file-download-line"></i>
+          <button type="button" class="btn btn--secondary btn--sm btn-block" (click)="descargarListaAsistencia(item)">
+            <i class="ri-file-download-line" aria-hidden="true"></i>
             {{ item.lista_asistencia_firmada_url ? 'Ver Lista de Asistencia Firmada (PDF)' : 'Descargar Lista de Asistencia para Firmar (PDF)' }}
           </button>
         </div>
       </div>
-      
-      <div *ngIf="asambleasFuturas.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+
+      <div *ngIf="asambleasFuturas.length === 0" class="alert empty-state">
         No hay próximas asambleas programadas.
       </div>
     </div>
 
     <!-- TAB: MINGAS PROXIMAS -->
-    <div class="events-grid" *ngIf="tabActivo === 'MINGA'">
+    <div class="events-grid" role="tabpanel" aria-labelledby="tab-minga" *ngIf="tabActivo === 'MINGA'">
       <div class="card event-card" *ngFor="let item of mingasFuturas">
         <div class="event-card__header">
-          <span class="badge badge--warning">
-            MINGA
-          </span>
+          <span class="badge badge--warning">MINGA</span>
           <span class="small font-bold text-danger" *ngIf="item.genera_multa_ausencia">
-            <i class="ri-error-warning-line"></i> Multa: ${{ item.valor_multa }}
+            <i class="ri-error-warning-line" aria-hidden="true"></i> Multa: {{ item.valor_multa | currency:'USD' }}
           </span>
         </div>
         <h3 class="event-card__title">{{ item.titulo }}</h3>
         <div class="event-card__details">
           <div class="detail-item">
-            <i class="ri-calendar-event-line"></i> <span><strong>Fecha:</strong> {{ item.fecha | date:'mediumDate' }}</span>
+            <i class="ri-calendar-event-line" aria-hidden="true"></i> <span><strong>Fecha:</strong> {{ item.fecha | date:'mediumDate' }}</span>
           </div>
           <div class="detail-item">
-            <i class="ri-time-line"></i> <span><strong>Hora:</strong> {{ item.hora_inicio }}</span>
+            <i class="ri-time-line" aria-hidden="true"></i> <span><strong>Hora:</strong> {{ item.hora_inicio }}</span>
           </div>
           <div class="detail-item">
-            <i class="ri-map-pin-2-line"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
+            <i class="ri-map-pin-2-line" aria-hidden="true"></i> <span><strong>Lugar:</strong> {{ item.lugar }}</span>
           </div>
         </div>
 
         <!-- ACCIONES PDF -->
-        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
-          <button class="btn btn--outline btn--sm" style="width: 100%; text-align: center;" (click)="descargarConvocatoria(item)">
-            <i class="ri-file-pdf-2-line"></i>
+        <div class="event-card__actions">
+          <button type="button" class="btn btn--outline btn--sm btn-block" (click)="descargarConvocatoria(item)">
+            <i class="ri-file-pdf-2-line" aria-hidden="true"></i>
             {{ item.convocatoria_firmada_url ? 'Ver Convocatoria Firmada (PDF)' : 'Ver Convocatoria Oficial (PDF)' }}
           </button>
-          <button class="btn btn--secondary btn--sm" style="width: 100%; text-align: center;" (click)="descargarListaAsistencia(item)">
-            <i class="ri-file-download-line"></i>
+          <button type="button" class="btn btn--secondary btn--sm btn-block" (click)="descargarListaAsistencia(item)">
+            <i class="ri-file-download-line" aria-hidden="true"></i>
             {{ item.lista_asistencia_firmada_url ? 'Ver Lista de Asistencia Firmada (PDF)' : 'Descargar Lista para Firmar (PDF)' }}
           </button>
         </div>
       </div>
 
-      <div *ngIf="mingasFuturas.length === 0" class="alert" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+      <div *ngIf="mingasFuturas.length === 0" class="alert empty-state">
         No hay próximas mingas programadas.
       </div>
     </div>
