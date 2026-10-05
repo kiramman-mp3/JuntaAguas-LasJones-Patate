@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import { ActasService } from '../../../../core/services/actas.service';
+import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
 import { environment } from '../../../../../environments/environment';
 
 export interface PuntoAsamblea {
@@ -48,7 +49,7 @@ export interface AsambleaItem {
 @Component({
   selector: 'app-asambleas-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './asambleas-admin.component.html',
   styleUrls: ['./asambleas-admin.component.scss']
 })

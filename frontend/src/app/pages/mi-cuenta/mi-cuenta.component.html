@@ -1,38 +1,49 @@
 <div class="consulta-page">
   <div class="container">
-    
+
     <!-- ENCABEZADO -->
-    <div class="search-header card card--glass" style="display: flex; justify-content: space-between; align-items: center; text-align: left;">
+    <div class="search-header card card--glass">
       <div>
-        <span class="badge badge--info"><i class="ri-user-settings-line"></i> Portal del Comunero</span>
-        <h2 style="margin-top: 0.5rem; font-size: 1.5rem;">Mi Cuenta y Estado de Obligaciones</h2>
+        <span class="badge badge--info"><i class="ri-user-settings-line" aria-hidden="true"></i> Portal del Comunero</span>
+        <h2>Mi Cuenta y Estado de Obligaciones</h2>
       </div>
       <div>
-        <button class="btn btn--outline btn--sm" (click)="cerrarSesion()"><i class="ri-logout-box-r-line"></i> Cerrar Sesión</button>
+        <button type="button" class="btn btn--outline btn--sm" (click)="cerrarSesion()">
+          <i class="ri-logout-box-r-line" aria-hidden="true"></i> Cerrar Sesión
+        </button>
       </div>
     </div>
 
-    <!-- CARGANDO -->
-    <div *ngIf="cargando" style="text-align: center; padding: 3rem;">
-      <i class="ri-loader-4-line spin" style="font-size: 3rem; color: var(--color-primary);"></i>
-      <p style="margin-top: 1rem; color: var(--text-muted);">Cargando tu información...</p>
+    <!-- CARGANDO (SKELETON) -->
+    <div *ngIf="cargando" class="skeleton-wrapper" aria-live="polite" aria-busy="true">
+      <span class="sr-only">Cargando tu información...</span>
+      <div class="card">
+        <div class="skeleton skeleton--title"></div>
+        <div class="skeleton skeleton--text"></div>
+        <div class="skeleton skeleton--text" style="width: 80%;"></div>
+      </div>
+      <div class="skeleton skeleton--card"></div>
+      <div class="skeleton skeleton--card"></div>
     </div>
 
     <!-- ALERTA DE ERROR -->
-    <div class="card error-card" *ngIf="!cargando && errorMensaje">
-      <i class="ri-error-warning-fill error-icon"></i>
+    <div class="card error-card" *ngIf="!cargando && errorMensaje" role="alert">
+      <i class="ri-error-warning-fill error-icon" aria-hidden="true"></i>
       <h3>Información no disponible</h3>
       <p>{{ errorMensaje }}</p>
+      <button type="button" class="btn btn--primary" (click)="reintentar()">
+        <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
+      </button>
     </div>
 
     <!-- RESULTADO -->
     <div class="search-results" *ngIf="!cargando && resultado">
-      
+
       <!-- TARJETA DEL TITULAR -->
       <div class="card user-info-card">
         <div class="user-info-header">
           <div class="user-avatar">
-            <i class="ri-user-3-line"></i>
+            <i class="ri-user-3-line" aria-hidden="true"></i>
           </div>
           <div>
             <h3>{{ resultado.nombres }}</h3>
@@ -57,18 +68,18 @@
       <!-- RESUMEN DE SALDO A PAGAR -->
       <div class="kpi-card" [ngClass]="{'kpi-card--danger': totalPendiente > 0, 'kpi-card--success': totalPendiente === 0}">
         <div class="kpi-card__icon">
-          <i class="ri-money-dollar-circle-line"></i>
+          <i class="ri-money-dollar-circle-line" aria-hidden="true"></i>
         </div>
         <div class="kpi-card__content">
-          <span class="kpi-card__value">${{ totalPendiente.toFixed(2) }}</span>
+          <span class="kpi-card__value">{{ totalPendiente | currency:'USD' }}</span>
           <span class="kpi-card__label">Total Saldo Pendiente a Cancelar</span>
         </div>
       </div>
 
-      <!-- TABLA DETALLADA DE OBLIGACIONES -->
-      <div class="card table-card" *ngIf="resultado.deudas.length > 0">
+      <!-- OBLIGACIONES PENDIENTES -->
+      <div class="card table-card" *ngIf="deudasPendientes.length > 0">
         <div class="card__header">
-          <h4 class="card__title"><i class="ri-file-list-3-line"></i> Mi Historial de Cuentas y Multas</h4>
+          <h4 class="card__title"><i class="ri-file-list-3-line" aria-hidden="true"></i> Obligaciones Pendientes</h4>
         </div>
 
         <div class="table-container">
@@ -83,16 +94,42 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of resultado.deudas">
+              <tr *ngFor="let item of deudasPendientes">
                 <td>{{ item.fechaEmision }}</td>
                 <td><strong>{{ item.concepto }}</strong></td>
                 <td>{{ item.periodo }} ({{ item.anio }})</td>
-                <td><strong>${{ item.valor.toFixed(2) }}</strong></td>
-                <td>
-                  <span class="badge" [ngClass]="{'badge--danger': item.estado === 'PENDIENTE', 'badge--success': item.estado === 'PAGADA'}">
-                    {{ item.estado }}
-                  </span>
-                </td>
+                <td><strong>{{ item.valor | currency:'USD' }}</strong></td>
+                <td><span class="badge badge--danger">{{ item.estado }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- HISTORIAL DE PAGOS -->
+      <div class="card table-card" *ngIf="deudasPagadas.length > 0">
+        <div class="card__header">
+          <h4 class="card__title"><i class="ri-history-line" aria-hidden="true"></i> Historial de Cuentas Pagadas</h4>
+        </div>
+
+        <div class="table-container">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Emisión</th>
+                <th>Concepto de Cobro</th>
+                <th>Período / Referencia</th>
+                <th>Monto</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of deudasPagadas">
+                <td>{{ item.fechaEmision }}</td>
+                <td><strong>{{ item.concepto }}</strong></td>
+                <td>{{ item.periodo }} ({{ item.anio }})</td>
+                <td><strong>{{ item.valor | currency:'USD' }}</strong></td>
+                <td><span class="badge badge--success">{{ item.estado }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -100,15 +137,15 @@
       </div>
 
       <!-- SI NO TIENE DEUDAS -->
-      <div class="card success-empty-card" *ngIf="resultado.deudas.length === 0">
-        <i class="ri-checkbox-circle-fill success-icon"></i>
+      <div class="card success-empty-card" *ngIf="totalPendiente === 0">
+        <i class="ri-checkbox-circle-fill success-icon" aria-hidden="true"></i>
         <h3>¡Felicitaciones! No registras valores pendientes.</h3>
         <p>Te encuentras al día con tus cuotas de agua de riego y asistencias a mingas/asambleas.</p>
       </div>
 
       <!-- INFORMACIÓN DE PAGO -->
       <div class="card payment-info-card" *ngIf="totalPendiente > 0">
-        <h4><i class="ri-bank-card-line"></i> Puntos de Pago Autorizados</h4>
+        <h4><i class="ri-bank-card-line" aria-hidden="true"></i> Puntos de Pago Autorizados</h4>
         <p class="caption">Para cancelar tus valores pendientes, acércate a la recaudación de la Junta o realiza una transferencia bancaria:</p>
         <ul class="payment-list">
           <li><strong>Recaudación Presencial:</strong> Casa Comunal Junta La Jones (Lunes a Viernes de 08:00 a 16:00).</li>

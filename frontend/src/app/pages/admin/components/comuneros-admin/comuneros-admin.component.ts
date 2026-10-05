@@ -2,13 +2,16 @@ import { Component, OnInit, Output, EventEmitter, ChangeDetectorRef } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { DialogService } from '../../../../core/services/dialog.service';
 import * as L from 'leaflet';
 
 
 @Component({
   selector: 'app-comuneros-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './comuneros-admin.component.html',
   styleUrls: []
 })
@@ -121,7 +124,12 @@ export class ComunerosAdminComponent implements OnInit {
 
   
 
-  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef,
+    private notify: NotificationService,
+    private dialog: DialogService
+  ) {}
 
   ngOnInit() {
     this.cargarUsuarios();
@@ -155,7 +163,7 @@ export class ComunerosAdminComponent implements OnInit {
           this.cdr.detectChanges();
         }
       },
-      error: () => alert('Error al cargar comuneros.')
+      error: () => this.notify.error('Error al cargar comuneros.')
     });
   }
 
@@ -217,27 +225,27 @@ export class ComunerosAdminComponent implements OnInit {
 
   guardarUsuario() {
     if (!this.formUsuario.cedula || !this.formUsuario.nombres || !this.formUsuario.apellidos) {
-      alert('Cédula, Nombres y Apellidos son obligatorios.');
+      this.notify.warning('Cédula, Nombres y Apellidos son obligatorios.');
       return;
     }
 
     if (this.modoEdicionUsuario && this.formUsuario.id) {
       this.adminService.updatePersona(this.formUsuario.id, this.formUsuario).subscribe({
         next: (res) => {
-          alert('Comunero actualizado exitosamente.');
+          this.notify.success('Comunero actualizado exitosamente.');
           this.cerrarModalUsuario();
           this.cargarUsuarios();
         },
-        error: (err) => alert(err.error?.message || 'Error al actualizar comunero.')
+        error: (err) => this.notify.error(err.error?.message || 'Error al actualizar comunero.')
       });
     } else {
       this.adminService.createPersona(this.formUsuario).subscribe({
         next: (res) => {
-          alert('Comunero registrado exitosamente.');
+          this.notify.success('Comunero registrado exitosamente.');
           this.cerrarModalUsuario();
           this.cargarUsuarios();
         },
-        error: (err) => alert(err.error?.message || 'Error al registrar comunero.')
+        error: (err) => this.notify.error(err.error?.message || 'Error al registrar comunero.')
       });
     }
   }
@@ -368,7 +376,7 @@ export class ComunerosAdminComponent implements OnInit {
     this.adminService.createLote(this.formLote).subscribe({
       next: (res) => {
         this.guardandoLote = false;
-        alert('Lote creado exitosamente.');
+        this.notify.success('Lote creado exitosamente.');
         this.cerrarModalLote();
         this.cargarLotes();
       },
@@ -393,7 +401,7 @@ export class ComunerosAdminComponent implements OnInit {
         this.modalVincularVisible = true;
         this.cdr.detectChanges();
       },
-      error: () => alert('Error al cargar lotes para vinculación.')
+      error: () => this.notify.error('Error al cargar lotes para vinculación.')
     });
   }
 
@@ -404,7 +412,7 @@ export class ComunerosAdminComponent implements OnInit {
 
   guardarVinculo() {
     if (!this.formVincular.lote_id) {
-      alert('Por favor selecciona un lote.');
+      this.notify.warning('Por favor selecciona un lote.');
       return;
     }
     const payload = {
@@ -415,10 +423,10 @@ export class ComunerosAdminComponent implements OnInit {
 
     this.adminService.vincularPersonaLote(this.formVincular.lote_id, payload).subscribe({
       next: (res) => {
-        alert('Lote vinculado exitosamente.');
+        this.notify.success('Lote vinculado exitosamente.');
         this.cerrarModalVincular();
       },
-      error: (err) => alert(err.error?.message || 'Error al vincular el lote.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al vincular el lote.')
     });
   }
 
@@ -435,7 +443,7 @@ export class ComunerosAdminComponent implements OnInit {
         }
         this.cdr.detectChanges();
       },
-      error: () => alert('Error al cargar los lotes del comunero.')
+      error: () => this.notify.error('Error al cargar los lotes del comunero.')
     });
   }
 

@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { MingasAdminComponent } from './mingas-admin.component';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
+import { DialogService } from '../../../../core/services/dialog.service';
 
 const minga = {
   id: 1,
@@ -63,6 +64,7 @@ describe('Gestión de Mingas', () => {
       providers: [
         { provide: AdminService, useValue: admin },
         { provide: ConsultaService, useValue: consulta },
+        { provide: DialogService, useValue: { confirmar: vi.fn(async () => true) } },
       ],
     }).compileComponents();
     component = TestBed.createComponent(MingasAdminComponent).componentInstance;
@@ -128,17 +130,16 @@ describe('Gestión de Mingas', () => {
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
-  it('evita el doble envío mientras la convocatoria está en curso', () => {
+  it('evita el doble envío mientras la convocatoria está en curso', async () => {
     const respuesta = new Subject();
     admin.notificarMingaWhatsApp.mockReturnValue(respuesta);
-    const confirmacion = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const promesa = component.enviarConvocatoria(minga);
     component.enviarConvocatoria(minga);
-    component.enviarConvocatoria(minga);
+    await promesa;
     expect(admin.notificarMingaWhatsApp).toHaveBeenCalledOnce();
     respuesta.next({ message: 'Enviado' });
     respuesta.complete();
     expect(component.enviandoId).toBeNull();
-    confirmacion.mockRestore();
   });
 
   it('rechaza un archivo incompatible sin subirlo', () => {
@@ -150,12 +151,10 @@ describe('Gestión de Mingas', () => {
     expect(consulta.subirDocumentoEvento).not.toHaveBeenCalled();
   });
 
-  it('marca convocada después de un envío exitoso', () => {
+  it('marca convocada después de un envío exitoso', async () => {
     admin.notificarMingaWhatsApp.mockReturnValue(of({ enviados: 2, message: 'Enviado' }));
-    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    component.enviarConvocatoria({ ...minga });
+    await component.enviarConvocatoria({ ...minga });
     expect(admin.cambiarEstadoMinga).toHaveBeenCalledWith(1, 'CONVOCADO');
-    confirmar.mockRestore();
   });
 
   it('impide modificar una asistencia finalizada desde la interfaz', () => {
@@ -166,20 +165,19 @@ describe('Gestión de Mingas', () => {
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
-  it('no finaliza cuando hay asistentes pendientes en el backend', () => {
-    component.finalizarMinga({ ...minga });
+  it('no finaliza cuando hay asistentes pendientes en el backend', async () => {
+    await component.finalizarMinga({ ...minga });
     expect(admin.finalizarMinga).not.toHaveBeenCalled();
     expect(component.error).toContain('Pendientes: 1');
     expect(component.actualizandoId).toBeNull();
   });
 
-  it('confirma el resumen guardado antes de finalizar', () => {
+  it('confirma el resumen guardado antes de finalizar', async () => {
     admin.getAsistenciasMinga.mockReturnValue(of({ resumen: { total: 2, presentes: 1, ausentes: 1, justificados: 0, pendientes: 0 } }));
-    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    component.finalizarMinga({ ...minga });
+    const dialog = TestBed.inject(DialogService) as any;
+    await component.finalizarMinga({ ...minga });
     expect(admin.finalizarMinga).toHaveBeenCalledWith(1);
-    expect(confirmar.mock.calls[0][0]).toContain('1 ausentes');
-    confirmar.mockRestore();
+    expect(dialog.confirmar.mock.calls[0][0].mensaje).toContain('1 ausentes');
   });
 
   it('muestra acciones propias de Minga sin subtipo ni actas', () => {

@@ -10,9 +10,11 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize, switchMap, EMPTY } from 'rxjs';
+import { finalize, firstValueFrom } from 'rxjs';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
+import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
+import { DialogService } from '../../../../core/services/dialog.service';
 
 interface Minga {
   id: number;
@@ -42,13 +44,14 @@ interface Asistencia {
 @Component({
   selector: 'app-mingas-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './mingas-admin.component.html',
   styleUrls: ['./mingas-admin.component.scss'],
 })
 export class MingasAdminComponent implements OnInit {
   @Output() conectarWhatsApp = new EventEmitter<void>();
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(DialogService);
   mingas: Minga[] = [];
   cargando = false;
   error = '';
@@ -68,6 +71,7 @@ export class MingasAdminComponent implements OnInit {
   errorAsistencia = '';
   private asistenciaDisponible = false;
   private destruido = false;
+  private enviosEnProceso = new Set<number>();
   buscarComunero = '';
   asistencias: Asistencia[] = [];
   formulario = this.nuevoFormulario();
@@ -133,9 +137,17 @@ export class MingasAdminComponent implements OnInit {
     return this.seleccionada?.estado === 'REALIZADO' || this.seleccionada?.estado === 'CANCELADO';
   }
 
-  cambiarEstado(minga: Minga, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO', desdeEnvio = false) {
+  async cambiarEstado(minga: Minga, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO', desdeEnvio = false) {
     if (this.actualizandoId !== null || (!desdeEnvio && this.enviandoId !== null)) return;
-    if (estado === 'CANCELADO' && !confirm(`¿Cancelar la minga "${minga.titulo}"? Su asistencia quedará cerrada y no se generarán multas.`)) return;
+    if (estado === 'CANCELADO') {
+      const confirmado = await this.dialog.confirmar({
+        tipo: 'DANGER',
+        titulo: 'Cancelar minga',
+        mensaje: `¿Cancelar la minga "${minga.titulo}"? Su asistencia quedará cerrada y no se generarán multas.`,
+        textoConfirmar: 'Cancelar minga'
+      });
+      if (!confirmado) return;
+    }
     this.actualizandoId = minga.id;
     this.error = '';
     this.admin.cambiarEstadoMinga(minga.id, estado).pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
@@ -148,26 +160,37 @@ export class MingasAdminComponent implements OnInit {
     });
   }
 
-  finalizarMinga(minga: Minga) {
+  async finalizarMinga(minga: Minga) {
     if (this.actualizandoId !== null || this.enviandoId !== null || ['REALIZADO', 'CANCELADO'].includes(minga.estado)) return;
     this.actualizandoId = minga.id;
     this.error = '';
-    this.admin.getAsistenciasMinga(minga.id).pipe(switchMap(res => {
-      const r = res.resumen;
+    try {
+      const resAsis = await firstValueFrom(this.admin.getAsistenciasMinga(minga.id));
+      const r = resAsis.resumen;
       if (!r.total || r.pendientes) {
         this.error = `Complete y guarde la asistencia antes de finalizar. Pendientes: ${r.pendientes}.`;
-        return EMPTY;
+        return;
       }
-      const multa = minga.genera_multa_ausencia ? ` Se registrarán multas únicamente para las ${r.ausentes} ausencias.` : ' No se generarán multas.';
-      if (!confirm(`¿Finalizar "${minga.titulo}"? Asistencia guardada: ${r.presentes} presentes, ${r.ausentes} ausentes y ${r.justificados} justificados.${multa} La asistencia quedará cerrada.`)) return EMPTY;
-      return this.admin.finalizarMinga(minga.id);
-    }), takeUntilDestroyed(this.destroyRef), finalize(() => {
+      const multa = minga.genera_multa_ausencia
+        ? ` Se registrarán multas únicamente para las ${r.ausentes} ausencias.`
+        : ' No se generarán multas.';
+      const confirmado = await this.dialog.confirmar({
+        tipo: 'CONFIRM',
+        titulo: 'Finalizar minga',
+        mensaje: `Asistencia guardada: ${r.presentes} presentes, ${r.ausentes} ausentes y ${r.justificados} justificados.${multa} La asistencia quedará cerrada.`,
+        textoConfirmar: 'Finalizar minga'
+      });
+      if (!confirmado) return;
+      const res = await firstValueFrom(this.admin.finalizarMinga(minga.id));
+      minga.estado = res.estado;
+      this.mensaje = res.message;
+      this.cargar();
+    } catch (err: any) {
+      this.error = err?.error?.message || 'No se pudo finalizar la minga.';
+    } finally {
       this.actualizandoId = null;
       this.cdr.markForCheck();
-    })).subscribe({
-      next: res => { minga.estado = res.estado; this.mensaje = res.message; this.cargar(); },
-      error: err => this.error = err.error?.message || 'No se pudo finalizar la minga.'
-    });
+    }
   }
 
   estadoTexto(estado: string) {
@@ -267,14 +290,19 @@ export class MingasAdminComponent implements OnInit {
       });
   }
 
-  enviarConvocatoria(minga: Minga) {
+  async enviarConvocatoria(minga: Minga) {
     if (this.enviandoId !== null || this.actualizandoId !== null || minga.estado === 'CANCELADO' || minga.estado === 'REALIZADO')
       return;
-    if (
-      !confirm(
-        `¿Enviar la convocatoria de "${minga.titulo}" a todos los comuneros activos con teléfono? Un nuevo envío repetirá la convocatoria.`,
-      )
-    )
+    if (this.enviosEnProceso.has(minga.id)) return;
+    this.enviosEnProceso.add(minga.id);
+    const confirmado = await this.dialog.confirmar({
+      tipo: 'CONFIRM',
+      titulo: 'Enviar convocatoria',
+      mensaje: `¿Enviar la convocatoria de "${minga.titulo}" a todos los comuneros activos con teléfono? Un nuevo envío repetirá la convocatoria.`,
+      textoConfirmar: 'Enviar por WhatsApp'
+    });
+    this.enviosEnProceso.delete(minga.id);
+    if (!confirmado)
       return;
     this.enviandoId = minga.id;
     this.error = '';

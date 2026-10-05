@@ -5,14 +5,14 @@
 
       <!-- Top Row: Title and Main Actions -->
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 class="card__title" style="margin: 0; font-size: 1.3rem;"><i class="ri-team-line"
+        <h3 class="card__title" style="margin: 0; font-size: 1.3rem;"><i aria-hidden="true" class="ri-team-line"
             style="color: var(--color-primary); margin-right: 0.5rem;"></i> Registro de Comuneros y Terrenos</h3>
         <div style="display: flex; gap: 0.75rem;">
           <button *ngIf="subTabUsuarios === 'COMUNEROS'" class="btn btn--primary" (click)="abrirModalNuevoUsuario()">
-            <i class="ri-user-add-line"></i> Nuevo Comunero
+            <i aria-hidden="true" class="ri-user-add-line"></i> Nuevo Comunero
           </button>
           <button *ngIf="subTabUsuarios === 'LOTES'" class="btn btn--primary" (click)="abrirModalNuevoLote()">
-            <i class="ri-add-line"></i> Nuevo Lote
+            <i aria-hidden="true" class="ri-add-line"></i> Nuevo Lote
           </button>
         </div>
       </div>
@@ -26,11 +26,11 @@
           <button class="btn btn--sm" [ngClass]="subTabUsuarios === 'COMUNEROS' ? 'btn--primary' : 'btn--outline'"
             (click)="cambiarSubTabUsuarios('COMUNEROS')"
             style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
-            <i class="ri-user-line"></i> Comuneros
+            <i aria-hidden="true" class="ri-user-line"></i> Comuneros
           </button>
           <button class="btn btn--sm" [ngClass]="subTabUsuarios === 'LOTES' ? 'btn--primary' : 'btn--outline'"
             (click)="cambiarSubTabUsuarios('LOTES')" style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
-            <i class="ri-map-pin-line"></i> Catastro de Lotes
+            <i aria-hidden="true" class="ri-map-pin-line"></i> Catastro de Lotes
           </button>
         </div>
 
@@ -38,7 +38,7 @@
         <div *ngIf="subTabUsuarios === 'COMUNEROS'" class="filters"
           style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
           <div style="position: relative; display: flex; align-items: center;">
-            <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+            <i aria-hidden="true" class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
             <input type="text" class="input input--sm" placeholder="Buscar por cédula o nombre..."
               [(ngModel)]="usuariosBusqueda" (ngModelChange)="aplicarFiltroUsuarios()"
               style="padding-left: 2rem; width: 260px;">
@@ -55,7 +55,7 @@
         <div *ngIf="subTabUsuarios === 'LOTES'" class="filters"
           style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
           <div style="position: relative; display: flex; align-items: center;">
-            <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+            <i aria-hidden="true" class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
             <input type="text" class="input input--sm" placeholder="Buscar por código..." [(ngModel)]="lotesBusqueda"
               (ngModelChange)="aplicarFiltroLotes()" style="padding-left: 2rem; width: 220px;">
           </div>
@@ -113,7 +113,7 @@
                   <button *ngIf="u.lotes_count > 0" class="btn btn--outline btn--sm"
                     (click)="abrirModalLotesComunero(u)" title="Ver Lotes del Comunero"
                     style="padding: 0.15rem 0.35rem; border-radius: var(--radius-full);">
-                    <i class="ri-list-check" style="margin: 0;"></i>
+                    <i aria-hidden="true" class="ri-list-check" style="margin: 0;"></i>
                   </button>
                 </div>
               </td>
@@ -125,11 +125,11 @@
                 <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
                   <button class="btn btn--outline btn--sm" (click)="abrirModalEditarUsuario(u)" title="Editar Comunero"
                     style="width: 100%; justify-content: center;">
-                    <i class="ri-edit-line"></i> Editar Comunero
+                    <i aria-hidden="true" class="ri-edit-line"></i> Editar Comunero
                   </button>
                   <button class="btn btn--outline btn--sm" (click)="abrirModalVincular(u)"
                     title="Asignar Terreno al Comunero" style="width: 100%; justify-content: center;">
-                    <i class="ri-map-pin-add-line"></i> Asignar Terreno
+                    <i aria-hidden="true" class="ri-map-pin-add-line"></i> Asignar Terreno
                   </button>
                 </div>
               </td>
@@ -147,11 +147,11 @@
           <div class="pagination-actions" style="display: flex; gap: 0.5rem;">
             <button class="btn btn--outline btn--sm" [disabled]="usuariosPaginaActual === 1"
               (click)="cambiarPaginaUsuarios(usuariosPaginaActual - 1)">
-              <i class="ri-arrow-left-s-line"></i> Anterior
+              <i aria-hidden="true" class="ri-arrow-left-s-line"></i> Anterior
             </button>
             <button class="btn btn--outline btn--sm" [disabled]="usuariosPaginaActual === usuariosTotalPaginas"
               (click)="cambiarPaginaUsuarios(usuariosPaginaActual + 1)">
-              Siguiente <i class="ri-arrow-right-s-line"></i>
+              Siguiente <i aria-hidden="true" class="ri-arrow-right-s-line"></i>
             </button>
           </div>
         </div>
@@ -206,11 +206,11 @@
 <!-- ========================================= -->
 <!-- MODAL DE NUEVO/EDITAR COMUNERO            -->
 <!-- ========================================= -->
-<div class="modal-backdrop" *ngIf="modalUsuarioVisible">
+<div appModalA11y class="modal-backdrop" *ngIf="modalUsuarioVisible">
   <div class="card modal" style="max-width: 650px; width: 95%;">
     <div class="modal__header">
       <h3>{{ modoEdicionUsuario ? 'Editar Comunero' : 'Registrar Nuevo Comunero' }}</h3>
-      <button class="btn-close" (click)="cerrarModalUsuario()"><i class="ri-close-line"></i></button>
+      <button class="btn-close" (click)="cerrarModalUsuario()"><i aria-hidden="true" class="ri-close-line"></i></button>
     </div>
     <div class="modal-body">
       <form (ngSubmit)="guardarUsuario()" #usuarioForm="ngForm">
@@ -284,7 +284,7 @@
         <div *ngIf="modoEdicionUsuario"
           style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
           <div class="form-group">
-            <label style="color: var(--color-danger); font-weight: 600;"><i class="ri-key-2-line"></i> Cambiar
+            <label style="color: var(--color-danger); font-weight: 600;"><i aria-hidden="true" class="ri-key-2-line"></i> Cambiar
               Contraseña de Acceso (Opcional)</label>
             <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.5rem; margin-top: 0.25rem;">Si escribes
               una contraseña aquí, se actualizará o creará la cuenta de acceso para este comunero.</p>
@@ -296,7 +296,7 @@
         <div class="modal__footer">
           <button type="button" class="btn btn--outline" (click)="cerrarModalUsuario()">Cancelar</button>
           <button type="submit" class="btn btn--primary" [disabled]="usuarioForm.invalid">
-            <i class="ri-save-line"></i> Guardar
+            <i aria-hidden="true" class="ri-save-line"></i> Guardar
           </button>
         </div>
       </form>
@@ -307,11 +307,11 @@
 <!-- ========================================= -->
 <!-- MODAL DE NUEVO LOTE                       -->
 <!-- ========================================= -->
-<div class="modal-backdrop" *ngIf="modalLoteVisible">
+<div appModalA11y class="modal-backdrop" *ngIf="modalLoteVisible">
   <div class="card modal" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
     <div class="modal__header">
       <h3>Registrar Nuevo Lote</h3>
-      <button class="btn-close" (click)="cerrarModalLote()" [disabled]="guardandoLote" aria-label="Cerrar registro de lote"><i class="ri-close-line"></i></button>
+      <button class="btn-close" (click)="cerrarModalLote()" [disabled]="guardandoLote" aria-label="Cerrar registro de lote"><i aria-hidden="true" class="ri-close-line"></i></button>
     </div>
     <div class="modal-body">
       <form (ngSubmit)="guardarLote()" #loteForm="ngForm">
@@ -373,14 +373,14 @@
         <!-- Mapa Interactivo Leaflet -->
         <div class="form-group" style="margin-top: 1rem;">
           <label style="display: flex; align-items: center; gap: 0.5rem;">
-            <i class="ri-map-pin-2-fill" style="color: var(--color-primary);"></i>
+            <i aria-hidden="true" class="ri-map-pin-2-fill" style="color: var(--color-primary);"></i>
             Selecciona la ubicación aproximada en el mapa
           </label>
           <div id="loteMap"
             style="height: 320px; border-radius: var(--radius-md); border: 2px solid var(--border-color); overflow: hidden; margin-top: 0.5rem;">
           </div>
           <small class="text-muted" style="margin-top: 0.5rem; display: block;">
-            <i class="ri-information-line"></i> Haz clic en el mapa para colocar el marcador de la acometida o
+            <i aria-hidden="true" class="ri-information-line"></i> Haz clic en el mapa para colocar el marcador de la acometida o
             terreno.
           </small>
         </div>
@@ -389,7 +389,7 @@
           <p *ngIf="errorLote" class="text-danger" role="alert">{{ errorLote }}</p>
           <button type="button" class="btn btn--outline" (click)="cerrarModalLote()" [disabled]="guardandoLote">Cancelar</button>
           <button type="submit" class="btn btn--primary" [disabled]="loteForm.invalid || guardandoLote || sugiriendoCodigoLote">
-            <i class="ri-save-line"></i> {{ guardandoLote ? 'Guardando...' : 'Guardar Lote' }}
+            <i aria-hidden="true" class="ri-save-line"></i> {{ guardandoLote ? 'Guardando...' : 'Guardar Lote' }}
           </button>
         </div>
       </form>
@@ -400,11 +400,11 @@
 <!-- ========================================= -->
 <!-- MODAL DE ASIGNAR LOTE A COMUNERO          -->
 <!-- ========================================= -->
-<div class="modal-backdrop" *ngIf="modalVincularVisible">
+<div appModalA11y class="modal-backdrop" *ngIf="modalVincularVisible">
   <div class="card modal" style="max-width: 520px; width: 95%;">
     <div class="modal__header">
-      <h3><i class="ri-link" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Vincular Lote a Comunero</h3>
-      <button class="btn-close" (click)="cerrarModalVincular()"><i class="ri-close-line"></i></button>
+      <h3><i aria-hidden="true" class="ri-link" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Vincular Lote a Comunero</h3>
+      <button class="btn-close" (click)="cerrarModalVincular()"><i aria-hidden="true" class="ri-close-line"></i></button>
     </div>
     <div class="modal-body">
       <!-- Info del comunero seleccionado -->
@@ -442,7 +442,7 @@
         <div class="modal__footer">
           <button type="button" class="btn btn--outline" (click)="cerrarModalVincular()">Cancelar</button>
           <button type="submit" class="btn btn--primary" [disabled]="vincularForm.invalid">
-            <i class="ri-link"></i> Vincular Lote
+            <i aria-hidden="true" class="ri-link"></i> Vincular Lote
           </button>
         </div>
       </form>
@@ -453,14 +453,14 @@
 <!-- ========================================= -->
 <!-- MODAL DE LOTES DEL COMUNERO               -->
 <!-- ========================================= -->
-<div class="modal-backdrop" *ngIf="modalLotesComuneroVisible">
+<div appModalA11y class="modal-backdrop" *ngIf="modalLotesComuneroVisible">
   <div class="card modal" style="max-width: 820px; width: 95%;">
     <div class="modal__header">
       <h3>
-        <i class="ri-map-pin-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i>
+        <i aria-hidden="true" class="ri-map-pin-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i>
         Lotes de {{ comuneroSeleccionadoParaLotes?.apellidos }} {{ comuneroSeleccionadoParaLotes?.nombres }}
       </h3>
-      <button class="btn-close" (click)="cerrarModalLotesComunero()"><i class="ri-close-line"></i></button>
+      <button class="btn-close" (click)="cerrarModalLotesComunero()"><i aria-hidden="true" class="ri-close-line"></i></button>
     </div>
     <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
       <table class="table-custom">
@@ -476,7 +476,7 @@
         <tbody>
           <tr *ngIf="lotesDelComunero.length === 0">
             <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-              <i class="ri-loader-4-line"></i> Cargando lotes del comunero...
+              <i aria-hidden="true" class="ri-loader-4-line"></i> Cargando lotes del comunero...
             </td>
           </tr>
           <tr *ngFor="let lote of lotesDelComunero">
@@ -492,7 +492,7 @@
             <td>
               <button class="btn btn--outline btn--sm"
                 (click)="cerrarModalLotesComunero(); abrirModalDetalleLote(lote)"
-                title="Ver Detalle Completo"><i class="ri-eye-line"></i> Ver Detalle</button>
+                title="Ver Detalle Completo"><i aria-hidden="true" class="ri-eye-line"></i> Ver Detalle</button>
             </td>
           </tr>
         </tbody>
@@ -501,7 +501,7 @@
     <div class="modal__footer">
       <button type="button" class="btn btn--primary"
         (click)="cerrarModalLotesComunero(); abrirModalVincular(comuneroSeleccionadoParaLotes)">
-        <i class="ri-map-pin-add-line"></i> Asignar Otro Terreno
+        <i aria-hidden="true" class="ri-map-pin-add-line"></i> Asignar Otro Terreno
       </button>
       <button type="button" class="btn btn--outline" (click)="cerrarModalLotesComunero()">Cerrar</button>
     </div>
@@ -511,11 +511,11 @@
 <!-- ========================================= -->
 <!-- MODAL DE DETALLE DEL LOTE                 -->
 <!-- ========================================= -->
-<div class="modal-backdrop" *ngIf="modalDetalleLoteVisible">
+<div appModalA11y class="modal-backdrop" *ngIf="modalDetalleLoteVisible">
   <div class="card modal" style="max-width: 620px; width: 95%;">
     <div class="modal__header">
-      <h3><i class="ri-map-pin-2-fill" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Detalle del Lote</h3>
-      <button class="btn-close" (click)="cerrarModalDetalleLote()"><i class="ri-close-line"></i></button>
+      <h3><i aria-hidden="true" class="ri-map-pin-2-fill" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Detalle del Lote</h3>
+      <button class="btn-close" (click)="cerrarModalDetalleLote()"><i aria-hidden="true" class="ri-close-line"></i></button>
     </div>
     <div class="modal-body" *ngIf="loteSeleccionadoParaDetalle">
       <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -542,7 +542,7 @@
         <div>
           <h4
             style="margin-bottom: 0.75rem; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="ri-user-star-line" style="color: var(--color-primary);"></i> Dueños / Comuneros Vinculados
+            <i aria-hidden="true" class="ri-user-star-line" style="color: var(--color-primary);"></i> Dueños / Comuneros Vinculados
           </h4>
           <p *ngIf="loteSeleccionadoParaDetalle.propietariosList.length === 0" class="text-muted"
             style="font-size: 0.9rem; padding: 0.5rem 0;">
@@ -560,7 +560,7 @@
         <div>
           <h4
             style="margin-bottom: 0.75rem; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="ri-map-2-line" style="color: var(--color-primary);"></i> Georreferenciación
+            <i aria-hidden="true" class="ri-map-2-line" style="color: var(--color-primary);"></i> Georreferenciación
           </h4>
 
           <!-- Mapa Leaflet de detalle -->
@@ -591,7 +591,7 @@
           <div *ngIf="loteSeleccionadoParaDetalle.latitud_aproximada" style="margin-top: 0.75rem;">
             <button class="btn btn--outline btn--sm"
               (click)="abrirGoogleMaps(loteSeleccionadoParaDetalle.latitud_aproximada, loteSeleccionadoParaDetalle.longitud_aproximada)">
-              <i class="ri-google-fill"></i> Ver en Google Maps
+              <i aria-hidden="true" class="ri-google-fill"></i> Ver en Google Maps
             </button>
           </div>
         </div>
@@ -600,7 +600,7 @@
         <div *ngIf="loteSeleccionadoParaDetalle.observacion">
           <h4
             style="margin-bottom: 0.5rem; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="ri-file-text-line" style="color: var(--color-primary);"></i> Observaciones
+            <i aria-hidden="true" class="ri-file-text-line" style="color: var(--color-primary);"></i> Observaciones
           </h4>
           <p style="white-space: pre-line; margin: 0; font-size: 0.9rem;">{{ loteSeleccionadoParaDetalle.observacion }}</p>
         </div>
@@ -616,11 +616,11 @@
 <!-- ========================================= -->
 <!-- MODAL MAPA GEORREFERENCIADO (desde tabla) -->
 <!-- ========================================= -->
-<div class="modal-backdrop" *ngIf="modalMapaLoteVisible && loteSeleccionadoMapa">
+<div appModalA11y class="modal-backdrop" *ngIf="modalMapaLoteVisible && loteSeleccionadoMapa">
   <div class="card modal" style="max-width: 580px; width: 95%;">
     <div class="modal__header">
-      <h4><i class="ri-map-pin-2-fill" style="color: var(--color-primary);"></i> Ubicación del Lote {{ loteSeleccionadoMapa.loteCodigo || loteSeleccionadoMapa.codigo }}</h4>
-      <button class="btn-close" (click)="cerrarModalMapa()"><i class="ri-close-line"></i></button>
+      <h4><i aria-hidden="true" class="ri-map-pin-2-fill" style="color: var(--color-primary);"></i> Ubicación del Lote {{ loteSeleccionadoMapa.loteCodigo || loteSeleccionadoMapa.codigo }}</h4>
+      <button class="btn-close" (click)="cerrarModalMapa()"><i aria-hidden="true" class="ri-close-line"></i></button>
     </div>
     <div class="modal-body">
       <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;">
@@ -635,9 +635,9 @@
       </div>
 
       <div class="map-placeholder">
-        <i class="ri-earth-line map-bg-icon"></i>
+        <i aria-hidden="true" class="ri-earth-line map-bg-icon"></i>
         <div class="map-pin">
-          <i class="ri-map-pin-fill"></i>
+          <i aria-hidden="true" class="ri-map-pin-fill"></i>
           <span>Lote {{ loteSeleccionadoMapa.loteCodigo || loteSeleccionadoMapa.codigo }}</span>
         </div>
       </div>
@@ -645,7 +645,7 @@
     <div class="modal__footer">
       <button class="btn btn--secondary"
         (click)="abrirGoogleMaps(loteSeleccionadoMapa.latitud, loteSeleccionadoMapa.longitud)">
-        <i class="ri-google-fill"></i> Abrir en Google Maps
+        <i aria-hidden="true" class="ri-google-fill"></i> Abrir en Google Maps
       </button>
       <button class="btn btn--outline" (click)="cerrarModalMapa()">Cerrar</button>
     </div>

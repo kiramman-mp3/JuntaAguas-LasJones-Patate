@@ -2,11 +2,15 @@ import { Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { ComunerosAdminComponent } from './comuneros-admin.component';
 
+const notifyStub = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() } as any;
+const dialogStub = { confirmar: vi.fn(async () => true), solicitar: vi.fn(), aviso: vi.fn() } as any;
+const cdrStub = { detectChanges: vi.fn() } as any;
+
 describe('Código de nuevo lote', () => {
   it('descarta una sugerencia tardía después de cambiar el sector', () => {
     const respuesta = new Subject();
     const admin = { sugerirCodigoLote: vi.fn(() => respuesta) };
-    const component = new ComunerosAdminComponent(admin as any, { detectChanges: vi.fn() } as any);
+    const component = new ComunerosAdminComponent(admin as any, cdrStub, notifyStub, dialogStub);
     component.modalLoteVisible = true;
     component.formLote.sector_id = 1;
     component.sugerirCodigoLote();
@@ -22,7 +26,9 @@ describe('Código de nuevo lote', () => {
     const respuesta = new Subject();
     const component = new ComunerosAdminComponent(
       { sugerirCodigoLote: () => respuesta } as any,
-      { detectChanges: vi.fn() } as any,
+      cdrStub,
+      notifyStub,
+      dialogStub,
     );
     component.modalLoteVisible = true;
     component.formLote.sector_id = 1;
@@ -36,7 +42,7 @@ describe('Código de nuevo lote', () => {
     const admin = {
       createLote: vi.fn(() => throwError(() => ({ error: { message: 'Código ya registrado' } }))),
     };
-    const component = new ComunerosAdminComponent(admin as any, { detectChanges: vi.fn() } as any);
+    const component = new ComunerosAdminComponent(admin as any, cdrStub, notifyStub, dialogStub);
     component.modalLoteVisible = true;
     component.formLote.sector_id = 1;
     component.formLote.codigo = ' lja-001 ';

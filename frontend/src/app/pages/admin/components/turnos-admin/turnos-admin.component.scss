@@ -1,0 +1,15 @@
+/* Layout dividido del modal "Asignar Turno": formulario + lista de comuneros */
+.modal-split {
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Calendario semanal: en pantallas pequeñas reduce el ancho mínimo para
+   evitar un scroll horizontal excesivo. */
+@media (max-width: 700px) {
+  .calendario-semanal {
+    min-width: 0 !important;
+    grid-template-columns: repeat(7, minmax(130px, 1fr)) !important;
+  }
+}
