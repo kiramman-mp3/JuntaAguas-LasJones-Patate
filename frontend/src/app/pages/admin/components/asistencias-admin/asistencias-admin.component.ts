@@ -9,6 +9,7 @@ import * as L from 'leaflet';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MingasAdminComponent } from '../mingas-admin/mingas-admin.component';
+import { AsambleasAdminComponent } from '../asambleas-admin/asambleas-admin.component';
 import { environment } from '../../../../../environments/environment';
 
 
@@ -65,7 +66,7 @@ interface EventoAdmin {
 @Component({
   selector: 'app-asistencias-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, MingasAdminComponent],
+  imports: [CommonModule, FormsModule, MingasAdminComponent, AsambleasAdminComponent],
   templateUrl: './asistencias-admin.component.html',
   styleUrls: ['../../admin.component.scss']
 })

@@ -362,6 +362,120 @@ export class ActasService {
     const maker = pdfMakeInstance.createPdf ? pdfMakeInstance : ((pdfMake as any).default || pdfMake);
     maker.createPdf(docDefinition as any).download(`Convocatoria_${evento.tipo}_${evento.fecha}.pdf`);
   }
+
+  /**
+   * Generar y descargar el PDF oficial de un acta por punto tratado específico o tema nuevo (F07)
+   */
+  generarActaPuntoPDF(evento: any, punto: any, asistenciaStats?: any[]) {
+    const fechaObj = evento.fecha ? new Date(evento.fecha) : new Date();
+    const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
+    const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
+    const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();
+    const anio = dateParts.length === 3 ? parseInt(dateParts[0], 10) : fechaObj.getFullYear();
+
+    const meses = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    const mesNombre = meses[mesIdx] || '__________';
+    const fechaTexto = `${dia} de ${mesNombre} de ${anio}`;
+
+    const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
+    const presidente = evento.presidente || 'Carlos Eduardo Moreta Salazar';
+    const secretario = evento.secretario || 'Secretaría General de la Junta';
+    const lugar = evento.lugar || 'Casa Comunal Junta La Jones';
+
+    // Stats de Asistencia
+    let presentesCount = evento.asistentes || '______';
+    let totalUsuariosCount = evento.totalComuneros || '______';
+    if (asistenciaStats && Array.isArray(asistenciaStats)) {
+      const presObj = asistenciaStats.find(s => (s.estado || '').toUpperCase() === 'PRESENTE');
+      if (presObj) presentesCount = presObj.total;
+      const totalSum = asistenciaStats.reduce((acc, curr) => acc + (parseInt(curr.total, 10) || 0), 0);
+      if (totalSum > 0) totalUsuariosCount = totalSum;
+    }
+
+    const numeroPunto = punto.orden || 1;
+    const tituloPunto = (punto.titulo_acta || punto.punto_tratar || `PUNTO Nº ${numeroPunto}`).toUpperCase();
+
+    const docDefinition = {
+      pageSize: 'A4',
+      pageMargins: [45, 45, 45, 45],
+      content: [
+        { text: 'JUNTA DE AGUA Y RIEGO LA JONES - PATATE', style: 'docTitle' },
+        { text: 'ACTA RESOLUTIVA DE PUNTO TRATADO EN ASAMBLEA', style: 'docSubtitle' },
+        { text: `ASAMBLEA GENERAL ${subtipo}`, style: 'docType' },
+        {
+          margin: [0, 8, 0, 12],
+          table: {
+            widths: [130, '*'],
+            body: [
+              [{ text: 'Punto del Orden del Día:', bold: true }, { text: `Punto Nº ${numeroPunto}` }],
+              [{ text: 'Tema / Asunto:', bold: true }, { text: tituloPunto }],
+              [{ text: 'Fecha de Tratamiento:', bold: true }, { text: fechaTexto }],
+              [{ text: 'Lugar de Sesión:', bold: true }, { text: lugar }],
+              [{ text: 'Cuórum Registrado:', bold: true }, { text: `${presentesCount} comuneros presentes de ${totalUsuariosCount} registrados` }],
+              [{ text: 'Estado del Acta:', bold: true }, { text: punto.estado_acta || 'APROBADA' }]
+            ]
+          },
+          layout: {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0.5,
+            hLineColor: () => '#555555',
+            vLineColor: () => '#555555'
+          }
+        },
+        { text: '1. ANTECEDENTES Y DELIBERACIÓN', style: 'sectionTitle' },
+        {
+          text: punto.tratado || 'Durante la sesión de la Asamblea General, se procedió a la exposición y análisis exhaustivo de este punto por parte de la directiva y los comuneros presentes, debatiéndose los alcances y necesidades correspondientes para la comunidad.',
+          style: 'paragraph'
+        },
+        { text: '\n2. RESOLUCIONES Y ACUERDOS APROBADOS', style: 'sectionTitle' },
+        {
+          text: punto.resolucion || 'Habiéndose sometido a consideración de la Asamblea General de Usuarios, y contando con el voto favorable de la mayoría requerida, se resolvió aprobar las medidas y disposiciones expuestas para el beneficio del sistema de riego.',
+          style: 'resolucionBox'
+        },
+        { text: '\n3. RESPONSABLES DE LA EJECUCIÓN', style: 'sectionTitle' },
+        {
+          text: punto.responsables ? `Se designa y responsabiliza de dar cumplimiento a lo acordado a: ${punto.responsables}.` : 'La Directiva de la Junta de Riego y las comisiones pertinentes quedan facultadas para la ejecución de lo resuelto.',
+          style: 'paragraph'
+        },
+        { text: '\n\nPara constancia y fe de lo resuelto, suscriben la presente acta en unidad de acto:\n\n\n' },
+        {
+          columns: [
+            {
+              stack: [
+                { text: '__________________________________', alignment: 'center' },
+                { text: `Sr. ${presidente}`, bold: true, alignment: 'center' },
+                { text: 'PRESIDENTE', bold: true, alignment: 'center' },
+                { text: 'Junta de Riego La Jones', alignment: 'center', fontSize: 9 }
+              ]
+            },
+            {
+              stack: [
+                { text: '__________________________________', alignment: 'center' },
+                { text: `Sr./Sra. ${secretario}`, bold: true, alignment: 'center' },
+                { text: 'SECRETARIO/A', bold: true, alignment: 'center' },
+                { text: 'Junta de Riego La Jones', alignment: 'center', fontSize: 9 }
+              ]
+            }
+          ]
+        }
+      ],
+      styles: {
+        docTitle: { fontSize: 13, bold: true, alignment: 'center', margin: [0, 0, 0, 2] },
+        docSubtitle: { fontSize: 12, bold: true, alignment: 'center', color: '#0369a1', margin: [0, 0, 0, 2] },
+        docType: { fontSize: 10, bold: true, alignment: 'center', color: '#475569', margin: [0, 0, 0, 6] },
+        sectionTitle: { fontSize: 11, bold: true, color: '#0284c7', margin: [0, 6, 0, 3] },
+        paragraph: { fontSize: 10, alignment: 'justify', lineHeight: 1.25 },
+        resolucionBox: { fontSize: 10, bold: true, color: '#0f172a', alignment: 'justify', lineHeight: 1.25, margin: [5, 2, 5, 2] }
+      }
+    };
+
+    const maker = pdfMakeInstance.createPdf ? pdfMakeInstance : ((pdfMake as any).default || pdfMake);
+    const cleanFecha = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0] : 'fecha';
+    maker.createPdf(docDefinition as any).download(`Acta_Punto_${numeroPunto}_${cleanFecha}.pdf`);
+  }
 }
 
 
