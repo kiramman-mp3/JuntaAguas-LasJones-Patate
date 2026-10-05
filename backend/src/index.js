@@ -7,17 +7,18 @@ require('dotenv').config();
 const apiRouter = require('./routes/index');
 const errorHandler = require('./middlewares/errorHandler');
 const { swaggerSpec } = require('./config/swagger');
+const { verificarToken } = require('./middlewares/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares globales
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:4200', credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Servir archivos estáticos subidos (PDFs, imágenes)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', verificarToken, express.static(path.join(__dirname, '../uploads')));
 
 
 // Ruta de comprobación de salud (Health check)
