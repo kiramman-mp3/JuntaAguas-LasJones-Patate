@@ -24,3 +24,227 @@
     pointer-events: none;
   }
 }
+
+.annual-history {
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-surface);
+
+  &__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-surface-hover);
+
+    h4 {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0.3rem 0 0;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+  }
+
+  &__legend,
+  &__totals {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    white-space: nowrap;
+    font-size: 0.78rem;
+  }
+
+  &__legend {
+    color: var(--text-muted);
+  }
+
+  &__tree {
+    padding: 0.75rem;
+  }
+
+  &__year + &__year {
+    margin-top: 0.35rem;
+  }
+
+  &__node {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.6rem;
+    border: 0;
+    border-radius: 6px;
+    color: var(--text-color);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    > i:first-child {
+      width: 1rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+  }
+
+  &__node--year {
+    padding: 0.8rem;
+    background: var(--bg-surface-hover);
+    font-size: 0.92rem;
+  }
+
+  &__node--month {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  &__months {
+    margin: 0.35rem 0 0.5rem 1.15rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--border-color);
+  }
+
+  &__month + &__month {
+    margin-top: 0.2rem;
+  }
+
+  &__movements {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0.25rem 0 0.65rem 1rem;
+  }
+
+  &__movement {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-surface);
+  }
+
+  &__movement--cancelled {
+    opacity: 0.7;
+  }
+
+  &__movement-icon {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 2rem;
+    place-items: center;
+    border-radius: 50%;
+  }
+
+  &__movement-icon--income {
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  }
+
+  &__movement-icon--expense {
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  }
+
+  &__movement-info {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.15rem;
+    color: var(--text-color);
+    font-size: 0.83rem;
+
+    small {
+      color: var(--text-muted);
+      font-size: 0.73rem;
+    }
+  }
+
+  &__movement-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono, monospace);
+  }
+
+  &__movement-date {
+    color: var(--text-muted);
+    font-family: var(--font-family, inherit);
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+
+  &__movement-value {
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  &__empty {
+    display: flex;
+    min-height: 8rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+
+    i {
+      font-size: 2rem;
+      opacity: 0.5;
+    }
+  }
+
+  &__income {
+    color: var(--color-success);
+  }
+
+  &__expense {
+    color: var(--color-danger);
+  }
+
+  @media (max-width: 700px) {
+    &__heading,
+    &__movement {
+      align-items: flex-start;
+    }
+
+    &__heading {
+      flex-direction: column;
+    }
+
+    &__totals {
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.2rem;
+      margin-left: auto;
+    }
+
+    &__movement {
+      flex-wrap: wrap;
+    }
+
+    &__movement-value,
+    &__actions {
+      margin-left: auto;
+    }
+  }
+}

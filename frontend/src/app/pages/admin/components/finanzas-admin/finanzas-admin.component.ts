@@ -8,6 +8,33 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+interface MovimientoFinanciero {
+  tipo: 'INGRESO' | 'EGRESO';
+  id: number;
+  fecha: string;
+  concepto: string;
+  tercero: string;
+  factura: string;
+  valor: number;
+  anulado: boolean;
+  registro: any;
+}
+
+interface MesFinanciero {
+  clave: string;
+  nombre: string;
+  ingresos: number;
+  egresos: number;
+  movimientos: MovimientoFinanciero[];
+}
+
+interface AnioFinanciero {
+  anio: string;
+  ingresos: number;
+  egresos: number;
+  meses: MesFinanciero[];
+}
+
 @Component({
   selector: 'app-finanzas-admin',
   standalone: true,
@@ -23,7 +50,7 @@ export class FinanzasAdminComponent implements OnInit {
 
   // Lógica Finanzas
   Number = Number;
-  subTabFinanzas: 'INGRESOS' | 'EGRESOS' = 'INGRESOS';
+  subTabFinanzas: 'INGRESOS' | 'EGRESOS' | 'HISTORIAL' = 'INGRESOS';
   modalCobroVisible: boolean = false;
   todosLosComunerosFinanzas: any[] = [];
   comuneroFiltroFinanzas: string = '';
@@ -37,6 +64,7 @@ export class FinanzasAdminComponent implements OnInit {
   historialPagos: any[] = [];
   historialFiltroBusqueda: string = '';
   pagosComunero: any[] = [];
+  nodosHistorialExpandidos = new Set<string>();
 
   // Lógica de Egresos
   modalEgresoVisible: boolean = false;
@@ -98,8 +126,129 @@ export class FinanzasAdminComponent implements OnInit {
   }
 
   // --- CONTROL DE TABS Y MODALES ---
-  cambiarSubTabFinanzas(tab: 'INGRESOS' | 'EGRESOS') {
+  cambiarSubTabFinanzas(tab: 'INGRESOS' | 'EGRESOS' | 'HISTORIAL') {
     this.subTabFinanzas = tab;
+  }
+
+  toggleNodoHistorial(clave: string) {
+    if (this.nodosHistorialExpandidos.has(clave)) {
+      this.nodosHistorialExpandidos.delete(clave);
+    } else {
+      this.nodosHistorialExpandidos.add(clave);
+    }
+  }
+
+  nodoHistorialExpandido(clave: string): boolean {
+    return this.nodosHistorialExpandidos.has(clave);
+  }
+
+  claveNodoAnio(anio: string): string {
+    return `anio-${anio.toLowerCase().replace(/\s+/g, '-')}`;
+  }
+
+  get historialFinancieroAnual(): AnioFinanciero[] {
+    const term = this.historialFiltroBusqueda.trim().toLocaleLowerCase();
+    const movimientos: MovimientoFinanciero[] = [
+      ...this.historialPagos.map((pago): MovimientoFinanciero => ({
+        tipo: 'INGRESO',
+        id: Number(pago.id),
+        fecha: String(pago.fecha_pago || ''),
+        concepto: pago.observacion || 'Pago de obligaciones',
+        tercero: pago.comunero_nombre || 'Comunero',
+        factura: '',
+        valor: Number(pago.valor_total) || 0,
+        anulado: Boolean(pago.observacion?.includes('[ANULADO:')),
+        registro: pago
+      })),
+      ...this.historialEgresos.map((egreso): MovimientoFinanciero => ({
+        tipo: 'EGRESO',
+        id: Number(egreso.id),
+        fecha: String(egreso.fecha || ''),
+        concepto: egreso.concepto || 'Egreso',
+        tercero: egreso.proveedor_nombre || '',
+        factura: egreso.numero_factura || '',
+        valor: Number(egreso.valor) || 0,
+        anulado: false,
+        registro: egreso
+      }))
+    ].filter(movimiento =>
+      !term ||
+      [
+        movimiento.tipo,
+        movimiento.fecha,
+        this.nombreMesHistorial(this.claveMesHistorial(movimiento.fecha)),
+        movimiento.tipo === 'INGRESO' ? this.formatReciboNo(movimiento.id) : this.formatEgresoNo(movimiento.id),
+        movimiento.concepto,
+        movimiento.tercero,
+        movimiento.factura
+      ].some(valor => valor.toLocaleLowerCase().includes(term))
+    );
+
+    const anios = new Map<string, Map<string, MesFinanciero>>();
+    for (const movimiento of movimientos) {
+      const claveMes = this.claveMesHistorial(movimiento.fecha);
+      const anio = claveMes === 'sin-fecha' ? 'Sin fecha' : claveMes.slice(0, 4);
+      let meses = anios.get(anio);
+      if (!meses) {
+        meses = new Map<string, MesFinanciero>();
+        anios.set(anio, meses);
+      }
+
+      let mes = meses.get(claveMes);
+      if (!mes) {
+        mes = {
+          clave: claveMes,
+          nombre: this.nombreMesHistorial(claveMes),
+          ingresos: 0,
+          egresos: 0,
+          movimientos: []
+        };
+        meses.set(claveMes, mes);
+      }
+
+      mes.movimientos.push(movimiento);
+      if (movimiento.tipo === 'INGRESO') {
+        if (!movimiento.anulado) mes.ingresos += movimiento.valor;
+      } else {
+        mes.egresos += movimiento.valor;
+      }
+    }
+
+    return [...anios.entries()]
+      .sort(([anioA], [anioB]) => {
+        if (anioA === 'Sin fecha') return 1;
+        if (anioB === 'Sin fecha') return -1;
+        return anioB.localeCompare(anioA);
+      })
+      .map(([anio, meses]) => {
+        const mesesOrdenados = [...meses.values()]
+          .sort((mesA, mesB) => mesB.clave.localeCompare(mesA.clave))
+          .map(mes => ({
+            ...mes,
+            movimientos: [...mes.movimientos].sort((a, b) => b.fecha.localeCompare(a.fecha))
+          }));
+        return {
+          anio,
+          ingresos: mesesOrdenados.reduce((total, mes) => total + mes.ingresos, 0),
+          egresos: mesesOrdenados.reduce((total, mes) => total + mes.egresos, 0),
+          meses: mesesOrdenados
+        };
+      });
+  }
+
+  private claveMesHistorial(fecha: string): string {
+    const coincidencia = /^(\d{4})-(\d{2})/.exec(fecha);
+    if (!coincidencia || Number(coincidencia[2]) < 1 || Number(coincidencia[2]) > 12) {
+      return 'sin-fecha';
+    }
+    return `${coincidencia[1]}-${coincidencia[2]}`;
+  }
+
+  private nombreMesHistorial(clave: string): string {
+    if (clave === 'sin-fecha') return 'Sin fecha';
+    const [anio, mes] = clave.split('-').map(Number);
+    const nombre = new Date(anio, mes - 1, 1).toLocaleDateString('es-EC', { month: 'long' });
+    return `${nombre.charAt(0).toLocaleUpperCase('es-EC')}${nombre.slice(1)}`;
   }
 
   prepararNuevoCobro() {

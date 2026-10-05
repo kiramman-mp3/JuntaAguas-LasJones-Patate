@@ -30,6 +30,22 @@
                 style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
                 <i aria-hidden="true" class="ri-upload-2-line"></i> Egresos y Compras
               </button>
+              <button class="btn btn--sm" [ngClass]="subTabFinanzas === 'HISTORIAL' ? 'btn--primary' : 'btn--outline'"
+                (click)="cambiarSubTabFinanzas('HISTORIAL')"
+                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
+                <i aria-hidden="true" class="ri-node-tree"></i> Historial anual
+              </button>
+            </div>
+
+            <!-- Filter for annual financial history -->
+            <div *ngIf="subTabFinanzas === 'HISTORIAL'" class="filters"
+              style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <div style="position: relative; display: flex; align-items: center;">
+                <i aria-hidden="true" class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+                <input type="text" class="input input--sm" placeholder="Buscar en el historial anual..."
+                  [(ngModel)]="historialFiltroBusqueda"
+                  style="padding-left: 2rem; width: 280px;">
+              </div>
             </div>
 
             <!-- Filters INGRESOS -->
@@ -56,6 +72,101 @@
 
           </div>
         </div>
+
+        <section *ngIf="subTabFinanzas === 'HISTORIAL'" class="annual-history" aria-label="Historial financiero anual">
+          <div class="annual-history__heading">
+            <div>
+              <h4><i aria-hidden="true" class="ri-node-tree text-primary"></i> Historial financiero anual</h4>
+              <p>Expande un año y luego un mes para consultar sus movimientos.</p>
+            </div>
+            <span class="annual-history__legend">
+              <span><i class="ri-download-2-line" aria-hidden="true"></i> Ingresos</span>
+              <span><i class="ri-upload-2-line" aria-hidden="true"></i> Egresos</span>
+            </span>
+          </div>
+
+          <div *ngIf="historialFinancieroAnual.length > 0; else historialVacio" class="annual-history__tree">
+            <section *ngFor="let anio of historialFinancieroAnual" class="annual-history__year">
+              <button type="button" class="annual-history__node annual-history__node--year"
+                (click)="toggleNodoHistorial(claveNodoAnio(anio.anio))"
+                [attr.aria-expanded]="nodoHistorialExpandido(claveNodoAnio(anio.anio))"
+                [attr.aria-controls]="'historial-' + claveNodoAnio(anio.anio)">
+                <i aria-hidden="true" [class]="nodoHistorialExpandido(claveNodoAnio(anio.anio)) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+                <i aria-hidden="true" class="ri-calendar-2-line"></i>
+                <strong>{{ anio.anio }}</strong>
+                <span class="annual-history__totals">
+                  <span class="annual-history__income">Ingresos ${{ formatValor(anio.ingresos) }}</span>
+                  <span class="annual-history__expense">Egresos ${{ formatValor(anio.egresos) }}</span>
+                </span>
+              </button>
+
+              <div *ngIf="nodoHistorialExpandido(claveNodoAnio(anio.anio))"
+                [id]="'historial-' + claveNodoAnio(anio.anio)" class="annual-history__months">
+                <section *ngFor="let mes of anio.meses" class="annual-history__month">
+                  <button type="button" class="annual-history__node annual-history__node--month"
+                    (click)="toggleNodoHistorial('mes-' + mes.clave)"
+                    [attr.aria-expanded]="nodoHistorialExpandido('mes-' + mes.clave)"
+                    [attr.aria-controls]="'historial-mes-' + mes.clave">
+                    <i aria-hidden="true" [class]="nodoHistorialExpandido('mes-' + mes.clave) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line'"></i>
+                    <i aria-hidden="true" class="ri-folder-line"></i>
+                    <strong>{{ mes.nombre }}</strong>
+                    <span class="annual-history__totals">
+                      <span class="annual-history__income">Ingresos ${{ formatValor(mes.ingresos) }}</span>
+                      <span class="annual-history__expense">Egresos ${{ formatValor(mes.egresos) }}</span>
+                    </span>
+                  </button>
+
+                  <div *ngIf="nodoHistorialExpandido('mes-' + mes.clave)"
+                    [id]="'historial-mes-' + mes.clave" class="annual-history__movements">
+                    <article *ngFor="let movimiento of mes.movimientos" class="annual-history__movement"
+                      [class.annual-history__movement--cancelled]="movimiento.anulado">
+                      <span class="annual-history__movement-icon"
+                        [class.annual-history__movement-icon--income]="movimiento.tipo === 'INGRESO'"
+                        [class.annual-history__movement-icon--expense]="movimiento.tipo === 'EGRESO'">
+                        <i aria-hidden="true" [class]="movimiento.tipo === 'INGRESO' ? 'ri-download-2-line' : 'ri-upload-2-line'"></i>
+                      </span>
+                      <div class="annual-history__movement-info">
+                        <div class="annual-history__movement-title">
+                          <strong>{{ movimiento.tipo === 'INGRESO' ? formatReciboNo(movimiento.id) : formatEgresoNo(movimiento.id) }}</strong>
+                          <span *ngIf="movimiento.anulado" class="badge badge--warning">ANULADO</span>
+                          <span class="annual-history__movement-date">{{ movimiento.fecha | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        <span>{{ movimiento.concepto }}</span>
+                        <small *ngIf="movimiento.tercero">
+                          {{ movimiento.tipo === 'INGRESO' ? 'Comunero' : 'Proveedor' }}: {{ movimiento.tercero }}
+                        </small>
+                        <small *ngIf="movimiento.factura">Factura: {{ movimiento.factura }}</small>
+                      </div>
+                      <strong class="annual-history__movement-value"
+                        [class.annual-history__income]="movimiento.tipo === 'INGRESO'"
+                        [class.annual-history__expense]="movimiento.tipo === 'EGRESO'">
+                        {{ movimiento.tipo === 'INGRESO' ? '+' : '-' }}${{ formatValor(movimiento.valor) }}
+                      </strong>
+                      <div *ngIf="movimiento.tipo === 'INGRESO'" class="annual-history__actions">
+                        <button type="button" class="btn btn--outline btn--sm" title="Reimprimir comprobante"
+                          aria-label="Reimprimir comprobante" (click)="reimprimirPDFDesdeHistorial(movimiento.registro)">
+                          <i aria-hidden="true" class="ri-printer-line"></i>
+                        </button>
+                        <button *ngIf="!movimiento.anulado" type="button" class="btn btn--outline btn--sm"
+                          title="Anular pago" aria-label="Anular pago"
+                          (click)="anularPagoDesdeHistorial(movimiento.registro)">
+                          <i aria-hidden="true" class="ri-close-circle-line"></i>
+                        </button>
+                      </div>
+                    </article>
+                  </div>
+                </section>
+              </div>
+            </section>
+          </div>
+
+          <ng-template #historialVacio>
+            <div class="annual-history__empty">
+              <i aria-hidden="true" class="ri-file-search-line"></i>
+              <span>No hay movimientos que coincidan con la búsqueda.</span>
+            </div>
+          </ng-template>
+        </section>
 
         <!-- TAB 1: COBROS E INGRESOS (BUSCADOR COMUNERO) -->
 <div *ngIf="subTabFinanzas === 'INGRESOS'" class="finanzas-historial">
