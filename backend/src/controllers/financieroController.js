@@ -514,7 +514,21 @@ async function anularPago(req, res, next) {
     connection.release();
   }
 }
+async function getPeriodosObligaciones(req, res, next) {
+  try {
+    // Consulta SQL utilizando DISTINCT para evitar duplicados y ordenados de forma ascendente
+    const sql = `SELECT DISTINCT periodo_anio 
+                 FROM obligaciones 
+                 ORDER BY periodo_anio ASC`;
 
+    // Ejecutamos la consulta sin parámetros ya que es una lista general
+    const [periodos] = await db.query(sql);
+
+    return res.json({ status: 'OK', data: periodos });
+  } catch (error) {
+    next(error);
+  }
+}
 module.exports = {
   getConceptos,
   createTarifa,
@@ -526,5 +540,6 @@ module.exports = {
   getPagos,
   getEgresos,
   createEgreso,
-  getBalanceReport
+  getBalanceReport,
+  getPeriodosObligaciones
 };

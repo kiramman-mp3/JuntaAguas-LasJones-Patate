@@ -35,6 +35,9 @@ export class Cobros implements OnInit {
 
   cargandoObligaciones = false;
   procesandoPago = false;
+  
+  listaPeriodos: any[] = [];
+  periodoSeleccionadoFinanzas: any = null; // <-- PROPIEDAD AGREGADA AQUÍ
 
   // Permite descartar respuestas de una selección anterior.
   private consultaObligaciones = 0;
@@ -46,6 +49,7 @@ export class Cobros implements OnInit {
 
   ngOnInit(): void {
     this.cargarComunerosFinanzas();
+    this.cargarPeriodosObligaciones();
   }
 
   cargarComunerosFinanzas(): void {
@@ -57,6 +61,18 @@ export class Cobros implements OnInit {
       error: (err: any) => {
         console.error('Error al cargar comuneros', err);
         alert('No se pudo cargar la lista de comuneros.');
+      },
+    });
+  }
+
+  cargarPeriodosObligaciones(): void {
+    this.adminService.getPeriodosObligaciones().subscribe({
+      next: (res: any) => {
+        this.listaPeriodos = res?.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Error al cargar periodos de obligaciones', err);
       },
     });
   }
@@ -79,8 +95,14 @@ export class Cobros implements OnInit {
     );
   }
 
-  seleccionarComuneroFinanzas(comunero: any): void {
+  // MODIFICAR ESTE MÉTODO PARA ENVIAR EL AÑO SELECCIONADO
+seleccionarComuneroFinanzas(comunero: any): void {
     if (this.procesandoPago) return;
+
+    // VALIDACIÓN: Si no hay año seleccionado, no hace nada (el panel derecho muestra el aviso)
+    if (!this.periodoSeleccionadoFinanzas) {
+      return;
+    }
 
     this.comuneroSeleccionadoFinanzas = comunero;
     this.obligacionesComunero = [];
@@ -97,7 +119,7 @@ export class Cobros implements OnInit {
 
     this.cargandoObligaciones = true;
 
-    this.adminService.getObligaciones(comunero.id).subscribe({
+    this.adminService.getObligaciones(comunero.id, this.periodoSeleccionadoFinanzas).subscribe({
       next: (res: any) => {
         if (consultaActual !== this.consultaObligaciones) return;
 
@@ -111,8 +133,6 @@ export class Cobros implements OnInit {
           (ob) => ob.estado === 'PAGADA',
         );
 
-        // Mantiene el comportamiento original:
-        // todas las obligaciones se seleccionan inicialmente.
         this.obligacionesSeleccionadasIds =
           this.obligacionesComunero.map((ob) => ob.id);
 
@@ -124,10 +144,15 @@ export class Cobros implements OnInit {
 
         this.cargandoObligaciones = false;
         console.error('Error al consultar obligaciones', err);
-        alert('No se pudieron consultar las obligaciones del comunero.');
         this.cdr.detectChanges();
       },
     });
+  }
+
+  onCambioPeriodo(): void {
+    if (this.comuneroSeleccionadoFinanzas) {
+      this.seleccionarComuneroFinanzas(this.comuneroSeleccionadoFinanzas);
+    }
   }
 
   isObligacionSeleccionada(id: number): boolean {

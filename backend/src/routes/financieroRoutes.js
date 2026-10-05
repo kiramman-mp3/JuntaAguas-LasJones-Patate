@@ -186,5 +186,6 @@ router.post('/egresos', verificarToken, verificarRol(['ADMIN', 'TESORERO']), fin
  *       200: { description: Reporte de balance financiero al día. }
  */
 router.get('/balance', verificarToken, financieroController.getBalanceReport);
+router.get('/periodosobligaciones', verificarToken, financieroController.getPeriodosObligaciones);
 
 module.exports = router;

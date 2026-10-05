@@ -97,9 +97,18 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/financiero/balance`, { headers: this.getAuthHeaders() });
   }
 
-  getObligaciones(personaId?: number): Observable<any> {
-    const url = personaId ? `${this.baseUrl}/financiero/obligaciones?persona_id=${personaId}` : `${this.baseUrl}/financiero/obligaciones`;
-    return this.http.get(url, { headers: this.getAuthHeaders() });
+  getObligaciones(personaId?: number, anio?: number | null): Observable<any> {
+    let url = `${this.baseUrl}/financiero/obligaciones?`;
+    const params: string[] = [];
+
+    if (personaId) {
+      params.push(`persona_id=${personaId}`);
+    }
+    if (anio) {
+      params.push(`anio=${anio}`);
+    }
+
+    return this.http.get(url + params.join('&'), { headers: this.getAuthHeaders() });
   }
 
   registrarPago(payload: { persona_id: number; metodo: string; referencia?: string; observaciones?: string; obligacionesIds: number[] }): Observable<any> {
@@ -139,5 +148,9 @@ export class AdminService {
   notificarMingaWhatsApp(eventoId: number): Observable<any> {
     return this.http.post(`${this.baseUrl}/whatsapp/notificar-minga`, { eventoId }, { headers: this.getAuthHeaders() });
   }
-}
 
+  getPeriodosObligaciones(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/financiero/periodosobligaciones`, { headers: this.getAuthHeaders() });
+  }
+
+}
