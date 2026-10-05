@@ -19,6 +19,9 @@
       <a class="nav-item" [class.nav-item--active]="tabActiva === 'TURNOS'" (click)="cambiarTab('TURNOS')">
         <i class="ri-drop-line"></i> Turnos de Agua
       </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'COBROS'" (click)="cambiarTab('COBROS')">
+        <i class="ri-money-dollar-circle-line"></i> Cobros
+      </a>
       <a class="nav-item" [class.nav-item--active]="tabActiva === 'FINANZAS'" (click)="cambiarTab('FINANZAS')">
         <i class="ri-money-dollar-circle-line"></i> Finanzas
       </a>
@@ -140,6 +143,10 @@
     <!-- VISTA 4: FINANZAS -->
     <section *ngIf="tabActiva === 'FINANZAS'" class="tab-view">
       <app-finanzas-admin></app-finanzas-admin>
+    </section>
+
+    <section *ngIf="tabActiva === 'COBROS'" class="tab-view">
+      <app-cobros></app-cobros>
     </section>
 
   </main>
