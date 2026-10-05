@@ -9,12 +9,18 @@ if (!process.env.JWT_SECRET) {
  * Middleware para verificar token JWT en peticiones protegidas
  */
 function verificarToken(req, res, next) {
+  let token = null;
   const authHeader = req.headers['authorization'];
-  if (!authHeader) {
-    return res.status(401).json({ status: 'ERROR', message: 'Acceso no autorizado. Se requiere token JWT.' });
+
+  if (authHeader) {
+    token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
+  } else if (req.query && req.query.token) {
+    token = req.query.token;
   }
 
-  const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
+  if (!token) {
+    return res.status(401).json({ status: 'ERROR', message: 'Acceso no autorizado. Se requiere token JWT.' });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

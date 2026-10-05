@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { verificarToken } = require('../middlewares/authMiddleware');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiter para login (máximo 10 intentos por cada 15 minutos)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { status: 'ERROR', message: 'Demasiados intentos de inicio de sesión desde esta IP, por favor intente de nuevo en 15 minutos.' }
+});
 
 /**
  * @openapi
@@ -23,7 +31,7 @@ const { verificarToken } = require('../middlewares/authMiddleware');
  *       200: { description: Login exitoso, retorna JWT token. }
  *       401: { description: Credenciales inválidas. }
  */
-router.post('/login', authController.login);
+router.post('/login', loginLimiter, authController.login);
 
 /**
  * @openapi
