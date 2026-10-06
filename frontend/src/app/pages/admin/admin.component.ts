@@ -4,18 +4,21 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/services/admin.service';
 import { ComunerosAdminComponent } from './components/comuneros-admin/comuneros-admin.component';
 import { FinanzasAdminComponent } from './components/finanzas-admin/finanzas-admin.component';
+import { Gestioncontratacion } from './components/gestioncontratacion/gestioncontratacion';
+import { Cobros } from './components/cobros/cobros';
+
 import { TurnosAdminComponent } from './components/turnos-admin/turnos-admin.component';
 import { AsistenciasAdminComponent } from './components/asistencias-admin/asistencias-admin.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, ComunerosAdminComponent, FinanzasAdminComponent, TurnosAdminComponent, AsistenciasAdminComponent],
+  imports: [CommonModule, FormsModule, ComunerosAdminComponent, FinanzasAdminComponent, TurnosAdminComponent, AsistenciasAdminComponent,Cobros, Gestioncontratacion ],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
 export class AdminComponent implements OnInit {
-  tabActiva: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS' = 'DASHBOARD';
+  tabActiva: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'COBROS' | 'ACTAS' |'GESTIONCONTRATACION'= 'DASHBOARD';
   
   usuariosTotalRegistros: string | number = '150+';
   totalLotes: string | number = '180+';
@@ -25,6 +28,10 @@ export class AdminComponent implements OnInit {
   @ViewChild(FinanzasAdminComponent) finanzasAdminComponent!: FinanzasAdminComponent;
   @ViewChild(ComunerosAdminComponent) comunerosAdmin!: ComunerosAdminComponent;
   @ViewChild(AsistenciasAdminComponent) asistenciasAdmin!: AsistenciasAdminComponent;
+  @ViewChild(Cobros) cobros!: Cobros;
+  @ViewChild(Gestioncontratacion) gestioncontratacion!: Gestioncontratacion;
+
+
 
   // KPIs Financieros
   kpis = {
@@ -69,12 +76,12 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  cambiarTab(tab: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS') {
+  cambiarTab(tab: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'COBROS' | 'ACTAS'|'GESTIONCONTRATACION') {
     this.tabActiva = tab;
   }
 
   prepararNuevoCobroDashboard() {
-    this.cambiarTab('FINANZAS');
+    this.cambiarTab('COBROS');
     setTimeout(() => { if (this.finanzasAdminComponent) this.finanzasAdminComponent.prepararNuevoCobro(); }, 50);
   }
 

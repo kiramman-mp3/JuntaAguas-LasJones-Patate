@@ -516,7 +516,162 @@ async function anularPago(req, res, next) {
     connection.release();
   }
 }
+async function getPeriodosObligaciones(req, res, next) {
+  try {
+    // Consulta SQL utilizando DISTINCT para evitar duplicados y ordenados de forma ascendente
+    const sql = `SELECT DISTINCT periodo_anio 
+                 FROM obligaciones 
+                 ORDER BY periodo_anio ASC`;
 
+    // Ejecutamos la consulta sin parámetros ya que es una lista general
+    const [periodos] = await db.query(sql);
+
+    return res.json({ status: 'OK', data: periodos });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// Buscar el ID de la persona por su cédula.
+async function buscarPersonaPorCedula(cedula) {
+  const [personas] = await db.query(
+    `SELECT id
+     FROM personas
+     WHERE cedula = ?
+     LIMIT 1`,
+    [cedula],
+  );
+
+  return personas[0] ?? null;
+}
+
+async function getObligacionesMultas(req, res, next) {
+  try {
+    const { cedula, estado, anio, mes } = req.query;
+
+    if (typeof cedula !== 'string' || !cedula.trim()) {
+      return res.status(400).json({
+        status: 'ERROR',
+        message: 'Debe enviar la cédula del comunero.',
+      });
+    }
+
+    const persona = await buscarPersonaPorCedula(cedula.trim());
+
+    if (!persona) {
+      return res.status(404).json({
+        status: 'ERROR',
+        message: 'No existe una persona registrada con esa cédula.',
+      });
+    }
+
+    let sql = `
+      SELECT
+        o.*,
+        c.codigo AS concepto_codigo,
+        c.nombre AS concepto_nombre,
+        CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre,
+        p.cedula
+      FROM obligaciones o
+      JOIN personas p ON p.id = o.persona_id
+      JOIN conceptos_cobro c ON c.id = o.concepto_id
+      WHERE o.concepto_id != 1
+        AND o.persona_id = ?
+    `;
+
+    const params = [persona.id];
+
+    if (estado) {
+      sql += ` AND o.estado = ?`;
+      params.push(estado);
+    }
+
+    if (anio) {
+      sql += ` AND o.periodo_anio = ?`;
+      params.push(anio);
+    }
+
+    if (mes) {
+      sql += ` AND o.periodo_mes = ?`;
+      params.push(mes);
+    }
+
+    sql += ` ORDER BY o.fecha_emision DESC`;
+
+    const [obligaciones] = await db.query(sql, params);
+
+    return res.json({
+      status: 'OK',
+      data: obligaciones,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getObligacionesMensualidad(req, res, next) {
+  try {
+    const { cedula, estado, anio, mes } = req.query;
+
+    if (typeof cedula !== 'string' || !cedula.trim()) {
+      return res.status(400).json({
+        status: 'ERROR',
+        message: 'Debe enviar la cédula del comunero.',
+      });
+    }
+
+    const persona = await buscarPersonaPorCedula(cedula.trim());
+
+    if (!persona) {
+      return res.status(404).json({
+        status: 'ERROR',
+        message: 'No existe una persona registrada con esa cédula.',
+      });
+    }
+
+    let sql = `
+      SELECT
+        o.*,
+        c.codigo AS concepto_codigo,
+        c.nombre AS concepto_nombre,
+        CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre,
+        p.cedula
+      FROM obligaciones o
+      JOIN personas p ON p.id = o.persona_id
+      JOIN conceptos_cobro c ON c.id = o.concepto_id
+      WHERE o.concepto_id = 1
+        AND o.persona_id = ?
+    `;
+
+    const params = [persona.id];
+
+    if (estado) {
+      sql += ` AND o.estado = ?`;
+      params.push(estado);
+    }
+
+    if (anio) {
+      sql += ` AND o.periodo_anio = ?`;
+      params.push(anio);
+    }
+
+    if (mes) {
+      sql += ` AND o.periodo_mes = ?`;
+      params.push(mes);
+    }
+
+    sql += ` ORDER BY o.fecha_emision DESC`;
+
+    const [obligaciones] = await db.query(sql, params);
+
+    return res.json({
+      status: 'OK',
+      data: obligaciones,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 module.exports = {
   getConceptos,
   createTarifa,
@@ -528,5 +683,8 @@ module.exports = {
   getPagos,
   getEgresos,
   createEgreso,
-  getBalanceReport
+  getBalanceReport,
+  getPeriodosObligaciones,
+  getObligacionesMultas,
+  getObligacionesMensualidad
 };
