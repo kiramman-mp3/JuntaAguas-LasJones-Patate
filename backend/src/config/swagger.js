@@ -53,7 +53,7 @@ const swaggerDefinition = {
         properties: {
           id: { type: 'integer', example: 10 },
           sector_id: { type: 'integer', example: 1 },
-          codigo: { type: 'string', example: 'LOT-JONES-A04' },
+          codigo: { type: 'string', example: 'LJA-001' },
           superficie_m2: { type: 'number', example: 2500.00 },
           latitud_aproximada: { type: 'number', example: -1.3324100 },
           longitud_aproximada: { type: 'number', example: -78.5142100 },

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface LoginResponse {
   status: string;
@@ -23,7 +24,7 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   private tokenKey = 'junta_token';
   private userKey = 'junta_user';
 
@@ -33,16 +34,16 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { cedula, password }).pipe(
       tap(res => {
         if (res.token) {
-          localStorage.setItem(this.tokenKey, res.token);
-          localStorage.setItem(this.userKey, JSON.stringify(res.user));
+          this.setItem(this.tokenKey, res.token);
+          this.setItem(this.userKey, JSON.stringify(res.user));
         }
       })
     );
   }
 
   logout() {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
+    this.removeItem(this.tokenKey);
+    this.removeItem(this.userKey);
   }
 
   changePassword(actualPassword: string, nuevaPassword: string): Observable<any> {
@@ -52,15 +53,40 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return this.getItem(this.tokenKey);
   }
 
   getUser() {
-    const data = localStorage.getItem(this.userKey);
+    const data = this.getItem(this.userKey);
     return data ? JSON.parse(data) : null;
   }
 
   isLoggedIn(): boolean {
     return !!this.getToken();
+  }
+
+  /* Acceso seguro al almacenamiento: puede no existir en SSR o en pruebas. */
+  private getItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  private setItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* almacenamiento no disponible */
+    }
+  }
+
+  private removeItem(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* almacenamiento no disponible */
+    }
   }
 }

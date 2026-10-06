@@ -25,12 +25,13 @@ export interface ConsultaResultadoResponse {
 }
 
 import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConsultaService {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -71,6 +72,16 @@ export class ConsultaService {
 
   getDocumentosEvento(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/eventos/${id}/documentos`);
+  }
+
+  descargarListaAsistencia(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/eventos/${id}/pdf-asistencia`, {
+      ...this.getAuthHeaders(), responseType: 'blob'
+    });
+  }
+
+  urlDocumento(ruta: string): string {
+    return ruta.startsWith('/uploads/') ? `${this.apiUrl.replace(/\/api\/?$/, '')}${ruta}` : ruta;
   }
 }
 

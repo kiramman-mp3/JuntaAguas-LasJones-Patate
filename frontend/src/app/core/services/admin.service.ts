@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
-  private baseUrl = 'http://localhost:3000/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -49,6 +50,12 @@ export class AdminService {
     return this.http.post(`${this.baseUrl}/lotes`, data, { headers: this.getAuthHeaders() });
   }
 
+  sugerirCodigoLote(sectorId: number): Observable<{ status: string; data: { codigo: string } }> {
+    return this.http.get<{ status: string; data: { codigo: string } }>(
+      `${this.baseUrl}/lotes/sugerir-codigo?sector_id=${sectorId}`, { headers: this.getAuthHeaders() }
+    );
+  }
+
   vincularPersonaLote(loteId: number, data: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/lotes/${loteId}/vincular-persona`, data, { headers: this.getAuthHeaders() });
   }
@@ -73,8 +80,9 @@ export class AdminService {
     return this.http.delete(`${this.baseUrl}/turnos/${id}`, { headers: this.getAuthHeaders() });
   }
 
-  getEventos(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/eventos`, { headers: this.getAuthHeaders() });
+  getEventos(tipo?: 'ASAMBLEA' | 'MINGA'): Observable<any> {
+    const filtro = tipo ? `?tipo=${tipo}` : '';
+    return this.http.get(`${this.baseUrl}/eventos${filtro}`, { headers: this.getAuthHeaders() });
   }
 
   createEvento(payload: any): Observable<any> {
@@ -91,6 +99,48 @@ export class AdminService {
 
   getAsistencias(eventoId: number): Observable<any> {
     return this.http.get(`${this.baseUrl}/eventos/${eventoId}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
+  cambiarEstadoAsamblea(id: number, estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/estado`, { estado }, { headers: this.getAuthHeaders() });
+  }
+
+  finalizarAsamblea(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/finalizar`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  guardarPuntosAsamblea(id: number, puntos: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/puntos`, { puntos }, { headers: this.getAuthHeaders() });
+  }
+
+  cambiarEstadoActaPunto(id: number, puntoId: number, payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/puntos/${puntoId}/estado`, payload, { headers: this.getAuthHeaders() });
+  }
+
+  subirDocumentoFirmado(id: number, tipo: string, nombre_archivo: string, contenido_base64: string, punto_id?: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/documentos`, {
+      tipo,
+      nombre_archivo,
+      contenido_base64,
+      punto_id,
+      estado: 'FIRMADO'
+    }, { headers: this.getAuthHeaders() });
+  }
+
+  cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/estado`, { estado }, { headers: this.getAuthHeaders() });
+  }
+
+  finalizarMinga(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/finalizar`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  getAsistenciasMinga(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/mingas/${id}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
+  registrarAsistenciasMinga(id: number, asistencias: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
   }
 
   getBalance(): Observable<any> {
@@ -111,8 +161,12 @@ export class AdminService {
     return this.http.get(url + params.join('&'), { headers: this.getAuthHeaders() });
   }
 
-  registrarPago(payload: { persona_id: number; metodo: string; referencia?: string; observaciones?: string; obligacionesIds: number[] }): Observable<any> {
-    return this.http.post(`${this.baseUrl}/financiero/pagos`, payload, { headers: this.getAuthHeaders() });
+  registrarPago(payload: { persona_id: number; metodo: string; referencia?: string; observacion?: string; observaciones?: string; obligacionesIds: number[] }): Observable<any> {
+    const body = {
+      ...payload,
+      observacion: payload.observacion || payload.observaciones || 'Pago procesado desde panel administrativo.'
+    };
+    return this.http.post(`${this.baseUrl}/financiero/pagos`, body, { headers: this.getAuthHeaders() });
   }
 
   getPagos(personaId?: number): Observable<any> {

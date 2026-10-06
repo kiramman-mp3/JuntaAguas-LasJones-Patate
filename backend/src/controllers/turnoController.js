@@ -8,7 +8,8 @@ async function getTurnos(req, res, next) {
   try {
     const { dia_semana, persona_id, lote_id, sector_id } = req.query;
 
-    let sql = `SELECT t.*,
+    let sql = `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
+                      t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
                       CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula,
                       l.codigo AS lote_codigo, s.nombre AS sector_nombre
                FROM turnos_riego t

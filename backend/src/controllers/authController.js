@@ -46,7 +46,7 @@ async function login(req, res, next) {
     await db.query(`UPDATE cuentas SET ultimo_acceso = NOW() WHERE id = ?`, [user.cuenta_id]);
 
     // Generar Token JWT
-    const secret = process.env.JWT_SECRET || 'super_secret_key_junta_las_jones_2026';
+    const secret = process.env.JWT_SECRET;
     const token = jwt.sign(
       {
         cuentaId: user.cuenta_id,
@@ -104,16 +104,18 @@ async function changePassword(req, res, next) {
       return res.status(400).json({ status: 'ERROR', message: 'La nueva contraseña debe tener al menos 6 caracteres.' });
     }
 
+    if (!actualPassword) {
+      return res.status(400).json({ status: 'ERROR', message: 'Debe proporcionar su contraseña actual.' });
+    }
+
     const [rows] = await db.query(`SELECT password_hash FROM cuentas WHERE id = ?`, [cuentaId]);
     if (rows.length === 0) {
       return res.status(404).json({ status: 'ERROR', message: 'Cuenta no encontrada.' });
     }
 
-    if (actualPassword) {
-      const match = await bcrypt.compare(actualPassword, rows[0].password_hash);
-      if (!match) {
-        return res.status(400).json({ status: 'ERROR', message: 'La contraseña actual ingresada es incorrecta.' });
-      }
+    const match = await bcrypt.compare(actualPassword, rows[0].password_hash);
+    if (!match) {
+      return res.status(400).json({ status: 'ERROR', message: 'La contraseña actual ingresada es incorrecta.' });
     }
 
     const newHash = await bcrypt.hash(nuevaPassword, 10);

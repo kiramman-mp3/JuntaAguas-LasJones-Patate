@@ -7,14 +7,14 @@
 
 El presente documento describe la arquitectura, criterios de diseño y modelo entidad-relación que rigen la base de datos del **Sistema Integrado de Gestión de la Junta de Riego La Jones**, ubicada en el cantón Patate, provincia de Tungurahua.
 
-El modelo relacional está compuesto por **25 tablas** normalizadas y distribuidas en **7 dominios funcionales**, diseñados para garantizar integridad, flexibilidad, conservación histórica de datos y trazabilidad en los procesos administrativos, financieros y de comunicación de la Junta.
+El modelo relacional está compuesto por **22 tablas** normalizadas y distribuidas en **7 dominios funcionales**, optimizadas mediante depuración de entidades huérfanas para garantizar integridad, agilidad y trazabilidad en los procesos administrativos y financieros de la Junta.
 
 ---
 
 ## 2. 📐 Criterios Generales de Diseño
 
 1. **Separación entre Persona y Cuenta:** Los datos personales (`personas`) se mantienen independientes de las credenciales de acceso (`cuentas`), donde cada cuenta posee directamente un rol asignado (`rol_id`).
-2. **Normalización de Información:** Conceptos repetibles como roles, sectores, conceptos de cobro, tarifas y proveedores se separan en entidades independientes.
+2. **Normalización de Información:** Conceptos repetibles como roles, sectores, conceptos de cobro y tarifas se separan en entidades independientes.
 3. **Regla de No Pagos Parciales:** Una obligación financiera se cancela completamente (`PAGADA`) o permanece `PENDIENTE`. Un pago cancela una o varias obligaciones completas.
 4. **Gestión Documental Completa (PDFs y Firmas):** El sistema conserva tanto el PDF generado originalmente (`GENERADO`) como la versión posteriormente firmada manualmente y cargada (`FIRMADO`).
 5. **Automatización de Multas por Ausencia:** Las ausencias no justificadas a eventos de tipo `ASAMBLEA` o `MINGA` generan automáticamente una obligación financiera cuando `genera_multa_ausencia = true`.
@@ -22,14 +22,14 @@ El modelo relacional está compuesto por **25 tablas** normalizadas y distribuid
 
 ---
 
-## 3. 🗂️ Organización del Modelo por Dominios (25 Tablas)
+## 3. 🗂️ Organización del Modelo por Dominios (22 Tablas Optimizadas)
 
 | Dominio Funcional | Tablas Integrantes | Descripción Breve |
 | :--- | :--- | :--- |
-| **Identidad, Acceso y Organización** | `personas`, `roles`, `cuentas`, `cargos_directiva`, `miembros_directiva` | Gestión de comuneros, credenciales de acceso, roles (ADMIN/USUARIO) e historial de la directiva. |
+| **Identidad y Acceso** | `personas`, `roles`, `cuentas` | Gestión de comuneros, credenciales de acceso y perfiles (`ADMIN`, `USUARIO`). |
 | **Lotes y Riego** | `sectores`, `lotes`, `persona_lotes`, `turnos_riego` | Terrenos por sector, ubicación aproximada (lat/lng/radio de error), titularidad y horarios de agua. |
-| **Asambleas, Mingas, Asistencia y Comunicación** | `eventos`, `puntos_asamblea`, `asistencias`, `documentos_evento`, `envios_convocatoria` | Eventos, orden del día/resoluciones, control de asistencia, documentos PDF (generados y firmados) y notificaciones (WhatsApp/Email). |
-| **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `proveedores`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos, gastos y proveedores. |
+| **Asambleas, Mingas, Asistencia y Comunicación** | `eventos`, `puntos_asamblea`, `asistencias`, `documentos_evento`, `envios_convocatoria` | Eventos, orden del día/resoluciones, control de asistencia, documentos PDF y notificaciones WhatsApp. |
+| **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos y gastos operativos. |
 | **Inventario** | `bienes_inventario` | Registro y control físico de bienes y herramientas de la Junta. |
 | **Planificación Anual** | `planes_anuales`, `actividades_plan` | Plan operativo anual de trabajo y seguimiento de cumplimiento de actividades. |
 | **Auditoría** | `auditoria` | Bitácora imborrable de operaciones realizadas por los administradores. |
@@ -48,8 +48,6 @@ erDiagram
     roles ||--o{ cuentas : "asignado a"
     cuentas ||--o{ cuentas : "crea otras cuentas"
     personas ||--o{ persona_lotes : "se relaciona con"
-    personas ||--o{ miembros_directiva : "ejerce cargo"
-    cargos_directiva ||--o{ miembros_directiva : "asignado en"
 
     personas ||--o{ turnos_riego : "asignado turno"
     personas ||--o{ asistencias : "registra asistencia"
@@ -91,7 +89,6 @@ erDiagram
     tarifas ||--o{ obligaciones : "aplica tarifa"
     obligaciones ||--o| pago_detalles : "pagada por 1 detail"
     pagos ||--o{ pago_detalles : "cancela obligaciones"
-    proveedores ||--o{ egresos : "factura a la Junta"
 
     %% --------------------------------------------------
     %% 5. PLANIFICACIÓN ANUAL

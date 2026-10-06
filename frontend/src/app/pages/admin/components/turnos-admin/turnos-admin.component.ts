@@ -2,12 +2,16 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { DialogService } from '../../../../core/services/dialog.service';
 
 @Component({
   selector: 'app-turnos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './turnos-admin.component.html'
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
+  templateUrl: './turnos-admin.component.html',
+  styleUrls: ['./turnos-admin.component.scss']
 })
 export class TurnosAdminComponent implements OnInit {
   turnos: any[] = [];
@@ -78,7 +82,7 @@ export class TurnosAdminComponent implements OnInit {
     { valor: 7, label: 'Domingo' }
   ];
 
-  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
+  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef, private notify: NotificationService, private dialog: DialogService) {}
 
   ngOnInit(): void {
     this.cargarTurnos();
@@ -170,30 +174,30 @@ export class TurnosAdminComponent implements OnInit {
 
   guardarTurno() {
     if (!this.nuevoTurno.persona_id) {
-      alert('Debe seleccionar un comunero.');
+      this.notify.warning('Debe seleccionar un comunero.');
       return;
     }
     if (!this.nuevoTurno.lote_id) {
-      alert('Debe seleccionar un lote para asignar el turno.');
+      this.notify.warning('Debe seleccionar un lote para asignar el turno.');
       return;
     }
     if (!this.nuevoTurno.hora_inicio || !this.nuevoTurno.hora_fin) {
-      alert('Debe definir la hora de inicio y fin.');
+      this.notify.warning('Debe definir la hora de inicio y fin.');
       return;
     }
     if (this.nuevoTurno.hora_inicio >= this.nuevoTurno.hora_fin) {
-      alert('La hora de fin debe ser posterior a la de inicio.');
+      this.notify.warning('La hora de fin debe ser posterior a la de inicio.');
       return;
     }
 
     this.adminService.asignarTurno(this.nuevoTurno).subscribe({
       next: (res: any) => {
-        alert(res.message || 'Turno de agua asignado con éxito.');
+        this.notify.success(res.message || 'Turno de agua asignado con éxito.');
         this.cerrarModalTurno();
         this.cargarTurnos();
       },
       error: (err: any) => {
-        alert(err.error?.message || 'Error al asignar el turno.');
+        this.notify.error(err.error?.message || 'Error al asignar el turno.');
       }
     });
   }
@@ -233,11 +237,11 @@ export class TurnosAdminComponent implements OnInit {
     if (!this.turnoEnEdicion) return;
 
     if (!this.turnoEnEdicion.dia_semana || !this.turnoEnEdicion.hora_inicio || !this.turnoEnEdicion.hora_fin) {
-      alert('Día de semana y horarios son requeridos.');
+      this.notify.warning('Día de semana y horarios son requeridos.');
       return;
     }
     if (this.turnoEnEdicion.hora_inicio >= this.turnoEnEdicion.hora_fin) {
-      alert('La hora de fin debe ser mayor a la hora de inicio.');
+      this.notify.warning('La hora de fin debe ser mayor a la hora de inicio.');
       return;
     }
 
@@ -253,23 +257,29 @@ export class TurnosAdminComponent implements OnInit {
 
     this.adminService.actualizarTurno(this.turnoEnEdicion.id, payload).subscribe({
       next: (res: any) => {
-        alert(res.message || 'Turno actualizado correctamente.');
+        this.notify.success(res.message || 'Turno actualizado correctamente.');
         this.cerrarModalEditarTurno();
         this.cargarTurnos();
       },
-      error: (err: any) => alert(err.error?.message || 'Error al actualizar el turno.')
+      error: (err: any) => this.notify.error(err.error?.message || 'Error al actualizar el turno.')
     });
   }
 
-  eliminarTurno(turno: any) {
-    if (confirm(`¿Está seguro de eliminar el turno asignado a "${turno.usuario}" (${turno.dia} ${turno.horaInicio} - ${turno.horaFin})?`)) {
-      this.adminService.eliminarTurno(turno.id).subscribe({
-        next: (res: any) => {
-          alert(res.message || 'Turno eliminado con éxito.');
-          this.cargarTurnos();
-        },
-        error: (err: any) => alert(err.error?.message || 'Error al eliminar el turno.')
-      });
-    }
+  async eliminarTurno(turno: any) {
+    const confirmado = await this.dialog.confirmar({
+      tipo: 'DANGER',
+      titulo: 'Eliminar turno',
+      mensaje: `¿Está seguro de eliminar el turno asignado a "${turno.usuario}" (${turno.dia} ${turno.horaInicio} - ${turno.horaFin})?`,
+      textoConfirmar: 'Eliminar'
+    });
+    if (!confirmado) return;
+
+    this.adminService.eliminarTurno(turno.id).subscribe({
+      next: (res: any) => {
+        this.notify.success(res.message || 'Turno eliminado con éxito.');
+        this.cargarTurnos();
+      },
+      error: (err: any) => this.notify.error(err.error?.message || 'Error al eliminar el turno.')
+    });
   }
 }

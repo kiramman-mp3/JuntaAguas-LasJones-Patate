@@ -41,6 +41,8 @@ export class AdminComponent implements OnInit {
     balanceAlDia: 0
   };
 
+  errorCarga: string = '';
+
   constructor(
     private adminService: AdminService,
     private cdr: ChangeDetectorRef
@@ -56,6 +58,7 @@ export class AdminComponent implements OnInit {
   }
 
   cargarDatosBackend() {
+    this.errorCarga = '';
     this.adminService.getBalance().subscribe({
       next: (res) => {
         if (res && res.balance) {
@@ -66,7 +69,10 @@ export class AdminComponent implements OnInit {
         }
         this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => {
+        this.errorCarga = 'No se pudieron cargar los indicadores financieros. Verifique su conexión e intente de nuevo.';
+        this.cdr.detectChanges();
+      }
     });
   }
 

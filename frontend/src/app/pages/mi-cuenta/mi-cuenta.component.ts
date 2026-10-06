@@ -65,6 +65,21 @@ export class MiCuentaComponent implements OnInit {
     });
   }
 
+  reintentar() {
+    const user = this.authService.getUser();
+    if (user && user.cedula) {
+      this.consultarDatos(user.cedula);
+    }
+  }
+
+  get deudasPendientes(): DeudaItem[] {
+    return this.resultado ? this.resultado.deudas.filter(d => d.estado === 'PENDIENTE') : [];
+  }
+
+  get deudasPagadas(): DeudaItem[] {
+    return this.resultado ? this.resultado.deudas.filter(d => d.estado === 'PAGADA') : [];
+  }
+
   get totalPendiente(): number {
     if (!this.resultado) return 0;
     return this.resultado.deudas

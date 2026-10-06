@@ -5,7 +5,10 @@ const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
 const PDFDocument = require('pdfkit');
 
+let tablaDocumentosAsegurada = false;
+
 async function asegurarTablaDocumentos() {
+  if (tablaDocumentosAsegurada) return;
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS documentos_evento (
@@ -50,6 +53,32 @@ async function asegurarTablaDocumentos() {
       await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN generado_por_cuenta_id BIGINT NULL`);
     } catch (e) { /* Ignorar error */ }
 
+    // Asegurar columnas para soporte de múltiples actas por asamblea (F07)
+    try {
+      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN titulo_acta VARCHAR(255) NULL`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    try {
+      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN estado_acta ENUM('BORRADOR', 'APROBADA', 'FIRMADA') DEFAULT 'BORRADOR'`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    try {
+      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN acta_firmada_url VARCHAR(500) NULL`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    try {
+      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN acta_firmada_nombre VARCHAR(255) NULL`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    try {
+      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN responsables VARCHAR(255) NULL`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    try {
+      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN fecha_acta DATETIME NULL`);
+    } catch (e) { /* Ignorar error si ya existe */ }
+
+    tablaDocumentosAsegurada = true;
   } catch (err) {
     console.error('Error asegurando tabla documentos_evento:', err);
   }
@@ -63,7 +92,10 @@ async function getEventos(req, res, next) {
     await asegurarTablaDocumentos();
     const { tipo, estado, desde, hasta } = req.query;
 
-    let sql = `SELECT e.*, CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
+    let sql = `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin,
+                      e.lugar, e.estado, e.requiere_asistencia, e.genera_multa_ausencia, e.valor_multa,
+                      e.created_by_cuenta_id, e.created_at,
+                      CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
                       (SELECT COUNT(*) FROM asistencias a WHERE a.evento_id = e.id AND a.estado = 'PRESENTE') AS asistentes,
                       (SELECT COUNT(*) FROM personas p2 WHERE p2.estado = 'ACTIVO') AS totalComuneros,
                       (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_url,
@@ -179,6 +211,14 @@ async function createEvento(req, res, next) {
       return res.status(400).json({ status: 'ERROR', message: 'Tipo, título, fecha y hora de inicio son obligatorios.' });
     }
 
+    if (tipo === 'ASAMBLEA') {
+      const hoyStr = new Date().toISOString().split('T')[0];
+      const fechaStr = typeof fecha === 'string' ? fecha.split('T')[0] : '';
+      if (fechaStr && fechaStr < hoyStr) {
+        return res.status(400).json({ status: 'ERROR', message: 'La fecha de la asamblea no puede ser anterior a la fecha actual.' });
+      }
+    }
+
     const [result] = await db.query(
       `INSERT INTO eventos (tipo, titulo, descripcion, fecha, hora_inicio, hora_fin, lugar, requiere_asistencia, genera_multa_ausencia, valor_multa, created_by_cuenta_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -252,6 +292,24 @@ async function createEvento(req, res, next) {
       console.error('Error generando PDF de asistencia:', pdfError);
     }
 
+    if (tipo === 'ASAMBLEA' && Array.isArray(req.body.puntos_orden_dia) && req.body.puntos_orden_dia.length > 0) {
+      for (let i = 0; i < req.body.puntos_orden_dia.length; i++) {
+        const item = req.body.puntos_orden_dia[i];
+        const puntoTexto = typeof item === 'string' ? item.trim() : (item && item.punto_tratar ? item.punto_tratar.trim() : '');
+        if (puntoTexto) {
+          try {
+            await db.query(
+              `INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion, titulo_acta)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+              [eventoId, i + 1, puntoTexto, (typeof item === 'object' ? item.tratado : null) || null, (typeof item === 'object' ? item.resolucion : null) || null, puntoTexto]
+            );
+          } catch (pErr) {
+            console.error('Error insertando punto de orden del día inicial:', pErr);
+          }
+        }
+      }
+    }
+
     await registrarAuditoria({
       cuentaId: req.user.cuentaId,
       accion: 'CREAR',
@@ -268,12 +326,13 @@ async function createEvento(req, res, next) {
 }
 
 /**
- * Guardar puntos del orden del día y resoluciones para asambleas
+ * Guardar puntos del orden del día y resoluciones para asambleas (soporte múltiples actas F07)
  */
 async function savePuntosAsamblea(req, res, next) {
   try {
+    await asegurarTablaDocumentos();
     const { id } = req.params;
-    const { puntos } = req.body; // Array de { orden, punto_tratar, tratado, resolucion }
+    const { puntos } = req.body; // Array de { id, orden, punto_tratar, tratado, resolucion, responsables, titulo_acta, estado_acta }
 
     const [evento] = await db.query(`SELECT tipo FROM eventos WHERE id = ?`, [id]);
     if (evento.length === 0) {
@@ -291,25 +350,145 @@ async function savePuntosAsamblea(req, res, next) {
     try {
       await connection.query('BEGIN');
 
-      // Reemplazar puntos
+      const [existentes] = await connection.query(`SELECT * FROM puntos_asamblea WHERE evento_id = ?`, [id]);
+      const mapaExistentes = new Map(existentes.map(e => [e.id, e]));
+
+      // Reemplazar puntos manteniendo actas firmadas y estados previos si aplican
       await connection.query(`DELETE FROM puntos_asamblea WHERE evento_id = ?`, [id]);
 
-      for (const p of puntos) {
+      for (let i = 0; i < puntos.length; i++) {
+        const p = puntos[i];
+        const orden = p.orden !== undefined ? p.orden : (i + 1);
+        const puntoTexto = (p.punto_tratar || p.titulo_acta || '').trim();
+        if (!puntoTexto) continue;
+
+        const previo = (p.id && mapaExistentes.get(p.id)) || existentes.find(e => e.orden === orden);
+        const tituloActa = p.titulo_acta || puntoTexto;
+        const estadoActa = p.estado_acta || (previo ? previo.estado_acta : 'BORRADOR');
+        const actaFirmadaUrl = p.acta_firmada_url !== undefined ? p.acta_firmada_url : (previo ? previo.acta_firmada_url : null);
+        const actaFirmadaNombre = p.acta_firmada_nombre !== undefined ? p.acta_firmada_nombre : (previo ? previo.acta_firmada_nombre : null);
+        const responsables = p.responsables !== undefined ? p.responsables : (previo ? previo.responsables : null);
+        const fechaActa = p.fecha_acta || (previo ? previo.fecha_acta : null);
+
         await connection.query(
-          `INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion)
-           VALUES (?, ?, ?, ?, ?)`,
-          [id, p.orden, p.punto_tratar, p.tratado || null, p.resolucion || null]
+          `INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion, titulo_acta, estado_acta, acta_firmada_url, acta_firmada_nombre, responsables, fecha_acta)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, orden, puntoTexto, p.tratado || null, p.resolucion || null, tituloActa, estadoActa, actaFirmadaUrl, actaFirmadaNombre, responsables, fechaActa]
         );
       }
 
       await connection.query('COMMIT');
       connection.release();
-      return res.json({ status: 'OK', message: 'Puntos del orden del día guardados correctamente.' });
+
+      const [puntosActualizados] = await db.query(`SELECT * FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden ASC`, [id]);
+      return res.json({ status: 'OK', message: 'Puntos del orden del día y actas guardados correctamente.', data: puntosActualizados, puntos: puntosActualizados });
     } catch (txError) {
       await connection.query('ROLLBACK');
       connection.release();
       throw txError;
     }
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Cambiar estado de una asamblea (BORRADOR, PROGRAMADO, CONVOCADO, CANCELADO)
+ */
+async function cambiarEstado(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    const permitidos = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO', 'CANCELADO'];
+    if (!permitidos.includes(estado)) {
+      return res.status(400).json({
+        status: 'ERROR',
+        message: 'Estado inválido. Opciones permitidas: ' + permitidos.join(', ')
+      });
+    }
+
+    const [eventos] = await db.query('SELECT * FROM eventos WHERE id = ?', [id]);
+    if (eventos.length === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'Evento no encontrado.' });
+    }
+
+    const evento = eventos[0];
+    if (evento.estado === 'REALIZADO') {
+      return res.status(409).json({ status: 'ERROR', message: 'No se puede modificar el estado de un evento ya realizado.' });
+    }
+
+    await db.query('UPDATE eventos SET estado = ? WHERE id = ?', [estado, id]);
+
+    await registrarAuditoria({
+      cuentaId: req.user ? req.user.cuentaId : 1,
+      accion: 'MODIFICAR',
+      entidad: 'eventos',
+      entidadId: parseInt(id),
+      ip: req.ip,
+      detalle: { estadoAnterior: evento.estado, nuevoEstado: estado }
+    });
+
+    return res.json({
+      status: 'OK',
+      message: `Estado de la asamblea actualizado a ${estado}.`,
+      estado
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Cambiar estado o detalles del acta de un punto específico (F07)
+ */
+async function cambiarEstadoActaPunto(req, res, next) {
+  try {
+    await asegurarTablaDocumentos();
+    const { id, puntoId } = req.params;
+    const { estado_acta, resolucion, tratado, responsables, titulo_acta } = req.body;
+
+    const [puntos] = await db.query('SELECT * FROM puntos_asamblea WHERE id = ? AND evento_id = ?', [puntoId, id]);
+    if (puntos.length === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'Punto de asamblea no encontrado.' });
+    }
+
+    let sql = 'UPDATE puntos_asamblea SET updated_at = NOW()';
+    const params = [];
+
+    if (estado_acta) {
+      sql += ', estado_acta = ?';
+      params.push(estado_acta);
+    }
+    if (resolucion !== undefined) {
+      sql += ', resolucion = ?';
+      params.push(resolucion);
+    }
+    if (tratado !== undefined) {
+      sql += ', tratado = ?';
+      params.push(tratado);
+    }
+    if (responsables !== undefined) {
+      sql += ', responsables = ?';
+      params.push(responsables);
+    }
+    if (titulo_acta !== undefined) {
+      sql += ', titulo_acta = ?';
+      params.push(titulo_acta);
+    }
+
+    sql += ' WHERE id = ? AND evento_id = ?';
+    params.push(puntoId, id);
+
+    await db.query(sql, params);
+
+    const [actualizado] = await db.query('SELECT * FROM puntos_asamblea WHERE id = ?', [puntoId]);
+
+    return res.json({
+      status: 'OK',
+      message: 'Acta del punto actualizada exitosamente.',
+      data: actualizado[0] || null
+    });
   } catch (error) {
     next(error);
   }
@@ -385,6 +564,50 @@ async function finalizarEventoYGenerarMultas(req, res, next) {
 
     const evento = eventos[0];
 
+    if (evento.estado === 'REALIZADO') {
+      await connection.rollback();
+      return res.status(409).json({ status: 'ERROR', message: 'El evento ya fue finalizado previamente.' });
+    }
+
+    if (evento.estado === 'CANCELADO') {
+      await connection.rollback();
+      return res.status(409).json({ status: 'ERROR', message: 'No se puede finalizar un evento que ha sido cancelado.' });
+    }
+
+    if (evento.estado === 'BORRADOR') {
+      await connection.rollback();
+      return res.status(409).json({ status: 'ERROR', message: 'No se puede finalizar una asamblea en borrador. Debe ser convocada previamente.' });
+    }
+
+    // Validar que la fecha de la asamblea no sea futura
+    const hoyStr = new Date().toISOString().split('T')[0];
+    const fechaEventoStr = typeof evento.fecha === 'string'
+      ? evento.fecha.split('T')[0]
+      : (evento.fecha instanceof Date ? evento.fecha.toISOString().split('T')[0] : '');
+
+    if (fechaEventoStr && fechaEventoStr > hoyStr) {
+      await connection.rollback();
+      return res.status(409).json({
+        status: 'ERROR',
+        message: `No se puede finalizar una asamblea antes de su fecha programada (${fechaEventoStr}). Si la asamblea no se va a realizar, utilice la opción Cancelar Asamblea.`
+      });
+    }
+
+    // Validar que se haya registrado la asistencia de los comuneros
+    const [asistenciasRegistradas] = await connection.query(
+      `SELECT COUNT(*) AS total FROM asistencias WHERE evento_id = ?`,
+      [id]
+    );
+
+    const totalAsistencias = asistenciasRegistradas[0]?.total || 0;
+    if (totalAsistencias === 0) {
+      await connection.rollback();
+      return res.status(409).json({
+        status: 'ERROR',
+        message: 'No se puede finalizar la asamblea sin haber registrado la asistencia de los comuneros. Tome y guarde la lista de asistencia antes de finalizar.'
+      });
+    }
+
     // Actualizar estado del evento a REALIZADO
     await connection.query(`UPDATE eventos SET estado = 'REALIZADO' WHERE id = ?`, [id]);
 
@@ -456,7 +679,7 @@ async function guardarDocumentoEvento(req, res, next) {
   try {
     await asegurarTablaDocumentos();
     const { id } = req.params;
-    const { tipo, nombre_archivo, contenido_base64, estado } = req.body;
+    const { tipo, nombre_archivo, contenido_base64, estado, punto_id } = req.body;
 
     if (!tipo || !contenido_base64) {
       return res.status(400).json({ status: 'ERROR', message: 'El tipo y el contenido del documento son requeridos.' });
@@ -476,59 +699,76 @@ async function guardarDocumentoEvento(req, res, next) {
       await fsPromises.mkdir(uploadsDir, { recursive: true });
     }
 
-    const safeFileName = `${tipo.toLowerCase()}_evento_${id}_${Date.now()}${extension}`;
+    const prefix = punto_id ? `acta_punto_${punto_id}` : tipo.toLowerCase();
+    const safeFileName = `${prefix}_evento_${id}_${Date.now()}${extension}`;
     const filePathOnDisk = path.join(uploadsDir, safeFileName);
     await fsPromises.writeFile(filePathOnDisk, buffer);
 
     const relativeUrl = `/uploads/documentos/${safeFileName}`;
 
-    const [existente] = await db.query(
-      `SELECT id, ruta_archivo_firmado FROM documentos_evento WHERE evento_id = ? AND tipo = ?`,
-      [id, tipo]
-    );
+    if (punto_id) {
+      // Registrar acta firmada directamente en el punto tratado / tema específico (F07)
+      await db.query(
+        `UPDATE puntos_asamblea
+         SET acta_firmada_url = ?, acta_firmada_nombre = ?, estado_acta = 'FIRMADA', fecha_acta = NOW(), updated_at = NOW()
+         WHERE id = ? AND evento_id = ?`,
+        [relativeUrl, docNombre, punto_id, id]
+      );
+    } else {
+      const [existente] = await db.query(
+        `SELECT id, ruta_archivo_firmado FROM documentos_evento WHERE evento_id = ? AND tipo = ?`,
+        [id, tipo]
+      );
 
-    const cuentaId = req.user ? req.user.cuentaId : 1;
+      const cuentaId = req.user ? req.user.cuentaId : 1;
 
-    if (existente.length > 0) {
-      // Eliminar el archivo físico anterior del disco para no acumular basura
-      const oldUrl = existente[0].ruta_archivo_firmado;
-      if (oldUrl && oldUrl.startsWith('/uploads/')) {
-        const oldFilePathOnDisk = path.join(__dirname, '../../', oldUrl);
-        if (oldFilePathOnDisk) {
-          try {
-            await fsPromises.unlink(oldFilePathOnDisk);
-          } catch (err) {
-            if (err.code !== 'ENOENT') {
-              console.error('Error al eliminar archivo previo del servidor:', err);
+      if (existente.length > 0) {
+        // Eliminar el archivo físico anterior del disco para no acumular basura
+        const oldUrl = existente[0].ruta_archivo_firmado;
+        if (oldUrl && oldUrl.startsWith('/uploads/')) {
+          const oldFilePathOnDisk = path.join(__dirname, '../../', oldUrl);
+          if (oldFilePathOnDisk) {
+            try {
+              await fsPromises.unlink(oldFilePathOnDisk);
+            } catch (err) {
+              if (err.code !== 'ENOENT') {
+                console.error('Error al eliminar archivo previo del servidor:', err);
+              }
             }
           }
         }
-      }
 
-      await db.query(
-        `UPDATE documentos_evento 
-         SET nombre_archivo = ?, ruta_archivo_firmado = ?, ruta_archivo_generado = ?, estado = ?, updated_at = NOW()
-         WHERE evento_id = ? AND tipo = ?`,
-        [docNombre, relativeUrl, relativeUrl, estado || 'FIRMADO', id, tipo]
-      );
-    } else {
-      await db.query(
-        `INSERT INTO documentos_evento (evento_id, tipo, estado, nombre_archivo, ruta_archivo_firmado, nombre_archivo_generado, ruta_archivo_generado, fecha_generacion, generado_por_cuenta_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-        [id, tipo, estado || 'FIRMADO', docNombre, relativeUrl, docNombre, relativeUrl, cuentaId]
-      );
+        await db.query(
+          `UPDATE documentos_evento 
+           SET nombre_archivo = ?, ruta_archivo_firmado = ?, ruta_archivo_generado = ?, estado = ?, updated_at = NOW()
+           WHERE evento_id = ? AND tipo = ?`,
+          [docNombre, relativeUrl, relativeUrl, estado || 'FIRMADO', id, tipo]
+        );
+      } else {
+        await db.query(
+          `INSERT INTO documentos_evento (evento_id, tipo, estado, nombre_archivo, ruta_archivo_firmado, nombre_archivo_generado, ruta_archivo_generado, fecha_generacion, generado_por_cuenta_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+          [id, tipo, estado || 'FIRMADO', docNombre, relativeUrl, docNombre, relativeUrl, cuentaId]
+        );
+      }
     }
 
     await registrarAuditoria({
       cuentaId: req.user ? req.user.cuentaId : 1,
       accion: 'CREAR',
-      entidad: 'documentos_evento',
-      entidadId: parseInt(id),
+      entidad: punto_id ? 'puntos_asamblea' : 'documentos_evento',
+      entidadId: parseInt(punto_id || id),
       ip: req.ip,
-      detalle: { tipo, nombre_archivo: docNombre, url: relativeUrl }
+      detalle: { tipo, nombre_archivo: docNombre, url: relativeUrl, punto_id: punto_id || null }
     });
 
-    return res.json({ status: 'OK', message: 'Documento firmado guardado exitosamente en el servidor.', url: relativeUrl });
+    return res.json({
+      status: 'OK',
+      message: 'Documento firmado guardado exitosamente en el servidor.',
+      url: relativeUrl,
+      nombre_archivo: docNombre,
+      punto_id: punto_id || null
+    });
   } catch (error) {
     next(error);
   }
@@ -634,6 +874,8 @@ module.exports = {
   getEventoById,
   createEvento,
   savePuntosAsamblea,
+  cambiarEstado,
+  cambiarEstadoActaPunto,
   registrarAsistencias,
   getAsistencias,
   finalizarEventoYGenerarMultas,

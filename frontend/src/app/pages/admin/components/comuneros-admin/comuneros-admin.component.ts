@@ -2,13 +2,16 @@ import { Component, OnInit, Output, EventEmitter, ChangeDetectorRef } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { DialogService } from '../../../../core/services/dialog.service';
 import * as L from 'leaflet';
 
 
 @Component({
   selector: 'app-comuneros-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './comuneros-admin.component.html',
   styleUrls: []
 })
@@ -85,6 +88,10 @@ export class ComunerosAdminComponent implements OnInit {
 
   // Formulario Lote
   modalLoteVisible: boolean = false;
+  sugiriendoCodigoLote = false;
+  guardandoLote = false;
+  errorLote = '';
+  private solicitudCodigoLote = 0;
   formLote = {
     sector_id: null as number | null,
     codigo: '',
@@ -117,7 +124,12 @@ export class ComunerosAdminComponent implements OnInit {
 
   
 
-  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef,
+    private notify: NotificationService,
+    private dialog: DialogService
+  ) {}
 
   ngOnInit() {
     this.cargarUsuarios();
@@ -146,12 +158,12 @@ export class ComunerosAdminComponent implements OnInit {
           
           if (res.pagination) {
             this.usuariosTotalRegistros = res.pagination.total;
-            this.usuariosTotalPaginas = Math.ceil(res.pagination.total / res.pagination.limit);
+            this.usuariosTotalPaginas = Math.max(1, Math.ceil(res.pagination.total / res.pagination.limit));
           }
           this.cdr.detectChanges();
         }
       },
-      error: () => alert('Error al cargar comuneros.')
+      error: () => this.notify.error('Error al cargar comuneros.')
     });
   }
 
@@ -213,27 +225,27 @@ export class ComunerosAdminComponent implements OnInit {
 
   guardarUsuario() {
     if (!this.formUsuario.cedula || !this.formUsuario.nombres || !this.formUsuario.apellidos) {
-      alert('Cédula, Nombres y Apellidos son obligatorios.');
+      this.notify.warning('Cédula, Nombres y Apellidos son obligatorios.');
       return;
     }
 
     if (this.modoEdicionUsuario && this.formUsuario.id) {
       this.adminService.updatePersona(this.formUsuario.id, this.formUsuario).subscribe({
         next: (res) => {
-          alert('Comunero actualizado exitosamente.');
+          this.notify.success('Comunero actualizado exitosamente.');
           this.cerrarModalUsuario();
           this.cargarUsuarios();
         },
-        error: (err) => alert(err.error?.message || 'Error al actualizar comunero.')
+        error: (err) => this.notify.error(err.error?.message || 'Error al actualizar comunero.')
       });
     } else {
       this.adminService.createPersona(this.formUsuario).subscribe({
         next: (res) => {
-          alert('Comunero registrado exitosamente.');
+          this.notify.success('Comunero registrado exitosamente.');
           this.cerrarModalUsuario();
           this.cargarUsuarios();
         },
-        error: (err) => alert(err.error?.message || 'Error al registrar comunero.')
+        error: (err) => this.notify.error(err.error?.message || 'Error al registrar comunero.')
       });
     }
   }
@@ -267,6 +279,9 @@ export class ComunerosAdminComponent implements OnInit {
   
 
   abrirModalNuevoLote() {
+    this.solicitudCodigoLote++;
+    this.errorLote = '';
+    this.sugiriendoCodigoLote = false;
     this.formLote = { sector_id: null, codigo: '', superficie_m2: null, latitud_aproximada: '', longitud_aproximada: '', radio_error_m: 5, referencia_ubicacion: '', observacion: '' };
     this.modalLoteVisible = true;
     setTimeout(() => {
@@ -275,6 +290,9 @@ export class ComunerosAdminComponent implements OnInit {
   }
 
   cerrarModalLote() {
+    if (this.guardandoLote) return;
+    this.solicitudCodigoLote++;
+    this.sugiriendoCodigoLote = false;
     this.modalLoteVisible = false;
     if (this.map) {
       this.map.remove();
@@ -310,18 +328,63 @@ export class ComunerosAdminComponent implements OnInit {
     });
   }
 
+  cambiarSectorLote() {
+    this.solicitudCodigoLote++;
+    this.sugiriendoCodigoLote = false;
+    this.errorLote = '';
+  }
+
+  normalizarCodigoLote(codigo: string) {
+    this.formLote.codigo = codigo.trim().toUpperCase();
+    this.errorLote = '';
+  }
+
+  sugerirCodigoLote() {
+    if (!this.formLote.sector_id || this.sugiriendoCodigoLote || this.guardandoLote) return;
+    const solicitud = ++this.solicitudCodigoLote;
+    this.sugiriendoCodigoLote = true;
+    this.errorLote = '';
+    this.adminService.sugerirCodigoLote(this.formLote.sector_id).subscribe({
+      next: res => {
+        if (solicitud !== this.solicitudCodigoLote || !this.modalLoteVisible) return;
+        this.formLote.codigo = res.data.codigo;
+        this.sugiriendoCodigoLote = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        if (solicitud !== this.solicitudCodigoLote || !this.modalLoteVisible) return;
+        this.errorLote = err.error?.message || 'No se pudo sugerir un código. Intente nuevamente.';
+        this.sugiriendoCodigoLote = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   guardarLote() {
+    if (this.guardandoLote || this.sugiriendoCodigoLote) return;
+    this.errorLote = '';
     if (!this.formLote.sector_id || !this.formLote.codigo) {
-      alert('El sector y el código son obligatorios.');
+      this.errorLote = 'El sector y el código son obligatorios.';
       return;
     }
+    this.formLote.codigo = this.formLote.codigo.trim().toUpperCase();
+    if (!/^[A-Z]{3}-\d{3,8}$/.test(this.formLote.codigo)) {
+      this.errorLote = 'Use tres letras y de tres a ocho dígitos, por ejemplo LJA-001.';
+      return;
+    }
+    this.guardandoLote = true;
     this.adminService.createLote(this.formLote).subscribe({
       next: (res) => {
-        alert('Lote creado exitosamente.');
+        this.guardandoLote = false;
+        this.notify.success('Lote creado exitosamente.');
         this.cerrarModalLote();
         this.cargarLotes();
       },
-      error: (err) => alert(err.error?.message || 'Error al crear lote.')
+      error: (err) => {
+        this.guardandoLote = false;
+        this.errorLote = err.error?.message || 'Error al crear lote.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -338,7 +401,7 @@ export class ComunerosAdminComponent implements OnInit {
         this.modalVincularVisible = true;
         this.cdr.detectChanges();
       },
-      error: () => alert('Error al cargar lotes para vinculación.')
+      error: () => this.notify.error('Error al cargar lotes para vinculación.')
     });
   }
 
@@ -349,7 +412,7 @@ export class ComunerosAdminComponent implements OnInit {
 
   guardarVinculo() {
     if (!this.formVincular.lote_id) {
-      alert('Por favor selecciona un lote.');
+      this.notify.warning('Por favor selecciona un lote.');
       return;
     }
     const payload = {
@@ -360,10 +423,10 @@ export class ComunerosAdminComponent implements OnInit {
 
     this.adminService.vincularPersonaLote(this.formVincular.lote_id, payload).subscribe({
       next: (res) => {
-        alert('Lote vinculado exitosamente.');
+        this.notify.success('Lote vinculado exitosamente.');
         this.cerrarModalVincular();
       },
-      error: (err) => alert(err.error?.message || 'Error al vincular el lote.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al vincular el lote.')
     });
   }
 
@@ -380,7 +443,7 @@ export class ComunerosAdminComponent implements OnInit {
         }
         this.cdr.detectChanges();
       },
-      error: () => alert('Error al cargar los lotes del comunero.')
+      error: () => this.notify.error('Error al cargar los lotes del comunero.')
     });
   }
 

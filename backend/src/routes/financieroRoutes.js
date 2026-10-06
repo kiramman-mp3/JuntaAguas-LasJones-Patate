@@ -128,6 +128,7 @@ router.post('/obligaciones/:id/anular', verificarToken, verificarRol(['ADMIN', '
  *               metodo: { type: string, enum: [EFECTIVO, TRANSFERENCIA, DEPOSITO, OTRO], example: "EFECTIVO" }
  *               referencia: { type: string, example: "REC-00123" }
  *               observacion: { type: string, example: "Pago completo cuota agosto" }
+ *               observaciones: { type: string, example: "Alias opcional de observacion" }
  *               obligacionesIds: { type: array, items: { type: integer }, example: [101, 102] }
  *     responses:
  *       201: { description: Pago registrado y obligaciones cerradas como PAGADA. }

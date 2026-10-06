@@ -2,14 +2,18 @@ import { Component, OnInit, ChangeDetectorRef, Output, EventEmitter } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { DialogService } from '../../../../core/services/dialog.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-finanzas-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './finanzas-admin.component.html'
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
+  templateUrl: './finanzas-admin.component.html',
+  styleUrls: ['./finanzas-admin.component.scss']
 })
 export class FinanzasAdminComponent implements OnInit {
   // KPIs propios — se cargan internamente
@@ -27,6 +31,7 @@ export class FinanzasAdminComponent implements OnInit {
   obligacionesComunero: any[] = [];
   obligacionesSeleccionadasIds: number[] = [];
   valorRecibidoFinanzas: number | null = null;
+  observacionCobro: string = '';
   comprobanteModalVisible: boolean = false;
   comprobanteActual: any = null;
   historialPagos: any[] = [];
@@ -49,7 +54,9 @@ export class FinanzasAdminComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notify: NotificationService,
+    private dialog: DialogService
   ) {}
 
   ngOnInit() {
@@ -193,7 +200,7 @@ export class FinanzasAdminComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error al consultar obligaciones', err);
-        alert('Error al consultar obligaciones del comunero.');
+        this.notify.error('Error al consultar obligaciones del comunero.');
         this.cdr.detectChanges();
       }
     });
@@ -279,11 +286,11 @@ export class FinanzasAdminComponent implements OnInit {
   // --- ACCIONES ---
   guardarEgreso() {
     if (!this.nuevoEgreso.concepto || !this.nuevoEgreso.concepto.trim()) {
-      alert('Por favor ingresa el concepto o motivo del egreso.');
+      this.notify.warning('Por favor ingresa el concepto o motivo del egreso.');
       return;
     }
     if (!this.nuevoEgreso.valor || Number(this.nuevoEgreso.valor) <= 0) {
-      alert('Por favor ingresa un monto válido mayor a cero.');
+      this.notify.warning('Por favor ingresa un monto válido mayor a cero.');
       return;
     }
 
@@ -301,31 +308,33 @@ export class FinanzasAdminComponent implements OnInit {
         this.cdr.detectChanges();
         this.cargarHistorialEgresos();
         this.dataChanged.emit();
-        alert(res.message || 'Egreso registrado exitosamente.');
+        this.notify.success(res.message || 'Egreso registrado exitosamente.');
       },
-      error: (err) => alert(err.error?.message || 'Error al registrar el egreso.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al registrar el egreso.')
     });
   }
 
   cobrarObligacion() {
     if (!this.comuneroSeleccionadoFinanzas || this.obligacionesSeleccionadasIds.length === 0) {
-      alert('Por favor selecciona al menos una obligación a cobrar.');
+      this.notify.warning('Por favor selecciona al menos una obligación a cobrar.');
       return;
     }
 
     const total = this.totalAPagarFinanzas;
     if (this.valorRecibidoFinanzas === null || this.valorRecibidoFinanzas < total) {
-      alert(`El valor recibido debe ser mayor o igual al total a pagar ($${total.toFixed(2)}).`);
+      this.notify.warning(`El valor recibido debe ser mayor o igual al total a pagar ($${total.toFixed(2)}).`);
       return;
     }
 
     const obligacionesACobrar = this.obligacionesComunero.filter(o => this.obligacionesSeleccionadasIds.includes(o.id));
+    const textoObs = this.observacionCobro?.trim() || 'Pago procesado desde panel administrativo.';
 
     const payload = {
       persona_id: this.comuneroSeleccionadoFinanzas.id,
       metodo: 'EFECTIVO',
       obligacionesIds: this.obligacionesSeleccionadasIds,
-      observaciones: 'Pago procesado desde panel administrativo.'
+      observacion: textoObs,
+      observaciones: textoObs
     };
 
     this.adminService.registrarPago(payload).subscribe({
@@ -343,38 +352,46 @@ export class FinanzasAdminComponent implements OnInit {
           })),
           total: total,
           valorRecibido: Number(this.valorRecibidoFinanzas),
-          cambio: this.cambioCalculado
+          cambio: this.cambioCalculado,
+          observacion: textoObs
         };
 
+        this.observacionCobro = '';
         this.comprobanteModalVisible = true;
         this.modalCobroVisible = false;
         this.dataChanged.emit();
         this.cargarHistorialPagos();
         this.seleccionarComuneroFinanzas(this.comuneroSeleccionadoFinanzas);
       },
-      error: (err) => alert(err.error?.message || 'Error al procesar el pago.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al procesar el pago.')
     });
   }
 
-  anularPagoDesdeHistorial(pago: any) {
+  async anularPagoDesdeHistorial(pago: any) {
     if (pago.observacion && pago.observacion.includes('[ANULADO:')) {
-      alert('Este pago ya se encuentra anulado.');
+      this.notify.info('Este pago ya se encuentra anulado.');
       return;
     }
 
-    const motivo = prompt(`Ingresa el motivo de anulación para el pago No. REC-${String(pago.id).padStart(6, '0')}:`);
+    const motivo = await this.dialog.solicitar({
+      titulo: 'Anular pago',
+      mensaje: `Ingresa el motivo de anulación para el pago No. REC-${String(pago.id).padStart(6, '0')}:`,
+      placeholder: 'Motivo de la anulación',
+      textoConfirmar: 'Anular pago',
+      tipo: 'DANGER'
+    });
     if (!motivo || !motivo.trim()) return;
 
     this.adminService.anularPago(pago.id, motivo.trim()).subscribe({
       next: (res: any) => {
-        alert(res.message || 'Pago anulado exitosamente.');
+        this.notify.success(res.message || 'Pago anulado exitosamente.');
         this.dataChanged.emit();
         this.cargarHistorialPagos();
         if (this.comuneroSeleccionadoFinanzas) {
           this.seleccionarComuneroFinanzas(this.comuneroSeleccionadoFinanzas);
         }
       },
-      error: (err) => alert(err.error?.message || 'Error al anular el pago.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al anular el pago.')
     });
   }
 
@@ -487,13 +504,20 @@ export class FinanzasAdminComponent implements OnInit {
     doc.text('CAMBIO ENTREGADO:', 75, finalY + 10);
     doc.text(`$${c.cambio.toFixed(2)}`, 133, finalY + 10, { align: 'right' });
 
+    if (c.observacion) {
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Obs: ${c.observacion}`, 15, finalY + 16, { maxWidth: 118 });
+    }
+
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(80, 80, 80);
-    doc.text('Gracias por mantener al día sus aportes para el fortalecimiento de nuestra Junta de Agua.', 74, finalY + 22, { align: 'center' });
+    doc.text('Gracias por mantener al día sus aportes para el fortalecimiento de nuestra Junta de Agua.', 74, finalY + 23, { align: 'center' });
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('CAJA GENERAL - JUNTA LA JONES', 74, finalY + 27, { align: 'center' });
+    doc.text('CAJA GENERAL - JUNTA LA JONES', 74, finalY + 28, { align: 'center' });
 
     doc.autoPrint();
     const pdfBlobUrl = doc.output('bloburl');

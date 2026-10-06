@@ -1,12 +1,13 @@
 <div class="admin-layout">
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <aside class="sidebar" aria-label="Menú del panel administrativo">
     <div class="sidebar__logo">
-      <i class="ri-drop-fill" style="font-size: 2rem; color: #3b82f6;"></i>
-      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">La Jones</h2>
+      <i class="ri-drop-fill" aria-hidden="true"></i>
+      <h2>La Jones</h2>
     </div>
 
     <nav class="sidebar__nav">
+
       <a class="nav-item" [class.nav-item--active]="tabActiva === 'DASHBOARD'" (click)="cambiarTab('DASHBOARD')">
         <i class="ri-dashboard-line"></i> Dashboard
       </a>
@@ -33,96 +34,100 @@
 
   <!-- MAIN CONTENT -->
   <main class="main-content">
-    <header class="main-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: #fff; border-bottom: 1px solid #e2e8f0; margin-bottom: 2rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <header class="main-header">
       <div>
-        <h1 style="margin: 0; font-size: 1.5rem; color: #0f172a;">Sistema Integrado de Gesti&oacute;n</h1>
-        <p style="margin: 0.25rem 0 0; color: #64748b; font-size: 0.95rem;">Junta de Agua de Riego "Las Jones" - Patate</p>
+        <h1 class="main-header__title">Sistema Integrado de Gestión</h1>
+        <p class="main-header__subtitle">Junta de Agua y Riego "La Jones" - Patate</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn--outline" (click)="abrirModalWhatsApp()" style="display: flex; align-items: center; gap: 0.5rem; border-color: #25D366; color: #16a34a; font-weight: 600;">
-          <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i> WhatsApp Web
+        <button type="button" class="btn btn--outline btn-whatsapp" (click)="abrirModalWhatsApp()">
+          <i class="ri-whatsapp-line" aria-hidden="true"></i> WhatsApp Web
         </button>
-        <span class="badge badge--success"><i class="ri-pulse-line"></i> Sistema en L&iacute;nea</span>
+        <span class="badge badge--success"><i class="ri-pulse-line" aria-hidden="true"></i> Sistema en Línea</span>
       </div>
     </header>
 
     <!-- VISTA 0: DASHBOARD -->
     <section *ngIf="tabActiva === 'DASHBOARD'" class="tab-view">
+      <div class="alert alert--danger" *ngIf="errorCarga" role="alert">
+        <i class="ri-error-warning-line" aria-hidden="true"></i> {{ errorCarga }}
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargarDatosBackend()" style="margin-left: auto;">
+          <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
+        </button>
+      </div>
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-card__icon"><i class="ri-hand-coin-line"></i></div>
+          <div class="kpi-card__icon"><i class="ri-hand-coin-line" aria-hidden="true"></i></div>
           <div class="kpi-card__content">
             <span class="kpi-card__value">${{ kpis.recaudadoMes.toFixed(2) }}</span>
             <span class="kpi-card__label">Recaudado este Mes</span>
           </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card__icon" style="background:#fee2e2; color:#ef4444;"><i class="ri-error-warning-line"></i></div>
+          <div class="kpi-card__icon kpi-card__icon--danger"><i class="ri-error-warning-line" aria-hidden="true"></i></div>
           <div class="kpi-card__content">
-            <span class="kpi-card__value" style="color:#ef4444;">${{ kpis.pendientesCobro.toFixed(2) }}</span>
+            <span class="kpi-card__value text-danger">${{ kpis.pendientesCobro.toFixed(2) }}</span>
             <span class="kpi-card__label">Pendientes por Cobrar</span>
           </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card__icon" style="background:#fef3c7; color:#d97706;"><i class="ri-shopping-bag-line"></i></div>
+          <div class="kpi-card__icon kpi-card__icon--warning"><i class="ri-shopping-bag-line" aria-hidden="true"></i></div>
           <div class="kpi-card__content">
             <span class="kpi-card__value">${{ kpis.egresosMes.toFixed(2) }}</span>
             <span class="kpi-card__label">Egresos / Gastos</span>
           </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card__icon" style="background:#d1fae5; color:#059669;"><i class="ri-scales-3-line"></i></div>
+          <div class="kpi-card__icon kpi-card__icon--success"><i class="ri-scales-3-line" aria-hidden="true"></i></div>
           <div class="kpi-card__content">
-            <span class="kpi-card__value" style="color:#059669;">${{ kpis.balanceAlDia.toFixed(2) }}</span>
-            <span class="kpi-card__label">Balance General Al D&iacute;a</span>
+            <span class="kpi-card__value text-success">${{ kpis.balanceAlDia.toFixed(2) }}</span>
+            <span class="kpi-card__label">Balance General Al Día</span>
           </div>
         </div>
       </div>
 
-      <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card__header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-          <h3 class="card__title" style="margin: 0; font-size: 1.2rem;">
-            <i class="ri-flashlight-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Acciones R&aacute;pidas
+      <div class="card mb-2">
+        <div class="card__header dashboard-header">
+          <h3 class="card__title">
+            <i class="ri-flashlight-line text-primary" aria-hidden="true"></i> Acciones Rápidas
           </h3>
         </div>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
-          <button class="btn btn--primary" (click)="prepararNuevoCobroDashboard()">
-            <i class="ri-add-line"></i> Registrar Nuevo Cobro
+        <div class="quick-actions">
+          <button type="button" class="btn btn--primary" (click)="prepararNuevoCobroDashboard()">
+            <i class="ri-add-line" aria-hidden="true"></i> Registrar Nuevo Cobro
           </button>
-          <button class="btn btn--secondary" style="background:#fff7ed; color:#c2410c; border:1px solid #ffedd5;" (click)="abrirModalEgresoDashboard()">
-            <i class="ri-subtract-line"></i> Registrar Nuevo Egreso
+          <button type="button" class="btn btn-egreso" (click)="abrirModalEgresoDashboard()">
+            <i class="ri-subtract-line" aria-hidden="true"></i> Registrar Nuevo Egreso
           </button>
-          <button class="btn btn--secondary" (click)="abrirModalNuevoUsuarioDashboard()">
-            <i class="ri-user-add-line"></i> Registrar Comunero
+          <button type="button" class="btn btn--secondary" (click)="abrirModalNuevoUsuarioDashboard()">
+            <i class="ri-user-add-line" aria-hidden="true"></i> Registrar Comunero
           </button>
-          <button class="btn btn--secondary" (click)="cambiarTab('TURNOS')">
-            <i class="ri-calendar-event-line"></i> Asignar Turno de Agua
+          <button type="button" class="btn btn--secondary" (click)="cambiarTab('TURNOS')">
+            <i class="ri-calendar-event-line" aria-hidden="true"></i> Asignar Turno de Agua
           </button>
         </div>
       </div>
 
-      <div class="grid-2" style="margin-bottom: 1.5rem;">
-        <div class="card">
-          <h3 class="card__title" style="margin-bottom: 1rem; font-size: 1.1rem;">
-            <i class="ri-group-line" style="color: #2563eb; margin-right: 0.5rem;"></i> Resumen Operativo
-          </h3>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Comuneros Registrados</span>
-              <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-top: 0.25rem;">{{ usuariosTotalRegistros }}</div>
-            </div>
-            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Lotes Registrados</span>
-              <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-top: 0.25rem;">{{ totalLotes }}</div>
-            </div>
-            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Turnos Programados</span>
-              <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-top: 0.25rem;">{{ totalTurnos }}</div>
-            </div>
-            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Asambleas / Mingas</span>
-              <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-top: 0.25rem;">{{ totalEventos }}</div>
-            </div>
+      <div class="card mb-2">
+        <h3 class="card__title dashboard-subtitle">
+          <i class="ri-group-line text-primary" aria-hidden="true"></i> Resumen Operativo
+        </h3>
+        <div class="resumen-grid">
+          <div class="resumen-item">
+            <span class="resumen-item__label">Comuneros Registrados</span>
+            <div class="resumen-item__value">{{ usuariosTotalRegistros }}</div>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-item__label">Lotes Registrados</span>
+            <div class="resumen-item__value">{{ totalLotes }}</div>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-item__label">Turnos Programados</span>
+            <div class="resumen-item__value">{{ totalTurnos }}</div>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-item__label">Asambleas / Mingas</span>
+            <div class="resumen-item__value">{{ totalEventos }}</div>
           </div>
         </div>
       </div>
