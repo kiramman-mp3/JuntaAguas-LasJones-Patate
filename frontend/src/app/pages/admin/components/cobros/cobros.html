@@ -1,77 +1,55 @@
 <!-- GESTIÓN DE OBLIGACIONES FINANCIERAS -->
-<section class="tab-view">
-  <div class="card">
+<section class="tab-view cobros-page">
+  <div class="card cobros-module">
     <!-- CABECERA -->
     <div
-      class="card__header"
-      style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0;"
+      class="card__header cobros-header"
     >
-      <div
-        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;"
-      >
-        <h3 class="card__title" style="margin: 0; font-size: 1.3rem;">
-          <i
-            class="ri-hand-coin-line"
-            style="color: var(--color-primary); margin-right: 0.5rem;"
-          ></i>
-          Gestión de cobros mensualidades y multas
-        </h3>
+      <div class="cobros-header__title">
+        <span class="cobros-header__icon"><i class="ri-hand-coin-line" aria-hidden="true"></i></span>
+        <div>
+          <h3 class="card__title">Gestión de cobros</h3>
+          <p>Consulta obligaciones y registra pagos de comuneros.</p>
+        </div>
       </div>
 
       <!-- PESTAÑAS Y FILTROS -->
-      <div
-        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 0.75rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);"
-      >
+      <div class="cobros-toolbar">
         <!-- PESTAÑAS -->
-        <div
-          class="tab-pills"
-          style="display: flex; flex-wrap: wrap; gap: 0.5rem;"
-        >
+        <div class="cobros-tabs" role="group" aria-label="Tipo de obligación">
           <button
             type="button"
-            class="btn btn--sm"
+            class="cobros-tabs__item"
             [disabled]="cargandoObligaciones || procesandoPago"
-            [ngClass]="
-              tipoObligacionSeleccionado === 'MENSUALIDAD'
-                ? 'btn--primary'
-                : 'btn--outline'
-            "
+            [class.cobros-tabs__item--active]="tipoObligacionSeleccionado === 'MENSUALIDAD'"
+            [attr.aria-pressed]="tipoObligacionSeleccionado === 'MENSUALIDAD'"
             (click)="cambiarTabFinanciero('MENSUALIDAD')"
-            style="border-radius: var(--radius-full); padding: 0.4rem 1rem;"
           >
-            <i class="ri-bill-line"></i>
-            Mensualidades
+            <i class="ri-calendar-check-line" aria-hidden="true"></i><span>Mensualidades</span>
           </button>
 
           <button
             type="button"
-            class="btn btn--sm"
+            class="cobros-tabs__item"
             [disabled]="cargandoObligaciones || procesandoPago"
-            [ngClass]="
-              tipoObligacionSeleccionado === 'MULTA'
-                ? 'btn--primary'
-                : 'btn--outline'
-            "
+            [class.cobros-tabs__item--active]="tipoObligacionSeleccionado === 'MULTA'"
+            [attr.aria-pressed]="tipoObligacionSeleccionado === 'MULTA'"
             (click)="cambiarTabFinanciero('MULTA')"
-            style="border-radius: var(--radius-full); padding: 0.4rem 1rem;"
           >
-            <i class="ri-error-warning-line"></i>
-            Multas
+            <i class="ri-alarm-warning-line" aria-hidden="true"></i><span>Multas</span>
           </button>
         </div>
 
         <!-- FILTROS -->
-        <div
-          class="filters"
-          style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;"
-        >
+        <div class="cobros-filters">
           <!-- AÑO -->
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="cobros-year-filter">
+            <i class="ri-calendar-line" aria-hidden="true"></i>
             <label
               for="anio-financiero"
-              style="font-size: 0.82rem; font-weight: 700; color: var(--text-color);"
+              class="cobros-year-filter__label"
             >
-              Año:
+              Año
             </label>
 
             <select
@@ -80,7 +58,7 @@
               [(ngModel)]="anioFinancieroFiltro"
               (ngModelChange)="onCambioFiltros()"
               [disabled]="cargandoObligaciones || procesandoPago"
-              style="width: 140px;"
+              aria-label="Año de obligaciones"
             >
               <option [ngValue]="null">Seleccione</option>
 
@@ -94,39 +72,34 @@
           </div>
 
           <!-- CÉDULA Y BÚSQUEDA -->
-          <div
-            style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;"
-          >
-            <div
-              style="position: relative; display: flex; align-items: center;"
-            >
-              <i
-                class="ri-search-line"
-                aria-hidden="true"
-                style="position: absolute; left: 0.75rem; color: var(--text-muted);"
-              ></i>
+          <div class="cobros-search">
+            <div class="cobros-search__field cobros-search__field--simple">
+              <span class="cobros-search__icon" aria-hidden="true">
+                <i class="ri-search-line"></i>
+              </span>
 
               <input
+                id="cedula-comunero"
                 type="text"
-                class="input input--sm"
-                placeholder="Ingrese la cédula..."
-                aria-label="Cédula del comunero"
+                class="input input--sm cobros-search__input"
+                placeholder="Buscar por cédula"
                 [(ngModel)]="busquedaFinanciera"
-                (ngModelChange)="onCambioFiltros()"
+                (input)="normalizarCedulaInput($event)"
                 maxlength="10"
                 inputmode="numeric"
+                pattern="[0-9]*"
+                autocomplete="off"
                 [disabled]="cargandoObligaciones || procesandoPago"
-                style="padding-left: 2rem; width: 220px;"
               >
             </div>
 
             <button
               type="button"
-              class="btn btn--primary btn--sm"
+              class="btn btn--primary cobros-search__button"
               (click)="cargarObligacionesSegunTab()"
               [disabled]="cargandoObligaciones || procesandoPago"
             >
-              <i class="ri-search-line"></i>
+              <i class="ri-search-line" aria-hidden="true"></i>
               {{ cargandoObligaciones ? 'Buscando...' : 'Buscar' }}
             </button>
           </div>
@@ -135,16 +108,16 @@
     </div>
 
     <!-- CONTENIDO -->
-    <div class="financial-content" style="min-width: 0;">
+    <div class="financial-content cobros-content">
       <!-- CARGANDO -->
       <div
         *ngIf="cargandoObligaciones"
         role="status"
-        style="padding: 2rem 1rem; text-align: center; color: var(--text-muted);"
+        class="cobros-loading"
       >
         <i
           class="ri-loader-4-line"
-          style="display: block; margin-bottom: 0.5rem; font-size: 1.8rem;"
+          aria-hidden="true"
         ></i>
         Cargando obligaciones...
       </div>
@@ -159,33 +132,25 @@
             !comuneroSeleccionadoFinanzas
           )
         "
-        style="padding: 2rem 1rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.75rem; background: var(--bg-surface-hover, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px;"
+        class="cobros-welcome"
       >
-        <div
-          style="width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: var(--color-primary-light, #eff6ff); color: var(--color-primary, #2563eb); border-radius: 50%; font-size: 1.8rem;"
-        >
-          <i class="ri-hand-coin-line" aria-hidden="true"></i>
+        <div class="cobros-welcome__icon">
+          <i class="ri-user-search-line" aria-hidden="true"></i>
         </div>
 
-        <h4
-          style="margin: 0; font-size: 1.15rem; color: var(--text-color, #0f172a);"
-        >
+        <h4>
           Bienvenido a la gestión de cobros
         </h4>
 
-        <p
-          style="margin: 0; max-width: 460px; font-size: 0.88rem; line-height: 1.6; color: var(--text-muted, #64748b);"
-        >
+        <p>
           Consulta las mensualidades y multas pendientes de un comunero
           para registrar su pago.
         </p>
 
-        <ol
-          style="margin: 0.35rem 0 0; padding-left: 1.25rem; text-align: left; font-size: 0.82rem; line-height: 1.9; color: var(--text-color, #0f172a);"
-        >
+        <ol class="cobros-welcome__steps">
           <li>Elige mensualidades o multas.</li>
           <li>Selecciona el año que deseas consultar.</li>
-          <li>Ingresa la cédula de 10 dígitos del comunero.</li>
+          <li>Ingresa la cédula de 10 dígitos.</li>
           <li>Pulsa <strong>Buscar</strong> para ver sus obligaciones.</li>
         </ol>
       </div>
@@ -200,52 +165,29 @@
           !cargandoObligaciones &&
           comuneroSeleccionadoFinanzas
         "
-        style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.75rem;"
+        class="cobros-results"
       >
         <!-- DATOS DEL COMUNERO -->
-        <aside
-          style="flex: 0 1 210px; min-width: 0; padding: 0.75rem; box-sizing: border-box; background: var(--bg-surface-hover, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px;"
-        >
-          <span style="font-size: 0.72rem; color: var(--text-muted);">
-            COMUNERO TITULAR
-          </span>
-
-          <h4
-            style="margin: 0.35rem 0 0.75rem; font-size: 0.95rem; overflow-wrap: anywhere;"
-          >
-            {{ comuneroSeleccionadoFinanzas.nombres }}
-          </h4>
-
-          <span
-            style="display: block; font-size: 0.72rem; color: var(--text-muted);"
-          >
-            Cédula
-          </span>
-
-          <strong style="font-size: 0.85rem;">
-            {{ comuneroSeleccionadoFinanzas.cedula }}
-          </strong>
-
-          <span
-            style="display: block; margin-top: 0.65rem; font-size: 0.72rem; color: var(--text-muted);"
-          >
-            Año consultado
-          </span>
-
-          <strong style="font-size: 0.85rem;">
-            {{ periodoSeleccionadoFinanzas ?? 'Todos' }}
-          </strong>
+        <aside class="cobros-person">
+          <span class="cobros-person__avatar"><i class="ri-user-3-line" aria-hidden="true"></i></span>
+          <span class="cobros-person__eyebrow">COMUNERO TITULAR</span>
+          <h4>{{ comuneroSeleccionadoFinanzas.nombres }}</h4>
+          <div class="cobros-person__meta">
+            <span><i class="ri-id-card-line" aria-hidden="true"></i>Cédula</span>
+            <strong>{{ comuneroSeleccionadoFinanzas.cedula }}</strong>
+          </div>
+          <div class="cobros-person__meta">
+            <span><i class="ri-calendar-line" aria-hidden="true"></i>Año consultado</span>
+            <strong>{{ periodoSeleccionadoFinanzas ?? 'Todos' }}</strong>
+          </div>
         </aside>
 
         <!-- OBLIGACIONES Y PAGO -->
-        <div
-          style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 0.65rem;"
-        >
+        <div class="cobros-obligations">
           <!-- TÍTULO Y SELECCIÓN -->
-          <div
-            style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem;"
-          >
-            <h5 style="margin: 0; font-size: 0.95rem;">
+          <div class="cobros-obligations__heading">
+            <h5>
+              <i [class]="tabFinancieroActivo === 'MENSUALIDAD' ? 'ri-calendar-check-line' : 'ri-alarm-warning-line'" aria-hidden="true"></i>
               {{
                 tabFinancieroActivo === 'MENSUALIDAD'
                   ? 'Mensualidades'
@@ -256,7 +198,7 @@
 
             <label
               *ngIf="obligacionesComunero.length > 0"
-              style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; cursor: pointer;"
+              class="cobros-select-all"
             >
               <input
                 type="checkbox"
@@ -274,32 +216,28 @@
           <!-- TABLA DE OBLIGACIONES -->
           <div
             *ngIf="obligacionesComunero.length > 0"
-            style="overflow: auto; max-height: 360px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px;"
+            class="cobros-table-wrap"
           >
-            <table
-              style="width: 100%; border-collapse: collapse; font-size: 0.82rem;"
-            >
-              <thead
-                style="background: var(--bg-surface-hover, #f8fafc);"
-              >
+            <table class="cobros-table">
+              <thead>
                 <tr>
                   <th
                     scope="col"
-                    style="padding: 0.55rem 0.75rem; text-align: left;"
+                    class="cobros-table__concept-heading"
                   >
                     Concepto / periodo
                   </th>
 
                   <th
                     scope="col"
-                    style="padding: 0.55rem; text-align: right;"
+                    class="cobros-table__value-heading"
                   >
                     Valor
                   </th>
 
                   <th
                     scope="col"
-                    style="padding: 0.55rem; text-align: center; width: 65px;"
+                    class="cobros-table__check-heading"
                   >
                     Pagar
                   </th>
@@ -310,12 +248,12 @@
                 <ng-container *ngFor="let grupo of obligacionesPorMes">
                   <!-- MES -->
                   <tr
-                    style="background: var(--bg-surface-hover, #f8fafc);"
+                    class="cobros-table__month"
                   >
                     <th
                       colspan="3"
                       scope="rowgroup"
-                      style="padding: 0.5rem 0.75rem; text-align: left; font-weight: 700;"
+                      class="cobros-table__month-title"
                     >
                       {{ grupo.etiqueta }}
                     </th>
@@ -330,7 +268,7 @@
                         : 'var(--bg-surface, #ffffff)'
                     "
                   >
-                    <td style="padding: 0.45rem 0.75rem;">
+                    <td class="cobros-table__concept">
                       {{
                         ob.concepto_nombre ||
                         ob.concepto ||
@@ -338,7 +276,7 @@
                       }}
 
                       <small
-                        style="display: block; color: var(--text-muted);"
+                        class="cobros-table__period"
                       >
                         Periodo: {{ ob.periodo_anio ?? 'N/A' }}{{
                           ob.periodo_mes ? ' / ' + ob.periodo_mes : ''
@@ -347,13 +285,13 @@
                     </td>
 
                     <td
-                      style="padding: 0.45rem 0.55rem; text-align: right; white-space: nowrap;"
+                      class="cobros-table__value"
                     >
                       ${{ formatValor(ob.valor) }}
                     </td>
 
                     <td
-                      style="padding: 0.45rem; text-align: center;"
+                      class="cobros-table__checkbox"
                     >
                       <input
                         type="checkbox"
@@ -368,7 +306,6 @@
                             'obligación'
                           )
                         "
-                        style="width: 18px; height: 18px; cursor: pointer;"
                       >
                     </td>
                   </tr>
@@ -376,13 +313,13 @@
                   <!-- SUBTOTAL -->
                   <tr>
                     <td
-                      style="padding: 0.45rem 0.75rem; text-align: right; color: var(--text-muted);"
+                      class="cobros-table__subtotal-label"
                     >
                       Subtotal del mes
                     </td>
 
                     <td
-                      style="padding: 0.45rem 0.55rem; text-align: right; font-weight: 700;"
+                      class="cobros-table__subtotal"
                     >
                       ${{ formatValor(grupo.subtotal) }}
                     </td>
@@ -393,18 +330,18 @@
               </tbody>
 
               <tfoot
-                style="border-top: 1px solid var(--border-color, #e2e8f0);"
+                class="cobros-table__footer"
               >
                <tr>
                   <th
                     scope="row"
-                    style="padding: 0.6rem 0.75rem; text-align: right; font-size: 1.1rem;"
+                    class="cobros-table__total-label"
                   >
                     Total pendiente
                   </th>
 
                   <td
-                    style="padding: 0.6rem 0.55rem; text-align: right; font-weight: 700; font-size: 1.1rem;"
+                    class="cobros-table__total"
                   >
                     ${{ formatValor(totalPendienteFinanzas) }}
                   </td>
@@ -418,44 +355,35 @@
           <!-- SIN OBLIGACIONES -->
           <div
             *ngIf="obligacionesComunero.length === 0"
-            style="padding: 0.85rem; border: 1px dashed var(--border-color, #e2e8f0); border-radius: 8px; color: var(--text-muted);"
+            class="cobros-no-obligations"
           >
+            <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+            <strong>Comunero al día</strong>
             No hay obligaciones pendientes para esta consulta.
           </div>
 
          <!-- REGISTRO DEL PAGO -->
-<div
-  *ngIf="obligacionesComunero.length > 0"
-  style="background: var(--bg-surface-hover, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.65rem;"
->
-  <div
-    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 0.65rem; align-items: stretch;"
-  >
+<div *ngIf="obligacionesComunero.length > 0" class="cobros-payment">
+  <div class="cobros-payment__fields">
     <!-- MONTO SELECCIONADO -->
-    <div
-      style="background: var(--bg-surface, #ffffff); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color, #e2e8f0); display: flex; flex-direction: column; justify-content: center;"
-    >
-      <span
-        style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; display: block;"
-      >
+    <div class="cobros-payment__field cobros-payment__field--total">
+      <span class="cobros-payment__label">
+        <i class="ri-hand-coin-line" aria-hidden="true"></i>
         Monto total
       </span>
 
-      <strong
-        style="font-size: 1.15rem; color: var(--color-primary, #2563eb); line-height: 1.4;"
-      >
+      <strong>
         ${{ totalAPagarFinanzas.toFixed(2) }}
       </strong>
     </div>
 
-    <!-- VALOR RECIBIDO (Igualado en diseño al resto) -->
-    <div
-      style="background: var(--bg-surface, #ffffff); padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color, #e2e8f0); display: flex; flex-direction: column; justify-content: center;"
-    >
+    <!-- VALOR RECIBIDO -->
+    <div class="cobros-payment__field">
       <label
         for="valor-recibido-finanzas"
-        style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 0.05rem; cursor: pointer;"
+        class="cobros-payment__label"
       >
+        <i class="ri-money-dollar-circle-line" aria-hidden="true"></i>
         Valor recibido ($)
       </label>
 
@@ -468,17 +396,13 @@
         placeholder="0.00"
         [(ngModel)]="valorRecibidoFinanzas"
         [disabled]="procesandoPago || cargandoObligaciones"
-        style="font-size: 1.15rem; font-weight: 700; padding: 0; width: 100%; border: none; background: transparent; box-shadow: none; outline: none; color: var(--text-color, #0f172a);"
       >
     </div>
 
     <!-- CAMBIO -->
-    <div
-      style="background: var(--bg-surface, #ffffff); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color, #e2e8f0); display: flex; flex-direction: column; justify-content: center;"
-    >
-      <span
-        style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; display: block;"
-      >
+    <div class="cobros-payment__field">
+      <span class="cobros-payment__label">
+        <i class="ri-exchange-dollar-line" aria-hidden="true"></i>
         Cambio / vuelto
       </span>
 
@@ -489,7 +413,6 @@
             ? 'var(--color-success, #10b981)'
             : 'var(--text-muted)'
         "
-        style="font-size: 1.15rem; line-height: 1.4;"
       >
         ${{ cambioCalculado.toFixed(2) }}
       </strong>
@@ -502,17 +425,16 @@
       valorRecibidoFinanzas !== null &&
       valorRecibidoFinanzas < totalAPagarFinanzas
     "
-    class="alert alert--warning"
-    style="padding: 0.35rem 0.65rem; font-size: 0.75rem; margin: 0;"
+    class="alert alert--warning cobros-payment__warning"
   >
-    <i class="ri-alert-line"></i>
+    <i class="ri-alert-line" aria-hidden="true"></i>
     El valor recibido es menor al total a pagar.
   </div>
 
   <!-- PROCESAR PAGO -->
   <button
     type="button"
-    class="btn btn--primary"
+    class="btn btn--primary cobros-payment__submit"
     (click)="cobrarObligacion()"
     [disabled]="
       procesandoPago ||
@@ -521,8 +443,8 @@
       valorRecibidoFinanzas === null ||
       valorRecibidoFinanzas < totalAPagarFinanzas
     "
-    style="width: 100%; max-width: 400px; margin: 0.5rem auto 0 auto; padding: 0.8rem 1.25rem; font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
   >
+    <i [class]="procesandoPago ? 'ri-loader-4-line' : 'ri-secure-payment-line'" aria-hidden="true"></i>
     {{
       procesandoPago
         ? 'Procesando pago...'
@@ -539,25 +461,18 @@
       <div
         *ngIf="tabFinancieroActivo === 'ERROR' && !cargandoObligaciones"
         role="alert"
-        style="padding: 1rem; background: var(--bg-surface-hover, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px;"
+        class="cobros-error"
       >
-        <h4
-          style="margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--text-color);"
-        >
-          <i
-            class="ri-error-warning-line"
-            style="color: var(--color-warning, #d97706);"
-          ></i>
+        <h4>
+          <i class="ri-error-warning-line" aria-hidden="true"></i>
           Verifique los datos
         </h4>
 
-        <p style="margin: 0 0 0.5rem; font-size: 0.85rem;">
+        <p>
           {{ mensajeErrorFinanciero }}
         </p>
 
-        <ul
-          style="margin: 0; padding-left: 1.25rem; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted);"
-        >
+        <ul>
           <li>Seleccione un año para consultar las obligaciones.</li>
           <li>Ingrese una cédula de 10 dígitos registrada en el sistema.</li>
           <li>Pulse Buscar para realizar nuevamente la consulta.</li>

@@ -34,26 +34,41 @@
             </nav>
 
             <div class="finance-toolbar__filters">
-              <!-- Filter for annual financial history -->
-              <label *ngIf="subTabFinanzas === 'HISTORIAL'" class="finance-search">
-                <i aria-hidden="true" class="ri-search-line"></i>
-                <input type="search" class="input input--sm" aria-label="Buscar en el historial anual"
-                  placeholder="Buscar movimiento..." [(ngModel)]="historialFiltroBusqueda">
-              </label>
+              <div *ngIf="subTabFinanzas === 'HISTORIAL'" class="finance-searchbar">
+                <label class="finance-search">
+                  <i aria-hidden="true" class="ri-search-line"></i>
+                  <input type="search" class="input input--sm" aria-label="Buscar en el historial anual"
+                    placeholder="Buscar movimiento..." [(ngModel)]="historialFiltroBusqueda">
+                </label>
+                <button type="button" class="btn btn--primary finance-searchbar__button">
+                  <i aria-hidden="true" class="ri-search-line"></i>
+                  Buscar
+                </button>
+              </div>
 
-              <!-- Filters INGRESOS -->
-              <label *ngIf="subTabFinanzas === 'INGRESOS'" class="finance-search">
-                <i aria-hidden="true" class="ri-search-line"></i>
-                <input type="search" class="input input--sm" aria-label="Buscar pagos por recibo o comunero"
-                  placeholder="Buscar recibo o comunero..." [(ngModel)]="historialFiltroBusqueda">
-              </label>
+              <div *ngIf="subTabFinanzas === 'INGRESOS'" class="finance-searchbar">
+                <label class="finance-search">
+                  <i aria-hidden="true" class="ri-search-line"></i>
+                  <input type="search" class="input input--sm" aria-label="Buscar pagos por recibo o comunero"
+                    placeholder="Buscar recibo o comunero..." [(ngModel)]="historialFiltroBusqueda">
+                </label>
+                <button type="button" class="btn btn--primary finance-searchbar__button">
+                  <i aria-hidden="true" class="ri-search-line"></i>
+                  Buscar
+                </button>
+              </div>
 
-              <!-- Filters EGRESOS -->
-              <label *ngIf="subTabFinanzas === 'EGRESOS'" class="finance-search">
-                <i aria-hidden="true" class="ri-search-line"></i>
-                <input type="search" class="input input--sm" aria-label="Buscar egresos por concepto o factura"
-                  placeholder="Buscar concepto o factura..." [(ngModel)]="historialEgresosFiltroBusqueda">
-              </label>
+              <div *ngIf="subTabFinanzas === 'EGRESOS'" class="finance-searchbar">
+                <label class="finance-search">
+                  <i aria-hidden="true" class="ri-search-line"></i>
+                  <input type="search" class="input input--sm" aria-label="Buscar egresos por concepto o factura"
+                    placeholder="Buscar concepto o factura..." [(ngModel)]="historialEgresosFiltroBusqueda">
+                </label>
+                <button type="button" class="btn btn--primary finance-searchbar__button">
+                  <i aria-hidden="true" class="ri-search-line"></i>
+                  Buscar
+                </button>
+              </div>
             </div>
           </div>
         </div>

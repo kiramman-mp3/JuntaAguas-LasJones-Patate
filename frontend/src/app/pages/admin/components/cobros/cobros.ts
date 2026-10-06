@@ -70,6 +70,35 @@ export class Cobros implements OnInit {
     this.tabFinancieroActivo = 'BIENVENIDA';
   }
 
+  get cedulaBusquedaInvalida(): boolean {
+    const valor = this.busquedaFinanciera.trim();
+    return valor.length > 0 && !/^\d{10}$/.test(valor);
+  }
+
+  get ayudaCedulaBusqueda(): string {
+    const valor = this.busquedaFinanciera.trim();
+
+    if (!valor) return 'Debe ingresar 10 dígitos.';
+    if (/^\d+$/.test(valor) && valor.length < 10) {
+      return `Faltan ${10 - valor.length} dígitos.`;
+    }
+    if (/^\d+$/.test(valor) && valor.length === 10) return 'Cédula válida.';
+    return 'Solo se permiten números.';
+  }
+
+  normalizarCedulaInput(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    if (!input) return;
+
+    const valorNormalizado = input.value.replace(/\D/g, '').slice(0, 10);
+    if (input.value !== valorNormalizado) {
+      input.value = valorNormalizado;
+    }
+
+    this.busquedaFinanciera = valorNormalizado;
+    this.onCambioFiltros();
+  }
+
   private validarFiltros(): string {
     const anio = Number(this.anioFinancieroFiltro);
     if (!Number.isInteger(anio) || anio <= 0) return 'Seleccione un año para consultar las obligaciones.';
