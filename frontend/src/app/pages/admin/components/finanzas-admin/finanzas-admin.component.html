@@ -1,75 +1,60 @@
 <div>
-      <div class="card">
-        <div class="card__header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0;">
-
-          <!-- Top Row: Title and Main Actions -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <h3 class="card__title" style="margin: 0; font-size: 1.3rem;">
-              <i aria-hidden="true" class="ri-bank-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Módulo Financiero y Caja
-            </h3>
-            <div style="display: flex; gap: 0.75rem;">
-              <button *ngIf="subTabFinanzas === 'EGRESOS'" class="btn btn--primary" (click)="abrirModalEgreso()">
-                <i aria-hidden="true" class="ri-add-line"></i> Registrar Nuevo Egreso
-              </button>
+      <div class="card finance-module">
+        <div class="card__header finance-header">
+          <div class="finance-header__main">
+            <div class="finance-header__title">
+              <span class="finance-header__icon"><i aria-hidden="true" class="ri-wallet-3-line"></i></span>
+              <div>
+                <h3 class="card__title">Módulo Financiero y Caja</h3>
+                <p>Administra los ingresos, egresos y movimientos de la Junta.</p>
+              </div>
             </div>
+            <button *ngIf="subTabFinanzas === 'EGRESOS'" class="btn btn--primary" (click)="abrirModalEgreso()">
+              <i aria-hidden="true" class="ri-add-line"></i> Registrar egreso
+            </button>
           </div>
 
-          <!-- Bottom Row: Tabs and Filters inside a toolbar -->
-          <div
-            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
-
-            <!-- Tabs Pills -->
-            <div class="tab-pills" style="display: flex; gap: 0.5rem;">
-              <button class="btn btn--sm" [ngClass]="subTabFinanzas === 'INGRESOS' ? 'btn--primary' : 'btn--outline'"
-                (click)="cambiarSubTabFinanzas('INGRESOS')"
-                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
-                <i aria-hidden="true" class="ri-arrow-down-circle-line"></i> Cobros e Ingresos
+          <div class="finance-toolbar">
+            <nav class="finance-tabs" aria-label="Áreas de Finanzas">
+              <button type="button" class="finance-tabs__item" [class.finance-tabs__item--active]="subTabFinanzas === 'INGRESOS'"
+                [attr.aria-current]="subTabFinanzas === 'INGRESOS' ? 'page' : null"
+                (click)="cambiarSubTabFinanzas('INGRESOS')">
+                <i aria-hidden="true" class="ri-hand-coin-line"></i><span>Ingresos</span>
               </button>
-              <button class="btn btn--sm" [ngClass]="subTabFinanzas === 'EGRESOS' ? 'btn--primary' : 'btn--outline'"
-                (click)="cambiarSubTabFinanzas('EGRESOS')"
-                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
-                <i aria-hidden="true" class="ri-arrow-up-circle-line"></i> Egresos y Compras
+              <button type="button" class="finance-tabs__item" [class.finance-tabs__item--active]="subTabFinanzas === 'EGRESOS'"
+                [attr.aria-current]="subTabFinanzas === 'EGRESOS' ? 'page' : null"
+                (click)="cambiarSubTabFinanzas('EGRESOS')">
+                <i aria-hidden="true" class="ri-shopping-bag-3-line"></i><span>Egresos</span>
               </button>
-              <button class="btn btn--sm" [ngClass]="subTabFinanzas === 'HISTORIAL' ? 'btn--primary' : 'btn--outline'"
-                (click)="cambiarSubTabFinanzas('HISTORIAL')"
-                style="border-radius: var(--radius-full); padding: 0.4rem 1rem;">
-                <i aria-hidden="true" class="ri-history-line"></i> Historial anual
+              <button type="button" class="finance-tabs__item" [class.finance-tabs__item--active]="subTabFinanzas === 'HISTORIAL'"
+                [attr.aria-current]="subTabFinanzas === 'HISTORIAL' ? 'page' : null"
+                (click)="cambiarSubTabFinanzas('HISTORIAL')">
+                <i aria-hidden="true" class="ri-history-line"></i><span>Historial</span>
               </button>
-            </div>
+            </nav>
 
-            <!-- Filter for annual financial history -->
-            <div *ngIf="subTabFinanzas === 'HISTORIAL'" class="filters"
-              style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <div style="position: relative; display: flex; align-items: center;">
-                <i aria-hidden="true" class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
-                <input type="text" class="input input--sm" placeholder="Buscar en el historial anual..."
-                  [(ngModel)]="historialFiltroBusqueda"
-                  style="padding-left: 2rem; width: 280px;">
-              </div>
-            </div>
+            <div class="finance-toolbar__filters">
+              <!-- Filter for annual financial history -->
+              <label *ngIf="subTabFinanzas === 'HISTORIAL'" class="finance-search">
+                <i aria-hidden="true" class="ri-search-line"></i>
+                <input type="search" class="input input--sm" aria-label="Buscar en el historial anual"
+                  placeholder="Buscar movimiento..." [(ngModel)]="historialFiltroBusqueda">
+              </label>
 
-            <!-- Filters INGRESOS -->
-            <div *ngIf="subTabFinanzas === 'INGRESOS'" class="filters"
-              style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <div style="position: relative; display: flex; align-items: center;">
-                <i aria-hidden="true" class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
-                <input type="text" class="input input--sm" placeholder="Buscar por recibo, comunero..."
-                  [(ngModel)]="historialFiltroBusqueda"
-                  style="padding-left: 2rem; width: 280px;">
-              </div>
-            </div>
+              <!-- Filters INGRESOS -->
+              <label *ngIf="subTabFinanzas === 'INGRESOS'" class="finance-search">
+                <i aria-hidden="true" class="ri-search-line"></i>
+                <input type="search" class="input input--sm" aria-label="Buscar pagos por recibo o comunero"
+                  placeholder="Buscar recibo o comunero..." [(ngModel)]="historialFiltroBusqueda">
+              </label>
 
-            <!-- Filters EGRESOS -->
-            <div *ngIf="subTabFinanzas === 'EGRESOS'" class="filters"
-              style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <div style="position: relative; display: flex; align-items: center;">
-                <i aria-hidden="true" class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
-                <input type="text" class="input input--sm" placeholder="Buscar por concepto, factura..."
-                  [(ngModel)]="historialEgresosFiltroBusqueda"
-                  style="padding-left: 2rem; width: 280px;">
-              </div>
+              <!-- Filters EGRESOS -->
+              <label *ngIf="subTabFinanzas === 'EGRESOS'" class="finance-search">
+                <i aria-hidden="true" class="ri-search-line"></i>
+                <input type="search" class="input input--sm" aria-label="Buscar egresos por concepto o factura"
+                  placeholder="Buscar concepto o factura..." [(ngModel)]="historialEgresosFiltroBusqueda">
+              </label>
             </div>
-
           </div>
         </div>
 
@@ -205,88 +190,102 @@
         </section>
 
         <!-- TAB 1: COBROS E INGRESOS (BUSCADOR COMUNERO) -->
-<div *ngIf="subTabFinanzas === 'INGRESOS'" class="finanzas-historial">
+        <div *ngIf="subTabFinanzas === 'INGRESOS'" class="finanzas-historial finance-income">
+        <header class="finance-section-heading finance-income__heading">
+          <div><span class="finance-section-heading__icon"><i aria-hidden="true" class="ri-hand-coin-line"></i></span>
+            <div><h4>Cobros e ingresos</h4><p>Consulta el estado de caja y registra pagos de comuneros</p></div></div>
+          <span class="finance-monthly__count">{{ historialPagos.length }} pagos registrados</span>
+        </header>
 
-<!-- RESUMEN MENSUAL Y TOTALES -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-  <div style="background: var(--bg-surface); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Ingresos</span>
-    <strong style="font-size: 1.5rem; color: var(--color-success);">$ {{ kpis.recaudadoMes.toFixed(2) }}</strong>
-  </div>
-  <div style="background: var(--bg-surface); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Egresos</span>
-    <strong style="font-size: 1.5rem; color: var(--color-danger);">$ {{ kpis.egresosMes.toFixed(2) }}</strong>
-  </div>
-  <div style="background: var(--bg-surface); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: var(--bg-surface-hover);">
-    <span style="font-size: 0.85rem; color: var(--text-color); font-weight: 600; text-transform: uppercase;">Saldo Actual</span>
-    <strong style="font-size: 1.5rem; color: var(--color-primary);">$ {{ kpis.balanceAlDia.toFixed(2) }}</strong>
-  </div>
+        <!-- RESUMEN MENSUAL Y TOTALES -->
+<div class="finance-summary">
+  <article class="finance-summary__card finance-summary__card--income">
+    <span class="finance-summary__icon"><i class="ri-hand-coin-line" aria-hidden="true"></i></span>
+    <div><span class="finance-summary__label">Ingresos acumulados</span>
+    <strong class="finance-summary__value">$ {{ kpis.recaudadoMes.toFixed(2) }}</strong></div>
+    <small>Pagos registrados</small>
+  </article>
+  <article class="finance-summary__card finance-summary__card--expense">
+    <span class="finance-summary__icon"><i class="ri-shopping-bag-3-line" aria-hidden="true"></i></span>
+    <div><span class="finance-summary__label">Egresos acumulados</span>
+    <strong class="finance-summary__value">$ {{ kpis.egresosMes.toFixed(2) }}</strong></div>
+    <small>Gastos registrados</small>
+  </article>
+  <article class="finance-summary__card finance-summary__card--balance">
+    <span class="finance-summary__icon"><i class="ri-scales-3-line" aria-hidden="true"></i></span>
+    <div><span class="finance-summary__label">Saldo actual</span>
+    <strong class="finance-summary__value">$ {{ kpis.balanceAlDia.toFixed(2) }}</strong></div>
+    <small>Calculado por el sistema</small>
+  </article>
 </div>
 
-<div *ngIf="resumenMensual.length > 0" style="margin-bottom: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
-  <div style="padding: 1rem; background: var(--bg-surface-hover); border-bottom: 1px solid var(--border-color);">
-    <h4 style="margin: 0; font-size: 1rem; color: var(--text-color);"><i aria-hidden="true" class="ri-bar-chart-box-line text-primary"></i> Resumen por Mes</h4>
+<section *ngIf="resumenMensual.length > 0" class="finance-monthly" aria-label="Resumen mensual financiero">
+  <header class="finance-section-heading">
+    <div><span class="finance-section-heading__icon"><i aria-hidden="true" class="ri-bar-chart-box-line"></i></span>
+      <div><h4>Resumen mensual</h4><p>Ingresos y egresos registrados por período</p></div></div>
+    <span class="finance-monthly__count">{{ resumenMensual.length }} períodos</span>
+  </header>
+  <div class="finance-monthly__list">
+    <article *ngFor="let mes of resumenMensual" class="finance-monthly__item">
+      <strong class="finance-monthly__period"><i class="ri-calendar-line" aria-hidden="true"></i>{{ mes.mes }}</strong>
+      <span class="finance-monthly__amount finance-monthly__amount--income">
+        <i class="ri-arrow-down-circle-line" aria-hidden="true"></i><small>Ingresos</small><strong>$ {{ formatValor(mes.ingresos) }}</strong>
+      </span>
+      <span class="finance-monthly__amount finance-monthly__amount--expense">
+        <i class="ri-arrow-up-circle-line" aria-hidden="true"></i><small>Egresos</small><strong>$ {{ formatValor(mes.egresos) }}</strong>
+      </span>
+    </article>
   </div>
-  <div style="display: flex; overflow-x: auto; padding: 1rem; gap: 1rem;">
-    <div *ngFor="let mes of resumenMensual" style="min-width: 150px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem;">
-      <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem;">Mes: {{ mes.mes }}</strong>
-      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
-        <span style="color: var(--text-muted);">Ingresos:</span> <strong style="color: var(--color-success);">$ {{ formatValor(mes.ingresos) }}</strong>
-      </div>
-      <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-        <span style="color: var(--text-muted);">Egresos:</span> <strong style="color: var(--color-danger);">$ {{ formatValor(mes.egresos) }}</strong>
-      </div>
-    </div>
-  </div>
-</div>
+</section>
 
 <div class="finanzas-grid">
         
         <!-- PANEL IZQUIERDO: LISTA DE COMUNEROS -->
-        <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: var(--radius-md, 8px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <section class="finance-panel finance-people">
           
           <!-- Cabecera de búsqueda -->
-          <div style="padding: 0.85rem; background: var(--bg-surface-hover, #f8fafc); border-bottom: 1px solid var(--border-color, #e2e8f0);">
-            <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color); margin-bottom: 0.4rem; display: block;">
-              <i aria-hidden="true" class="ri-user-search-line text-primary"></i> Seleccionar Comunero (Total: {{ comunerosFiltradosFinanzas.length }})
+          <header class="finance-panel__header">
+            <label class="finance-panel__title">
+              <span><i aria-hidden="true" class="ri-user-search-line"></i></span>
+              <span>Seleccionar comunero</span>
+              <small>{{ comunerosFiltradosFinanzas.length }}</small>
             </label>
-            <div class="search-box" style="position: relative;">
-              <i aria-hidden="true" class="ri-search-line search-icon" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-              <input type="text" class="input input--sm" placeholder="Buscar comunero por nombre o cédula..."
-                [(ngModel)]="comuneroFiltroFinanzas" style="width: 100%; padding-left: 2.25rem;" />
-            </div>
-          </div>
+            <label class="finance-search finance-search--wide">
+              <i aria-hidden="true" class="ri-search-line"></i>
+              <input type="search" class="input input--sm" aria-label="Buscar comunero por nombre o cédula"
+                placeholder="Nombre o cédula..." [(ngModel)]="comuneroFiltroFinanzas">
+            </label>
+          </header>
 
           <!-- Lista scrollable de Comuneros -->
-          <div style="flex: 1; overflow-y: auto; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; max-height: 420px;">
-            <div *ngFor="let u of comunerosFiltradosFinanzas" (click)="seleccionarComuneroFinanzas(u)"
-              [style.background]="comuneroSeleccionadoFinanzas?.id === u.id ? 'var(--color-primary-light, #eff6ff)' : 'var(--bg-surface, #ffffff)'"
-              [style.borderColor]="comuneroSeleccionadoFinanzas?.id === u.id ? 'var(--color-primary, #2563eb)' : 'var(--border-color, #e2e8f0)'"
-              style="padding: 0.75rem; border: 1.5px solid; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: space-between;">
+          <div class="finance-people__list">
+            <button *ngFor="let u of comunerosFiltradosFinanzas" type="button" (click)="seleccionarComuneroFinanzas(u)"
+              [class.finance-person--selected]="comuneroSeleccionadoFinanzas?.id === u.id"
+              [attr.aria-pressed]="comuneroSeleccionadoFinanzas?.id === u.id" class="finance-person">
               
-              <div style="display: flex; align-items: center; gap: 0.65rem;">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--color-primary-light, #e0e7ff); color: var(--color-primary, #2563eb); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;">
+              <div class="finance-person__identity">
+                <div class="finance-person__avatar">
                   {{ u.nombres?.charAt(0) || 'C' }}
                 </div>
-                <div>
-                  <strong style="display: block; font-size: 0.85rem; color: var(--text-color);">{{ u.nombres }}</strong>
-                  <span style="font-size: 0.75rem; color: var(--text-muted);"><i aria-hidden="true" class="ri-id-card-line"></i> {{ u.cedula }}</span>
+                <div class="finance-person__details">
+                  <strong>{{ u.nombres }}</strong>
+                  <span><i aria-hidden="true" class="ri-id-card-line"></i> {{ u.cedula }}</span>
                 </div>
               </div>
 
-              <i aria-hidden="true" class="ri-arrow-right-s-line" [style.color]="comuneroSeleccionadoFinanzas?.id === u.id ? 'var(--color-primary)' : 'var(--text-muted)'" style="font-size: 1.2rem;"></i>
-            </div>
+              <i aria-hidden="true" class="ri-arrow-right-s-line finance-person__arrow"></i>
+            </button>
 
-            <div *ngIf="comunerosFiltradosFinanzas.length === 0" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); font-size: 0.85rem;">
-              <i aria-hidden="true" class="ri-user-unfollow-line" style="font-size: 2.2rem; opacity: 0.3; display: block; margin-bottom: 0.4rem;"></i>
+            <div *ngIf="comunerosFiltradosFinanzas.length === 0" class="finance-empty">
+              <i aria-hidden="true" class="ri-user-search-line"></i>
               No se encontraron comuneros que coincidan con la búsqueda.
             </div>
           </div>
 
-        </div>
+        </section>
 
         <!-- PANEL DERECHO: DETALLE DE COBRO & CALCULADORA -->
-        <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: var(--radius-md, 8px); padding: 1.25rem; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <section class="finance-panel finance-payment">
           
           <div *ngIf="!comuneroSeleccionadoFinanzas" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
             <i aria-hidden="true" class="ri-hand-coin-line" style="font-size: 3.5rem; color: var(--color-primary); opacity: 0.25; margin-bottom: 0.75rem;"></i>
@@ -419,80 +418,87 @@
 
           </div>
 
-        </div>
+        </section>
 
       </div>
     </div>
 <!-- TAB 2: EGRESOS Y COMPRAS (HISTORIAL) -->
-        <div *ngIf="subTabFinanzas === 'EGRESOS'" class="finanzas-egresos">
-          
-          <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto; background: var(--bg-surface, #ffffff); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
+        <section *ngIf="subTabFinanzas === 'EGRESOS'" class="finanzas-egresos finance-expenses" aria-label="Egresos y compras">
+          <header class="finance-section-heading">
+            <div><span class="finance-section-heading__icon finance-section-heading__icon--expense">
+              <i aria-hidden="true" class="ri-shopping-bag-3-line"></i>
+            </span><div><h4>Registro de egresos</h4><p>Control de compras y gastos de la Junta</p></div></div>
+            <span class="finance-monthly__count">{{ historialEgresosFiltrado.length }} registros</span>
+          </header>
+          <div class="finance-table-wrap">
+            <table class="table-custom finance-table">
               <thead>
-                <tr style="background: var(--bg-surface-hover); border-bottom: 1.5px solid var(--border-color); text-align: left;">
-                  <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">No. Egreso</th>
-                  <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Fecha</th>
-                  <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Concepto / Detalle</th>
-                  <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">No. Factura</th>
-                  <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Monto Total</th>
-                  <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Registrado por</th>
+                <tr>
+                  <th>No. Egreso</th>
+                  <th>Fecha</th>
+                  <th>Concepto / Detalle</th>
+                  <th>No. Factura</th>
+                  <th>Monto Total</th>
+                  <th>Registrado por</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let e of historialEgresosFiltrado" style="border-bottom: 1px solid var(--border-color);">
+                <tr *ngFor="let e of historialEgresosFiltrado">
                   <!-- No. Egreso -->
-                  <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
+                  <td>
                     <span class="badge badge--danger" style="font-family: monospace; font-size: 0.82rem; padding: 0.25rem 0.55rem; font-weight: 700;">
+                      <i aria-hidden="true" class="ri-arrow-up-circle-line"></i>
                       {{ formatEgresoNo(e.id) }}
                     </span>
                   </td>
                   
                   <!-- Fecha -->
-                  <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
-                    <strong style="color: var(--text-color); font-size: 0.85rem;">
-                      <i aria-hidden="true" class="ri-calendar-line text-muted" style="margin-right: 0.2rem;"></i> {{ e.fecha | date:'dd/MM/yyyy' }}
+                  <td>
+                    <strong class="finance-table__date">
+                      <i aria-hidden="true" class="ri-calendar-line"></i> {{ e.fecha | date:'dd/MM/yyyy' }}
                     </strong>
                   </td>
 
                   <!-- Concepto y Detalle -->
-                  <td style="padding: 0.9rem 1rem; vertical-align: middle;">
-                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                      <strong style="color: var(--text-color); font-size: 0.88rem;">{{ e.concepto }}</strong>
-                      <span *ngIf="e.descripcion" style="font-size: 0.78rem; color: var(--text-muted);">{{ e.descripcion }}</span>
+                  <td>
+                    <div class="finance-table__concept">
+                      <strong>{{ e.concepto }}</strong>
+                      <span *ngIf="e.descripcion">{{ e.descripcion }}</span>
                     </div>
                   </td>
 
                   <!-- No. Factura -->
-                  <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
-                    <span style="font-size: 0.82rem; font-family: monospace; color: var(--text-color);">
+                  <td>
+                    <span class="finance-table__invoice">
                       {{ e.numero_factura || 'N/A' }}
                     </span>
                   </td>
 
                   <!-- Monto Total -->
-                  <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
-                    <strong style="color: var(--color-danger, #ef4444); font-size: 0.95rem;">-${{ formatValor(e.valor) }}</strong>
+                  <td>
+                    <strong class="finance-table__amount">-${{ formatValor(e.valor) }}</strong>
                   </td>
 
                   <!-- Registrado por -->
-                  <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
-                    <span style="font-size: 0.8rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-hover); padding: 0.25rem 0.6rem; border-radius: var(--radius-full); border: 1px solid var(--border-color);">
-                      <i aria-hidden="true" class="ri-user-line text-primary"></i> {{ e.registrado_por_usuario || 'Administración' }}
+                  <td>
+                    <span class="finance-table__user">
+                      <i aria-hidden="true" class="ri-user-line"></i>{{ e.registrado_por_usuario || 'Administración' }}
                     </span>
                   </td>
                 </tr>
 
                 <tr *ngIf="historialEgresosFiltrado.length === 0">
-                  <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
-                    <i aria-hidden="true" class="ri-file-search-line" style="font-size: 2.2rem; opacity: 0.3; display: block; margin-bottom: 0.4rem;"></i>
-                    No se encontraron egresos registrados.
+                  <td colspan="6" class="finance-table__empty">
+                    <i aria-hidden="true" class="ri-search-eye-line"></i>
+                    <strong>No se encontraron egresos</strong>
+                    <span>Prueba con otro término de búsqueda o registra un egreso.</span>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-        </div>
+        </section>
 
       </div>
     </div>
@@ -508,7 +514,7 @@
     <div style="padding: 1.1rem 1.5rem; background: var(--bg-surface, #ffffff); border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
       <div>
         <h4 style="margin: 0; color: var(--text-color, #0f172a); font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-          <i aria-hidden="true" class="ri-upload-2-line text-danger" style="color: var(--color-danger, #ef4444);"></i> Registrar Nuevo Egreso / Compra
+          <i aria-hidden="true" class="ri-arrow-up-circle-line text-danger" style="color: var(--color-danger, #ef4444);"></i> Registrar Nuevo Egreso / Compra
         </h4>
         <p style="margin: 0.2rem 0 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b);">
           Ingresa la información del egreso o gasto para actualizar el balance financiero.
