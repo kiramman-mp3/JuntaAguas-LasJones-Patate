@@ -7,26 +7,28 @@
     </div>
 
     <nav class="sidebar__nav">
-      <button type="button" class="nav-item" [class.active]="tabActiva === 'DASHBOARD'"
-        [attr.aria-current]="tabActiva === 'DASHBOARD' ? 'page' : null" (click)="cambiarTab('DASHBOARD')">
-        <i class="ri-dashboard-line" aria-hidden="true"></i> Dashboard
-      </button>
-      <button type="button" class="nav-item" [class.active]="tabActiva === 'USUARIOS'"
-        [attr.aria-current]="tabActiva === 'USUARIOS' ? 'page' : null" (click)="cambiarTab('USUARIOS')">
-        <i class="ri-group-line" aria-hidden="true"></i> Comuneros & Lotes
-      </button>
-      <button type="button" class="nav-item" [class.active]="tabActiva === 'ASISTENCIAS'"
-        [attr.aria-current]="tabActiva === 'ASISTENCIAS' ? 'page' : null" (click)="cambiarTab('ASISTENCIAS')">
-        <i class="ri-calendar-check-line" aria-hidden="true"></i> Asistencias
-      </button>
-      <button type="button" class="nav-item" [class.active]="tabActiva === 'TURNOS'"
-        [attr.aria-current]="tabActiva === 'TURNOS' ? 'page' : null" (click)="cambiarTab('TURNOS')">
-        <i class="ri-drop-line" aria-hidden="true"></i> Turnos de Agua
-      </button>
-      <button type="button" class="nav-item" [class.active]="tabActiva === 'FINANZAS'"
-        [attr.aria-current]="tabActiva === 'FINANZAS' ? 'page' : null" (click)="cambiarTab('FINANZAS')">
-        <i class="ri-money-dollar-circle-line" aria-hidden="true"></i> Finanzas
-      </button>
+
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'DASHBOARD'" (click)="cambiarTab('DASHBOARD')">
+        <i class="ri-dashboard-line"></i> Dashboard
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'USUARIOS'" (click)="cambiarTab('USUARIOS')">
+        <i class="ri-group-line"></i> Comuneros & Lotes
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'ASISTENCIAS'" (click)="cambiarTab('ASISTENCIAS')">
+        <i class="ri-calendar-check-line"></i> Asistencias
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'TURNOS'" (click)="cambiarTab('TURNOS')">
+        <i class="ri-drop-line"></i> Turnos de Agua
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'COBROS'" (click)="cambiarTab('COBROS')">
+        <i class="ri-hand-coin-line"></i> Cobros
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'GESTIONCONTRATACION'" (click)="cambiarTab('GESTIONCONTRATACION')">
+        <i class="ri-money-dollar-circle-line"></i> Gestion de Contratación
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'FINANZAS'" (click)="cambiarTab('FINANZAS')">
+        <i class="ri-money-dollar-circle-line"></i> Finanzas
+      </a>
     </nav>
   </aside>
 
@@ -151,5 +153,14 @@
       <app-finanzas-admin></app-finanzas-admin>
     </section>
 
+    <!-- VISTA 5: COBROS -->
+    <section *ngIf="tabActiva === 'COBROS'" class="tab-view">
+      <app-cobros></app-cobros>
+    </section>
+
+    <!-- VISTA 6: GESTIÓN CONTRATACIÓN -->
+    <section *ngIf="tabActiva === 'GESTIONCONTRATACION'" class="tab-view">
+      <app-gestioncontratacion></app-gestioncontratacion>
+    </section>
   </main>
 </div>
