@@ -7,12 +7,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { AdminService } from '../../../../core/services/admin.service';
-
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
 @Component({
   selector: 'app-cobros',
   standalone: true,
@@ -22,146 +19,183 @@ import autoTable from 'jspdf-autotable';
 })
 export class Cobros implements OnInit {
   @Output() dataChanged = new EventEmitter<void>();
-
-  todosLosComunerosFinanzas: any[] = [];
-  comuneroFiltroFinanzas = '';
   comuneroSeleccionadoFinanzas: any = null;
-
   obligacionesComunero: any[] = [];
-  pagosComunero: any[] = [];
   obligacionesSeleccionadasIds: number[] = [];
-
   valorRecibidoFinanzas: number | null = null;
-
   cargandoObligaciones = false;
   procesandoPago = false;
-  
   listaPeriodos: any[] = [];
-  periodoSeleccionadoFinanzas: any = null; // <-- PROPIEDAD AGREGADA AQUÍ
+  periodoSeleccionadoFinanzas: number | null = null;
+  anioFinancieroFiltro: number | null = null;
+  busquedaFinanciera = '';
+  tipoObligacionSeleccionado: 'MENSUALIDAD' | 'MULTA' = 'MENSUALIDAD';
+  tabFinancieroActivo: 'MENSUALIDAD' | 'MULTA' | 'ERROR' |'BIENVENIDA'= 'BIENVENIDA';
+  mensajeErrorFinanciero = 'Seleccione un año e ingrese una cédula de 10 dígitos.';
+  private consultaListado = 0;
 
-  // Permite descartar respuestas de una selección anterior.
-  private consultaObligaciones = 0;
-
-  constructor(
-    private adminService: AdminService,
-    private cdr: ChangeDetectorRef,
-  ) {}
+  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.cargarComunerosFinanzas();
-    this.cargarPeriodosObligaciones();
-  }
-
-  cargarComunerosFinanzas(): void {
-    this.adminService.getPersonas(1, 1000).subscribe({
-      next: (res: any) => {
-        this.todosLosComunerosFinanzas = res?.data ?? [];
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar comuneros', err);
-        alert('No se pudo cargar la lista de comuneros.');
-      },
-    });
-  }
-
-  cargarPeriodosObligaciones(): void {
     this.adminService.getPeriodosObligaciones().subscribe({
       next: (res: any) => {
-        this.listaPeriodos = res?.data ?? [];
+        this.listaPeriodos = this.extraerLista(res);
         this.cdr.detectChanges();
       },
-      error: (err: any) => {
-        console.error('Error al cargar periodos de obligaciones', err);
+      error: () => {
+        this.mostrarErrorFinanciero('No se pudieron cargar los años disponibles.');
+        this.cdr.detectChanges();
       },
     });
   }
 
-  get comunerosFiltradosFinanzas(): any[] {
-    const termino = this.comuneroFiltroFinanzas.trim().toLowerCase();
-
-    if (!termino) {
-      return this.todosLosComunerosFinanzas;
-    }
-
-    return this.todosLosComunerosFinanzas.filter((comunero) =>
-      [
-        comunero.nombres,
-        comunero.apellidos,
-        comunero.cedula,
-      ].some((valor) =>
-        String(valor ?? '').toLowerCase().includes(termino),
-      ),
-    );
+  private extraerLista(res: any): any[] {
+    const datos = res?.data ?? res;
+    return Array.isArray(datos) ? datos : [];
   }
 
-  // MODIFICAR ESTE MÉTODO PARA ENVIAR EL AÑO SELECCIONADO
-seleccionarComuneroFinanzas(comunero: any): void {
-    if (this.procesandoPago) return;
-
-    // VALIDACIÓN: Si no hay año seleccionado, no hace nada (el panel derecho muestra el aviso)
-    if (!this.periodoSeleccionadoFinanzas) {
-      return;
-    }
-
-    this.comuneroSeleccionadoFinanzas = comunero;
+  private limpiarConsulta(): void {
+    ++this.consultaListado;
+    this.cargandoObligaciones = false;
+    this.comuneroSeleccionadoFinanzas = null;
     this.obligacionesComunero = [];
-    this.pagosComunero = [];
     this.obligacionesSeleccionadasIds = [];
     this.valorRecibidoFinanzas = null;
+    this.periodoSeleccionadoFinanzas = null;
+  }
 
-    const consultaActual = ++this.consultaObligaciones;
+  private mostrarErrorFinanciero(mensaje: string): void {
+    this.limpiarConsulta();
+    this.mensajeErrorFinanciero = mensaje;
+    this.tabFinancieroActivo = 'BIENVENIDA';
+  }
 
-    if (!comunero) {
-      this.cargandoObligaciones = false;
+  private validarFiltros(): string {
+    const anio = Number(this.anioFinancieroFiltro);
+    if (!Number.isInteger(anio) || anio <= 0) return 'Seleccione un año para consultar las obligaciones.';
+    if (!/^\d{10}$/.test(this.busquedaFinanciera.trim())) return 'La cédula debe contener exactamente 10 dígitos.';
+    return '';
+  }
+
+  onCambioFiltros(): void {
+    if (this.procesandoPago) return;
+    this.limpiarConsulta();
+    const error = this.validarFiltros();
+    this.mensajeErrorFinanciero = error;
+    this.tabFinancieroActivo = error ? 'ERROR' : this.tipoObligacionSeleccionado;
+  }
+
+  cambiarTabFinanciero(tab: 'MENSUALIDAD' | 'MULTA'): void {
+    if (this.procesandoPago || this.cargandoObligaciones) return;
+    this.tipoObligacionSeleccionado = tab;
+    this.onCambioFiltros();
+  }
+
+  // Este método solo está conectado al botón Buscar.
+  cargarObligacionesSegunTab(): void {
+    if (this.procesandoPago || this.cargandoObligaciones) return;
+    const error = this.validarFiltros();
+    if (error) {
+      this.mostrarErrorFinanciero(error);
       return;
     }
-
+    const cedula = this.busquedaFinanciera.trim();
+    const anio = Number(this.anioFinancieroFiltro);
+    const tab = this.tipoObligacionSeleccionado;
+    this.limpiarConsulta();
+    const consulta = this.consultaListado;
+    this.periodoSeleccionadoFinanzas = anio;
+    this.tabFinancieroActivo = tab;
+    this.mensajeErrorFinanciero = '';
     this.cargandoObligaciones = true;
-
-    this.adminService.getObligaciones(comunero.id, this.periodoSeleccionadoFinanzas).subscribe({
+    const peticion = tab === 'MENSUALIDAD'
+      ? this.adminService.getObligacionesMensualidades(cedula, anio)
+      : this.adminService.getObligacionesMultas(cedula, anio);
+    peticion.subscribe({
       next: (res: any) => {
-        if (consultaActual !== this.consultaObligaciones) return;
-
-        const obligaciones: any[] = res?.data ?? [];
-
-        this.obligacionesComunero = obligaciones.filter(
-          (ob) => ob.estado === 'PENDIENTE',
-        );
-
-        this.pagosComunero = obligaciones.filter(
-          (ob) => ob.estado === 'PAGADA',
-        );
-
-        this.obligacionesSeleccionadasIds =
-          this.obligacionesComunero.map((ob) => ob.id);
-
+        if (consulta !== this.consultaListado) return;
         this.cargandoObligaciones = false;
+        if (res?.status && res.status !== 'OK') {
+          this.mostrarErrorFinanciero(res.message || 'No se pudieron consultar las obligaciones.');
+        } else {
+          const datos = this.extraerLista(res);
+          const persona = datos[0];
+          if (!persona) {
+            this.mostrarErrorFinanciero('No se encontraron obligaciones para esta cédula y año.');
+          } else {
+            this.comuneroSeleccionadoFinanzas = {
+              id: Number(persona.persona_id),
+              nombres: persona.comunero_nombre ?? '',
+              cedula: persona.cedula ?? cedula,
+            };
+            this.obligacionesComunero = datos.filter((ob: any) => ob.estado === 'PENDIENTE')
+              .map((ob: any) => ({ ...ob, id: Number(ob.id) }));
+            this.obligacionesSeleccionadasIds = this.obligacionesComunero.map((ob) => ob.id);
+          }
+        }
         this.cdr.detectChanges();
       },
       error: (err: any) => {
-        if (consultaActual !== this.consultaObligaciones) return;
-
-        this.cargandoObligaciones = false;
-        console.error('Error al consultar obligaciones', err);
+        if (consulta !== this.consultaListado) return;
+        this.mostrarErrorFinanciero(err.error?.message || err.error?.mensaje || 'No se pudieron consultar las obligaciones.');
         this.cdr.detectChanges();
       },
     });
   }
 
-  onCambioPeriodo(): void {
-    if (this.comuneroSeleccionadoFinanzas) {
-      this.seleccionarComuneroFinanzas(this.comuneroSeleccionadoFinanzas);
+get obligacionesPorMes(): {
+  etiqueta: string;
+  obligaciones: any[];
+  subtotal: number;
+}[] {
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const grupos = new Map<string, {
+    anio: number;
+    mes: number;
+    etiqueta: string;
+    obligaciones: any[];
+    subtotal: number;
+  }>();
+  for (const ob of this.obligacionesComunero) {
+    const anioNumero = Number(ob.periodo_anio);
+    const mesNumero = Number(ob.periodo_mes);
+    const anio = Number.isInteger(anioNumero) && anioNumero > 0 ? anioNumero : 0;
+    const mes = Number.isInteger(mesNumero) && mesNumero >= 1 && mesNumero <= 12 ? mesNumero : 0;
+    const clave = `${anio}-${mes}`;
+    if (!grupos.has(clave)) {
+      grupos.set(clave, {
+        anio,
+        mes,
+        etiqueta: `${mes ? meses[mes - 1] : 'Sin mes'}${anio ? ' ' + anio : ' · Sin año'}`,
+        obligaciones: [],
+        subtotal: 0,
+      });
     }
+    const grupo = grupos.get(clave)!;
+    grupo.obligaciones.push(ob);
+    const valor = Number(ob.valor ?? 0);
+    grupo.subtotal += Number.isFinite(valor) ? valor : 0;
   }
-
-  isObligacionSeleccionada(id: number): boolean {
+  return [...grupos.values()]
+    .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
+    .map((grupo) => ({
+      etiqueta: grupo.etiqueta,
+      obligaciones: grupo.obligaciones,
+      subtotal: Number(grupo.subtotal.toFixed(2)),
+    }));
+}
+get totalPendienteFinanzas(): number {
+  const total = this.obligacionesComunero.reduce((suma, ob) => {
+    const valor = Number(ob.valor ?? 0);
+    return suma + (Number.isFinite(valor) ? valor : 0);
+  }, 0);
+  return Number(total.toFixed(2));
+}  isObligacionSeleccionada(id: number): boolean {
     return this.obligacionesSeleccionadasIds.includes(id);
   }
-
   toggleObligacionSeleccionada(id: number): void {
     if (this.procesandoPago) return;
-
     if (this.isObligacionSeleccionada(id)) {
       this.obligacionesSeleccionadasIds =
         this.obligacionesSeleccionadasIds.filter(
@@ -174,35 +208,27 @@ seleccionarComuneroFinanzas(comunero: any): void {
       ];
     }
   }
-
   toggleSeleccionarTodasObligaciones(event: Event): void {
     if (this.procesandoPago) return;
-
     const seleccionado =
       (event.target as HTMLInputElement).checked;
-
     this.obligacionesSeleccionadasIds = seleccionado
       ? this.obligacionesComunero.map((ob) => ob.id)
       : [];
   }
-
   formatValor(valor: unknown): string {
     const numero = Number(valor ?? 0);
     return Number.isFinite(numero) ? numero.toFixed(2) : '0.00';
   }
-
   get totalAPagarFinanzas(): number {
     const total = this.obligacionesComunero
       .filter((ob) => this.isObligacionSeleccionada(ob.id))
       .reduce((suma, ob) => suma + Number(ob.valor ?? 0), 0);
-
     return Number(total.toFixed(2));
   }
-
   get cambioCalculado(): number {
     const recibido = this.valorRecibidoFinanzas;
     const total = this.totalAPagarFinanzas;
-
     if (
       recibido === null ||
       !Number.isFinite(recibido) ||
@@ -210,24 +236,19 @@ seleccionarComuneroFinanzas(comunero: any): void {
     ) {
       return 0;
     }
-
     return Number((recibido - total).toFixed(2));
   }
-
   cobrarObligacion(): void {
     if (this.procesandoPago || this.cargandoObligaciones) return;
-
     if (
       !this.comuneroSeleccionadoFinanzas ||
       this.obligacionesSeleccionadasIds.length === 0
     ) {
-      alert('Selecciona al menos una obligación para cobrar.');
+      this.mostrarErrorFinanciero('Selecciona al menos una obligación para cobrar.');
       return;
     }
-
     const total = this.totalAPagarFinanzas;
     const recibido = this.valorRecibidoFinanzas;
-
     if (
       !Number.isFinite(total) ||
       total <= 0 ||
@@ -235,14 +256,11 @@ seleccionarComuneroFinanzas(comunero: any): void {
       !Number.isFinite(recibido) ||
       recibido < total
     ) {
-      alert('Ingresa un valor recibido válido que cubra el total.');
+      this.mostrarErrorFinanciero('Ingresa un valor recibido válido que cubra el total.');
       return;
     }
-
-    // Captura los datos antes de iniciar la petición.
     const comunero = { ...this.comuneroSeleccionadoFinanzas };
     const ids = [...this.obligacionesSeleccionadasIds];
-
     const detalles = this.obligacionesComunero
       .filter((ob) => ids.includes(ob.id))
       .map((ob) => ({
@@ -255,20 +273,16 @@ seleccionarComuneroFinanzas(comunero: any): void {
           : 'N/A',
         valor: Number(ob.valor),
       }));
-
     const payload = {
       persona_id: comunero.id,
       metodo: 'EFECTIVO',
       obligacionesIds: ids,
       observaciones: 'Pago procesado desde panel administrativo.',
     };
-
     this.procesandoPago = true;
-
     this.adminService.registrarPago(payload).subscribe({
       next: (res: any) => {
         this.procesandoPago = false;
-
         const comprobante = {
           comprobanteNo: res.pagoId
             ? `REC-${String(res.pagoId).padStart(6, '0')}`
@@ -281,39 +295,35 @@ seleccionarComuneroFinanzas(comunero: any): void {
           valorRecibido: recibido,
           cambio: Number((recibido - total).toFixed(2)),
         };
-
-        this.seleccionarComuneroFinanzas(comunero);
+        this.obligacionesComunero = this.obligacionesComunero.filter((ob) => !ids.includes(ob.id));
+        this.obligacionesSeleccionadasIds = [];
+        this.valorRecibidoFinanzas = null;
         this.dataChanged.emit();
-
         try {
           this.generarPDFComprobante(comprobante);
         } catch (error) {
           console.error('Error al generar el comprobante', error);
-          alert(
+          this.mostrarErrorFinanciero(
             'El pago fue registrado, pero no se pudo generar el PDF. ' +
             'No vuelvas a registrar el pago.',
           );
         }
-
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.procesandoPago = false;
-        alert(err.error?.message || 'Error al procesar el pago.');
+        this.mostrarErrorFinanciero(err.error?.message || 'Error al procesar el pago.');
         this.cdr.detectChanges();
       },
     });
   }
-
   private generarPDFComprobante(comprobante: any): void {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a5',
     });
-
     const centro = doc.internal.pageSize.getWidth() / 2;
-
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.text(
@@ -322,7 +332,6 @@ seleccionarComuneroFinanzas(comunero: any): void {
       15,
       { align: 'center' },
     );
-
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.text(
@@ -331,7 +340,6 @@ seleccionarComuneroFinanzas(comunero: any): void {
       21,
       { align: 'center' },
     );
-
     doc.setFont('helvetica', 'bold');
     doc.text(
       `COMPROBANTE DE PAGO ${comprobante.comprobanteNo}`,
@@ -339,21 +347,16 @@ seleccionarComuneroFinanzas(comunero: any): void {
       28,
       { align: 'center' },
     );
-
     doc.line(15, 32, 133, 32);
-
     doc.setFont('helvetica', 'normal');
-
     const nombre = doc.splitTextToSize(
       `Comunero: ${comprobante.comuneroNombre}`,
       118,
     );
     doc.text(nombre, 15, 39);
-
     const siguienteY = 39 + nombre.length * 5;
     doc.text(`Cédula: ${comprobante.comuneroCedula}`, 15, siguienteY);
     doc.text(`Fecha: ${comprobante.fechaHora}`, 15, siguienteY + 6);
-
     autoTable(doc, {
       startY: siguienteY + 12,
       head: [['Concepto', 'Periodo', 'Valor']],
@@ -385,7 +388,6 @@ seleccionarComuneroFinanzas(comunero: any): void {
         2: { cellWidth: 23, halign: 'right' },
       },
     });
-
     doc.save(`${comprobante.comprobanteNo}.pdf`);
   }
 }

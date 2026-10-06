@@ -153,4 +153,19 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/financiero/periodosobligaciones`, { headers: this.getAuthHeaders() });
   }
 
+  // Sustituye estos métodos dentro de AdminService.
+// Conserva los imports HttpClient y Observable que ya utiliza tu servicio.
+getObligacionesMultas(cedula: string, anio: number): Observable<any> {
+  return this.http.get(`${this.baseUrl}/financiero/obligaciones/multas`, {
+    headers: this.getAuthHeaders(),
+    params: { cedula, anio: String(anio) },
+  });
+}
+
+getObligacionesMensualidades(cedula: string, anio: number): Observable<any> {
+  return this.http.get(`${this.baseUrl}/financiero/obligaciones/mensualidades`, {
+    headers: this.getAuthHeaders(),
+    params: { cedula, anio: String(anio) },
+  });
+}
 }

@@ -22,6 +22,9 @@
       <a class="nav-item" [class.nav-item--active]="tabActiva === 'COBROS'" (click)="cambiarTab('COBROS')">
         <i class="ri-hand-coin-line"></i> Cobros
       </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'GESTIONCONTRATACION'" (click)="cambiarTab('GESTIONCONTRATACION')">
+        <i class="ri-money-dollar-circle-line"></i> Gestion de Contratación
+      </a>
       <a class="nav-item" [class.nav-item--active]="tabActiva === 'FINANZAS'" (click)="cambiarTab('FINANZAS')">
         <i class="ri-money-dollar-circle-line"></i> Finanzas
       </a>
@@ -145,9 +148,14 @@
       <app-finanzas-admin></app-finanzas-admin>
     </section>
 
+    <!-- VISTA 5: COBROS -->
     <section *ngIf="tabActiva === 'COBROS'" class="tab-view">
       <app-cobros></app-cobros>
     </section>
 
+    <!-- VISTA 6: GESTIÓN CONTRATACIÓN -->
+    <section *ngIf="tabActiva === 'GESTIONCONTRATACION'" class="tab-view">
+      <app-gestioncontratacion></app-gestioncontratacion>
+    </section>
   </main>
 </div>
