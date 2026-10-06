@@ -162,7 +162,7 @@ export class AsistenciasAdminComponent implements OnInit {
           this.cdr.detectChanges();
         }
       },
-      error: () => { }
+      error: () => this.notify.error('No se pudo cargar el balance financiero.')
     });
   }
 
@@ -230,10 +230,10 @@ export class AsistenciasAdminComponent implements OnInit {
     this.adminService.getBalance().subscribe({
       next: (res: any) => {
         if (res && res.balance) {
-          this.kpis.recaudadoMes = Number(res.balance.totalIngresos) || this.kpis.recaudadoMes;
-          this.kpis.egresosMes = Number(res.balance.totalEgresos) || this.kpis.egresosMes;
-          this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || this.kpis.pendientesCobro;
-          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia) || this.kpis.balanceAlDia;
+          this.kpis.recaudadoMes = Number(res.balance.totalIngresos);
+          this.kpis.egresosMes = Number(res.balance.totalEgresos);
+          this.kpis.pendientesCobro = Number(res.balance.totalPendientes);
+          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia);
         }
         if (res && res.resumenMensual) {
           this.resumenMensual = res.resumenMensual;

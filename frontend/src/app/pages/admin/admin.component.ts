@@ -55,10 +55,10 @@ export class AdminComponent implements OnInit {
     this.adminService.getBalance().subscribe({
       next: (res) => {
         if (res && res.balance) {
-          this.kpis.recaudadoMes = Number(res.balance.totalIngresos) || this.kpis.recaudadoMes;
-          this.kpis.egresosMes = Number(res.balance.totalEgresos) || this.kpis.egresosMes;
-          this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || this.kpis.pendientesCobro;
-          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia) || this.kpis.balanceAlDia;
+          this.kpis.recaudadoMes = Number(res.balance.totalIngresos);
+          this.kpis.egresosMes = Number(res.balance.totalEgresos);
+          this.kpis.pendientesCobro = Number(res.balance.totalPendientes);
+          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia);
         }
         this.cdr.detectChanges();
       },

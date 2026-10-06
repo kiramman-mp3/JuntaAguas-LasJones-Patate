@@ -98,17 +98,17 @@ export class FinanzasAdminComponent implements OnInit {
     this.adminService.getBalance().subscribe({
       next: (res: any) => {
         if (res && res.balance) {
-          this.kpis.recaudadoMes   = Number(res.balance.totalIngresos)   || 0;
-          this.kpis.egresosMes     = Number(res.balance.totalEgresos)    || 0;
-          this.kpis.pendientesCobro = Number(res.balance.totalPendientes) || 0;
-          this.kpis.balanceAlDia   = Number(res.balance.balanceAlDia)    || 0;
+          this.kpis.recaudadoMes = Number(res.balance.totalIngresos);
+          this.kpis.egresosMes = Number(res.balance.totalEgresos);
+          this.kpis.pendientesCobro = Number(res.balance.totalPendientes);
+          this.kpis.balanceAlDia = Number(res.balance.balanceAlDia);
         }
         if (res && res.resumenMensual) {
           this.resumenMensual = res.resumenMensual;
         }
         this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => this.notify.error('No se pudo cargar el balance financiero.')
     });
   }
 

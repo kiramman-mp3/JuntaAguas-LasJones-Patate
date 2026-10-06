@@ -429,10 +429,13 @@ async function getBalanceReport(req, res, next) {
     const [pendientesRes] = await db.query(sqlPendientes);
     const [resumenMensual] = await db.query(sqlResumenMensual);
 
-    const totalIngresos = Number(ingresosRes[0].total_ingresos);
-    const totalEgresos = Number(egresosRes[0].total_egresos);
+    const ingresosDecimal = String(ingresosRes[0].total_ingresos);
+    const egresosDecimal = String(egresosRes[0].total_egresos);
+    const totalIngresos = Number(ingresosDecimal);
+    const totalEgresos = Number(egresosDecimal);
     const totalPendientes = Number(pendientesRes[0].total_pendientes);
-    const balanceAlDia = totalIngresos - totalEgresos;
+    const balanceEnCentavos = decimalACentavos(ingresosDecimal) - decimalACentavos(egresosDecimal);
+    const balanceAlDia = Number(balanceEnCentavos) / 100;
 
     return res.json({
       status: 'OK',
@@ -449,6 +452,16 @@ async function getBalanceReport(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+
+function decimalACentavos(amount) {
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(amount);
+  if (!match) {
+    throw new TypeError(`Monto decimal inválido recibido desde la base de datos: ${amount}`);
+  }
+
+  const minorUnits = BigInt(match[2]) * 100n + BigInt((match[3] || '').padEnd(2, '0'));
+  return match[1] === '-' ? -minorUnits : minorUnits;
 }
 
 /**
