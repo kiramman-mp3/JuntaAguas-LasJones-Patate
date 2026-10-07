@@ -9,7 +9,7 @@
  */
 const { hoy, inicioDelDiaUtc, finDelDiaUtc, ZONA_MYSQL } = require('../shared/dates');
 const { notFound } = require('../shared/errors');
-const { restarMontos } = require('../shared/money');
+const { aCentavos, aDolares, restarMontos } = require('../shared/money');
 
 const where = (condiciones) => (condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '');
 
@@ -219,7 +219,47 @@ async function balance(conexion, { desde, hasta }) {
   };
 }
 
+/** Suma ingresos y egresos de un nodo (mes, año o total) en centavos y devuelve dólares con su balance. */
+function totales(nodos) {
+  const ingresos = nodos.reduce((s, n) => s + aCentavos(n.ingresos), 0);
+  const egresos = nodos.reduce((s, n) => s + aCentavos(n.egresos), 0);
+  return { ingresos: aDolares(ingresos), egresos: aDolares(egresos), balance: aDolares(ingresos - egresos) };
+}
+
+/**
+ * Historial financiero anual: años → meses con ingresos (pagos vigentes, por mes de Ecuador),
+ * egresos y balance. Los totales y balances se calculan aquí, en centavos, para que el
+ * frontend solo los muestre. Años y meses van del más reciente al más antiguo.
+ */
+async function historialAnual(conexion) {
+  const [filas] = await conexion.query(
+    `SELECT mes, SUM(ingresos) AS ingresos, SUM(egresos) AS egresos,
+            SUM(es_pago) AS pagos, SUM(1 - es_pago) AS registrosEgreso
+     FROM (
+       SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m') AS mes, valor_total AS ingresos, 0 AS egresos, 1 AS es_pago
+       FROM pagos WHERE estado = 'VIGENTE'
+       UNION ALL
+       SELECT DATE_FORMAT(fecha, '%Y-%m'), 0, valor, 0 FROM egresos
+     ) t GROUP BY mes ORDER BY mes DESC`,
+    [ZONA_MYSQL]
+  );
+
+  const anios = new Map();
+  for (const f of filas) {
+    const anio = Number(f.mes.slice(0, 4));
+    if (!anios.has(anio)) anios.set(anio, []);
+    anios.get(anio).push({
+      mes: f.mes,
+      ...totales([f]),
+      pagos: Number(f.pagos),
+      egresosRegistrados: Number(f.registrosEgreso)
+    });
+  }
+  const resultado = [...anios].map(([anio, meses]) => ({ anio, ...totales(meses), meses }));
+  return { anios: resultado, total: totales(resultado) };
+}
+
 module.exports = {
   filtroFechaPago, listarConceptos, listarTarifas, listarObligaciones, obligacionesPorCedula, periodosObligaciones,
-  listarPagos, detallePago, listarEgresos, balance
+  listarPagos, detallePago, listarEgresos, balance, historialAnual
 };

@@ -113,9 +113,15 @@ router.post('/pagos/:id/anular', ...soloAdmin, financieroController.anularPago);
  *     tags: [Gestión Financiera]
  *     summary: Balance de ingresos, egresos y cartera pendiente
  *     security: [{ bearerAuth: [] }]
+ * /financiero/historial:
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Historial anual de ingresos, egresos y balance agrupado por mes
+ *     security: [{ bearerAuth: [] }]
  */
 router.get('/egresos', ...soloAdmin, financieroController.getEgresos);
 router.post('/egresos', ...soloAdmin, financieroController.createEgreso);
 router.get('/balance', ...soloAdmin, financieroController.getBalanceReport);
+router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
 
 module.exports = router;
