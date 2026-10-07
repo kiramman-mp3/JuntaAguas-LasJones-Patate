@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ConsultaService } from '../../core/services/consulta.service';
+import { ConsultaService, EventoPublico } from '../../core/services/consulta.service';
 import { ActasService } from '../../core/services/actas.service';
 import { hoyEnEcuador } from '../../core/utils/fechas';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
@@ -13,8 +13,8 @@ import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
   styleUrls: ['./eventos.component.scss']
 })
 export class EventosComponent implements OnInit {
-  asambleasFuturas: any[] = [];
-  mingasFuturas: any[] = [];
+  asambleasFuturas: EventoPublico[] = [];
+  mingasFuturas: EventoPublico[] = [];
   tabActivo: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
   cargandoActa: boolean = false;
 
@@ -26,8 +26,8 @@ export class EventosComponent implements OnInit {
         if (res.status === 'OK') {
           const hoy = hoyEnEcuador();
 
-          const eventos = res.data || res.eventos || [];
-          eventos.forEach((ev: any) => {
+          const eventos = res.data ?? [];
+          eventos.forEach((ev) => {
             // Solo mostrar próximos eventos. Las fechas AAAA-MM-DD se comparan como texto, sin zona horaria.
             if (String(ev.fecha).slice(0, 10) >= hoy && ev.estado !== 'CANCELADO') {
               if (ev.tipo === 'MINGA') {
@@ -51,7 +51,7 @@ export class EventosComponent implements OnInit {
     this.tabActivo = tab;
   }
 
-  descargarConvocatoria(ev: any) {
+  descargarConvocatoria(ev: EventoPublico) {
     if (ev.convocatoria_firmada_url) {
       this.consultaService.abrirDocumento(ev.convocatoria_firmada_url);
     } else {
