@@ -14,7 +14,7 @@
   i { color: var(--text-muted); font-size: 0.85rem; }
 }
 
-.view-swap { animation: ui-fade 0.25s ease both; }
+.view-swap { animation: ui-fade 0.25s ease backwards; }
 
 /* --- Calendario semanal: siete columnas; en pantallas angostas se desplaza dentro de su contenedor --- */
 .week {

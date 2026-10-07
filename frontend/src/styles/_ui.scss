@@ -97,7 +97,7 @@
   gap: 0.45rem;
   padding: 3rem 1.25rem;
   color: var(--text-muted);
-  animation: ui-fade 0.3s ease both;
+  animation: ui-fade 0.3s ease backwards;
 
   &__icon {
     display: grid;

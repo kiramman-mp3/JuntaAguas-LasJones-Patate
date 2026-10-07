@@ -279,7 +279,7 @@
 
   &__reason {
     grid-column: 1 / -1;
-    animation: ui-rise 0.25s var(--ease-out) both;
+    animation: ui-rise 0.25s var(--ease-out) backwards;
   }
 
   @media (max-width: 600px) {

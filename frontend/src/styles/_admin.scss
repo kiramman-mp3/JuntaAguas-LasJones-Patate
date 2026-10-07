@@ -367,7 +367,7 @@ label.icon-btn:focus-within,
 }
 
 /* Aparición de un panel que se despliega dentro del flujo. */
-.reveal-enter { animation: ui-rise 0.28s var(--ease-out) both; }
+.reveal-enter { animation: ui-rise 0.28s var(--ease-out) backwards; }
 
 .toolbar--flush { width: 100%; }
 
