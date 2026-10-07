@@ -80,10 +80,7 @@
           <span>Generar multa automática por inasistencia no justificada</span>
         </label>
         @if (formulario.genera_multa_ausencia) {
-          <div class="inline-field">
-            <label for="asamblea-multa">Valor de la multa ($)</label>
-            <input id="asamblea-multa" type="number" class="input input--sm" name="valor_multa" [(ngModel)]="formulario.valor_multa" step="0.50" min="0" />
-          </div>
+          <app-multa-configurada tipo="ASAMBLEA" />
         }
       </section>
     </div>

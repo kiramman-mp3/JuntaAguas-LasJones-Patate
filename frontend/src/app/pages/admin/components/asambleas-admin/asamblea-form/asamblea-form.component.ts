@@ -4,12 +4,13 @@ import { AdminService } from '../../../../../core/services/admin.service';
 import { DialogService } from '../../../../../core/services/dialog.service';
 import { hoyEnEcuador, sumarDias } from '../../../../../core/utils/fechas';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { MultaConfiguradaComponent } from '../../../../../shared/multa-configurada/multa-configurada.component';
 
 /** Formulario de convocatoria de una nueva asamblea con su orden del día inicial. */
 @Component({
   selector: 'app-asamblea-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ModalComponent, MultaConfiguradaComponent],
   templateUrl: './asamblea-form.component.html'
 })
 export class AsambleaFormComponent {
@@ -33,7 +34,6 @@ export class AsambleaFormComponent {
     hora_fin: '21:00',
     lugar: 'Casa Comunal Junta La Jones',
     genera_multa_ausencia: true,
-    valor_multa: 10.0,
     puntos_orden_dia: [
       '1. Constatación del cuórum reglamentario',
       '2. Lectura y aprobación del acta de la asamblea anterior',
@@ -75,8 +75,8 @@ export class AsambleaFormComponent {
       hora_inicio: f.hora_inicio,
       hora_fin: f.hora_fin || null,
       lugar: f.lugar.trim(),
+      // El valor de la multa lo toma el servidor de Ajustes → Tarifas.
       genera_multa_ausencia: f.genera_multa_ausencia,
-      valor_multa: f.genera_multa_ausencia ? Number(f.valor_multa) : 0,
       puntos_orden_dia: f.puntos_orden_dia.filter((p) => p.trim().length > 0)
     };
 

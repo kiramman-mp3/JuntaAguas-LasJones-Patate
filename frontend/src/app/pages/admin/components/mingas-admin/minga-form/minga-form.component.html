@@ -40,10 +40,7 @@
           <span>Aplica multa por ausencia</span>
         </label>
         @if (formulario.genera_multa_ausencia) {
-          <div class="inline-field">
-            <label for="minga-multa">Valor de la multa ($) *</label>
-            <input id="minga-multa" class="input input--sm" type="number" name="multa" [(ngModel)]="formulario.valor_multa" min="0.01" step="0.01" required />
-          </div>
+          <app-multa-configurada tipo="MINGA" />
         }
       </section>
       @if (error) {
