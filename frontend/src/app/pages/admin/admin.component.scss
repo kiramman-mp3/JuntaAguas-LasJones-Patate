@@ -228,7 +228,7 @@
 .main-content {
   min-width: 0;
   padding: clamp(1rem, 2.5vw, 2rem) clamp(1rem, 3vw, 2.5rem) 3rem;
-  animation: admin-fade 0.3s ease both;
+  animation: admin-fade 0.3s ease backwards;
 
   @media (max-width: 759px) {
     /* Deja espacio para la barra de pestañas inferior. */

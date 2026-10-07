@@ -13,8 +13,8 @@ html {
 }
 
 /* Ningún componente puede provocar desplazamiento horizontal de la página.
-   'clip' (a diferencia de 'hidden') no rompe position: sticky. */
-html,
+   'clip' (a diferencia de 'hidden') no rompe position: sticky. Va solo en <body>:
+   en <html> impediría que el bloqueo de scroll de los modales llegue al viewport. */
 body {
   overflow-x: clip;
 }

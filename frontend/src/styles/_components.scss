@@ -637,7 +637,7 @@ textarea.input {
 
 /* --- CONTENIDO DE PESTAÑAS --- */
 .tab-view {
-  animation: ui-fade 0.25s ease both;
+  animation: ui-fade 0.25s ease backwards;
 }
 
 /* --- ESQUELETOS DE CARGA --- */
