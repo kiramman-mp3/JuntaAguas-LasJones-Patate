@@ -1,0 +1,100 @@
+<div class="fin-split">
+  <section class="fin-panel" aria-labelledby="facturacion-titulo">
+    <div class="fin-panel__head">
+      <div>
+        <h3 class="fin-panel__title" id="facturacion-titulo"><i class="ri-calendar-2-line" aria-hidden="true"></i> Facturación mensual de agua</h3>
+        <p class="fin-panel__desc">
+          {{ totalesAnio().mesesEmitidos }} de 12 meses emitidos ·
+          emitido <strong class="money">${{ totalesAnio().emitido.toFixed(2) }}</strong> ·
+          cobrado <strong class="money">${{ totalesAnio().recaudado.toFixed(2) }}</strong>
+        </p>
+      </div>
+      <div class="field">
+        <label for="facturacion-anio" class="sr-only">Año</label>
+        <select id="facturacion-anio" class="input" [value]="anio()" (change)="cambiarAnio($any($event.target).value)">
+          @for (a of anios; track a) { <option [value]="a" [selected]="a === anio()">{{ a }}</option> }
+        </select>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert--danger" role="alert">
+        {{ error() }} <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+      </div>
+    } @else if (cargando() && !meses().length) {
+      <div class="month-grid" aria-live="polite">
+        @for (m of MESES; track m) { <div class="skeleton skeleton--card" style="height: 92px"></div> }
+      </div>
+    } @else {
+      <div class="month-grid">
+        @for (m of meses(); track m.mes) {
+          <button type="button" class="month-tile"
+            [class.month-tile--selected]="mesSeleccionado() === m.mes"
+            [disabled]="esFuturo(m.mes)"
+            [attr.aria-pressed]="mesSeleccionado() === m.mes"
+            (click)="seleccionar(m.mes)">
+            <span class="month-tile__name">{{ MESES[m.mes - 1] }}</span>
+            @if (m.emitidas) {
+              <span class="status-dot" [class.status-dot--ok]="!m.pendientes" [class.status-dot--pending]="m.pendientes">
+                {{ m.pendientes ? m.pendientes + ' por cobrar' : 'Cobrado' }}
+              </span>
+              <span class="month-tile__meta">{{ m.pagadas }}/{{ m.emitidas }} · ${{ m.total.toFixed(2) }}</span>
+              <span class="month-tile__bar" aria-hidden="true"><span [style.transform]="'scaleX(' + progreso(m) + ')'"></span></span>
+            } @else {
+              <span class="status-dot status-dot--none">{{ esFuturo(m.mes) ? 'Próximamente' : 'Sin emitir' }}</span>
+            }
+          </button>
+        }
+      </div>
+    }
+  </section>
+
+  <aside class="fin-panel" aria-labelledby="facturacion-mes-titulo" aria-live="polite">
+    @if (mesSeleccionado(); as mes) {
+      <h3 class="fin-panel__title" id="facturacion-mes-titulo">{{ MESES[mes - 1] }} {{ anio() }}</h3>
+
+      @if (detalle(); as d) {
+        @if (d.emitidas) {
+          <div class="summary" style="margin-top: 0.75rem">
+            <div class="summary__row"><span class="text-muted">Cuotas emitidas</span><strong class="money">{{ d.emitidas }}</strong></div>
+            <div class="summary__row"><span class="text-muted">Cobradas</span><strong class="money">{{ d.pagadas }} · ${{ d.recaudado.toFixed(2) }}</strong></div>
+            <div class="summary__row"><span class="text-muted">Pendientes</span><strong class="money">{{ d.pendientes }} · ${{ (d.total - d.recaudado).toFixed(2) }}</strong></div>
+            <hr class="summary__divider" />
+          </div>
+        }
+      }
+
+      @if (calculando()) {
+        <p class="text-muted" style="margin-top: 0.75rem">Calculando…</p>
+      } @else if (errorVistaPrevia()) {
+        <div class="alert alert--warning" role="alert" style="margin-top: 0.75rem">{{ errorVistaPrevia() }}</div>
+        <p class="field__hint" style="margin-top: 0.5rem">Si falta la tarifa, regístrela en la pestaña «Tarifas».</p>
+      } @else if (vistaPrevia(); as p) {
+        @if (p.generadas) {
+          <div class="preview-card" style="margin-top: 0.75rem">
+            <span class="text-muted">Se emitirán</span>
+            <span class="summary__total money">{{ p.generadas }} cuotas</span>
+            <span>de <strong class="money">${{ p.valor.toFixed(2) }}</strong> · total <strong class="money">${{ p.total.toFixed(2) }}</strong></span>
+            @if (p.existentes) { <span class="field__hint">{{ p.existentes }} comuneros ya tienen su cuota de este mes.</span> }
+            <span class="field__hint">Reciben cuota los {{ p.comuneros }} comuneros activos con al menos un lote. Vencen el último día del mes.</span>
+          </div>
+          <button type="button" class="btn btn--primary btn--lg btn--block pressable" style="margin-top: 1rem" [disabled]="emitiendo()" (click)="emitir()">
+            <i class="ri-send-plane-line" aria-hidden="true"></i> {{ emitiendo() ? 'Emitiendo…' : 'Emitir ' + p.generadas + ' cuotas' }}
+          </button>
+        } @else {
+          <div class="empty-state">
+            <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+            <strong>Mes al día</strong>
+            <p>Los {{ p.existentes }} comuneros con lote ya tienen su cuota de este mes.</p>
+          </div>
+        }
+      }
+    } @else {
+      <div class="empty-state">
+        <i class="ri-cursor-line" aria-hidden="true"></i>
+        <strong>Elija un mes</strong>
+        <p>Verá cuántas cuotas se emitirían antes de confirmar.</p>
+      </div>
+    }
+  </aside>
+</div>
