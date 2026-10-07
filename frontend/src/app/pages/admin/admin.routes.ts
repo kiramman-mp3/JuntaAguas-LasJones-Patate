@@ -13,8 +13,21 @@ export const ADMIN_ROUTES: Routes = [
   },
   {
     path: 'comuneros',
-    title: 'Comuneros y lotes · Junta La Jones',
-    loadComponent: () => import('./components/comuneros-admin/comuneros-admin.component').then(m => m.ComunerosAdminComponent)
+    loadComponent: () => import('./components/comuneros-admin/comuneros-admin.component').then(m => m.ComunerosAdminComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'padron' },
+      {
+        path: 'padron',
+        title: 'Padrón de comuneros · Junta La Jones',
+        loadComponent: () => import('./components/comuneros-admin/padron/padron-comuneros.component').then(m => m.PadronComunerosComponent)
+      },
+      {
+        path: 'lotes',
+        title: 'Catastro de lotes · Junta La Jones',
+        loadComponent: () => import('./components/comuneros-admin/catastro/catastro-lotes.component').then(m => m.CatastroLotesComponent)
+      },
+      { path: '**', redirectTo: 'padron' }
+    ]
   },
   {
     path: 'asistencias',

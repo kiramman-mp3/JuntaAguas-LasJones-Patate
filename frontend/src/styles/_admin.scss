@@ -370,3 +370,301 @@ label.icon-btn:focus-within,
 
 /* Aparición de un panel que se despliega dentro del flujo. */
 .reveal-enter { animation: ui-rise 0.28s var(--ease-out) both; }
+
+.toolbar--flush { width: 100%; }
+
+.is-refreshing {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+/* --- Tablas dentro de una superficie --- */
+.table-container--flush {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.table-custom {
+  .cell-actions {
+    text-align: right;
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  td { vertical-align: middle; }
+}
+
+/* En pantallas angostas cada fila se presenta como una tarjeta con etiquetas: sin scroll horizontal. */
+@media (max-width: 720px) {
+  .table-custom--stack {
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    tbody, tr, td { display: block; width: 100%; }
+
+    tr {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:last-child { border-bottom: 0; }
+    tr:hover td { background: transparent; }
+
+    td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.3rem 0;
+      border: 0;
+      text-align: right;
+      min-width: 0;
+      overflow-wrap: anywhere;
+
+      &::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: left;
+      }
+
+      &:first-child {
+        padding-bottom: 0.5rem;
+        text-align: left;
+
+        &::before { display: none; }
+      }
+
+      &.cell-actions {
+        justify-content: flex-end;
+        width: 100%;
+        padding-top: 0.5rem;
+
+        &::before { content: none; }
+      }
+    }
+
+    .text-truncate-2 { max-width: none; }
+  }
+}
+
+/* --- Persona con avatar de iniciales --- */
+.person {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong { font-weight: 600; }
+  }
+
+  &__meta {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-secondary-light));
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pill--button {
+  border: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease-out;
+
+  &:hover { filter: brightness(0.96); }
+  &:active { transform: scale(0.96); }
+}
+
+.pager {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* --- Fichas de detalle --- */
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-hover);
+
+  dt {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  dd { margin: 0.15rem 0 0; font-weight: 600; }
+
+  &__big {
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+  }
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  &__title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+
+    i { color: var(--color-primary); }
+  }
+}
+
+.tag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-full);
+    background: var(--bg-surface-hover);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+}
+
+.kv-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+
+  > div {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+  }
+
+  dt { color: var(--text-muted); flex-shrink: 0; }
+  dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+}
+
+.prewrap {
+  margin: 0;
+  white-space: pre-line;
+  font-size: 0.9rem;
+}
+
+/* --- Formulario de lote: campos y mapa lado a lado en escritorio --- */
+.lote-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+
+    .form-group { margin-bottom: 0; }
+  }
+
+  &__map {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    position: sticky;
+    top: 0;
+  }
+
+  @media (max-width: 760px) {
+    grid-template-columns: minmax(0, 1fr);
+
+    &__map { position: static; order: -1; }
+  }
+}
+
+.lote-map {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.coord-readout {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+
+  i { color: var(--color-primary); }
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+
+  .input { flex: 1; min-width: 0; }
+  .btn { flex-shrink: 0; }
+}
+
+.field-hint {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.field-error {
+  display: block;
+  color: var(--color-danger);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
