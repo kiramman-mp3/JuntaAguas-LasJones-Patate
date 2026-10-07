@@ -95,7 +95,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let item of deudasPendientes">
-                <td>{{ item.fechaEmision }}</td>
+                <td>{{ item.fechaEmision | fechaLocal }}</td>
                 <td><strong>{{ item.concepto }}</strong></td>
                 <td>{{ item.periodo }} ({{ item.anio }})</td>
                 <td><strong>{{ item.valor | currency:'USD' }}</strong></td>
@@ -125,7 +125,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let item of deudasPagadas">
-                <td>{{ item.fechaEmision }}</td>
+                <td>{{ item.fechaEmision | fechaLocal }}</td>
                 <td><strong>{{ item.concepto }}</strong></td>
                 <td>{{ item.periodo }} ({{ item.anio }})</td>
                 <td><strong>{{ item.valor | currency:'USD' }}</strong></td>

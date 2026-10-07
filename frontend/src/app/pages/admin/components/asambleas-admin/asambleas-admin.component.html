@@ -98,7 +98,7 @@
       <dl class="card-meta">
         <div class="meta-item">
           <dt><i class="ri-calendar-line"></i> Fecha y hora:</dt>
-          <dd><strong>{{ a.fecha }}</strong> · {{ a.hora_inicio }} hs</dd>
+          <dd><strong>{{ a.fecha | fechaLocal }}</strong> · {{ a.hora_inicio }} hs</dd>
         </div>
         <div class="meta-item">
           <dt><i class="ri-map-pin-line"></i> Lugar:</dt>
@@ -414,7 +414,7 @@
       <div>
         <h3 id="modalActasTitle"><i class="ri-book-read-fill"></i> Actas Resolutivas de la Asamblea</h3>
         <p class="modal-subtitle">
-          {{ asambleaSeleccionada.titulo }} · {{ asambleaSeleccionada.fecha }} ·
+          {{ asambleaSeleccionada.titulo }} · {{ asambleaSeleccionada.fecha | fechaLocal }} ·
           <strong>Soporte para múltiples actas por punto tratado o nuevo tema (F07)</strong>
         </p>
       </div>
@@ -570,7 +570,7 @@
       <div>
         <h3 id="modalAsistenciaTitle"><i class="ri-checkbox-circle-fill"></i> Registro Digital de Asistencia</h3>
         <p class="modal-subtitle">
-          {{ asambleaSeleccionada.titulo }} · Fecha: {{ asambleaSeleccionada.fecha }} · Multa: ${{ asambleaSeleccionada.valor_multa.toFixed(2) }}
+          {{ asambleaSeleccionada.titulo }} · Fecha: {{ asambleaSeleccionada.fecha | fechaLocal }} · Multa: ${{ asambleaSeleccionada.valor_multa.toFixed(2) }}
         </p>
       </div>
       <button class="btn-close" (click)="cerrarModalAsistencia()" aria-label="Cerrar modal"><i class="ri-close-line"></i></button>

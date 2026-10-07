@@ -7,11 +7,13 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { DialogService } from '../../../../core/services/dialog.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatearFecha, hoyEnEcuador } from '../../../../core/utils/fechas';
+import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
 
 @Component({
   selector: 'app-finanzas-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalA11yDirective],
+  imports: [CommonModule, FechaLocalPipe, FormsModule, ModalA11yDirective],
   templateUrl: './finanzas-admin.component.html',
   styleUrls: ['./finanzas-admin.component.scss']
 })
@@ -43,7 +45,7 @@ export class FinanzasAdminComponent implements OnInit {
   historialEgresos: any[] = [];
   historialEgresosFiltroBusqueda: string = '';
   nuevoEgreso: any = {
-    fecha: new Date().toISOString().substring(0, 10),
+    fecha: hoyEnEcuador(),
     concepto: '',
     proveedor: '',
     ruc: '',
@@ -120,7 +122,7 @@ export class FinanzasAdminComponent implements OnInit {
   abrirModalEgreso() {
     this.modalEgresoVisible = true;
     this.nuevoEgreso = {
-      fecha: new Date().toISOString().substring(0, 10),
+      fecha: hoyEnEcuador(),
       concepto: '',
       proveedor: '',
       ruc: '',
@@ -295,7 +297,7 @@ export class FinanzasAdminComponent implements OnInit {
     }
 
     const payload = {
-      fecha: this.nuevoEgreso.fecha || new Date().toISOString().substring(0, 10),
+      fecha: this.nuevoEgreso.fecha || hoyEnEcuador(),
       concepto: this.nuevoEgreso.concepto.trim(),
       descripcion: this.nuevoEgreso.descripcion ? this.nuevoEgreso.descripcion.trim() : null,
       numero_factura: this.nuevoEgreso.numero_factura ? this.nuevoEgreso.numero_factura.trim() : null,
@@ -342,7 +344,7 @@ export class FinanzasAdminComponent implements OnInit {
         // Armar datos del comprobante para imprimir
         this.comprobanteActual = {
           comprobanteNo: res.pagoId ? `REC-${String(res.pagoId).padStart(6, '0')}` : `REC-${Date.now()}`,
-          fechaHora: new Date().toLocaleString(),
+          fechaHora: formatearFecha(new Date(), 'conHora'),
           comuneroNombre: this.comuneroSeleccionadoFinanzas.nombres,
           comuneroCedula: this.comuneroSeleccionadoFinanzas.cedula,
           detalles: obligacionesACobrar.map(o => ({
@@ -398,7 +400,7 @@ export class FinanzasAdminComponent implements OnInit {
   reimprimirPDFDesdeHistorial(pago: any) {
     this.comprobanteActual = {
       comprobanteNo: `REC-${String(pago.id).padStart(6, '0')}`,
-      fechaHora: new Date(pago.fecha_pago).toLocaleString(),
+      fechaHora: formatearFecha(pago.fecha_pago, 'conHora'),
       comuneroNombre: pago.comunero_nombre,
       comuneroCedula: pago.cedula,
       detalles: [

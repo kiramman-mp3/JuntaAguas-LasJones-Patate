@@ -64,6 +64,7 @@ interface EventoAdmin {
   lista_asistencia_url?: string;
   lista_asistencia_firmada_url?: string;
 }
+import { aFecha, aFechaIso, esSoloFecha, hoyEnEcuador } from '../../../../core/utils/fechas';
 
 @Component({
   selector: 'app-asistencias-admin',
@@ -143,7 +144,7 @@ export class AsistenciasAdminComponent implements OnInit {
             tipo: e.tipo,
             titulo: e.titulo,
             subtipo_asamblea: e.subtipo_asamblea || 'ORDINARIA',
-            fecha: e.fecha ? (typeof e.fecha === 'string' ? e.fecha.split('T')[0] : new Date(e.fecha).toISOString().split('T')[0]) : '',
+            fecha: e.fecha ? (typeof e.fecha === 'string' ? e.fecha.split('T')[0] : aFechaIso(aFecha(e.fecha) ?? new Date())) : '',
             hora_inicio: e.hora_inicio,
             lugar: e.lugar,
             estado: e.estado,
@@ -234,48 +235,10 @@ export class AsistenciasAdminComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Las fechas de cargarEventos llegan como AAAA-MM-DD: se comparan con el día de hoy en Ecuador. */
   esEventoPasado(fechaStr: string): boolean {
-    if (!fechaStr) return false;
-
-    // Tratamos de parsear la fecha. En el backend se guarda como fecha o string ISO
-    // Si viene en formato local (DD/MM/YYYY) hay que tener cuidado, 
-    // pero this.eventos se mapeá como new Date(e.fecha).toLocaleDateString()
-    // Es más seguro comparar con el objeto date o convertir a un formato estándar.
-    // Como lo guardamos como local string, parsearlo puede ser complicado según el locale.
-    // Vamos a parsear desde las partes asumiendo un formato estándar local o ISO.
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    // Intentar convertir la cadena de fecha local a un objeto Date
-    // Si la cadena es "MM/DD/YYYY" o "DD/MM/YYYY" depende del locale del sistema.
-    // La forma más segura en TS sin librerías: 
-    const partes = fechaStr.split(/[\/\-]/);
-    let fechaObj: Date;
-    if (partes.length === 3 && partes[0].length === 4) {
-      // ISO YYYY-MM-DD (formato de cargarEventos): construir en hora local,
-      // new Date('YYYY-MM-DD') lo toma como UTC y en Ecuador resta un día
-      fechaObj = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
-    } else if (partes.length === 3) {
-      // heurística simple: si el último tiene 4 digitos es año
-      if (partes[2].length === 4) {
-        // Puede ser DD/MM/YYYY o MM/DD/YYYY. Asumiremos que Date.parse o new Date de MM/DD/YYYY funciona en general
-        // O mejor, construimos manualmente si sabemos que es DD/MM/YYYY (común en latam)
-        const dia = parseInt(partes[0], 10);
-        const mes = parseInt(partes[1], 10) - 1;
-        const anio = parseInt(partes[2], 10);
-        // Si dia > 12 definitivamente es DD/MM. Si es ambiguo, new Date(anio, mes, dia) usará el formato DD/MM
-        // De hecho, toLocaleDateString() comúnmente en español es D/M/YYYY
-        fechaObj = new Date(anio, mes, dia);
-      } else {
-        fechaObj = new Date(fechaStr);
-      }
-    } else {
-      fechaObj = new Date(fechaStr);
-    }
-
-    fechaObj.setHours(0, 0, 0, 0);
-    return fechaObj < hoy;
+    const fecha = String(fechaStr ?? '').slice(0, 10);
+    return esSoloFecha(fecha) && fecha < hoyEnEcuador();
   }
 
   verLoteEnMapa(u: UsuarioAdmin) {
@@ -343,7 +306,7 @@ export class AsistenciasAdminComponent implements OnInit {
       subtipo_asamblea: 'ORDINARIA',
       titulo: this.subTabEventos === 'ASAMBLEA' ? 'ASAMBLEA GENERAL DE USUARIOS' : 'MINGA COMUNITARIA',
       descripcion: '',
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: hoyEnEcuador(),
       hora_inicio: '18:00',
       lugar: 'Casa Comunal Junta La Jones',
       puntos_orden_dia: [

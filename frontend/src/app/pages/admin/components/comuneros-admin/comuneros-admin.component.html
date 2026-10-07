@@ -266,31 +266,44 @@
           <div *ngIf="formUsuario.crearCuenta" class="grid-2" style="margin-top: 1rem;">
             <div class="form-group">
               <label>Rol de Usuario</label>
-              <select class="input" name="rol_id" [(ngModel)]="formUsuario.rol_id">
-                <option [ngValue]="3">Comunero / Usuario Normal</option>
-                <option [ngValue]="2">Directiva</option>
-                <option [ngValue]="1">Administrador</option>
+              <select class="input" name="rol" [(ngModel)]="formUsuario.rol">
+                <option value="USUARIO">Comunero (consulta su propia información)</option>
+                <option value="ADMIN">Administrador (directiva, acceso total)</option>
               </select>
             </div>
             <div class="form-group" style="justify-content: center;">
               <span class="text-muted" style="font-size: 0.85rem; display: block; padding-top: 1.5rem;">
-                * La contraseña temporal será la Cédula del usuario.
+                * Se generará una contraseña temporal que verá una sola vez al guardar.
               </span>
             </div>
           </div>
         </div>
 
-        <!-- Contraseña y Cuenta (Solo en Edición) -->
+        <!-- Cuenta de acceso (Solo en Edición) -->
         <div *ngIf="modoEdicionUsuario"
           style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <div class="form-group">
-            <label style="color: var(--color-danger); font-weight: 600;"><i aria-hidden="true" class="ri-key-2-line"></i> Cambiar
-              Contraseña de Acceso (Opcional)</label>
-            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.5rem; margin-top: 0.25rem;">Si escribes
-              una contraseña aquí, se actualizará o creará la cuenta de acceso para este comunero.</p>
-            <input type="text" class="input" name="nuevaContrasena" [(ngModel)]="formUsuario.nuevaContrasena"
-              placeholder="Escribe la nueva contraseña si deseas cambiarla">
-          </div>
+          <label style="font-weight: 600;"><i aria-hidden="true" class="ri-key-2-line"></i> Cuenta de acceso web</label>
+          <ng-container *ngIf="cuentaUsuario; else sinCuenta">
+            <p class="text-muted" style="font-size: 0.85rem; margin: 0.25rem 0 0.75rem;">
+              {{ cuentaUsuario.rol === 'ADMIN' ? 'Administrador' : 'Comunero' }} · cuenta {{ cuentaUsuario.estado | lowercase }}.
+              Si olvidó su contraseña, genere una temporal: deberá cambiarla al ingresar.
+            </p>
+            <button type="button" class="btn btn--outline btn--sm" (click)="restablecerPasswordUsuario()" [disabled]="gestionandoCuenta">
+              <i aria-hidden="true" class="ri-lock-unlock-line"></i> Restablecer contraseña
+            </button>
+          </ng-container>
+          <ng-template #sinCuenta>
+            <p class="text-muted" style="font-size: 0.85rem; margin: 0.25rem 0 0.75rem;">Este comunero aún no tiene cuenta.</p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+              <select class="input" name="rolCuenta" [(ngModel)]="formUsuario.rol" style="max-width: 16rem;" aria-label="Rol de la cuenta">
+                <option value="USUARIO">Comunero</option>
+                <option value="ADMIN">Administrador</option>
+              </select>
+              <button type="button" class="btn btn--outline btn--sm" (click)="crearCuentaUsuario()" [disabled]="gestionandoCuenta">
+                <i aria-hidden="true" class="ri-user-add-line"></i> Crear cuenta
+              </button>
+            </div>
+          </ng-template>
         </div>
 
         <div class="modal__footer">
@@ -651,3 +664,5 @@
     </div>
   </div>
 </div>
+
+<app-password-temporal [credencial]="credencialTemporal" (cerrado)="cerrarCredencial()"></app-password-temporal>

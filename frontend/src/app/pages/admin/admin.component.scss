@@ -444,3 +444,30 @@ select.input {
     transform: translateY(0);
   }
 }
+
+.kpi-card__hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.proximos-eventos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  &__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+
+    &:last-child { border-bottom: none; }
+  }
+
+  &__titulo {
+    font-weight: 600;
+    flex: 1 1 14rem;
+  }
+}

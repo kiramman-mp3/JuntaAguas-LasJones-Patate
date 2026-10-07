@@ -40,11 +40,13 @@ interface Asistencia {
   estado: EstadoAsistencia;
   motivo_justificacion: string;
 }
+import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
 
 @Component({
   selector: 'app-mingas-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalA11yDirective],
+  imports: [CommonModule, FechaLocalPipe, FormsModule, ModalA11yDirective],
   templateUrl: './mingas-admin.component.html',
   styleUrls: ['./mingas-admin.component.scss'],
 })
@@ -91,8 +93,7 @@ export class MingasAdminComponent implements OnInit {
   }
 
   private fechaLocal() {
-    const hoy = new Date();
-    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    return hoyEnEcuador();
   }
 
   private nuevoFormulario() {

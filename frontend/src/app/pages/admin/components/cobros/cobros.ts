@@ -10,6 +10,8 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatearFecha } from '../../../../core/utils/fechas';
+
 @Component({
   selector: 'app-cobros',
   standalone: true,
@@ -287,7 +289,7 @@ get totalPendienteFinanzas(): number {
           comprobanteNo: res.pagoId
             ? `REC-${String(res.pagoId).padStart(6, '0')}`
             : `REC-${Date.now()}`,
-          fechaHora: new Date().toLocaleString('es-EC'),
+          fechaHora: formatearFecha(new Date(), 'conHora'),
           comuneroNombre: String(comunero.nombres ?? ''),
           comuneroCedula: String(comunero.cedula ?? ''),
           detalles,

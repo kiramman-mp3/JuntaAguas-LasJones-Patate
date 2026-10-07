@@ -8,10 +8,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FechaLocalPipe, FormsModule],
   selector: 'app-gestioncontratacion',
   styleUrl: './gestioncontratacion.scss',
   templateUrl: './gestioncontratacion.html',
@@ -39,6 +42,7 @@ export class Gestioncontratacion implements OnInit {
   constructor(
     private adminService: AdminService,
     private cdr: ChangeDetectorRef,
+    private notify: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -47,12 +51,7 @@ export class Gestioncontratacion implements OnInit {
 
   // Fecha local para el input de tipo date.
   private fechaActual(): string {
-    const fecha = new Date();
-    const anio = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const dia = String(fecha.getDate()).padStart(2, '0');
-
-    return `${anio}-${mes}-${dia}`;
+    return hoyEnEcuador();
   }
 
   private crearNuevoEgreso() {
@@ -101,10 +100,7 @@ export class Gestioncontratacion implements OnInit {
       },
       error: (err: any) => {
         console.error('Error al consultar egresos:', err);
-        alert(
-          err?.error?.message ||
-            'Error al consultar el historial de egresos.',
-        );
+        this.notify.error(err?.error?.message || 'Error al consultar el historial de egresos.');
         this.cdr.markForCheck();
       },
     });
@@ -145,17 +141,17 @@ guardarEgreso(): void {
   const valor = Number(this.nuevoEgreso.valor);
 
   if (!this.nuevoEgreso.fecha) {
-    alert('Por favor selecciona la fecha del egreso.');
+    this.notify.warning('Por favor selecciona la fecha del egreso.');
     return;
   }
 
   if (!concepto) {
-    alert('Por favor ingresa el concepto o motivo del egreso.');
+    this.notify.warning('Por favor ingresa el concepto o motivo del egreso.');
     return;
   }
 
   if (!Number.isFinite(valor) || valor <= 0) {
-    alert('Por favor ingresa un monto válido mayor a cero.');
+    this.notify.warning('Por favor ingresa un monto válido mayor a cero.');
     return;
   }
 
@@ -178,16 +174,13 @@ guardarEgreso(): void {
       this.dataChanged.emit();
       this.cdr.markForCheck();
 
-      alert(res?.message || 'Egreso registrado exitosamente.');
+      this.notify.success(res?.message || 'Egreso registrado exitosamente.');
     },
     error: (err: any) => {
       this.guardandoEgreso = false;
       this.cdr.markForCheck();
 
-      alert(
-        err?.error?.message ||
-        'Error al registrar el egreso.'
-      );
+      this.notify.error(err?.error?.message || 'Error al registrar el egreso.');
     },
   });
 }

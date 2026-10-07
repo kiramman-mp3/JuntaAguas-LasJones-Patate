@@ -12,6 +12,12 @@ export const authGuard: CanActivateFn = (route, state) => {
     return false;
   }
 
+  // Con una contraseña temporal el servidor solo acepta el cambio de contraseña.
+  if (authService.debeCambiarPassword()) {
+    router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+    return false;
+  }
+
   // Verificar si la ruta requiere roles específicos
   const requiredRoles = route.data['roles'] as Array<string>;
   if (requiredRoles && requiredRoles.length > 0) {

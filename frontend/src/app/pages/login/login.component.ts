@@ -1,8 +1,10 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ROLES } from '../../core/auth/session';
+import { REQUISITOS_PASSWORD, problemaConPassword } from '../../core/auth/password-policy';
 
 @Component({
   selector: 'app-login',
@@ -11,7 +13,7 @@ import { AuthService } from '../../core/services/auth.service';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   usuario: string = '';
   password: string = '';
   mostrarPassword: boolean = false;
@@ -24,9 +26,21 @@ export class LoginComponent {
   requiereCambioPassword: boolean = false;
   nuevaPassword1: string = '';
   nuevaPassword2: string = '';
+  /** Contraseña temporal; se pide si la sesión se retomó sin pasar por el formulario de ingreso. */
+  passwordActual: string = '';
   exitoMensaje: string = '';
+  readonly requisitosPassword = REQUISITOS_PASSWORD;
 
   constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    if (!this.authService.isLoggedIn()) return;
+    if (this.authService.debeCambiarPassword()) {
+      this.requiereCambioPassword = true;
+    } else {
+      this.redirigirPorRol(this.authService.getUser()?.rol ?? ROLES.USUARIO);
+    }
+  }
 
   iniciarSesion() {
     if (!this.usuario || !this.password) {
@@ -44,6 +58,7 @@ export class LoginComponent {
         if (res.status === 'OK') {
           if (res.user.debeCambiarPassword) {
              this.requiereCambioPassword = true;
+             this.passwordActual = this.password;
           } else {
              this.redirigirPorRol(res.user.rol);
           }
@@ -66,7 +81,7 @@ export class LoginComponent {
       this.router.navigateByUrl(returnUrl);
       return;
     }
-    if (rol === 'ADMIN' || rol === 'SECRETARIO') {
+    if (rol === ROLES.ADMIN) {
       this.router.navigate(['/admin']);
     } else {
       this.router.navigate(['/mi-cuenta']);
@@ -74,8 +89,11 @@ export class LoginComponent {
   }
 
   cambiarPassword() {
-    if (this.nuevaPassword1.length < 6) {
-       this.errorMensaje = 'La contraseña debe tener al menos 6 caracteres.';
+    const problema = !this.passwordActual
+      ? 'Ingrese la contraseña temporal que le entregaron.'
+      : problemaConPassword(this.nuevaPassword1, { cedula: this.authService.getUser()?.cedula, actual: this.passwordActual });
+    if (problema) {
+       this.errorMensaje = problema;
        return;
     }
     if (this.nuevaPassword1 !== this.nuevaPassword2) {
@@ -86,15 +104,14 @@ export class LoginComponent {
     this.cargando = true;
     this.errorMensaje = '';
 
-    this.authService.changePassword(this.password, this.nuevaPassword1).subscribe({
-      next: () => {
+    // El servidor devuelve un token nuevo con acceso completo; AuthService lo guarda.
+    this.authService.changePassword(this.passwordActual, this.nuevaPassword1).subscribe({
+      next: (res) => {
          this.cargando = false;
          this.exitoMensaje = 'Contraseña actualizada. Redirigiendo...';
-         const user = this.authService.getUser();
-         setTimeout(() => {
-           this.redirigirPorRol(user.rol);
-         }, 1500);
+         this.passwordActual = this.password = this.nuevaPassword1 = this.nuevaPassword2 = '';
          this.cdr.detectChanges();
+         setTimeout(() => this.redirigirPorRol(res.user.rol), 1200);
       },
       error: (err) => {
          this.cargando = false;
@@ -102,6 +119,14 @@ export class LoginComponent {
          this.cdr.detectChanges();
       }
     });
+  }
+
+  /** Abandona el cambio de contraseña y vuelve al formulario de ingreso. */
+  cancelarCambioPassword() {
+    this.authService.logout();
+    this.requiereCambioPassword = false;
+    this.password = this.passwordActual = this.nuevaPassword1 = this.nuevaPassword2 = '';
+    this.errorMensaje = '';
   }
 
   togglePassword() {

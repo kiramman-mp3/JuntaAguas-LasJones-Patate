@@ -2,11 +2,13 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConsultaService } from '../../core/services/consulta.service';
 import { ActasService } from '../../core/services/actas.service';
+import { hoyEnEcuador } from '../../core/utils/fechas';
+import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 
 @Component({
   selector: 'app-eventos',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FechaLocalPipe],
   templateUrl: './eventos.component.html',
   styleUrls: ['./eventos.component.scss']
 })
@@ -22,16 +24,12 @@ export class EventosComponent implements OnInit {
     this.consultaService.getEventosPublicos().subscribe({
       next: (res) => {
         if (res.status === 'OK') {
-          const hoy = new Date();
-          hoy.setHours(0, 0, 0, 0);
+          const hoy = hoyEnEcuador();
 
           const eventos = res.data || res.eventos || [];
           eventos.forEach((ev: any) => {
-            const fechaEv = new Date(ev.fecha);
-            fechaEv.setHours(0, 0, 0, 0);
-
-            // Solo mostrar próximos eventos
-            if (fechaEv >= hoy && ev.estado !== 'CANCELADO') {
+            // Solo mostrar próximos eventos. Las fechas AAAA-MM-DD se comparan como texto, sin zona horaria.
+            if (String(ev.fecha).slice(0, 10) >= hoy && ev.estado !== 'CANCELADO') {
               if (ev.tipo === 'MINGA') {
                 this.mingasFuturas.push(ev);
               } else {

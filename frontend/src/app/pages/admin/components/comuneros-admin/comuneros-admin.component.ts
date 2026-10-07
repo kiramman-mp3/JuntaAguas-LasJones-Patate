@@ -5,13 +5,15 @@ import { AdminService } from '../../../../core/services/admin.service';
 import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { DialogService } from '../../../../core/services/dialog.service';
+import { ROLES, Rol } from '../../../../core/auth/session';
+import { CredencialTemporal, PasswordTemporalComponent } from '../../../../shared/password-temporal/password-temporal.component';
 import * as L from 'leaflet';
 
 
 @Component({
   selector: 'app-comuneros-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalA11yDirective],
+  imports: [CommonModule, FormsModule, ModalA11yDirective, PasswordTemporalComponent],
   templateUrl: './comuneros-admin.component.html',
   styleUrls: []
 })
@@ -58,6 +60,11 @@ export class ComunerosAdminComponent implements OnInit {
   // Formulario de Comunero (Crear/Editar)
   modalUsuarioVisible: boolean = false;
   modoEdicionUsuario: boolean = false;
+  /** Cuenta de acceso del comunero en edición (null si no tiene). */
+  cuentaUsuario: { estado: string; rol: Rol } | null = null;
+  gestionandoCuenta = false;
+  /** Contraseña temporal recién generada, mostrada una sola vez. */
+  credencialTemporal: CredencialTemporal | null = null;
 
   // Modal Lotes del Comunero
   modalLotesComuneroVisible: boolean = false;
@@ -76,8 +83,7 @@ export class ComunerosAdminComponent implements OnInit {
     fecha_nacimiento: '',
     estado: 'ACTIVO',
     crearCuenta: false,
-    rol_id: 2, // 2 = USUARIO por defecto (asumiendo que 1 es ADMIN)
-    nuevaContrasena: ''
+    rol: ROLES.USUARIO as Rol
   };
 
   // LOTES
@@ -193,14 +199,14 @@ export class ComunerosAdminComponent implements OnInit {
       fecha_nacimiento: '',
       estado: 'ACTIVO',
       crearCuenta: true,
-      rol_id: 2, // 2 = USUARIO (Comunero)
-      nuevaContrasena: ''
+      rol: ROLES.USUARIO
     };
     this.modalUsuarioVisible = true;
   }
 
   abrirModalEditarUsuario(u: any) {
     this.modoEdicionUsuario = true;
+    this.cuentaUsuario = u.cuenta_estado ? { estado: u.cuenta_estado, rol: u.rol } : null;
     this.formUsuario = {
       id: u.id,
       nombres: u.nombres || '',
@@ -213,8 +219,7 @@ export class ComunerosAdminComponent implements OnInit {
       fecha_nacimiento: u.fecha_nacimiento,
       estado: u.estado,
       crearCuenta: false,
-      rol_id: 2,
-      nuevaContrasena: ''
+      rol: ROLES.USUARIO
     };
     this.modalUsuarioVisible = true;
   }
@@ -242,12 +247,69 @@ export class ComunerosAdminComponent implements OnInit {
       this.adminService.createPersona(this.formUsuario).subscribe({
         next: (res) => {
           this.notify.success('Comunero registrado exitosamente.');
+          if (res?.passwordTemporal) this.mostrarCredencial(res.passwordTemporal);
           this.cerrarModalUsuario();
           this.cargarUsuarios();
         },
         error: (err) => this.notify.error(err.error?.message || 'Error al registrar comunero.')
       });
     }
+  }
+
+  /** Crea la cuenta de acceso del comunero en edición. */
+  crearCuentaUsuario() {
+    if (!this.formUsuario.id || this.gestionandoCuenta) return;
+    this.gestionandoCuenta = true;
+    this.adminService.crearCuenta(this.formUsuario.id, this.formUsuario.rol).subscribe({
+      next: (res) => {
+        this.gestionandoCuenta = false;
+        this.cuentaUsuario = { estado: 'ACTIVA', rol: this.formUsuario.rol };
+        this.mostrarCredencial(res.passwordTemporal);
+        this.cargarUsuarios();
+      },
+      error: (err) => {
+        this.gestionandoCuenta = false;
+        this.notify.error(err.error?.message || 'No se pudo crear la cuenta.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /** Genera una contraseña temporal nueva para el comunero en edición. */
+  async restablecerPasswordUsuario() {
+    if (!this.formUsuario.id || this.gestionandoCuenta) return;
+    const confirmado = await this.dialog.confirmar({
+      tipo: 'WARNING',
+      titulo: 'Restablecer contraseña',
+      mensaje: `Se generará una contraseña temporal para ${this.formUsuario.nombres} ${this.formUsuario.apellidos} y su contraseña actual dejará de funcionar.`,
+      textoConfirmar: 'Restablecer'
+    });
+    if (!confirmado) return;
+    this.gestionandoCuenta = true;
+    this.adminService.restablecerPassword(this.formUsuario.id).subscribe({
+      next: (res) => {
+        this.gestionandoCuenta = false;
+        this.mostrarCredencial(res.passwordTemporal);
+      },
+      error: (err) => {
+        this.gestionandoCuenta = false;
+        this.notify.error(err.error?.message || 'No se pudo restablecer la contraseña.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private mostrarCredencial(password: string) {
+    this.credencialTemporal = {
+      nombre: `${this.formUsuario.nombres} ${this.formUsuario.apellidos}`.trim(),
+      cedula: this.formUsuario.cedula,
+      password
+    };
+    this.cdr.detectChanges();
+  }
+
+  cerrarCredencial() {
+    this.credencialTemporal = null;
   }
 
   // ============== LOTES ==============

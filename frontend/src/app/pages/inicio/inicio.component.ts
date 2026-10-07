@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FechaLocalPipe, RouterLink],
   templateUrl: './inicio.component.html',
   styleUrls: ['./inicio.component.scss']
 })
