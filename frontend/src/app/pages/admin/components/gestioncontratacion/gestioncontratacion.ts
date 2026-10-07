@@ -8,6 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   standalone: true,
@@ -39,6 +40,7 @@ export class Gestioncontratacion implements OnInit {
   constructor(
     private adminService: AdminService,
     private cdr: ChangeDetectorRef,
+    private notify: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -101,7 +103,7 @@ export class Gestioncontratacion implements OnInit {
       },
       error: (err: any) => {
         console.error('Error al consultar egresos:', err);
-        alert(
+        this.notify.error(
           err?.error?.message ||
             'Error al consultar el historial de egresos.',
         );
@@ -145,17 +147,17 @@ guardarEgreso(): void {
   const valor = Number(this.nuevoEgreso.valor);
 
   if (!this.nuevoEgreso.fecha) {
-    alert('Por favor selecciona la fecha del egreso.');
+    this.notify.warning('Por favor selecciona la fecha del egreso.');
     return;
   }
 
   if (!concepto) {
-    alert('Por favor ingresa el concepto o motivo del egreso.');
+    this.notify.warning('Por favor ingresa el concepto o motivo del egreso.');
     return;
   }
 
   if (!Number.isFinite(valor) || valor <= 0) {
-    alert('Por favor ingresa un monto válido mayor a cero.');
+    this.notify.warning('Por favor ingresa un monto válido mayor a cero.');
     return;
   }
 
@@ -178,13 +180,13 @@ guardarEgreso(): void {
       this.dataChanged.emit();
       this.cdr.markForCheck();
 
-      alert(res?.message || 'Egreso registrado exitosamente.');
+      this.notify.success(res?.message || 'Egreso registrado exitosamente.');
     },
     error: (err: any) => {
       this.guardandoEgreso = false;
       this.cdr.markForCheck();
 
-      alert(
+      this.notify.error(
         err?.error?.message ||
         'Error al registrar el egreso.'
       );
