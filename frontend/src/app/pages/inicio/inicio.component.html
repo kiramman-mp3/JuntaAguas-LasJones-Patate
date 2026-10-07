@@ -95,15 +95,15 @@
           <i aria-hidden="true" class="ri-drop-line"></i>
         </div>
         <h3>{{ s.nombre }}</h3>
-        <p class="caption">Abastecimiento: {{ s.canal }}</p>
+        <p class="caption" *ngIf="s.descripcion">{{ s.descripcion }}</p>
         <div class="sector-card__info">
           <div>
             <small>Lotes Registrados</small>
             <strong>{{ s.lotesCount }} lotes</strong>
           </div>
           <div>
-            <small>Caudal Asignado</small>
-            <strong>{{ s.caudal }}</strong>
+            <small>Superficie regada</small>
+            <strong>{{ s.superficieHa | number: '1.1-1' }} ha</strong>
           </div>
         </div>
       </div>
