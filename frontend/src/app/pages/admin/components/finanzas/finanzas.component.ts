@@ -11,33 +11,15 @@ import { EgresosComponent } from './egresos/egresos.component';
 import { FacturacionMensualComponent } from './facturacion-mensual/facturacion-mensual.component';
 import { TarifasComponent } from './tarifas/tarifas.component';
 import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
+import { GRUPOS_FINANZAS, GrupoFinanzas, SeccionFinanzas } from './grupos-finanzas';
 
-export type SeccionFinanzas = 'cobrar' | 'pagos' | 'egresos' | 'historial' | 'facturacion' | 'tarifas';
-
-interface Seccion {
-  id: SeccionFinanzas;
-  etiqueta: string;
-  icono: string;
-}
-
-export interface GrupoSecciones {
-  id: 'cobros' | 'ajustes' | 'historial';
-  etiqueta: string;
-  secciones: Seccion[];
-}
+export type { GrupoFinanzas, GrupoSecciones, SeccionFinanzas } from './grupos-finanzas';
 
 interface Indicadores {
   mes: Balance;
   historico: Balance;
 }
 
-/**
- * Módulo financiero en tres grupos:
- * Cobros y pagos: cobro en caja y egresos de la Junta.
- * Ajustes: tarifas por concepto (agua, multas…) y facturación mensual de las cuotas de agua.
- * Historial: recibos de cobro e ingresos y egresos por año.
- * Cada sección tiene su URL (/admin/finanzas/egresos); `?nuevo=egreso` abre el formulario de egreso.
- */
 @Component({
   selector: 'app-finanzas',
   standalone: true,
@@ -48,49 +30,24 @@ export class FinanzasComponent {
   private finanzas = inject(FinanzasService);
   private router = inject(Router);
 
+  /** Dato de la ruta: qué apartado del menú se está mostrando. */
+  readonly grupo = input<GrupoFinanzas | undefined>();
   /** Parámetro de ruta :seccion (texto libre de la URL; se valida en `seccionActual`). */
   readonly seccion = input<string | undefined>();
   /** Parámetro de consulta ?nuevo=egreso (atajo del dashboard). */
   readonly nuevo = input<string | undefined>();
 
-  /**
-   * Tres áreas independientes: Cobros y pagos (el movimiento de caja del día),
-   * Ajustes (tarifas y emisión mensual de cuotas de agua) e Historial (recibos e ingresos/egresos anuales).
-   * Los id de sección son las URL y no cambian aunque cambie el grupo.
-   */
-  readonly grupos: GrupoSecciones[] = [
-    { id: 'cobros', etiqueta: 'Cobros y pagos', secciones: [
-      { id: 'cobrar', etiqueta: 'Cobrar', icono: 'ri-hand-coin-line' },
-      { id: 'egresos', etiqueta: 'Egresos', icono: 'ri-shopping-bag-3-line' }
-    ] },
-    { id: 'ajustes', etiqueta: 'Ajustes', secciones: [
-      { id: 'tarifas', etiqueta: 'Tarifas', icono: 'ri-price-tag-3-line' },
-      { id: 'facturacion', etiqueta: 'Facturación', icono: 'ri-calendar-2-line' }
-    ] },
-    { id: 'historial', etiqueta: 'Historial', secciones: [
-      { id: 'pagos', etiqueta: 'Recibos', icono: 'ri-file-list-3-line' },
-      { id: 'historial', etiqueta: 'Ingresos y egresos', icono: 'ri-git-branch-line' }
-    ] }
-  ];
-  readonly secciones = this.grupos.flatMap((g) => g.secciones);
+  readonly grupos = GRUPOS_FINANZAS;
 
-  /** Una sección desconocida en la URL muestra el cobro. */
-  readonly seccionActual = computed<SeccionFinanzas>(() =>
-    this.secciones.find((s) => s.id === this.seccion())?.id ?? 'cobrar');
+  readonly grupoActual = computed(() => this.grupos.find((g) => g.id === this.grupo()) ?? this.grupos[0]);
+
+  /** Una sección desconocida (o de otro apartado) muestra la primera del apartado. */
+  readonly seccionActual = computed<SeccionFinanzas>(() => {
+    const secciones = this.grupoActual().secciones;
+    return secciones.find((s) => s.id === this.seccion())?.id ?? secciones[0].id;
+  });
+  readonly indiceActual = computed(() => this.grupoActual().secciones.findIndex((s) => s.id === this.seccionActual()));
   readonly abrirEgreso = computed(() => this.seccionActual() === 'egresos' && this.nuevo() === 'egreso');
-
-  readonly grupoActual = computed(() => this.grupos.find((g) => g.secciones.some((s) => s.id === this.seccionActual()))!);
-
-  /** Posición de la sección activa dentro de su grupo (-1 si el grupo no está activo). */
-  indiceEn(grupo: GrupoSecciones): number {
-    return grupo.secciones.findIndex((s) => s.id === this.seccionActual());
-  }
-
-  /** Cada grupo es un tablist con una sola parada de tabulación: la activa o, si no la hay, la primera. */
-  tabEnfocable(grupo: GrupoSecciones, id: SeccionFinanzas): boolean {
-    const indice = this.indiceEn(grupo);
-    return indice >= 0 ? grupo.secciones[indice].id === id : grupo.secciones[0].id === id;
-  }
 
   readonly indicadores = signal<Indicadores | null>(null);
   readonly errorIndicadores = signal(false);
@@ -100,17 +57,16 @@ export class FinanzasComponent {
   }
 
   cambiarSeccion(id: SeccionFinanzas): void {
-    this.router.navigate(['/admin/finanzas', id]);
+    this.router.navigate(['/admin', this.grupoActual().id, id]);
   }
 
-  /** Flechas izquierda/derecha entre los segmentos de un grupo, como un grupo de pestañas. */
-  onTeclaSegmento(evento: KeyboardEvent, grupo: GrupoSecciones): void {
+  /** Flechas izquierda/derecha entre las secciones del apartado, como un grupo de pestañas. */
+  onTeclaSegmento(evento: KeyboardEvent): void {
     if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return;
     evento.preventDefault();
+    const secciones = this.grupoActual().secciones;
     const paso = evento.key === 'ArrowRight' ? 1 : -1;
-    const n = grupo.secciones.length;
-    const actual = Math.max(grupo.secciones.findIndex((s) => s.id === (evento.target as HTMLElement).id.replace('fin-tab-', '')), 0);
-    const siguiente = grupo.secciones[(actual + paso + n) % n];
+    const siguiente = secciones[(this.indiceActual() + paso + secciones.length) % secciones.length];
     this.cambiarSeccion(siguiente.id);
     document.getElementById(`fin-tab-${siguiente.id}`)?.focus();
   }

@@ -51,12 +51,12 @@
   <section aria-labelledby="acciones-titulo">
     <h3 id="acciones-titulo" class="section-head__title section-gap">Acciones rápidas</h3>
     <div class="quick-grid">
-      <a class="quick-tile" routerLink="/admin/finanzas/cobrar">
+      <a class="quick-tile" routerLink="/admin/cobros/cobrar">
         <span class="quick-tile__icon" aria-hidden="true"><i class="ri-hand-coin-line"></i></span>
         <span class="quick-tile__text"><strong>Registrar cobro</strong><span>Cobro en caja a un comunero</span></span>
         <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
       </a>
-      <a class="quick-tile quick-tile--warning" routerLink="/admin/finanzas/egresos" [queryParams]="{ nuevo: 'egreso' }">
+      <a class="quick-tile quick-tile--warning" routerLink="/admin/cobros/egresos" [queryParams]="{ nuevo: 'egreso' }">
         <span class="quick-tile__icon" aria-hidden="true"><i class="ri-shopping-bag-3-line"></i></span>
         <span class="quick-tile__text"><strong>Registrar egreso</strong><span>Gasto o pago de la Junta</span></span>
         <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>

@@ -1,4 +1,7 @@
 import { Routes } from '@angular/router';
+import { grupoDeSeccion } from './components/finanzas/grupos-finanzas';
+
+const cargarFinanzas = () => import('./components/finanzas/finanzas.component').then(m => m.FinanzasComponent);
 
 /**
  * Secciones del panel administrativo. Los parámetros de ruta y de consulta llegan
@@ -52,11 +55,30 @@ export const ADMIN_ROUTES: Routes = [
     title: 'Turnos de agua · Junta La Jones',
     loadComponent: () => import('./components/turnos-admin/turnos-admin.component').then(m => m.TurnosAdminComponent)
   },
-  { path: 'finanzas', pathMatch: 'full', redirectTo: 'finanzas/cobrar' },
+  // Finanzas se divide en tres apartados del menú; cada uno usa el mismo componente con su grupo.
+  { path: 'cobros', pathMatch: 'full', redirectTo: 'cobros/cobrar' },
   {
-    path: 'finanzas/:seccion',
-    title: 'Finanzas · Junta La Jones',
-    loadComponent: () => import('./components/finanzas/finanzas.component').then(m => m.FinanzasComponent)
+    path: 'cobros/:seccion',
+    title: 'Cobros y pagos · Junta La Jones',
+    data: { grupo: 'cobros' },
+    loadComponent: cargarFinanzas
   },
+  { path: 'ajustes', pathMatch: 'full', redirectTo: 'ajustes/tarifas' },
+  {
+    path: 'ajustes/:seccion',
+    title: 'Ajustes · Junta La Jones',
+    data: { grupo: 'ajustes' },
+    loadComponent: cargarFinanzas
+  },
+  { path: 'historial', pathMatch: 'full', redirectTo: 'historial/pagos' },
+  {
+    path: 'historial/:seccion',
+    title: 'Historial · Junta La Jones',
+    data: { grupo: 'historial' },
+    loadComponent: cargarFinanzas
+  },
+  // Enlaces antiguos (/admin/finanzas/egresos) llevan a su nuevo apartado conservando ?nuevo=…
+  { path: 'finanzas', pathMatch: 'full', redirectTo: 'cobros/cobrar' },
+  { path: 'finanzas/:seccion', redirectTo: ({ params }) => `/admin/${grupoDeSeccion(params['seccion']).id}/${params['seccion']}` },
   { path: '**', redirectTo: 'dashboard' }
 ];
