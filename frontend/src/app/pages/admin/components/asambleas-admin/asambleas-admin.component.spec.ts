@@ -38,7 +38,15 @@ describe('Módulo de Asambleas (AsambleasAdminComponent)', () => {
       cambiarEstadoActaPunto: vi.fn(() => of({ status: 'OK' })),
       subirDocumentoFirmado: vi.fn(() => of({ status: 'OK', url: '/uploads/documentos/doc.pdf' })),
       getPersonas: vi.fn(() => of({ data: [{ id: 1, cedula: '1800000001', nombres: 'Carlos', apellidos: 'Moreta' }] })),
-      registrarAsistencias: vi.fn(() => of({ status: 'OK' }))
+      registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
+      getAsistencias: vi.fn(() => of({
+        status: 'OK',
+        data: [
+          { persona_id: 1, cedula: '1800000001', nombre: 'Moreta Carlos', estado: 'PRESENTE', motivo_justificacion: '' },
+          { persona_id: 2, cedula: '1800000002', nombre: 'Quispe Rosa', estado: 'JUSTIFICADO', motivo_justificacion: 'Enfermedad' }
+        ],
+        resumen: { total: 2, presentes: 1, ausentes: 0, justificados: 1, pendientes: 0 }
+      }))
     };
 
     consultaMock = {
@@ -114,6 +122,14 @@ describe('Módulo de Asambleas (AsambleasAdminComponent)', () => {
     component.cambiarEstado(a, 'CONVOCADO');
     expect(adminMock.cambiarEstadoAsamblea).toHaveBeenCalledWith(10, 'CONVOCADO');
     expect(a.estado).toBe('CONVOCADO');
+  });
+
+  it('al reabrir la asistencia muestra los estados ya guardados en el servidor', () => {
+    component.abrirAsistencia(asambleaMock);
+    expect(adminMock.getAsistencias).toHaveBeenCalledWith(10);
+    expect(component.personasAsistencia.map((p: any) => p.estado)).toEqual(['PRESENTE', 'JUSTIFICADO']);
+    expect(component.personasAsistencia[1].motivo_justificacion).toBe('Enfermedad');
+    expect(adminMock.getPersonas).not.toHaveBeenCalled();
   });
 
   it('soporta registrar múltiples actas por asamblea y agregar temas nuevos (F07)', () => {
