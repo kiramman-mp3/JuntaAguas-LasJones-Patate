@@ -6,7 +6,7 @@ Esta guía contiene los pasos detallados para levantar el entorno de desarrollo 
 
 ## 1. Requisitos Previos
 - **Docker y Docker Compose** (Para levantar la base de datos).
-- **Node.js 24.15 o superior** (o 22.22.3 o superior). Es obligatorio: Angular 22 no arranca con versiones anteriores. Revisa tu versión con `node -v`; en Windows puedes actualizar con `winget upgrade OpenJS.NodeJS.LTS` (luego cierra y vuelve a abrir la terminal o VS Code).
+- **Node.js 26** (el que usa el CI; como mínimo 22.22.3, que exige Angular 22). Revisa tu versión con `node -v`; en Windows puedes actualizar con `winget upgrade OpenJS.NodeJS.LTS` (luego cierra y vuelve a abrir la terminal o VS Code).
 - **NPM** (Viene integrado con Node.js).
 - **Angular CLI** instalado globalmente (Opcional, pero recomendado: `npm install -g @angular/cli`).
 
@@ -14,13 +14,13 @@ Esta guía contiene los pasos detallados para levantar el entorno de desarrollo 
 
 ## 2. Levantar la Base de Datos (MySQL)
 
-El proyecto incluye un contenedor de Docker preconfigurado que cargará automáticamente el esquema (tablas) cuando se levante por primera vez.
+El proyecto incluye un contenedor de Docker con MySQL 8. Las tablas no las crea Docker: las crean las migraciones del backend (paso 3).
 
 1. Abre una terminal y navega a la carpeta `bd`.
 2. Ejecuta el siguiente comando para levantar el contenedor en segundo plano:
    ```bash
    cd bd
-   docker-compose up -d
+   docker compose up -d
    ```
 3. Esto levantará una instancia de MySQL 8.0 en el puerto `3306`.
    - **Usuario:** `junta_user` (o `root`)
@@ -42,11 +42,19 @@ El proyecto incluye un contenedor de Docker preconfigurado que cargará automát
    cp .env.example .env
    ```
    En PowerShell: `Copy-Item .env.example .env`
-4. Levanta el servidor en modo desarrollo:
+4. Genera un `JWT_SECRET` y pégalo en `.env` (el backend no arranca sin él):
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+   ```
+5. Crea la base y aplica las migraciones (es seguro repetirlo: solo aplica las pendientes y no borra datos):
+   ```bash
+   npm run db:migrate
+   ```
+6. Levanta el servidor en modo desarrollo:
    ```bash
    npm run dev
    ```
-5. El servidor estará escuchando en `http://localhost:3000`.
+7. El servidor estará escuchando en `http://localhost:3000` y la documentación Swagger en `http://localhost:3000/api-docs`.
 
 ---
 
@@ -74,9 +82,9 @@ npm run db:seed -- --reset   # elimina y recrea la base antes de sembrar
    ```
 3. Levanta el servidor de desarrollo de Angular:
    ```bash
-   npx ng serve --open
+   npm start
    ```
-4. Esto abrirá automáticamente el navegador en `http://localhost:4200`.
+4. Abre el navegador en `http://localhost:4200`. El panel de administración está en `/admin` y cada sección tiene su URL (por ejemplo `/admin/finanzas/facturacion`).
 
 **URL del backend:** el frontend toma la dirección de la API desde `frontend/src/environments/environment.ts` (desarrollo) y `environment.prod.ts` (producción). En código nuevo usa `environment.apiUrl` (o `environment.serverUrl` para abrir archivos subidos) en lugar de escribir `http://localhost:3000`.
 
@@ -95,12 +103,38 @@ Al terminar, `npm run db:seed` imprime las credenciales: la cédula del **admini
 
 ---
 
-## 7. Notas Adicionales
+## 7. Verificar antes de integrar
+
+Lo mismo que ejecuta el CI (`.github/workflows/ci.yml`) en cada pull request a `develop` o `main`:
+
+```bash
+cd backend  && npm run lint && npm test          # necesita el contenedor de MySQL levantado
+cd frontend && npm run lint && npm test -- --watch=false && npm run build
+```
+
+Las pruebas del backend usan su propia base (`junta_las_jones_test`), que crean y borran; no tocan `junta_las_jones`.
+
+---
+
+## 8. Actualizar la base de datos tras un `git pull`
+
+Si un cambio trae migraciones nuevas (`backend/database/migrations/`), basta con:
+
+```bash
+cd backend
+npm run db:migrate
+```
+
+No hace falta borrar el contenedor ni perder datos. Para crear una migración nueva, agrega el siguiente archivo numerado en esa carpeta (`011_descripcion.js` o `.sql`); nunca modifiques una migración ya publicada.
+
+---
+
+## 9. Notas Adicionales
 - Si en algún momento necesitas resetear completamente la base de datos, puedes bajar el contenedor y borrar su volumen:
   ```bash
   cd bd
-  docker-compose down -v
-  docker-compose up -d
+  docker compose down -v
+  docker compose up -d
   ```
-  Luego recuerda volver a ejecutar `npm run db:seed` en `backend`.
+  Luego vuelve a ejecutar `npm run db:migrate` (y, si quieres datos de prueba, `npm run db:seed`) en `backend`.
 - Asegúrate de tener los puertos `3000` (Backend), `4200` (Frontend) y `3306` (MySQL) libres antes de levantar los servicios.
