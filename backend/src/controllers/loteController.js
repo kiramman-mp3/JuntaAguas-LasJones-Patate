@@ -34,28 +34,18 @@ async function sugerirCodigo(req, res, next) {
 /**
  * Obtener catálogo de sectores
  */
-async function getSectores(req, res, next) {
-  try {
-    const sql = `
-      SELECT s.*, 
-             (SELECT COUNT(*) FROM lotes l WHERE l.sector_id = s.id) AS lotesCount
-      FROM sectores s 
-      WHERE s.activo = TRUE 
-      ORDER BY s.nombre ASC
-    `;
-    const [sectores] = await db.query(sql);
-    
-    // Asignamos un canal simulado y caudal basado en los lotes si la BD no los tiene nativamente
-    const data = sectores.map(s => ({
-      ...s,
-      canal: s.descripcion || `Canal Matriz ${s.nombre.charAt(0)}`,
-      caudal: `${(s.lotesCount * 0.4).toFixed(1)} L/s`
-    }));
-
-    return res.json({ status: 'OK', data });
-  } catch (error) {
-    next(error);
-  }
+async function getSectores(req, res) {
+  const [sectores] = await db.query(
+    `SELECT s.id, s.nombre, s.descripcion,
+            COUNT(l.id) AS lotesCount,
+            ROUND(COALESCE(SUM(l.superficie_m2), 0) / 10000, 2) AS superficieHa
+     FROM sectores s
+     LEFT JOIN lotes l ON l.sector_id = s.id AND l.activo = TRUE
+     WHERE s.activo = TRUE
+     GROUP BY s.id
+     ORDER BY s.nombre ASC`
+  );
+  return res.json({ status: 'OK', data: sectores.map((x) => ({ ...x, lotesCount: Number(x.lotesCount), superficieHa: Number(x.superficieHa) })) });
 }
 
 /**
