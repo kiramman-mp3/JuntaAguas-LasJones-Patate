@@ -4,6 +4,7 @@
    ============================================================================== */
 
 @use './styles/finanzas';
+@use './styles/ui';
 
 :root {
   /* --- Colores Primarios (Agua / Junta) --- */
@@ -87,6 +88,16 @@
   /* --- Skeleton / carga --- */
   --skeleton-base: #e2e8f0;
   --skeleton-shine: #f1f5f9;
+
+  /* --- Estados semánticos (fondos suaves y texto de alto contraste) --- */
+  --color-success-light: #d1fae5;
+  --color-success-strong: #047857;
+  --color-warning-light: #fef3c7;
+  --color-warning-strong: #b45309;
+  --color-danger-light: #fee2e2;
+
+  /* --- Movimiento: curva amortiguada sin rebote --- */
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 [data-theme="dark"] {
@@ -104,6 +115,11 @@
   --nav-border: rgba(255, 255, 255, 0.08);
   --skeleton-base: #334155;
   --skeleton-shine: #475569;
+  --color-success-light: rgba(16, 185, 129, 0.16);
+  --color-success-strong: #34d399;
+  --color-warning-light: rgba(245, 158, 11, 0.16);
+  --color-warning-strong: #fbbf24;
+  --color-danger-light: rgba(239, 68, 68, 0.16);
 
   /* Los alias heredan automáticamente porque referencian los tokens de arriba. */
   --bg-card: var(--bg-surface);
