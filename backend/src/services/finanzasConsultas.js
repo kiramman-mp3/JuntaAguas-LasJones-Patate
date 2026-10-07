@@ -9,7 +9,7 @@
  */
 const { hoy, inicioDelDiaUtc, finDelDiaUtc, ZONA_MYSQL } = require('../shared/dates');
 const { notFound } = require('../shared/errors');
-const { redondear } = require('./finanzasService');
+const { restarMontos } = require('../shared/money');
 
 const where = (condiciones) => (condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '');
 
@@ -209,7 +209,7 @@ async function balance(conexion, { desde, hasta }) {
       totalPendientes: Number(cartera.totalPendientes),
       totalVencido: Number(cartera.totalVencido),
       comunerosConDeuda: Number(cartera.comunerosConDeuda),
-      balanceAlDia: redondear(Number(totalIngresos) - Number(totalEgresos)),
+      balanceAlDia: restarMontos(totalIngresos, totalEgresos),
       desde: desde ?? null,
       hasta: hasta ?? null,
       fechaReporte: new Date().toISOString()
