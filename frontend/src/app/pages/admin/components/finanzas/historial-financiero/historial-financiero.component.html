@@ -1,0 +1,119 @@
+<section class="fin-panel" aria-labelledby="historial-titulo">
+  <div class="fin-panel__head">
+    <div>
+      <h3 class="fin-panel__title" id="historial-titulo"><i class="ri-git-branch-line" aria-hidden="true"></i> Historial financiero</h3>
+      <p class="fin-panel__desc">Ingresos y egresos por año y mes. Los totales y el balance se calculan en el servidor.</p>
+    </div>
+    <button type="button" class="icon-btn" [disabled]="cargando()" (click)="cargar()" aria-label="Actualizar historial" title="Actualizar">
+      <i [class]="cargando() ? 'ri-loader-4-line ri-spin' : 'ri-refresh-line'" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--danger" role="alert">
+      {{ error() }} <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (!historial()) {
+    <div aria-live="polite"><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--text"></div></div>
+  } @else if (!historial()!.anios.length) {
+    <div class="empty-state">
+      <i class="ri-inbox-line" aria-hidden="true"></i>
+      <strong>Sin movimientos</strong>
+      <p>Todavía no hay pagos ni egresos registrados.</p>
+    </div>
+  } @else {
+    @let h = historial()!;
+    <div class="fin-tree__total">
+      <span>Ingresos <strong class="money">${{ h.total.ingresos.toFixed(2) }}</strong></span>
+      <span>Egresos <strong class="money">${{ h.total.egresos.toFixed(2) }}</strong></span>
+      <span>Balance <strong class="money" [class.is-negativo]="h.total.balance < 0">${{ h.total.balance.toFixed(2) }}</strong></span>
+    </div>
+
+    <ul class="fin-tree">
+      @for (a of h.anios; track a.anio) {
+        @let idAnio = claveAnio(a.anio);
+        <li class="fin-tree__anio">
+          <button type="button" class="fin-tree__nodo fin-tree__nodo--anio" [attr.aria-expanded]="expandido(idAnio)"
+            [attr.aria-controls]="idAnio" (click)="alternar(idAnio)">
+            <i class="ri-arrow-right-s-line fin-tree__chevron" aria-hidden="true"></i>
+            <span class="fin-tree__etiqueta">{{ a.anio }}</span>
+            <span class="fin-tree__cifras">
+              <span class="fin-tree__ingreso money">+${{ a.ingresos.toFixed(2) }}</span>
+              <span class="fin-tree__egreso money">−${{ a.egresos.toFixed(2) }}</span>
+              <strong class="money" [class.is-negativo]="a.balance < 0">${{ a.balance.toFixed(2) }}</strong>
+            </span>
+          </button>
+
+          @if (expandido(idAnio)) {
+            <ul class="fin-tree__hijos" [id]="idAnio">
+              @for (m of a.meses; track m.mes) {
+                <li>
+                  <button type="button" class="fin-tree__nodo" [attr.aria-expanded]="expandido(m.mes)"
+                    [attr.aria-controls]="'mes-' + m.mes" (click)="alternarMes(m.mes)">
+                    <i class="ri-arrow-right-s-line fin-tree__chevron" aria-hidden="true"></i>
+                    <span class="fin-tree__etiqueta">
+                      {{ nombreMes(m.mes) }}
+                      <span class="fin-table__muted">{{ m.pagos }} {{ m.pagos === 1 ? 'pago' : 'pagos' }} · {{ m.egresosRegistrados }} {{ m.egresosRegistrados === 1 ? 'egreso' : 'egresos' }}</span>
+                    </span>
+                    <span class="fin-tree__cifras">
+                      <span class="fin-tree__ingreso money">+${{ m.ingresos.toFixed(2) }}</span>
+                      <span class="fin-tree__egreso money">−${{ m.egresos.toFixed(2) }}</span>
+                      <strong class="money" [class.is-negativo]="m.balance < 0">${{ m.balance.toFixed(2) }}</strong>
+                    </span>
+                  </button>
+
+                  @if (expandido(m.mes)) {
+                    <div class="fin-tree__hijos" [id]="'mes-' + m.mes">
+                      @let estado = estadoMes(m.mes);
+                      @if (!estado || estado.cargando) {
+                        <div aria-live="polite"><div class="skeleton skeleton--text"></div></div>
+                      } @else if (estado.error) {
+                        <div class="alert alert--danger" role="alert">
+                          {{ estado.error }} <button type="button" class="btn btn--outline btn--sm" (click)="cargarMovimientos(m.mes)">Reintentar</button>
+                        </div>
+                      } @else {
+                        <div class="table-scroll">
+                          <table class="fin-table">
+                            <thead>
+                              <tr>
+                                <th scope="col">Número</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Detalle</th>
+                                <th scope="col" class="num">Valor</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (mov of estado.movimientos; track mov.numero) {
+                                <tr [class.is-anulado]="mov.anulado">
+                                  <td class="money">
+                                    <span class="badge" [class.badge--success]="mov.tipo === 'INGRESO'" [class.badge--danger]="mov.tipo === 'EGRESO'">
+                                      {{ mov.tipo === 'INGRESO' ? 'Ingreso' : 'Egreso' }}
+                                    </span>
+                                    {{ mov.numero }}
+                                  </td>
+                                  <td>{{ mov.fecha | fechaLocal:(mov.tipo === 'INGRESO' ? 'conHora' : 'corta') }}</td>
+                                  <td>
+                                    {{ mov.detalle }}
+                                    @if (mov.tercero) { <br /><span class="fin-table__muted">{{ mov.tercero }}</span> }
+                                    @if (mov.anulado) { <br /><span class="fin-table__muted">Anulado: no suma al balance</span> }
+                                  </td>
+                                  <td class="num">
+                                    <span class="money">{{ mov.tipo === 'INGRESO' ? '+' : '−' }}${{ mov.valor.toFixed(2) }}</span>
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      }
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

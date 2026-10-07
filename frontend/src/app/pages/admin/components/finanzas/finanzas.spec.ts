@@ -11,6 +11,7 @@ import { CobroCajaComponent } from './cobro-caja/cobro-caja.component';
 import { FacturacionMensualComponent } from './facturacion-mensual/facturacion-mensual.component';
 import { TarifasComponent } from './tarifas/tarifas.component';
 import { EgresosComponent } from './egresos/egresos.component';
+import { HistorialFinancieroComponent } from './historial-financiero/historial-financiero.component';
 import { FinanzasComponent } from './finanzas.component';
 
 const balance = {
@@ -156,6 +157,60 @@ describe('Egresos', () => {
     expect(registrarEgreso).not.toHaveBeenCalled();
     expect(c.errorDe('ruc_proveedor')).toContain('10 o 13');
   });
+
+  it('el RUC descarta todo lo que no sea dígito mientras se escribe', () => {
+    configurar({ getEgresos: () => of({ status: 'OK', data: [] }) });
+    const c = TestBed.createComponent(EgresosComponent).componentInstance;
+    const campo = document.createElement('input');
+    campo.value = '18-912a3456 70019';
+    c.soloDigitosRuc({ target: campo } as unknown as Event);
+    expect(campo.value).toBe('1891234567001');
+    expect(c.form.ruc_proveedor).toBe('1891234567001');
+  });
+});
+
+describe('Historial financiero', () => {
+  const historial = {
+    anios: [
+      { anio: 2026, ingresos: 30, egresos: 10.3, balance: 19.7, meses: [
+        { mes: '2026-02', ingresos: 30, egresos: 0, balance: 30, pagos: 2, egresosRegistrados: 0 },
+        { mes: '2026-01', ingresos: 0, egresos: 10.3, balance: -10.3, pagos: 0, egresosRegistrados: 1 }
+      ] },
+      { anio: 2025, ingresos: 5, egresos: 0, balance: 5, meses: [
+        { mes: '2025-12', ingresos: 5, egresos: 0, balance: 5, pagos: 1, egresosRegistrados: 0 }
+      ] }
+    ],
+    total: { ingresos: 35, egresos: 10.3, balance: 24.7 }
+  };
+
+  it('muestra los totales del servidor y abre solo el año más reciente', () => {
+    configurar({ getHistorialAnual: () => of({ status: 'OK', data: historial }) });
+    const c = TestBed.createComponent(HistorialFinancieroComponent).componentInstance;
+    expect(c.historial()?.total.balance).toBe(24.7);
+    expect(c.expandido('anio-2026')).toBe(true);
+    expect(c.expandido('anio-2025')).toBe(false);
+    expect(c.nombreMes('2026-02')).toBe('Febrero');
+  });
+
+  it('al abrir un mes consulta sus movimientos una sola vez, con el rango del mes', () => {
+    const getPagos = vi.fn(() => of({ status: 'OK' as const, data: [
+      { id: 3, fecha_pago: '2026-02-10T15:00:00.000Z', valor_total: 30, estado: 'VIGENTE', comunero_nombre: 'Rosa Caiza', observacion: null },
+      { id: 4, fecha_pago: '2026-02-11T15:00:00.000Z', valor_total: 8, estado: 'ANULADO', comunero_nombre: 'Luis Toapanta', observacion: null }
+    ] }));
+    const getEgresos = vi.fn(() => of({ status: 'OK' as const, data: [] }));
+    configurar({ getHistorialAnual: () => of({ status: 'OK', data: historial }), getPagos, getEgresos });
+    const c = TestBed.createComponent(HistorialFinancieroComponent).componentInstance;
+
+    c.alternarMes('2026-02');
+    expect(getPagos).toHaveBeenCalledWith({ desde: '2026-02-01', hasta: '2026-02-28' });
+    const movimientos = c.estadoMes('2026-02')?.movimientos ?? [];
+    expect(movimientos.map((m) => m.numero)).toEqual(['REC-000004', 'REC-000003']);
+    expect(movimientos[0].anulado).toBe(true);
+
+    c.alternarMes('2026-02');
+    c.alternarMes('2026-02');
+    expect(getPagos).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('Módulo de finanzas', () => {
@@ -172,6 +227,28 @@ describe('Módulo de finanzas', () => {
     fixture.componentRef.setInput('seccion', 'inventada');
     expect(c.seccionActual()).toBe('cobrar');
     expect(c.indicadores()?.historico.balanceAlDia).toBe(60);
+  });
+
+  it('separa Cobros y Finanzas y las flechas recorren solo el grupo', () => {
+    configurar({ getHistorialAnual: () => of({ status: 'OK', data: { anios: [], total: { ingresos: 0, egresos: 0, balance: 0 } } }) });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(FinanzasComponent);
+    const c = fixture.componentInstance;
+    expect(c.grupos.map((g) => g.secciones.map((s) => s.id))).toEqual([['cobrar', 'pagos', 'facturacion', 'tarifas'], ['egresos', 'historial']]);
+
+    fixture.componentRef.setInput('seccion', 'historial');
+    const [cobros, finanzas] = c.grupos;
+    expect(c.grupoActual().id).toBe('finanzas');
+    expect(c.indiceEn(cobros)).toBe(-1);
+    expect(c.tabEnfocable(cobros, 'cobrar')).toBe(true);
+    expect(c.tabEnfocable(finanzas, 'egresos')).toBe(false);
+
+    const tab = document.createElement('button');
+    tab.id = 'fin-tab-historial';
+    const evento = new KeyboardEvent('keydown', { key: 'ArrowRight' });
+    Object.defineProperty(evento, 'target', { value: tab });
+    c.onTeclaSegmento(evento, finanzas);
+    expect(navigate).toHaveBeenCalledWith(['/admin/finanzas', 'egresos']);
   });
 
   it('cambiar de sección navega a su URL', () => {

@@ -193,3 +193,30 @@ test('el dashboard entrega indicadores reales', async () => {
   assert.ok(res.body.data.finanzas.carteraPendiente > 0);
   assert.equal((await request(app).get('/api/dashboard/resumen').set(auth(comunero))).status, 403);
 });
+
+test('el historial anual agrupa por año y mes y cuadra con el balance', async () => {
+  const egreso = (fecha, valor) => request(app).post('/api/financiero/egresos').set(auth(admin))
+    .send({ fecha, concepto: 'Mantenimiento del canal', valor });
+  assert.equal((await egreso('2019-03-10', 10.1)).status, 201);
+  assert.equal((await egreso('2019-03-20', 0.2)).status, 201);
+  assert.equal((await egreso('2019-05-02', 5)).status, 201);
+
+  const res = await request(app).get('/api/financiero/historial').set(auth(admin));
+  assert.equal(res.status, 200);
+  const { anios, total } = res.body.data;
+  assert.deepEqual(anios.map((a) => a.anio), [...anios.map((a) => a.anio)].sort((a, b) => b - a), 'años del más reciente al más antiguo');
+
+  const anio2019 = anios.find((a) => a.anio === 2019);
+  assert.deepEqual(anio2019.meses.map((m) => m.mes), ['2019-05', '2019-03']);
+  assert.equal(anio2019.egresos, 15.3);
+  assert.equal(anio2019.balance, -15.3);
+  assert.equal(anio2019.meses[1].egresos, 10.3, '10.10 + 0.20 sin error de coma flotante');
+  assert.equal(anio2019.meses[1].egresosRegistrados, 2);
+
+  const balance = (await request(app).get('/api/financiero/balance').set(auth(admin))).body.balance;
+  assert.equal(total.ingresos, balance.totalIngresos, 'solo cuenta pagos vigentes');
+  assert.equal(total.egresos, balance.totalEgresos);
+  assert.equal(total.balance, balance.balanceAlDia);
+
+  assert.equal((await request(app).get('/api/financiero/historial').set(auth(comunero))).status, 403);
+});

@@ -650,3 +650,123 @@
 @media (prefers-contrast: more) {
   .segmented, .stat-tile, .fin-panel, .check-row, .month-tile { border-color: var(--text-main); }
 }
+
+/* --- Historial financiero en árbol (año → mes → movimientos) --- */
+.fin-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &__total {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+
+    strong { color: var(--text-main); margin-left: 0.25rem; }
+    .is-negativo { color: var(--color-danger); }
+  }
+
+  &__anio {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  &__hijos {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0.5rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  &__nodo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover { background: var(--bg-surface-hover); }
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+    &--anio { font-weight: 700; font-size: 1rem; }
+
+    &[aria-expanded='true'] .fin-tree__chevron { transform: rotate(90deg); }
+  }
+
+  &__chevron {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    transition: transform 0.2s var(--fin-ease, ease);
+  }
+
+  &__etiqueta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__cifras {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  &__ingreso { color: var(--color-success); }
+  &__egreso { color: var(--color-danger); }
+
+  .is-negativo { color: var(--color-danger); }
+
+  .fin-table .badge { margin-right: 0.35rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__chevron { transition: none; }
+  }
+}
+
+/* --- Grupos de secciones: Cobros | Finanzas --- */
+.fin-toolbar--grupos {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 0.75rem;
+
+  @media (max-width: 760px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.fin-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+
+  &__titulo {
+    padding-left: 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  &--activo &__titulo { color: var(--color-primary); }
+}
+
+/* Un grupo sin la sección activa no muestra el indicador. */
+.segmented--inactivo .segmented__thumb { opacity: 0; }

@@ -135,6 +135,11 @@ async function getBalanceReport(req, res) {
   return res.json({ status: 'OK', ...reporte });
 }
 
+/** Historial anual: ingresos, egresos y balance por año y por mes. */
+async function getHistorialAnual(req, res) {
+  return res.json({ status: 'OK', data: await consultas.historialAnual(db) });
+}
+
 /** Años con obligaciones registradas (sin anuladas). */
 async function getPeriodosObligaciones(req, res) {
   return res.json({ status: 'OK', data: await consultas.periodosObligaciones(db) });
@@ -192,6 +197,7 @@ module.exports = {
   getEgresos,
   createEgreso,
   getBalanceReport,
+  getHistorialAnual,
   getPeriodosObligaciones,
   getObligacionesMultas,
   getObligacionesMensualidad,
