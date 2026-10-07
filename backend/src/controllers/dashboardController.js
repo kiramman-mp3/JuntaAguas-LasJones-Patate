@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const { hoy } = require('../shared/dates');
+const { hoy, inicioDelDiaUtc } = require('../shared/dates');
 
 /**
  * Indicadores del panel de administración, calculados con datos reales.
@@ -29,7 +29,8 @@ async function getResumen(req, res) {
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') AS carteraPendiente,
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS carteraVencida,
        (SELECT COUNT(DISTINCT persona_id) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS comunerosEnMora`,
-    [inicioMes, inicioAnio, inicioMes, inicioAnio, fecha, fecha]
+    // fecha_pago está en UTC: el mes de Ecuador empieza a las 05:00 UTC del día 1.
+    [inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioAnio), inicioMes, inicioAnio, fecha, fecha]
   );
 
   // Eficiencia de cobro de las cuotas de agua emitidas este año.

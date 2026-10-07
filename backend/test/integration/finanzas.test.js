@@ -137,6 +137,23 @@ test('el balance respeta el rango de fechas en ingresos y egresos', async () => 
   assert.equal((await request(app).post('/api/financiero/egresos').set(auth(admin)).send({ fecha: '2999-01-01', concepto: 'Futuro', valor: 1 })).status, 400);
 });
 
+test('los filtros por día usan el calendario de Ecuador aunque fecha_pago esté en UTC', async () => {
+  // 02:00 UTC del 10 de marzo son las 21:00 del 9 de marzo en Ecuador.
+  const [r] = await db.query(
+    "INSERT INTO pagos (persona_id, fecha_pago, valor_total, metodo, estado, registrado_por_cuenta_id) VALUES (?, '2025-03-10 02:00:00', 7.77, 'EFECTIVO', 'VIGENTE', ?)",
+    [vecino.personaId, admin.cuentaId]
+  );
+  const dia = (fecha) => request(app).get(`/api/financiero/pagos?desde=${fecha}&hasta=${fecha}`).set(auth(admin));
+  assert.ok((await dia('2025-03-09')).body.data.some((p) => p.id === r.insertId), 'aparece el 9 de marzo');
+  assert.ok(!(await dia('2025-03-10')).body.data.some((p) => p.id === r.insertId), 'no aparece el 10 de marzo');
+
+  const balance = await request(app).get('/api/financiero/balance?desde=2025-03-01&hasta=2025-03-09').set(auth(admin));
+  assert.ok(balance.body.balance.totalIngresos >= 7.77);
+  const marzo = balance.body.resumenMensual.find((m) => m.mes === '2025-03');
+  assert.ok(marzo && marzo.ingresos >= 7.77, 'el pago cuenta en marzo de Ecuador');
+  await db.query('DELETE FROM pagos WHERE id = ?', [r.insertId]);
+});
+
 test('solo se anulan obligaciones pendientes', async () => {
   const ob = await crearObligacion({ personaId: vecino.personaId, anio: 2024, mes: 8 });
   const anular = () => request(app).post(`/api/financiero/obligaciones/${ob}/anular`).set(auth(admin)).send({ motivo: 'Exonerado por asamblea' });
