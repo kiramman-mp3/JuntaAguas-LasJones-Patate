@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ROLES, session } from '../auth/session';
 
 export interface LoginResponse {
   status: string;
@@ -14,7 +15,7 @@ export interface LoginResponse {
     nombres: string;
     apellidos: string;
     email: string;
-    rol: string;
+    rol: 'ADMIN' | 'USUARIO';
     rolNombre: string;
     debeCambiarPassword: boolean;
   };
@@ -25,68 +26,38 @@ export interface LoginResponse {
 })
 export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
-  private tokenKey = 'junta_token';
-  private userKey = 'junta_user';
 
   constructor(private http: HttpClient) {}
 
   login(cedula: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { cedula, password }).pipe(
       tap(res => {
-        if (res.token) {
-          this.setItem(this.tokenKey, res.token);
-          this.setItem(this.userKey, JSON.stringify(res.user));
-        }
+        if (res.token) session.guardar(res.token, res.user);
       })
     );
   }
 
   logout() {
-    this.removeItem(this.tokenKey);
-    this.removeItem(this.userKey);
+    session.limpiar();
   }
 
   changePassword(actualPassword: string, nuevaPassword: string): Observable<any> {
-    const token = this.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-    return this.http.post(`${this.apiUrl}/change-password`, { actualPassword, nuevaPassword }, { headers });
+    return this.http.post(`${this.apiUrl}/change-password`, { actualPassword, nuevaPassword });
   }
 
   getToken(): string | null {
-    return this.getItem(this.tokenKey);
+    return session.token();
   }
 
-  getUser() {
-    const data = this.getItem(this.userKey);
-    return data ? JSON.parse(data) : null;
+  getUser(): LoginResponse['user'] | null {
+    return session.usuario<LoginResponse['user']>();
   }
 
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
 
-  /* Acceso seguro al almacenamiento: puede no existir en SSR o en pruebas. */
-  private getItem(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  }
-
-  private setItem(key: string, value: string): void {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      /* almacenamiento no disponible */
-    }
-  }
-
-  private removeItem(key: string): void {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* almacenamiento no disponible */
-    }
+  esAdmin(): boolean {
+    return this.getUser()?.rol === ROLES.ADMIN;
   }
 }

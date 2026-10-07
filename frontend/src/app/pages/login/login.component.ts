@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ROLES } from '../../core/auth/session';
 
 @Component({
   selector: 'app-login',
@@ -92,7 +93,7 @@ export class LoginComponent {
          this.exitoMensaje = 'Contraseña actualizada. Redirigiendo...';
          const user = this.authService.getUser();
          setTimeout(() => {
-           this.redirigirPorRol(user.rol);
+           this.redirigirPorRol(user?.rol ?? ROLES.USUARIO);
          }, 1500);
          this.cdr.detectChanges();
       },

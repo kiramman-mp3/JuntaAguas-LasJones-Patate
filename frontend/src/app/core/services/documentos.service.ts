@@ -1,8 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthService } from './auth.service';
 import { NotificationService } from './notification.service';
 
 export type TipoDocumento = 'CONVOCATORIA' | 'ACTA' | 'RESOLUCION' | 'OTRO';
@@ -20,13 +19,12 @@ export const TAMANO_MAXIMO_ARCHIVO = 10 * 1024 * 1024;
 
 /**
  * Subida y apertura de documentos firmados.
- * Los archivos se piden con HttpClient (llevan el token) y se muestran como blob,
+ * Los archivos se piden con HttpClient (el interceptor agrega el token) y se muestran como blob,
  * porque una pestaña abierta con window.open no puede enviar la cabecera Authorization.
  */
 @Injectable({ providedIn: 'root' })
 export class DocumentosService {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
   private readonly notify = inject(NotificationService);
 
   /** Devuelve un mensaje si el archivo no es aceptable, o null si es válido. */
@@ -42,7 +40,7 @@ export class DocumentosService {
     datos.append('tipo', tipo);
     if (puntoId) datos.append('punto_id', String(puntoId));
     datos.append('archivo', archivo, archivo.name);
-    return this.http.post<DocumentoSubido>(`${environment.apiUrl}/eventos/${eventoId}/documentos`, datos, { headers: this.headers() });
+    return this.http.post<DocumentoSubido>(`${environment.apiUrl}/eventos/${eventoId}/documentos`, datos);
   }
 
   /** URL absoluta de un documento guardado ('/uploads/...' o ya absoluta). */
@@ -64,7 +62,7 @@ export class DocumentosService {
   private abrirBlob(url: string): void {
     // La pestaña se abre en el gesto del usuario para que el navegador no la bloquee.
     const ventana = window.open('', '_blank');
-    this.http.get(url, { headers: this.headers(), responseType: 'blob' }).subscribe({
+    this.http.get(url, { responseType: 'blob' }).subscribe({
       next: (blob) => {
         const objeto = URL.createObjectURL(blob);
         if (ventana) ventana.location.href = objeto;
@@ -79,10 +77,5 @@ export class DocumentosService {
         this.notify.error(mensaje);
       }
     });
-  }
-
-  private headers(): HttpHeaders {
-    const token = this.auth.getToken();
-    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : new HttpHeaders();
   }
 }

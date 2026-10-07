@@ -24,7 +24,6 @@ export interface ConsultaResultadoResponse {
   };
 }
 
-import { AuthService } from './auth.service';
 import { DocumentosService, DocumentoSubido, TipoDocumento } from './documentos.service';
 import { environment } from '../../../environments/environment';
 
@@ -34,19 +33,10 @@ import { environment } from '../../../environments/environment';
 export class ConsultaService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient, private authService: AuthService, private documentos: DocumentosService) {}
-
-  private getAuthHeaders() {
-    const token = this.authService.getToken();
-    return {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    };
-  }
+  constructor(private http: HttpClient, private documentos: DocumentosService) {}
 
   consultarPorCedula(cedula: string): Observable<ConsultaResultadoResponse> {
-    return this.http.get<ConsultaResultadoResponse>(`${this.apiUrl}/personas/consulta/${cedula}`, this.getAuthHeaders());
+    return this.http.get<ConsultaResultadoResponse>(`${this.apiUrl}/personas/consulta/${cedula}`);
   }
 
   getEventosPublicos(): Observable<any> {
@@ -55,7 +45,7 @@ export class ConsultaService {
   }
 
   getEventoDetalle(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/eventos/${id}`, this.getAuthHeaders());
+    return this.http.get<any>(`${this.apiUrl}/eventos/${id}`);
   }
 
   getSectores(): Observable<any> {
@@ -71,13 +61,11 @@ export class ConsultaService {
   }
 
   getDocumentosEvento(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/eventos/${id}/documentos`, this.getAuthHeaders());
+    return this.http.get<any>(`${this.apiUrl}/eventos/${id}/documentos`);
   }
 
   descargarListaAsistencia(id: number): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/eventos/${id}/pdf-asistencia`, {
-      ...this.getAuthHeaders(), responseType: 'blob'
-    });
+    return this.http.get(`${this.apiUrl}/eventos/${id}/pdf-asistencia`, { responseType: 'blob' });
   }
 }
 
