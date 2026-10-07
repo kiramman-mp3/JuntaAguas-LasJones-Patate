@@ -1,11 +1,9 @@
 <div class="fin">
-  <app-page-header
-    titulo="Finanzas"
-    subtitulo="Cobros y pagos del día, ajustes de tarifas y facturación, e historial de recibos, ingresos y egresos."
-    icono="ri-money-dollar-circle-line"
-  />
+  <app-page-header [titulo]="grupoActual().etiqueta" [subtitulo]="grupoActual().descripcion" [icono]="grupoActual().icono" />
 
-  @if (indicadores(); as k) {
+  <!-- Los indicadores de caja no aplican en Ajustes -->
+  @if (!grupoActual().indicadores) {
+  } @else if (indicadores(); as k) {
     <div class="stat-grid" aria-label="Indicadores financieros">
       <div class="stat-tile" [class.stat-tile--positive]="k.historico.balanceAlDia >= 0" [class.stat-tile--negative]="k.historico.balanceAlDia < 0">
         <span class="stat-tile__label">Saldo de caja</span>
@@ -39,26 +37,20 @@
     </div>
   }
 
-  <div class="fin-toolbar fin-toolbar--grupos">
-    @for (g of grupos; track g.id) {
-      <div class="fin-grupo" [class.fin-grupo--activo]="grupoActual().id === g.id">
-        <span class="fin-grupo__titulo" [id]="'fin-grupo-' + g.id">{{ g.etiqueta }}</span>
-        <div class="segmented" role="tablist" [attr.aria-labelledby]="'fin-grupo-' + g.id"
-          [class.segmented--inactivo]="indiceEn(g) < 0"
-          [style.--n]="g.secciones.length" [style.--i]="indiceEn(g) < 0 ? 0 : indiceEn(g)">
-          <span class="segmented__thumb" aria-hidden="true"></span>
-          @for (s of g.secciones; track s.id) {
-            <button type="button" role="tab" class="segmented__item" [id]="'fin-tab-' + s.id"
-              [class.segmented__item--active]="seccionActual() === s.id"
-              [attr.aria-selected]="seccionActual() === s.id" [attr.aria-controls]="'fin-panel-' + s.id"
-              [tabindex]="tabEnfocable(g, s.id) ? 0 : -1"
-              (click)="cambiarSeccion(s.id)" (keydown)="onTeclaSegmento($event, g)">
-              <i [class]="s.icono" aria-hidden="true"></i> {{ s.etiqueta }}
-            </button>
-          }
-        </div>
-      </div>
-    }
+  <div class="section-nav">
+    <div class="segmented" role="tablist" [attr.aria-label]="'Secciones de ' + grupoActual().etiqueta"
+      [style.--n]="grupoActual().secciones.length" [style.--i]="indiceActual()">
+      <span class="segmented__thumb" aria-hidden="true"></span>
+      @for (s of grupoActual().secciones; track s.id) {
+        <button type="button" role="tab" class="segmented__item" [id]="'fin-tab-' + s.id"
+          [class.segmented__item--active]="seccionActual() === s.id"
+          [attr.aria-selected]="seccionActual() === s.id" [attr.aria-controls]="'fin-panel-' + s.id"
+          [tabindex]="seccionActual() === s.id ? 0 : -1"
+          (click)="cambiarSeccion(s.id)" (keydown)="onTeclaSegmento($event)">
+          <i [class]="s.icono" aria-hidden="true"></i> <span class="segmented__label">{{ s.etiqueta }}</span>
+        </button>
+      }
+    </div>
   </div>
 
   <div role="tabpanel" [id]="'fin-panel-' + seccionActual()" [attr.aria-labelledby]="'fin-tab-' + seccionActual()" class="fin">

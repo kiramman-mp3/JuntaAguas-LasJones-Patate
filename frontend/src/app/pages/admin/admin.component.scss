@@ -254,3 +254,98 @@
     -webkit-backdrop-filter: none;
   }
 }
+
+/* --- Grupo "Finanzas" del menú: Cobros y pagos · Ajustes · Historial --- */
+.sidebar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar__group-title {
+  padding: 0 0.75rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* La pestaña "Finanzas" solo existe en la barra inferior del móvil. */
+.tab-more { display: none; }
+
+@media (max-width: 1099px) and (min-width: 760px) {
+  .sidebar__group-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}
+
+@media (max-width: 759px) {
+  .sidebar__group { display: none; }
+
+  .tab-more {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+
+    > .nav-item { width: 100%; }
+
+    &__panel {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 0.6rem);
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 220px;
+      padding: 0.4rem;
+      border-radius: var(--radius-lg);
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+      transform-origin: bottom right;
+
+      &--enter { animation: tab-more-in 0.22s var(--ease-out) both; }
+    }
+
+    &__item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-height: 2.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.92rem;
+      font-weight: 500;
+      text-decoration: none;
+
+      i { font-size: 1.15rem; color: var(--text-muted); }
+
+      &:active { background: var(--bg-surface-hover); }
+
+      &.active {
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        font-weight: 600;
+
+        i { color: var(--color-primary); }
+      }
+    }
+  }
+}
+
+@keyframes tab-more-in {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
