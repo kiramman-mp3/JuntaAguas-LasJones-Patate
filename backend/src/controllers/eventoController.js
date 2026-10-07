@@ -1,9 +1,9 @@
-const fs = require('fs');
-const fsPromises = require('fs/promises');
-const path = require('path');
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
 const PDFDocument = require('pdfkit');
+const { guardarDocumento, eliminarDocumento } = require('../services/documentStorage');
+const { badRequest, notFound } = require('../shared/errors');
+const { z, idParam } = require('../shared/schemas');
 
 /**
  * Listar eventos (Asambleas y Mingas)
@@ -22,7 +22,7 @@ async function getEventos(req, res, next) {
                       (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_nombre,
                       (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_url,
                       (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre,
-                      (SELECT ruta_archivo_generado FROM documentos_evento d WHERE d.evento_id = e.id AND d.nombre_archivo = 'Lista_Asistencia_Generada.pdf' LIMIT 1) AS lista_asistencia_url,
+                      NULL AS lista_asistencia_url,
                       (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'OTRO' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS lista_asistencia_firmada_url
                FROM eventos e
                LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
@@ -90,7 +90,7 @@ async function getEventoById(req, res, next) {
               (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_nombre,
               (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_url,
               (SELECT nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre,
-              (SELECT ruta_archivo_generado FROM documentos_evento d WHERE d.evento_id = e.id AND d.nombre_archivo = 'Lista_Asistencia_Generada.pdf' LIMIT 1) AS lista_asistencia_url,
+              NULL AS lista_asistencia_url,
               (SELECT ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'OTRO' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS lista_asistencia_firmada_url
        FROM eventos e WHERE e.id = ?`,
       [id]
@@ -161,59 +161,6 @@ async function createEvento(req, res, next) {
     );
 
     const eventoId = result.insertId;
-
-    // Generar PDF de Asistencia
-    try {
-      const docsDir = path.join(__dirname, '../../uploads/documentos');
-      await fsPromises.mkdir(docsDir, { recursive: true });
-
-      const safeFileName = `lista_asistencia_${eventoId}_${Date.now()}.pdf`;
-      const filePathOnDisk = path.join(docsDir, safeFileName);
-      const relativeUrl = `/uploads/documentos/${safeFileName}`;
-
-      const doc = new PDFDocument({ margin: 50 });
-      const stream = fs.createWriteStream(filePathOnDisk);
-      doc.pipe(stream);
-
-      // Cabecera
-      doc.fontSize(18).text(`Lista de Asistencia - ${tipo}`, { align: 'center' });
-      doc.moveDown();
-      doc.fontSize(12).text(`Título: ${titulo}`);
-      doc.text(`Fecha: ${fecha} | Hora: ${hora_inicio}`);
-      doc.text(`Lugar: ${lugar || 'Casa Comunal Junta La Jones'}`);
-      doc.moveDown(2);
-
-      const [personas] = await db.query(`SELECT cedula, nombres, apellidos FROM personas WHERE estado = 'ACTIVO' ORDER BY apellidos ASC`);
-
-      let yPosition = doc.y;
-      doc.fontSize(10);
-      doc.text('Nº', 50, yPosition, { bold: true });
-      doc.text('Cédula', 80, yPosition, { bold: true });
-      doc.text('Nombres y Apellidos', 150, yPosition, { bold: true });
-      doc.text('Firma', 400, yPosition, { bold: true });
-      doc.moveTo(50, yPosition + 15).lineTo(550, yPosition + 15).stroke();
-      
-      yPosition += 25;
-      personas.forEach((p, i) => {
-        if (yPosition > 700) { doc.addPage(); yPosition = 50; }
-        doc.text((i + 1).toString(), 50, yPosition);
-        doc.text(p.cedula, 80, yPosition);
-        doc.text(`${p.apellidos} ${p.nombres}`, 150, yPosition);
-        doc.moveTo(400, yPosition + 10).lineTo(550, yPosition + 10).stroke();
-        yPosition += 30;
-      });
-      doc.end();
-
-      await new Promise(resolve => stream.on('finish', resolve));
-
-      await db.query(
-        `INSERT INTO documentos_evento (evento_id, tipo, estado, nombre_archivo, ruta_archivo_generado, fecha_generacion, generado_por_cuenta_id)
-         VALUES (?, ?, ?, ?, ?, NOW(), ?)`,
-        [eventoId, 'OTRO', 'GENERADO', 'Lista_Asistencia_Generada.pdf', relativeUrl, req.user.cuentaId]
-      );
-    } catch (pdfError) {
-      console.error('Error generando PDF de asistencia:', pdfError);
-    }
 
     if (tipo === 'ASAMBLEA' && Array.isArray(req.body.puntos_orden_dia) && req.body.puntos_orden_dia.length > 0) {
       for (let i = 0; i < req.body.puntos_orden_dia.length; i++) {
@@ -593,105 +540,69 @@ async function finalizarEventoYGenerarMultas(req, res, next) {
   }
 }
 
+const documentoSchema = z.object({
+  tipo: z.enum(['CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO'], { error: 'Tipo de documento inválido.' }),
+  punto_id: z.coerce.number().int().positive().optional()
+});
+
+/** Nombre original solo para mostrarlo: sin rutas ni caracteres de control. */
+function nombreVisible(original, respaldo) {
+  const base = String(original || '').split(/[\\/]/u).pop().replace(/[^\p{L}\p{N} ._()-]/gu, '').trim();
+  return (base || respaldo).slice(0, 255);
+}
+
 /**
- * Guardar o actualizar un documento PDF (firmado) para un evento
+ * Guardar el documento firmado (PDF o imagen escaneada) de un evento o del acta de un punto.
+ * Recibe multipart/form-data con el campo "archivo". El tipo real del archivo se valida por su contenido.
  */
-async function guardarDocumentoEvento(req, res, next) {
-  try {
-    const { id } = req.params;
-    const { tipo, nombre_archivo, contenido_base64, estado, punto_id } = req.body;
+async function guardarDocumentoEvento(req, res) {
+  const { id } = idParam.parse(req.params);
+  const { tipo, punto_id } = documentoSchema.parse(req.body ?? {});
+  if (!req.file) throw badRequest('Debe adjuntar el archivo firmado.');
 
-    if (!tipo || !contenido_base64) {
-      return res.status(400).json({ status: 'ERROR', message: 'El tipo y el contenido del documento son requeridos.' });
-    }
+  const [eventos] = await db.query('SELECT id FROM eventos WHERE id = ?', [id]);
+  if (!eventos.length) throw notFound('Evento no encontrado.');
 
-    const extension = nombre_archivo ? path.extname(nombre_archivo).toLowerCase() : '.pdf';
-    const docNombre = nombre_archivo || `${tipo}_Firmado${extension}`;
-
-    // Guardar archivo físico en el servidor (disco)
-    const base64Clean = contenido_base64.replace(/^data:[a-zA-Z0-9/+-]+;base64,/, '');
-    const buffer = Buffer.from(base64Clean, 'base64');
-
-    const uploadsDir = path.join(__dirname, '../../uploads/documentos');
-    try {
-      await fsPromises.access(uploadsDir);
-    } catch {
-      await fsPromises.mkdir(uploadsDir, { recursive: true });
-    }
-
-    const prefix = punto_id ? `acta_punto_${punto_id}` : tipo.toLowerCase();
-    const safeFileName = `${prefix}_evento_${id}_${Date.now()}${extension}`;
-    const filePathOnDisk = path.join(uploadsDir, safeFileName);
-    await fsPromises.writeFile(filePathOnDisk, buffer);
-
-    const relativeUrl = `/uploads/documentos/${safeFileName}`;
-
-    if (punto_id) {
-      // Registrar acta firmada directamente en el punto tratado / tema específico (F07)
-      await db.query(
-        `UPDATE puntos_asamblea
-         SET acta_firmada_url = ?, acta_firmada_nombre = ?, estado_acta = 'FIRMADA', fecha_acta = NOW(), updated_at = NOW()
-         WHERE id = ? AND evento_id = ?`,
-        [relativeUrl, docNombre, punto_id, id]
-      );
-    } else {
-      const [existente] = await db.query(
-        `SELECT id, ruta_archivo_firmado FROM documentos_evento WHERE evento_id = ? AND tipo = ?`,
-        [id, tipo]
-      );
-
-      const cuentaId = req.user ? req.user.cuentaId : 1;
-
-      if (existente.length > 0) {
-        // Eliminar el archivo físico anterior del disco para no acumular basura
-        const oldUrl = existente[0].ruta_archivo_firmado;
-        if (oldUrl && oldUrl.startsWith('/uploads/')) {
-          const oldFilePathOnDisk = path.join(__dirname, '../../', oldUrl);
-          if (oldFilePathOnDisk) {
-            try {
-              await fsPromises.unlink(oldFilePathOnDisk);
-            } catch (err) {
-              if (err.code !== 'ENOENT') {
-                console.error('Error al eliminar archivo previo del servidor:', err);
-              }
-            }
-          }
-        }
-
-        await db.query(
-          `UPDATE documentos_evento 
-           SET nombre_archivo = ?, ruta_archivo_firmado = ?, ruta_archivo_generado = ?, estado = ?, updated_at = NOW()
-           WHERE evento_id = ? AND tipo = ?`,
-          [docNombre, relativeUrl, relativeUrl, estado || 'FIRMADO', id, tipo]
-        );
-      } else {
-        await db.query(
-          `INSERT INTO documentos_evento (evento_id, tipo, estado, nombre_archivo, ruta_archivo_firmado, nombre_archivo_generado, ruta_archivo_generado, fecha_generacion, generado_por_cuenta_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-          [id, tipo, estado || 'FIRMADO', docNombre, relativeUrl, docNombre, relativeUrl, cuentaId]
-        );
-      }
-    }
-
-    await registrarAuditoria({
-      cuentaId: req.user ? req.user.cuentaId : 1,
-      accion: 'CREAR',
-      entidad: punto_id ? 'puntos_asamblea' : 'documentos_evento',
-      entidadId: parseInt(punto_id || id),
-      ip: req.ip,
-      detalle: { tipo, nombre_archivo: docNombre, url: relativeUrl, punto_id: punto_id || null }
-    });
-
-    return res.json({
-      status: 'OK',
-      message: 'Documento firmado guardado exitosamente en el servidor.',
-      url: relativeUrl,
-      nombre_archivo: docNombre,
-      punto_id: punto_id || null
-    });
-  } catch (error) {
-    next(error);
+  let urlAnterior;
+  if (punto_id) {
+    const [puntos] = await db.query('SELECT acta_firmada_url FROM puntos_asamblea WHERE id = ? AND evento_id = ?', [punto_id, id]);
+    if (!puntos.length) throw notFound('El punto del acta no pertenece a este evento.');
+    urlAnterior = puntos[0].acta_firmada_url;
+  } else {
+    const [existente] = await db.query('SELECT ruta_archivo_firmado FROM documentos_evento WHERE evento_id = ? AND tipo = ?', [id, tipo]);
+    urlAnterior = existente[0]?.ruta_archivo_firmado ?? null;
   }
+
+  const { url, mime } = await guardarDocumento(req.file.buffer, punto_id ? 'acta_punto' : tipo.toLowerCase());
+  const nombre = nombreVisible(req.file.originalname, `${tipo}_firmado`);
+
+  if (punto_id) {
+    await db.query(
+      `UPDATE puntos_asamblea
+       SET acta_firmada_url = ?, acta_firmada_nombre = ?, estado_acta = 'FIRMADA', fecha_acta = UTC_TIMESTAMP()
+       WHERE id = ?`,
+      [url, nombre, punto_id]
+    );
+  } else {
+    await db.query(
+      `INSERT INTO documentos_evento
+         (evento_id, tipo, estado, nombre_archivo, ruta_archivo_firmado, nombre_archivo_firmado, mime_type, fecha_subida_firmado, subido_por_cuenta_id)
+       VALUES (?, ?, 'FIRMADO', ?, ?, ?, ?, UTC_TIMESTAMP(), ?)
+       ON DUPLICATE KEY UPDATE estado = 'FIRMADO', nombre_archivo = VALUES(nombre_archivo),
+         ruta_archivo_firmado = VALUES(ruta_archivo_firmado), nombre_archivo_firmado = VALUES(nombre_archivo_firmado),
+         mime_type = VALUES(mime_type), fecha_subida_firmado = VALUES(fecha_subida_firmado),
+         subido_por_cuenta_id = VALUES(subido_por_cuenta_id)`,
+      [id, tipo, nombre, url, nombre, mime, req.user.cuentaId]
+    );
+  }
+  await eliminarDocumento(urlAnterior);
+
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: punto_id ? 'puntos_asamblea' : 'documentos_evento',
+    entidadId: punto_id || id, ip: req.ip, detalle: { eventoId: id, tipo, url }
+  });
+
+  return res.json({ status: 'OK', message: 'Documento firmado guardado correctamente.', url, nombre_archivo: nombre, punto_id: punto_id ?? null });
 }
 
 /**
@@ -777,15 +688,15 @@ async function descargarPDFAsistencia(req, res, next) {
   }
 }
 
-async function getDocumentosEvento(req, res, next) {
-  try {
-    const { id } = req.params;
-    const db = require('../../database');
-    const [documentos] = await db.query('SELECT * FROM documentos_evento WHERE evento_id = ?', [id]);
-    return res.json({ status: 'OK', data: documentos });
-  } catch (error) {
-    next(error);
-  }
+/** Documentos registrados de un evento (sin el contenido). */
+async function getDocumentosEvento(req, res) {
+  const { id } = idParam.parse(req.params);
+  const [documentos] = await db.query(
+    `SELECT id, tipo, estado, nombre_archivo, ruta_archivo_firmado, mime_type, fecha_subida_firmado, updated_at
+     FROM documentos_evento WHERE evento_id = ? ORDER BY tipo`,
+    [id]
+  );
+  return res.json({ status: 'OK', data: documentos });
 }
 
 module.exports = {

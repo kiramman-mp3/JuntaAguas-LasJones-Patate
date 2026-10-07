@@ -2,6 +2,7 @@ const express = require('express');
 const eventoController = require('../controllers/eventoController');
 const mingaController = require('../controllers/mingaController');
 const { soloAdmin } = require('../middlewares/authMiddleware');
+const { recibirArchivo } = require('../services/documentStorage');
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.post('/:id/puntos/:puntoId/estado', ...soloAdmin, eventoController.cambia
 router.post('/:id/asistencias', ...soloAdmin, mingaController.encaminarAsistencias, eventoController.registrarAsistencias);
 router.get('/:id/asistencias', ...soloAdmin, eventoController.getAsistencias);
 router.get('/:id/pdf-asistencia', ...soloAdmin, eventoController.descargarPDFAsistencia);
-router.post('/:id/documentos', ...soloAdmin, eventoController.guardarDocumentoEvento);
+router.post('/:id/documentos', ...soloAdmin, recibirArchivo, eventoController.guardarDocumentoEvento);
 router.get('/:id/documentos', ...soloAdmin, eventoController.getDocumentosEvento);
 
 module.exports = router;
