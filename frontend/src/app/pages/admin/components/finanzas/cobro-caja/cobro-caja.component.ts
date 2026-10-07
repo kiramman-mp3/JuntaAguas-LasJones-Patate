@@ -5,17 +5,33 @@ import { Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap,
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { ComprobantePdfService, Comprobante } from '../../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
-import { ComuneroBusqueda, MetodoPago, ObligacionItem, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
+import { ComuneroBusqueda, MESES, MetodoPago, ObligacionItem, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
 import { formatearFecha } from '../../../../../core/utils/fechas';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 
 type FiltroObligaciones = 'TODAS' | 'AGUA' | 'OTRAS';
 
-interface GrupoObligaciones {
+/** Mes del árbol de obligaciones: sus conceptos de cobro y el subtotal. */
+export interface NodoMes {
+  clave: string;
   etiqueta: string;
   obligaciones: ObligacionItem[];
   subtotal: number;
 }
+
+/** Año del árbol de obligaciones: sus meses y el total del año. */
+export interface NodoAnio {
+  clave: string;
+  etiqueta: string;
+  meses: NodoMes[];
+  total: number;
+  cantidad: number;
+}
+
+export type EstadoSeleccion = 'todas' | 'algunas' | 'ninguna';
+
+const SIN_PERIODO = 'sin-periodo';
+const SIN_MES = 'sin-mes';
 
 const redondear = (n: number) => Math.round(n * 100) / 100;
 
@@ -73,17 +89,44 @@ export class CobroCajaComponent {
       filtro === 'TODAS' || (filtro === 'AGUA' ? o.concepto_codigo === 'AGUA_MENSUAL' : o.concepto_codigo !== 'AGUA_MENSUAL'));
   });
 
-  readonly grupos = computed<GrupoObligaciones[]>(() => {
-    const porAnio = new Map<string, GrupoObligaciones>();
+  /**
+   * Árbol año → mes → concepto de las obligaciones visibles, del período más antiguo al más reciente.
+   * Las obligaciones sin año (multas u otros rubros sin período) van al final.
+   */
+  readonly arbol = computed<NodoAnio[]>(() => {
+    const anios = new Map<string, NodoAnio>();
     for (const o of this.visibles()) {
-      const clave = o.periodo_anio ? String(o.periodo_anio) : 'Sin período';
-      const grupo = porAnio.get(clave) ?? { etiqueta: clave, obligaciones: [], subtotal: 0 };
-      grupo.obligaciones.push(o);
-      grupo.subtotal = redondear(grupo.subtotal + Number(o.valor));
-      porAnio.set(clave, grupo);
+      const claveAnio = o.periodo_anio ? String(o.periodo_anio) : SIN_PERIODO;
+      let anio = anios.get(claveAnio);
+      if (!anio) {
+        anio = { clave: claveAnio, etiqueta: o.periodo_anio ? String(o.periodo_anio) : 'Sin período', meses: [], total: 0, cantidad: 0 };
+        anios.set(claveAnio, anio);
+      }
+      const numMes = o.periodo_mes && o.periodo_mes >= 1 && o.periodo_mes <= 12 ? o.periodo_mes : null;
+      const claveMes = `${claveAnio}-${numMes ?? SIN_MES}`;
+      let mes = anio.meses.find((m) => m.clave === claveMes);
+      if (!mes) {
+        mes = { clave: claveMes, etiqueta: numMes ? MESES[numMes - 1] : o.periodo_anio ? 'Sin mes' : 'Otros rubros', obligaciones: [], subtotal: 0 };
+        anio.meses.push(mes);
+      }
+      mes.obligaciones.push(o);
+      mes.subtotal = redondear(mes.subtotal + Number(o.valor));
+      anio.total = redondear(anio.total + Number(o.valor));
+      anio.cantidad++;
     }
-    return [...porAnio.values()];
+    const numero = (clave: string) => (clave.endsWith(SIN_MES) || clave === SIN_PERIODO ? Number.MAX_SAFE_INTEGER : Number(clave.split('-').pop()));
+    return [...anios.values()]
+      .map((a) => ({ ...a, meses: [...a.meses].sort((x, y) => numero(x.clave) - numero(y.clave)) }))
+      .sort((a, b) => numero(a.clave) - numero(b.clave));
   });
+
+  /** Nodos plegados; por defecto todo está desplegado para que el cajero vea el detalle. */
+  readonly plegados = signal<ReadonlySet<string>>(new Set());
+
+  /** Total de lo visible y lo marcado dentro de lo visible (según el filtro activo). */
+  readonly totalVisible = computed(() => redondear(this.visibles().reduce((s, o) => s + Number(o.valor), 0)));
+  readonly seleccionadoVisible = computed(() =>
+    redondear(this.visibles().filter((o) => this.seleccion().has(o.id)).reduce((s, o) => s + Number(o.valor), 0)));
 
   readonly totalPendiente = computed(() => redondear(this.obligaciones().reduce((s, o) => s + Number(o.valor), 0)));
   readonly seleccionadas = computed(() => this.obligaciones().filter((o) => this.seleccion().has(o.id)));
@@ -152,6 +195,7 @@ export class CobroCajaComponent {
     this.comunero.set(null);
     this.obligaciones.set([]);
     this.seleccion.set(new Set());
+    this.plegados.set(new Set());
     this.comprobante.set(null);
     this.reiniciarPago();
     setTimeout(() => this.campoBusqueda()?.nativeElement.focus());
@@ -180,6 +224,35 @@ export class CobroCajaComponent {
   alternar(id: number): void {
     const nueva = new Set(this.seleccion());
     if (nueva.has(id)) nueva.delete(id); else nueva.add(id);
+    this.seleccion.set(nueva);
+  }
+
+  estaAbierto(clave: string): boolean {
+    return !this.plegados().has(clave);
+  }
+
+  alternarNodo(clave: string): void {
+    const nuevo = new Set(this.plegados());
+    if (nuevo.has(clave)) nuevo.delete(clave); else nuevo.add(clave);
+    this.plegados.set(nuevo);
+  }
+
+  idsDe(nodo: NodoAnio | NodoMes): number[] {
+    return 'meses' in nodo ? nodo.meses.flatMap((m) => m.obligaciones.map((o) => o.id)) : nodo.obligaciones.map((o) => o.id);
+  }
+
+  estadoSeleccion(ids: number[]): EstadoSeleccion {
+    const marcadas = ids.filter((id) => this.seleccion().has(id)).length;
+    return marcadas === 0 ? 'ninguna' : marcadas === ids.length ? 'todas' : 'algunas';
+  }
+
+  /** Marca o desmarca de una vez todo un año o un mes. */
+  alternarGrupo(ids: number[]): void {
+    const marcar = this.estadoSeleccion(ids) !== 'todas';
+    const nueva = new Set(this.seleccion());
+    for (const id of ids) {
+      if (marcar) nueva.add(id); else nueva.delete(id);
+    }
     this.seleccion.set(nueva);
   }
 

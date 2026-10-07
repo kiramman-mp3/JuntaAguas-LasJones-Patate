@@ -82,27 +82,84 @@
           }
         </div>
 
-        @for (g of grupos(); track g.etiqueta) {
-          <div class="group-label"><span>{{ g.etiqueta }}</span><span class="money">${{ g.subtotal.toFixed(2) }}</span></div>
-          <ul class="check-list">
-            @for (o of g.obligaciones; track o.id) {
-              <li>
-                <label class="check-row" [class.check-row--checked]="seleccion().has(o.id)">
-                  <input type="checkbox" [checked]="seleccion().has(o.id)" (change)="alternar(o.id)" />
-                  <span>
-                    <span class="check-row__title">{{ o.concepto_nombre }}</span><br />
-                    <span class="check-row__meta">
-                      {{ etiquetaPeriodo(o.periodo_anio, o.periodo_mes) }}
-                      @if (o.fecha_vencimiento) { · vence {{ o.fecha_vencimiento | fechaLocal }} }
-                      @if (o.observacion) { · {{ o.observacion }} }
+        @if (arbol().length) {
+          <ul class="fin-tree cobro-tree" aria-label="Obligaciones pendientes por año y mes">
+            @for (a of arbol(); track a.clave) {
+              @let idsAnio = idsDe(a);
+              @let estadoAnio = estadoSeleccion(idsAnio);
+              <li class="fin-tree__anio">
+                <div class="cobro-tree__fila cobro-tree__fila--anio">
+                  <input type="checkbox" class="cobro-tree__check" [checked]="estadoAnio === 'todas'" [indeterminate]="estadoAnio === 'algunas'"
+                    (change)="alternarGrupo(idsAnio)" [attr.aria-label]="'Seleccionar todo ' + a.etiqueta" />
+                  <button type="button" class="fin-tree__nodo fin-tree__nodo--anio" [attr.aria-expanded]="estaAbierto(a.clave)"
+                    [attr.aria-controls]="'cobro-anio-' + a.clave" (click)="alternarNodo(a.clave)">
+                    <i class="ri-arrow-right-s-line fin-tree__chevron" aria-hidden="true"></i>
+                    <span class="fin-tree__etiqueta">
+                      {{ a.etiqueta }}
+                      <span class="check-row__meta">{{ a.cantidad }} {{ a.cantidad === 1 ? 'obligación' : 'obligaciones' }}</span>
                     </span>
-                  </span>
-                  <span class="check-row__value money">${{ o.valor.toFixed(2) }}</span>
-                </label>
+                    <span class="cobro-tree__cifra">
+                      <span class="cobro-tree__rotulo">Total del año</span>
+                      <strong class="money">${{ a.total.toFixed(2) }}</strong>
+                    </span>
+                  </button>
+                </div>
+
+                @if (estaAbierto(a.clave)) {
+                  <ul class="fin-tree__hijos cobro-tree__meses" [id]="'cobro-anio-' + a.clave">
+                    @for (m of a.meses; track m.clave) {
+                      @let idsMes = idsDe(m);
+                      @let estadoMes = estadoSeleccion(idsMes);
+                      <li>
+                        <div class="cobro-tree__fila">
+                          <input type="checkbox" class="cobro-tree__check" [checked]="estadoMes === 'todas'" [indeterminate]="estadoMes === 'algunas'"
+                            (change)="alternarGrupo(idsMes)" [attr.aria-label]="'Seleccionar todo ' + m.etiqueta + ' ' + a.etiqueta" />
+                          <button type="button" class="fin-tree__nodo" [attr.aria-expanded]="estaAbierto(m.clave)"
+                            [attr.aria-controls]="'cobro-mes-' + m.clave" (click)="alternarNodo(m.clave)">
+                            <i class="ri-arrow-right-s-line fin-tree__chevron" aria-hidden="true"></i>
+                            <span class="fin-tree__etiqueta">{{ m.etiqueta }}</span>
+                            <span class="cobro-tree__cifra">
+                              <span class="cobro-tree__rotulo">Subtotal</span>
+                              <strong class="money">${{ m.subtotal.toFixed(2) }}</strong>
+                            </span>
+                          </button>
+                        </div>
+
+                        @if (estaAbierto(m.clave)) {
+                          <ul class="check-list cobro-tree__conceptos" [id]="'cobro-mes-' + m.clave">
+                            @for (o of m.obligaciones; track o.id) {
+                              <li>
+                                <label class="check-row" [class.check-row--checked]="seleccion().has(o.id)">
+                                  <input type="checkbox" [checked]="seleccion().has(o.id)" (change)="alternar(o.id)" />
+                                  <span>
+                                    <span class="check-row__title">{{ o.concepto_nombre }}</span>
+                                    @if (o.fecha_vencimiento || o.observacion) {
+                                      <br />
+                                      <span class="check-row__meta">
+                                        @if (o.fecha_vencimiento) { Vence {{ o.fecha_vencimiento | fechaLocal }} }
+                                        @if (o.fecha_vencimiento && o.observacion) { · }
+                                        @if (o.observacion) { {{ o.observacion }} }
+                                      </span>
+                                    }
+                                  </span>
+                                  <span class="check-row__value money">${{ o.valor.toFixed(2) }}</span>
+                                </label>
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
               </li>
             }
           </ul>
-        } @empty {
+          <div class="cobro-tree__resumen" aria-live="polite">
+            <span class="text-muted">Seleccionado</span>
+            <span><strong class="money">${{ seleccionadoVisible().toFixed(2) }}</strong> <span class="text-muted">de</span> <span class="money">${{ totalVisible().toFixed(2) }}</span></span>
+          </div>
+        } @else {
           <p class="text-muted">No hay obligaciones de este tipo.</p>
         }
       }
