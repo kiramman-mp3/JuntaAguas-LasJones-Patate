@@ -12,13 +12,24 @@ const router = express.Router();
  *     summary: Conceptos de cobro con su tarifa vigente
  *     security: [{ bearerAuth: [] }]
  * /financiero/tarifas:
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Historial de tarifas por concepto
+ *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Gestión Financiera]
- *     summary: Registrar tarifa de un concepto
+ *     summary: Registrar tarifa (cierra la vigencia de la anterior)
+ *     security: [{ bearerAuth: [] }]
+ * /financiero/facturacion/mensual:
+ *   post:
+ *     tags: [Gestión Financiera]
+ *     summary: Emitir (o simular) las cuotas de agua de un mes para los comuneros activos con lote
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/conceptos', verificarToken, financieroController.getConceptos);
+router.get('/tarifas', ...soloAdmin, financieroController.getTarifas);
 router.post('/tarifas', ...soloAdmin, financieroController.createTarifa);
+router.post('/facturacion/mensual', ...soloAdmin, financieroController.generarFacturacionMensual);
 
 /**
  * @openapi
@@ -77,6 +88,7 @@ router.get('/periodosobligaciones', ...soloAdmin, financieroController.getPeriod
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/pagos', verificarToken, financieroController.getPagos);
+router.get('/pagos/:id', verificarToken, financieroController.getPagoById);
 router.post('/pagos', ...soloAdmin, financieroController.registrarPago);
 router.post('/pagos/:id/anular', ...soloAdmin, financieroController.anularPago);
 
