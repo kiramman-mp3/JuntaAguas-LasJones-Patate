@@ -69,6 +69,15 @@ export class ModalA11yDirective implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     desbloquearScroll();
+    // Al moverlo a <body>, Angular ya no lo quita cuando se destruye el componente que lo
+    // contiene (p. ej. <app-modal>): se retira aquí, con la misma animación de salida.
+    const el = this.host.nativeElement;
+    if (el.isConnected) {
+      el.classList.add('modal-backdrop--leave');
+      const quitar = () => el.remove();
+      el.addEventListener('animationend', quitar, { once: true });
+      setTimeout(quitar, 250);
+    }
     this.elementoPrevio?.focus?.();
   }
 
