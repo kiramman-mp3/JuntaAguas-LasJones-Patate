@@ -60,8 +60,9 @@
 
       <div class="form-options">
         <label class="remember-me">
-          <input type="checkbox" [(ngModel)]="recordarSesion" name="recordar" /> Recordar mi sesión
+          <input type="checkbox" [(ngModel)]="recordarSesion" name="recordar" aria-describedby="recordar-ayuda" /> Recordar mi sesión
         </label>
+        <span id="recordar-ayuda" class="sr-only">Si no la marca, la sesión se cierra al cerrar el navegador. Déjela sin marcar en computadoras compartidas.</span>
         <button type="button" class="forgot-link" (click)="alternarAyudaPassword()">¿Olvidó su contraseña?</button>
       </div>
 
