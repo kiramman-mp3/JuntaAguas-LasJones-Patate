@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
@@ -72,7 +73,15 @@ import { aFecha, aFechaIso, esSoloFecha, hoyEnEcuador } from '../../../../core/u
   templateUrl: './asistencias-admin.component.html',
   styleUrls: ['../../admin.component.scss']
 })
-export class AsistenciasAdminComponent implements OnInit {
+export class AsistenciasAdminComponent implements OnInit, OnDestroy {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  /** ?whatsapp=1 abre el panel de WhatsApp Web (botón del encabezado del panel). */
+  @Input() set whatsapp(valor: string | undefined) {
+    if (valor) this.abrirModalWhatsApp();
+  }
+
   usuariosTotalRegistros: string | number = '150+';
   totalLotes: string | number = '180+';
   tabActiva: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'ACTAS' = 'DASHBOARD';
@@ -360,6 +369,14 @@ export class AsistenciasAdminComponent implements OnInit {
 
   cerrarModalWhatsApp() {
     this.modalWhatsAppVisible = false;
+    this.detenerPollingWhatsApp();
+    // Quita ?whatsapp=1 para que el botón del encabezado pueda volver a abrirlo.
+    if (this.route.snapshot.queryParamMap.has('whatsapp')) {
+      this.router.navigate([], { relativeTo: this.route, queryParams: { whatsapp: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
+  }
+
+  ngOnDestroy() {
     this.detenerPollingWhatsApp();
   }
 
