@@ -18,8 +18,21 @@ export const ADMIN_ROUTES: Routes = [
   },
   {
     path: 'asistencias',
-    title: 'Asistencias · Junta La Jones',
-    loadComponent: () => import('./components/asistencias-admin/asistencias-admin.component').then(m => m.AsistenciasAdminComponent)
+    loadComponent: () => import('./components/asistencias-admin/asistencias-admin.component').then(m => m.AsistenciasAdminComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'asambleas' },
+      {
+        path: 'asambleas',
+        title: 'Asambleas · Junta La Jones',
+        loadComponent: () => import('./components/asambleas-admin/asambleas-admin.component').then(m => m.AsambleasAdminComponent)
+      },
+      {
+        path: 'mingas',
+        title: 'Mingas · Junta La Jones',
+        loadComponent: () => import('./components/mingas-admin/mingas-admin.component').then(m => m.MingasAdminComponent)
+      },
+      { path: '**', redirectTo: 'asambleas' }
+    ]
   },
   {
     path: 'turnos',

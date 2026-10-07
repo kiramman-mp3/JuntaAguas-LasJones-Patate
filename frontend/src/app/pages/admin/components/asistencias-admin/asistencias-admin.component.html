@@ -1,74 +1,9 @@
-<!-- VISTA 2: ASISTENCIAS Y MINGAS -->
-<section class="tab-view">
-  <div class="card">
-    <div
-      class="card__header"
-      style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0"
-    >
-      <!-- Top Row: Title -->
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 1rem;
-        "
-      >
-        <h3 class="card__title" style="margin: 0; font-size: 1.3rem">
-          <i
-            class="ri-calendar-event-fill"
-            style="color: var(--color-primary); margin-right: 0.5rem"
-          ></i>
-          Control de Asistencia a Eventos
-        </h3>
-      </div>
-
-      <!-- Bottom Row: Tabs -->
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 1rem;
-          background: var(--bg-surface-hover);
-          padding: 0.75rem 1.5rem;
-          margin: 0 -1.5rem 1.5rem -1.5rem;
-          border-top: 1px solid var(--border-color);
-          border-bottom: 1px solid var(--border-color);
-        "
-      >
-        <!-- Tabs -->
-        <div class="tab-pills" style="display: flex; gap: 0.5rem">
-          <button
-            class="btn btn--sm"
-            [ngClass]="subTabEventos === 'ASAMBLEA' ? 'btn--primary' : 'btn--outline'"
-            (click)="cambiarSubTabEventos('ASAMBLEA')"
-            style="border-radius: var(--radius-full); padding: 0.4rem 1.25rem"
-          >
-            <i class="ri-group-line"></i> Asambleas
-          </button>
-          <button
-            class="btn btn--sm"
-            [ngClass]="subTabEventos === 'MINGA' ? 'btn--primary' : 'btn--outline'"
-            (click)="cambiarSubTabEventos('MINGA')"
-            style="border-radius: var(--radius-full); padding: 0.4rem 1.25rem"
-          >
-            <i class="ri-tools-line"></i> Mingas
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUB-TAB ASAMBLEAS REDISEÑADO (F05, C10, F07) -->
-    @if (subTabEventos === 'ASAMBLEA') {
-      <app-asambleas-admin></app-asambleas-admin>
-    }
-
-    <!-- SUB-TAB MINGAS -->
-    @if (subTabEventos === 'MINGA') {
-      <app-mingas-admin></app-mingas-admin>
-    }
-  </div>
+<section class="module">
+  <app-page-header
+    titulo="Asistencias"
+    subtitulo="Convoque asambleas y mingas, registre la asistencia y gestione los documentos firmados."
+    icono="ri-calendar-check-line"
+  />
+  <app-section-nav [items]="secciones" etiqueta="Tipos de evento" />
+  <router-outlet />
 </section>

@@ -1,19 +1,21 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MingasAdminComponent } from '../mingas-admin/mingas-admin.component';
-import { AsambleasAdminComponent } from '../asambleas-admin/asambleas-admin.component';
+import { RouterOutlet } from '@angular/router';
+import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
+import { SectionNavComponent, SeccionNav } from '../../../../shared/ui/section-nav.component';
 
-/** Vista de Asistencias: pestañas de asambleas y mingas. */
+/**
+ * Módulo de Asistencias. Asambleas y mingas son flujos de negocio distintos
+ * (actas y multas vs. jornadas de trabajo), así que cada uno es una ruta hija con su propio componente.
+ */
 @Component({
   selector: 'app-asistencias-admin',
   standalone: true,
-  imports: [CommonModule, MingasAdminComponent, AsambleasAdminComponent],
+  imports: [RouterOutlet, PageHeaderComponent, SectionNavComponent],
   templateUrl: './asistencias-admin.component.html'
 })
 export class AsistenciasAdminComponent {
-  subTabEventos: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
-
-  cambiarSubTabEventos(subTab: 'ASAMBLEA' | 'MINGA') {
-    this.subTabEventos = subTab;
-  }
+  readonly secciones: SeccionNav[] = [
+    { ruta: '/admin/asistencias/asambleas', etiqueta: 'Asambleas', icono: 'ri-user-voice-line' },
+    { ruta: '/admin/asistencias/mingas', etiqueta: 'Mingas', icono: 'ri-tools-line' }
+  ];
 }
