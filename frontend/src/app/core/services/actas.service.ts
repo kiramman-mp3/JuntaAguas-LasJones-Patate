@@ -1,28 +1,47 @@
-import { Injectable } from '@angular/core';
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import { Injectable, inject } from '@angular/core';
+import { NotificationService } from './notification.service';
 
-const pdfMakeInstance: any = (pdfMake as any).default || pdfMake;
-const pdfFontsInstance: any = (pdfFonts as any).default || pdfFonts;
+type PdfMake = { createPdf(documento: unknown): { download(nombre: string): void } };
 
-try {
-  if (pdfFontsInstance && pdfFontsInstance.pdfMake && pdfFontsInstance.pdfMake.vfs) {
-    pdfMakeInstance.vfs = pdfFontsInstance.pdfMake.vfs;
-  } else if (pdfFontsInstance && pdfFontsInstance.vfs) {
-    pdfMakeInstance.vfs = pdfFontsInstance.vfs;
-  } else if ((pdfFonts as any).vfs) {
-    pdfMakeInstance.vfs = (pdfFonts as any).vfs;
-  }
-} catch (e) {
-  console.warn('Error inicializando vfs para pdfMake:', e);
+let cargaPdfMake: Promise<PdfMake> | null = null;
+
+/**
+ * Carga pdfmake y sus fuentes solo cuando se genera el primer PDF: juntos pesan más de 1 MB
+ * y antes viajaban en el bundle inicial de todas las páginas.
+ */
+function cargarPdfMake(): Promise<PdfMake> {
+  cargaPdfMake ??= Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
+    .then(([modulo, fuentes]) => {
+      const pdfMake: any = (modulo as any).default ?? modulo;
+      const vfs = (fuentes as any).default ?? fuentes;
+      // pdfmake 0.3 exporta el vfs directamente; versiones anteriores lo anidaban en { pdfMake: { vfs } } o { vfs }.
+      const archivos = vfs?.pdfMake?.vfs ?? vfs?.vfs ?? vfs;
+      if (typeof pdfMake.addVirtualFileSystem === 'function') pdfMake.addVirtualFileSystem(archivos);
+      else pdfMake.vfs = archivos;
+      return pdfMake as PdfMake;
+    })
+    .catch((error) => {
+      cargaPdfMake = null; // Permite reintentar si falló la red.
+      throw error;
+    });
+  return cargaPdfMake;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ActasService {
+  private readonly notify = inject(NotificationService);
 
-  constructor() { }
+  /** Genera y descarga el documento; informa si no se pudo cargar el generador de PDF. */
+  private async descargar(documento: unknown, nombre: string): Promise<void> {
+    try {
+      (await cargarPdfMake()).createPdf(documento).download(nombre);
+    } catch (error) {
+      console.error('No se pudo generar el PDF:', error);
+      this.notify.error('No se pudo generar el PDF. Verifique su conexión e intente de nuevo.');
+    }
+  }
 
   /**
    * Generar y descargar el PDF oficial de un acta de asamblea finalizada
@@ -30,7 +49,7 @@ export class ActasService {
    * @param puntos Array de puntos tratados {orden, punto_tratar, tratado, resolucion}
    * @param asistenciaStats Opcional: Estadísticas de asistencia
    */
-  generarActaPDF(evento: any, puntos: any[] = [], asistenciaStats?: any[]) {
+  generarActaPDF(evento: any, puntos: any[] = [], asistenciaStats?: any[]): Promise<void> {
     const fechaObj = evento.fecha ? new Date(evento.fecha) : new Date();
     // Prevenir desfasaje UTC
     const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
@@ -271,15 +290,13 @@ export class ActasService {
       }
     };
 
-    // Crear y descargar el PDF usando el resolvedor seguro pdfMakeInstance
-    const maker = pdfMakeInstance.createPdf ? pdfMakeInstance : ((pdfMake as any).default || pdfMake);
-    maker.createPdf(docDefinition as any).download(`Acta_Asamblea_${evento.fecha}.pdf`);
+    return this.descargar(docDefinition, `Acta_Asamblea_${evento.fecha}.pdf`);
   }
 
   /**
    * Generar y descargar el PDF de Convocatoria a una Asamblea o Minga
    */
-  generarConvocatoriaPDF(evento: any) {
+  generarConvocatoriaPDF(evento: any): Promise<void> {
     const fechaObj = evento.fecha ? new Date(evento.fecha) : new Date();
     const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
     const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
@@ -359,14 +376,13 @@ export class ActasService {
       }
     };
 
-    const maker = pdfMakeInstance.createPdf ? pdfMakeInstance : ((pdfMake as any).default || pdfMake);
-    maker.createPdf(docDefinition as any).download(`Convocatoria_${evento.tipo}_${evento.fecha}.pdf`);
+    return this.descargar(docDefinition, `Convocatoria_${evento.tipo}_${evento.fecha}.pdf`);
   }
 
   /**
    * Generar y descargar el PDF oficial de un acta por punto tratado específico o tema nuevo (F07)
    */
-  generarActaPuntoPDF(evento: any, punto: any, asistenciaStats?: any[]) {
+  generarActaPuntoPDF(evento: any, punto: any, asistenciaStats?: any[]): Promise<void> {
     const fechaObj = evento.fecha ? new Date(evento.fecha) : new Date();
     const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
     const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
@@ -472,9 +488,8 @@ export class ActasService {
       }
     };
 
-    const maker = pdfMakeInstance.createPdf ? pdfMakeInstance : ((pdfMake as any).default || pdfMake);
     const cleanFecha = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0] : 'fecha';
-    maker.createPdf(docDefinition as any).download(`Acta_Punto_${numeroPunto}_${cleanFecha}.pdf`);
+    return this.descargar(docDefinition, `Acta_Punto_${numeroPunto}_${cleanFecha}.pdf`);
   }
 }
 
