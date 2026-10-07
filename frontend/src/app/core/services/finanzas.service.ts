@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  BalanceRespuesta, ComuneroBusqueda, ConceptoCobro, Egreso, NuevaTarifa, NuevoEgreso, NuevoPago,
+  BalanceRespuesta, ComuneroBusqueda, ConceptoCobro, Egreso, HistorialAnual, NuevaTarifa, NuevoEgreso, NuevoPago,
   ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoFacturacion, ResumenFacturacion, Tarifa
 } from '../models/finanzas';
 
@@ -31,6 +31,11 @@ export class FinanzasService {
 
   getBalance(desde?: string, hasta?: string): Observable<BalanceRespuesta> {
     return this.http.get<BalanceRespuesta>(`${this.url}/balance`, { params: parametros({ desde, hasta }) });
+  }
+
+  /** Ingresos, egresos y balance por año y mes, calculados en el backend. */
+  getHistorialAnual(): Observable<Respuesta<HistorialAnual>> {
+    return this.http.get<Respuesta<HistorialAnual>>(`${this.url}/historial`);
   }
 
   getObligaciones(filtros: { persona_id?: number; estado?: ObligacionItem['estado']; anio?: number }): Observable<Respuesta<ObligacionItem[]>> {

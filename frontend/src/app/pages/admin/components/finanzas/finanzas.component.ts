@@ -6,11 +6,12 @@ import { Balance } from '../../../../core/models/finanzas';
 import { hoyEnEcuador } from '../../../../core/utils/fechas';
 import { CobroCajaComponent } from './cobro-caja/cobro-caja.component';
 import { HistorialPagosComponent } from './historial-pagos/historial-pagos.component';
+import { HistorialFinancieroComponent } from './historial-financiero/historial-financiero.component';
 import { EgresosComponent } from './egresos/egresos.component';
 import { FacturacionMensualComponent } from './facturacion-mensual/facturacion-mensual.component';
 import { TarifasComponent } from './tarifas/tarifas.component';
 
-export type SeccionFinanzas = 'cobrar' | 'pagos' | 'egresos' | 'facturacion' | 'tarifas';
+export type SeccionFinanzas = 'cobrar' | 'pagos' | 'egresos' | 'historial' | 'facturacion' | 'tarifas';
 
 interface Indicadores {
   mes: Balance;
@@ -25,7 +26,7 @@ interface Indicadores {
 @Component({
   selector: 'app-finanzas',
   standalone: true,
-  imports: [CobroCajaComponent, HistorialPagosComponent, EgresosComponent, FacturacionMensualComponent, TarifasComponent],
+  imports: [CobroCajaComponent, HistorialPagosComponent, EgresosComponent, HistorialFinancieroComponent, FacturacionMensualComponent, TarifasComponent],
   templateUrl: './finanzas.component.html'
 })
 export class FinanzasComponent {
@@ -41,6 +42,7 @@ export class FinanzasComponent {
     { id: 'cobrar', etiqueta: 'Cobrar', icono: 'ri-hand-coin-line' },
     { id: 'pagos', etiqueta: 'Pagos', icono: 'ri-file-list-3-line' },
     { id: 'egresos', etiqueta: 'Egresos', icono: 'ri-shopping-bag-3-line' },
+    { id: 'historial', etiqueta: 'Historial', icono: 'ri-git-branch-line' },
     { id: 'facturacion', etiqueta: 'Facturación', icono: 'ri-calendar-2-line' },
     { id: 'tarifas', etiqueta: 'Tarifas', icono: 'ri-price-tag-3-line' }
   ];

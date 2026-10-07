@@ -61,6 +61,7 @@
       @case ('cobrar') { <app-cobro-caja (cobrado)="onDatosCambiados()" /> }
       @case ('pagos') { <app-historial-pagos (anulado)="onDatosCambiados()" /> }
       @case ('egresos') { <app-egresos [abrirNuevo]="abrirEgreso()" (registrado)="onDatosCambiados()" /> }
+      @case ('historial') { <app-historial-financiero /> }
       @case ('facturacion') { <app-facturacion-mensual (emitido)="onDatosCambiados()" /> }
       @case ('tarifas') { <app-tarifas /> }
     }

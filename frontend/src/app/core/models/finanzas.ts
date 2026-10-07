@@ -103,6 +103,30 @@ export interface BalanceRespuesta {
   carteraPorConcepto: { codigo: string; nombre: string; obligaciones: number; total: number }[];
 }
 
+/** Totales calculados por el backend (en centavos) para un nodo del historial. */
+export interface TotalesHistorial {
+  ingresos: number;
+  egresos: number;
+  balance: number;
+}
+
+export interface MesHistorial extends TotalesHistorial {
+  /** 'AAAA-MM' (mes de Ecuador). */
+  mes: string;
+  pagos: number;
+  egresosRegistrados: number;
+}
+
+export interface AnioHistorial extends TotalesHistorial {
+  anio: number;
+  meses: MesHistorial[];
+}
+
+export interface HistorialAnual {
+  anios: AnioHistorial[];
+  total: TotalesHistorial;
+}
+
 export interface ConceptoCobro {
   id: number;
   codigo: string;
