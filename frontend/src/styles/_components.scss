@@ -442,6 +442,8 @@ textarea.input {
   flex-direction: column;
   width: 100%;
   max-height: min(90vh, 900px);
+  /* dvh: alto realmente visible (en móvil excluye la barra del navegador). */
+  max-height: min(90dvh, 900px);
   padding: 0;
   overflow: hidden;
   border-radius: var(--radius-2xl);
@@ -453,6 +455,7 @@ textarea.input {
     max-width: none !important;
     width: 100% !important;
     max-height: 92vh;
+    max-height: 92dvh;
     border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
     padding-bottom: env(safe-area-inset-bottom);
 

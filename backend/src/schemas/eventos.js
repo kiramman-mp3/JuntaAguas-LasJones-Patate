@@ -1,5 +1,5 @@
 /** Esquemas zod de las rutas de eventos (asambleas y mingas). */
-const { z, fecha, hora, textoOpcional, dinero } = require('../shared/schemas');
+const { z, fecha, hora, textoOpcional } = require('../shared/schemas');
 
 const TIPOS = ['ASAMBLEA', 'MINGA'];
 const ESTADOS = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO', 'REALIZADO', 'CANCELADO'];
@@ -21,7 +21,7 @@ const crearSchema = z.object({
   lugar: textoOpcional(255),
   requiere_asistencia: z.boolean().default(true),
   genera_multa_ausencia: z.boolean().default(true),
-  valor_multa: z.preprocess((v) => (v === '' ? null : v), dinero.min(0).max(1000).nullish()),
+  // valor_multa no se recibe: se toma de la tarifa vigente del concepto de multa.
   puntos_orden_dia: z.array(z.union([
     z.string(),
     z.object({ punto_tratar: z.string(), tratado: z.string().nullish(), resolucion: z.string().nullish() })
@@ -29,9 +29,6 @@ const crearSchema = z.object({
 }).superRefine((d, ctx) => {
   if (d.hora_fin && d.hora_fin <= d.hora_inicio) {
     ctx.addIssue({ code: 'custom', path: ['hora_fin'], message: 'La hora de fin debe ser posterior a la de inicio.' });
-  }
-  if (d.genera_multa_ausencia && d.valor_multa !== null && d.valor_multa !== undefined && d.valor_multa <= 0) {
-    ctx.addIssue({ code: 'custom', path: ['valor_multa'], message: 'La multa debe ser mayor a cero o desactive la multa por ausencia.' });
   }
 });
 

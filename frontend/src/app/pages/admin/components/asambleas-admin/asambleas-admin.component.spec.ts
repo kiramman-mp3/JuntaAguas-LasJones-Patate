@@ -138,7 +138,6 @@ describe('Módulo de Asambleas', () => {
       hora_fin: '21:00',
       lugar: 'Sede Central',
       genera_multa_ausencia: true,
-      valor_multa: 15,
       puntos_orden_dia: ['Punto 1', 'Punto 2']
     };
     component.guardar();
@@ -146,6 +145,8 @@ describe('Módulo de Asambleas', () => {
     expect(payload.tipo).toBe('ASAMBLEA');
     expect(payload.subtipo_asamblea).toBe('ORDINARIA');
     expect(payload.puntos_orden_dia).toEqual(['Punto 1', 'Punto 2']);
+    expect(payload.genera_multa_ausencia).toBe(true);
+    expect(payload).not.toHaveProperty('valor_multa');
     expect(creada).toHaveBeenCalled();
   });
 

@@ -39,6 +39,10 @@ before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
   for (let i = 0; i < 3; i++) comuneros.push(await crearPersona({ nombres: `Comunero ${i}` }));
+  // La multa de asamblea se configura como tarifa; la de minga se deja sin configurar a propósito.
+  await db.query(
+    `INSERT INTO tarifas (concepto_id, valor, vigencia_desde) SELECT id, 12.50, '2020-01-01' FROM conceptos_cobro WHERE codigo = 'MULTA_ASAMBLEA'`
+  );
   await crearPersona({ nombres: 'Inactivo', estado: 'INACTIVO' });
 });
 after(closeDatabase);
@@ -53,20 +57,33 @@ test('crea una asamblea con su orden del día en una sola transacción', async (
   assert.deepEqual(puntos.map((p) => p.punto_tratar), ['Informe de tesorería', 'Mantenimiento del canal']);
   const [[evento]] = await db.query('SELECT hora_inicio, valor_multa FROM eventos WHERE id = ?', [res.body.eventoId]);
   assert.equal(evento.hora_inicio, '09:00:00');
-  assert.equal(Number(evento.valor_multa), 10, 'sin valor explícito se usa la multa por defecto');
+  assert.equal(Number(evento.valor_multa), 12.5, 'la multa sale de la tarifa vigente de MULTA_ASAMBLEA');
 });
 
 test('valida fechas, horas y el valor de la multa', async () => {
   const base = { tipo: 'ASAMBLEA', titulo: 'Asamblea', fecha: enDias(5), hora_inicio: '09:00' };
   assert.equal((await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, fecha: enDias(-1) })).status, 400);
   assert.equal((await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, hora_fin: '08:00' })).status, 400);
-  assert.equal((await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, valor_multa: 0 })).status, 400);
   assert.equal((await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, tipo: 'OTRO' })).status, 400);
 
   const sinMulta = await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, genera_multa_ausencia: false, valor_multa: 0 });
   assert.equal(sinMulta.status, 201);
   const [[e]] = await db.query('SELECT valor_multa FROM eventos WHERE id = ?', [sinMulta.body.eventoId]);
   assert.equal(e.valor_multa, null, 'una multa de 0 ya no se convierte en 10');
+});
+
+test('la multa no se escribe a mano: se ignora el valor enviado y se exige una tarifa configurada', async () => {
+  const base = { titulo: 'Evento con multa', fecha: enDias(7), hora_inicio: '09:00' };
+  const asamblea = await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, tipo: 'ASAMBLEA', valor_multa: 99 });
+  assert.equal(asamblea.status, 201, JSON.stringify(asamblea.body));
+  const [[e]] = await db.query('SELECT valor_multa FROM eventos WHERE id = ?', [asamblea.body.eventoId]);
+  assert.equal(Number(e.valor_multa), 12.5);
+
+  const minga = await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, tipo: 'MINGA', descripcion: 'Limpieza', lugar: 'Canal' });
+  assert.equal(minga.status, 409);
+  assert.match(minga.body.message, /Ajustes → Tarifas/);
+  const mingaSinMulta = await request(app).post('/api/eventos').set(auth(admin)).send({ ...base, tipo: 'MINGA', descripcion: 'Limpieza', lugar: 'Canal', genera_multa_ausencia: false });
+  assert.equal(mingaSinMulta.status, 201);
 });
 
 test('reabrir la asistencia devuelve lo ya registrado (no se pierde al guardar de nuevo)', async () => {

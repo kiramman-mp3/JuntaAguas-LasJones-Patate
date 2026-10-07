@@ -33,7 +33,9 @@ test('los comuneros tienen cédulas ecuatorianas válidas y únicas', async () =
 });
 
 test('la facturación usa la tarifa vigente de cada mes', async () => {
-  const [tarifas] = await db.query("SELECT valor, vigencia_desde, vigencia_hasta FROM tarifas ORDER BY vigencia_desde");
+  const [tarifas] = await db.query(
+    "SELECT t.valor, t.vigencia_desde, t.vigencia_hasta FROM tarifas t JOIN conceptos_cobro c ON c.id = t.concepto_id AND c.codigo = 'AGUA_MENSUAL' ORDER BY t.vigencia_desde"
+  );
   assert.equal(tarifas.length, 2);
   assert.equal(tarifas[0].vigencia_hasta, '2025-05-31');
   const fueraDeTarifa = await uno(

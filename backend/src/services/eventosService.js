@@ -5,6 +5,7 @@
  */
 const { badRequest, notFound, conflict } = require('../shared/errors');
 const { hoy, yaOcurrio } = require('../shared/dates');
+const { conceptoPorCodigo, tarifaVigente } = require('./finanzasService');
 
 const ESTADOS_ABIERTOS = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO'];
 const ESTADOS_ASISTENCIA = ['PENDIENTE', 'PRESENTE', 'AUSENTE', 'JUSTIFICADO'];
@@ -253,12 +254,25 @@ async function detalleEvento(conexion, id) {
   return { evento: filas[0], puntos, asistenciaStats };
 }
 
-/** Crea una asamblea o minga con sus puntos del orden del día. */
+/**
+ * Valor de la multa por inasistencia: la tarifa vigente en la fecha del evento del concepto
+ * MULTA_ASAMBLEA o MULTA_MINGA (Ajustes → Tarifas). No se acepta un valor escrito a mano.
+ */
+async function multaConfigurada(conexion, tipo, fecha) {
+  const concepto = await conceptoPorCodigo(conexion, CONCEPTO_MULTA[tipo]);
+  const tarifa = await tarifaVigente(conexion, concepto.id, fecha);
+  if (!tarifa || !(Number(tarifa.valor) > 0)) {
+    throw conflict(`No hay una tarifa vigente de "${concepto.nombre}" para el ${fecha}. Regístrela en Ajustes → Tarifas o desactive la multa por ausencia.`);
+  }
+  return Number(tarifa.valor);
+}
+
+/** Crea una asamblea o minga con sus puntos del orden del día. La multa se toma de las tarifas. */
 async function crearEvento(conexion, datos, cuentaId) {
   if (datos.tipo === 'ASAMBLEA' && datos.fecha < hoy()) {
     throw badRequest('La fecha de la asamblea no puede ser anterior a la fecha actual.');
   }
-  const valorMulta = datos.genera_multa_ausencia ? (datos.valor_multa ?? 10) : null;
+  const valorMulta = datos.genera_multa_ausencia ? await multaConfigurada(conexion, datos.tipo, datos.fecha) : null;
   const puntos = datos.tipo === 'ASAMBLEA'
     ? datos.puntos_orden_dia
       .map((p) => (typeof p === 'string' ? { punto_tratar: p } : p))

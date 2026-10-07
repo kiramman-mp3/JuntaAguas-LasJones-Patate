@@ -5,12 +5,13 @@ import { finalize } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { MultaConfiguradaComponent } from '../../../../../shared/multa-configurada/multa-configurada.component';
 
 /** Registro de una minga comunitaria (sin subtipo ni orden del día: no es una asamblea). */
 @Component({
   selector: 'app-minga-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ModalComponent, MultaConfiguradaComponent],
   templateUrl: './minga-form.component.html'
 })
 export class MingaFormComponent {
@@ -29,22 +30,14 @@ export class MingaFormComponent {
     fecha: hoyEnEcuador(),
     hora_inicio: '08:00',
     lugar: '',
-    genera_multa_ausencia: true,
-    valor_multa: 10
+    genera_multa_ausencia: true
   };
 
   guardar(): void {
     if (this.guardando) return;
     const f = this.formulario;
-    if (
-      !f.titulo.trim() ||
-      !f.descripcion.trim() ||
-      !f.lugar.trim() ||
-      !f.fecha ||
-      !f.hora_inicio ||
-      (f.genera_multa_ausencia && (!Number.isFinite(Number(f.valor_multa)) || Number(f.valor_multa) <= 0))
-    ) {
-      this.error = 'Complete la actividad, fecha, hora y lugar. Si aplica multa, ingrese un valor mayor a cero.';
+    if (!f.titulo.trim() || !f.descripcion.trim() || !f.lugar.trim() || !f.fecha || !f.hora_inicio) {
+      this.error = 'Complete la actividad, el trabajo a realizar, la fecha, la hora y el lugar.';
       return;
     }
     this.guardando = true;
@@ -56,8 +49,8 @@ export class MingaFormComponent {
       titulo: f.titulo.trim(),
       descripcion: f.descripcion.trim(),
       lugar: f.lugar.trim(),
-      requiere_asistencia: true,
-      valor_multa: f.genera_multa_ausencia ? Number(f.valor_multa) : 0
+      requiere_asistencia: true
+      // El valor de la multa lo toma el servidor de Ajustes → Tarifas.
     };
     this.admin
       .createEvento(payload)

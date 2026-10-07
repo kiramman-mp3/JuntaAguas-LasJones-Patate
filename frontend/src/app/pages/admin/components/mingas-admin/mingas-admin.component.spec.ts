@@ -102,7 +102,6 @@ describe('Gestión de Mingas', () => {
       hora_inicio: '08:00',
       lugar: ' Entrada ',
       genera_multa_ausencia: false,
-      valor_multa: 10,
     };
     form.guardar();
     const payload = admin.createEvento.mock.calls[0][0];
@@ -110,8 +109,8 @@ describe('Gestión de Mingas', () => {
       tipo: 'MINGA',
       titulo: 'Limpieza',
       lugar: 'Entrada',
-      valor_multa: 0,
     });
+    expect(payload).not.toHaveProperty('valor_multa');
     expect(payload).not.toHaveProperty('subtipo_asamblea');
     expect(payload).not.toHaveProperty('puntos_orden_dia');
     expect(admin.notificarMingaWhatsApp).not.toHaveBeenCalled();
