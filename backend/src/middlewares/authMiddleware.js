@@ -1,9 +1,5 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
-
-if (!process.env.JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is missing');
-}
+const env = require('../config/env');
 
 /**
  * Middleware para verificar token JWT en peticiones protegidas
@@ -23,7 +19,7 @@ function verificarToken(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.JWT_SECRET);
     req.user = decoded; // { cuentaId, personaId, cedula, rol, usuario }
     next();
   } catch (error) {
@@ -39,7 +35,7 @@ function tokenOpcional(req, res, next) {
   if (authHeader) {
     const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
     try {
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = jwt.verify(token, env.JWT_SECRET);
     } catch (e) {
       req.user = null;
     }

@@ -66,7 +66,7 @@ async function transaccion(req, res, next, operacion) {
       await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'eventos',
         entidadId: minga.id, ip: req.ip, detalle: resultado.auditoria });
     }
-    const { auditoria, ...respuesta } = resultado;
+    const { auditoria: _auditoria, ...respuesta } = resultado;
     return res.json({ status: 'OK', ...respuesta });
   } catch (error) {
     if (connection) await connection.rollback();

@@ -234,6 +234,9 @@ async function createPersona(req, res, next) {
     }
 
     const cleanCedula = cedula.trim();
+    if (!validarCedulaEcuatoriana(cleanCedula)) {
+      return res.status(400).json({ status: 'ERROR', message: 'La cédula ingresada no es una cédula ecuatoriana válida.' });
+    }
 
     // Validar cédula única
     const [exist] = await db.query(`SELECT id FROM personas WHERE cedula = ?`, [cleanCedula]);
@@ -309,7 +312,6 @@ async function updatePersona(req, res, next) {
       return res.status(404).json({ status: 'ERROR', message: 'Comunero no encontrado.' });
     }
 
-    const persona = rows[0];
 
     await db.query(
       `UPDATE personas

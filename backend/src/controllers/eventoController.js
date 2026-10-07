@@ -5,91 +5,11 @@ const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
 const PDFDocument = require('pdfkit');
 
-let tablaDocumentosAsegurada = false;
-
-async function asegurarTablaDocumentos() {
-  if (tablaDocumentosAsegurada) return;
-  try {
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS documentos_evento (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        evento_id BIGINT NOT NULL,
-        tipo ENUM('CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO') NOT NULL,
-        estado ENUM('GENERADO', 'FIRMADO') NOT NULL DEFAULT 'GENERADO',
-        nombre_archivo VARCHAR(255) NOT NULL DEFAULT 'documento.pdf',
-        contenido_base64 LONGTEXT,
-        ruta_archivo_firmado LONGTEXT,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE
-      ) ENGINE=InnoDB;
-    `);
-
-    try {
-      await db.query(`ALTER TABLE documentos_evento ADD COLUMN contenido_base64 LONGTEXT`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    try {
-      await db.query(`ALTER TABLE documentos_evento ADD COLUMN nombre_archivo VARCHAR(255) DEFAULT 'documento.pdf'`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    try {
-      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN ruta_archivo_firmado LONGTEXT`);
-    } catch (e) { /* Ignorar error */ }
-
-    try {
-      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN nombre_archivo_generado VARCHAR(255) NULL`);
-    } catch (e) { /* Ignorar error */ }
-
-    try {
-      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN ruta_archivo_generado VARCHAR(500) NULL`);
-    } catch (e) { /* Ignorar error */ }
-
-    try {
-      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN fecha_generacion DATETIME NULL`);
-    } catch (e) { /* Ignorar error */ }
-
-    try {
-      await db.query(`ALTER TABLE documentos_evento MODIFY COLUMN generado_por_cuenta_id BIGINT NULL`);
-    } catch (e) { /* Ignorar error */ }
-
-    // Asegurar columnas para soporte de múltiples actas por asamblea (F07)
-    try {
-      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN titulo_acta VARCHAR(255) NULL`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    try {
-      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN estado_acta ENUM('BORRADOR', 'APROBADA', 'FIRMADA') DEFAULT 'BORRADOR'`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    try {
-      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN acta_firmada_url VARCHAR(500) NULL`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    try {
-      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN acta_firmada_nombre VARCHAR(255) NULL`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    try {
-      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN responsables VARCHAR(255) NULL`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    try {
-      await db.query(`ALTER TABLE puntos_asamblea ADD COLUMN fecha_acta DATETIME NULL`);
-    } catch (e) { /* Ignorar error si ya existe */ }
-
-    tablaDocumentosAsegurada = true;
-  } catch (err) {
-    console.error('Error asegurando tabla documentos_evento:', err);
-  }
-}
-
 /**
  * Listar eventos (Asambleas y Mingas)
  */
 async function getEventos(req, res, next) {
   try {
-    await asegurarTablaDocumentos();
     const { tipo, estado, desde, hasta } = req.query;
 
     let sql = `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin,
@@ -330,7 +250,6 @@ async function createEvento(req, res, next) {
  */
 async function savePuntosAsamblea(req, res, next) {
   try {
-    await asegurarTablaDocumentos();
     const { id } = req.params;
     const { puntos } = req.body; // Array de { id, orden, punto_tratar, tratado, resolucion, responsables, titulo_acta, estado_acta }
 
@@ -444,7 +363,6 @@ async function cambiarEstado(req, res, next) {
  */
 async function cambiarEstadoActaPunto(req, res, next) {
   try {
-    await asegurarTablaDocumentos();
     const { id, puntoId } = req.params;
     const { estado_acta, resolucion, tratado, responsables, titulo_acta } = req.body;
 
@@ -677,7 +595,6 @@ async function finalizarEventoYGenerarMultas(req, res, next) {
  */
 async function guardarDocumentoEvento(req, res, next) {
   try {
-    await asegurarTablaDocumentos();
     const { id } = req.params;
     const { tipo, nombre_archivo, contenido_base64, estado, punto_id } = req.body;
 
@@ -689,7 +606,7 @@ async function guardarDocumentoEvento(req, res, next) {
     const docNombre = nombre_archivo || `${tipo}_Firmado${extension}`;
 
     // Guardar archivo físico en el servidor (disco)
-    const base64Clean = contenido_base64.replace(/^data:[a-zA-Z0-9\/\-\+]+;base64,/, '');
+    const base64Clean = contenido_base64.replace(/^data:[a-zA-Z0-9/+-]+;base64,/, '');
     const buffer = Buffer.from(base64Clean, 'base64');
 
     const uploadsDir = path.join(__dirname, '../../uploads/documentos');

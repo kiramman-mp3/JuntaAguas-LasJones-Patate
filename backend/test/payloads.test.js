@@ -100,7 +100,7 @@ test('getPersonas devuelve payload optimizado con paginacion y sin password_hash
 });
 
 test('getLotes devuelve proyeccion optimizada con datos de lote, sector y propietario', async () => {
-  const e = crearEntornoControlador('../src/controllers/loteController.js', (sql) => {
+  const e = crearEntornoControlador('../src/controllers/loteController.js', () => {
     return [[{
       id: 10,
       sector_id: 1,
@@ -122,7 +122,7 @@ test('getLotes devuelve proyeccion optimizada con datos de lote, sector y propie
 });
 
 test('getTurnos devuelve horarios limpios con nombres de comunero y lote', async () => {
-  const e = crearEntornoControlador('../src/controllers/turnoController.js', (sql) => {
+  const e = crearEntornoControlador('../src/controllers/turnoController.js', () => {
     return [[{
       id: 5,
       persona_id: 1,

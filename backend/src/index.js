@@ -1,49 +1,31 @@
-const path = require('path');
-const express = require('express');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-require('dotenv').config();
+const env = require('./config/env');
+const db = require('./config/db');
+const app = require('./app');
 
-const apiRouter = require('./routes/index');
-const errorHandler = require('./middlewares/errorHandler');
-const { swaggerSpec } = require('./config/swagger');
-const { verificarToken } = require('./middlewares/authMiddleware');
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middlewares globales
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:4200', credentials: true }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Servir archivos estáticos subidos (PDFs, imágenes)
-app.use('/uploads', verificarToken, express.static(path.join(__dirname, '../uploads')));
-
-
-// Ruta de comprobación de salud (Health check)
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'API del Sistema Integrado de Gestión - Junta La Jones funcionando correctamente.',
-    version: '1.0.0',
-    swaggerDocs: `http://localhost:${PORT}/api-docs`,
-    timestamp: new Date().toISOString()
-  });
+const server = app.listen(env.PORT, () => {
+  console.log(`[Servidor Backend] http://localhost:${env.PORT}/api (${env.NODE_ENV})`);
+  if (!env.esProduccion) console.log(`[Swagger UI] http://localhost:${env.PORT}/api-docs`);
 });
 
-// Documentación Swagger UI (Accesible en /api-docs)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Cierre ordenado: deja de aceptar conexiones, termina las peticiones en curso y libera el pool.
+let cerrando = false;
+async function apagar(senal) {
+  if (cerrando) return;
+  cerrando = true;
+  console.log(`[Servidor Backend] ${senal} recibido, cerrando...`);
+  const forzar = setTimeout(() => process.exit(1), 10000);
+  forzar.unref();
+  server.close(async () => {
+    try {
+      await require('./services/whatsappService').cerrar?.();
+    } catch { /* el servicio puede no estar inicializado */ }
+    await db.end().catch(() => {});
+    process.exit(0);
+  });
+}
 
-// Montar API principal en /api
-app.use('/api', apiRouter);
-
-// Middleware global de manejo de errores
-app.use(errorHandler);
-
-// Inicializar Servidor Express
-app.listen(PORT, () => {
-  console.log(`[Servidor Backend] Ejecutándose en http://localhost:${PORT}`);
-  console.log(`[Documentación Swagger UI] http://localhost:${PORT}/api-docs`);
-  console.log(`[API Base] http://localhost:${PORT}/api`);
+process.on('SIGINT', () => apagar('SIGINT'));
+process.on('SIGTERM', () => apagar('SIGTERM'));
+process.on('unhandledRejection', (razon) => {
+  console.error('[Promesa rechazada sin manejar]', razon);
 });

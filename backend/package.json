@@ -6,11 +6,11 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "init-db": "node src/utils/initDb.js",
-    "seed-db": "node src/utils/seedDb.js",
-    "seed": "node src/utils/seedDb.js",
-    "db:reset": "node src/utils/cleanDb.js && npm run init-db && npm run seed-db",
-    "test": "node --test test/*.test.js"
+    "lint": "eslint .",
+    "db:migrate": "node src/db/cli.js migrate",
+    "db:drop": "node src/db/cli.js drop",
+    "db:seed": "node src/utils/seedDb.js",
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

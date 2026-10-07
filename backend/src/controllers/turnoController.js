@@ -103,7 +103,7 @@ async function createTurno(req, res, next) {
 
     if (montoTurno > 0) {
       // Buscar o registrar concepto TURNO_ADICIONAL
-      let [conceptos] = await db.query(`SELECT id FROM conceptos_cobro WHERE codigo = 'TURNO_ADICIONAL'`);
+      const [conceptos] = await db.query(`SELECT id FROM conceptos_cobro WHERE codigo = 'TURNO_ADICIONAL'`);
       let conceptoId;
       if (conceptos.length === 0) {
         const [newConc] = await db.query(

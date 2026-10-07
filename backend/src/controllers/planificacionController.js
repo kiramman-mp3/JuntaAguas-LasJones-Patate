@@ -1,5 +1,4 @@
 const db = require('../config/db');
-const { registrarAuditoria } = require('../services/auditService');
 
 async function getPlanes(req, res, next) {
   try {
