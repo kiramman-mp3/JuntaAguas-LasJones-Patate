@@ -117,16 +117,6 @@ export class AdminService {
     return this.http.post(`${this.baseUrl}/eventos/${id}/puntos/${puntoId}/estado`, payload, { headers: this.getAuthHeaders() });
   }
 
-  subirDocumentoFirmado(id: number, tipo: string, nombre_archivo: string, contenido_base64: string, punto_id?: number): Observable<any> {
-    return this.http.post(`${this.baseUrl}/eventos/${id}/documentos`, {
-      tipo,
-      nombre_archivo,
-      contenido_base64,
-      punto_id,
-      estado: 'FIRMADO'
-    }, { headers: this.getAuthHeaders() });
-  }
-
   cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<any> {
     return this.http.post(`${this.baseUrl}/mingas/${id}/estado`, { estado }, { headers: this.getAuthHeaders() });
   }

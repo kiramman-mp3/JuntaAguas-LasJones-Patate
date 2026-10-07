@@ -450,47 +450,26 @@ export class MingasAdminComponent implements OnInit {
     }
     this.subiendoId = minga.id;
     this.error = '';
-    archivo
-      .arrayBuffer()
-      .then((buffer) => {
-        if (this.destruido) return;
-        const bytes = new Uint8Array(buffer);
-        const partes: string[] = [];
-        for (let i = 0; i < bytes.length; i += 8192)
-          partes.push(String.fromCharCode(...bytes.subarray(i, i + 8192)));
-        const base64 = `data:${archivo.type};base64,${btoa(partes.join(''))}`;
-        this.consulta
-          .subirDocumentoEvento(minga.id, 'OTRO', archivo.name, base64)
-          .pipe(
-            takeUntilDestroyed(this.destroyRef),
-            finalize(() => {
-              this.subiendoId = null;
-              this.cdr.markForCheck();
-            }),
-          )
-          .subscribe({
-            next: () => {
-              this.mensaje = 'Lista firmada guardada.';
-              this.cargar();
-            },
-            error: (err) =>
-              (this.error = err.error?.message || 'No se pudo subir la lista firmada.'),
-          });
-      })
-      .catch(() => {
-        if (this.destruido) return;
-        this.subiendoId = null;
-        this.error = 'No se pudo leer el archivo seleccionado.';
-        this.cdr.markForCheck();
+    this.consulta
+      .subirDocumentoEvento(minga.id, 'OTRO', archivo)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.subiendoId = null;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.mensaje = 'Lista firmada guardada.';
+          this.cargar();
+        },
+        error: (err) =>
+          (this.error = err.error?.message || 'No se pudo subir la lista firmada.'),
       });
   }
 
   verLista(minga: Minga) {
-    if (minga.lista_asistencia_firmada_url)
-      window.open(
-        this.consulta.urlDocumento(minga.lista_asistencia_firmada_url),
-        '_blank',
-        'noopener',
-      );
+    this.consulta.abrirDocumento(minga.lista_asistencia_firmada_url);
   }
 }

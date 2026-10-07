@@ -61,10 +61,6 @@
             <i class="ri-file-pdf-2-line" aria-hidden="true"></i>
             {{ item.convocatoria_firmada_url ? 'Ver Convocatoria Firmada (PDF)' : 'Ver Convocatoria Oficial (PDF)' }}
           </button>
-          <button type="button" class="btn btn--secondary btn--sm btn-block" (click)="descargarListaAsistencia(item)">
-            <i class="ri-file-download-line" aria-hidden="true"></i>
-            {{ item.lista_asistencia_firmada_url ? 'Ver Lista de Asistencia Firmada (PDF)' : 'Descargar Lista de Asistencia para Firmar (PDF)' }}
-          </button>
         </div>
       </div>
 
@@ -100,10 +96,6 @@
           <button type="button" class="btn btn--outline btn--sm btn-block" (click)="descargarConvocatoria(item)">
             <i class="ri-file-pdf-2-line" aria-hidden="true"></i>
             {{ item.convocatoria_firmada_url ? 'Ver Convocatoria Firmada (PDF)' : 'Ver Convocatoria Oficial (PDF)' }}
-          </button>
-          <button type="button" class="btn btn--secondary btn--sm btn-block" (click)="descargarListaAsistencia(item)">
-            <i class="ri-file-download-line" aria-hidden="true"></i>
-            {{ item.lista_asistencia_firmada_url ? 'Ver Lista de Asistencia Firmada (PDF)' : 'Descargar Lista para Firmar (PDF)' }}
           </button>
         </div>
       </div>

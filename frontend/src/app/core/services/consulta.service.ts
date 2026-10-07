@@ -25,6 +25,7 @@ export interface ConsultaResultadoResponse {
 }
 
 import { AuthService } from './auth.service';
+import { DocumentosService, DocumentoSubido, TipoDocumento } from './documentos.service';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -33,7 +34,7 @@ import { environment } from '../../../environments/environment';
 export class ConsultaService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(private http: HttpClient, private authService: AuthService, private documentos: DocumentosService) {}
 
   private getAuthHeaders() {
     const token = this.authService.getToken();
@@ -49,39 +50,34 @@ export class ConsultaService {
   }
 
   getEventosPublicos(): Observable<any> {
-    // El endpoint GET /eventos es público
-    return this.http.get<any>(`${this.apiUrl}/eventos`);
+    // Solo eventos anunciados y sin datos personales.
+    return this.http.get<any>(`${this.apiUrl}/eventos/publicos`);
   }
 
   getEventoDetalle(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/eventos/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/eventos/${id}`, this.getAuthHeaders());
   }
 
   getSectores(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/lotes/sectores`);
   }
 
-  subirDocumentoEvento(id: number, tipo: string, nombre_archivo: string, contenido_base64: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/eventos/${id}/documentos`, {
-      tipo,
-      nombre_archivo,
-      contenido_base64,
-      estado: 'FIRMADO'
-    }, this.getAuthHeaders());
+  subirDocumentoEvento(id: number, tipo: TipoDocumento, archivo: File): Observable<DocumentoSubido> {
+    return this.documentos.subir(id, tipo, archivo);
+  }
+
+  abrirDocumento(ruta: string | null | undefined): void {
+    this.documentos.abrir(ruta);
   }
 
   getDocumentosEvento(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/eventos/${id}/documentos`);
+    return this.http.get<any>(`${this.apiUrl}/eventos/${id}/documentos`, this.getAuthHeaders());
   }
 
   descargarListaAsistencia(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/eventos/${id}/pdf-asistencia`, {
       ...this.getAuthHeaders(), responseType: 'blob'
     });
-  }
-
-  urlDocumento(ruta: string): string {
-    return ruta.startsWith('/uploads/') ? `${this.apiUrl.replace(/\/api\/?$/, '')}${ruta}` : ruta;
   }
 }
 

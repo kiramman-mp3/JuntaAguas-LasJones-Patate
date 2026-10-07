@@ -13,7 +13,6 @@ import { AsambleasAdminComponent } from '../asambleas-admin/asambleas-admin.comp
 import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { DialogService } from '../../../../core/services/dialog.service';
-import { environment } from '../../../../../environments/environment';
 
 
 // Para solucionar problema de iconos de Leaflet en Angular
@@ -165,65 +164,6 @@ export class AsistenciasAdminComponent implements OnInit {
       error: () => { }
     });
   }
-
-  descargarConvocatoriaPdfParaFirmar(e: any) {
-    this.generarConvocatoriaPdf(e);
-  }
-
-  descargarActaPdfParaFirmar(e: any) {
-    this.consultaService.getEventoDetalle(e.id).subscribe({
-      next: (res: any) => {
-        if (res.status === 'OK') {
-          this.actasService.generarActaPDF(res.evento, res.puntos || [], res.asistenciaStats);
-        }
-      },
-      error: () => this.notify.error('Error al cargar datos del acta.')
-    });
-  }
-
-  subirDocumentoFirmado(e: any, tipo: 'CONVOCATORIA' | 'ACTA' | 'MINGA' | 'OTRO', fileInput: HTMLInputElement) {
-    if (!fileInput.files || fileInput.files.length === 0) return;
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      this.consultaService.subirDocumentoEvento(e.id, tipo, file.name, base64).subscribe({
-        next: (res: any) => {
-          if (res.status === 'OK') {
-            // Actualizar la URL en el objeto del evento inmediatamente (sin esperar recarga)
-            const serverUrl = res.url ? `${environment.serverUrl}${res.url}` : null;
-            if (serverUrl) {
-              if (tipo === 'CONVOCATORIA') {
-                e.convocatoria_firmada_url = serverUrl;
-                e.convocatoria_firmada_nombre = file.name;
-              } else if (tipo === 'ACTA') {
-                e.acta_firmada_url = serverUrl;
-                e.acta_firmada_nombre = file.name;
-              } else {
-                // MINGA u OTRO â†’ lista de asistencia firmada
-                e.lista_asistencia_firmada_url = serverUrl;
-              }
-              // Abrir el documento recién subido en una nueva pestaña
-              window.open(serverUrl, '_blank');
-            }
-            // Limpiar el input de archivo para permitir volver a subir
-            fileInput.value = '';
-            this.cdr.detectChanges();
-
-          }
-        },
-        error: (err: any) => this.notify.error('Error al subir el documento firmado.')
-      });
-    };
-    reader.readAsDataURL(file);
-  }
-
-  descargarDocumentoGuardado(url?: string, filename?: string) {
-    if (!url) return;
-    const fullUrl = url.startsWith('http') ? url : `${environment.serverUrl}${url}`;
-    window.open(fullUrl, '_blank');
-  }
-
 
   cargarDatosBackend() {
     // Cargar balance financiero en tiempo real desde la API
