@@ -368,7 +368,7 @@ export class FinanzasAdminComponent implements OnInit {
   }
 
   async anularPagoDesdeHistorial(pago: any) {
-    if (pago.observacion && pago.observacion.includes('[ANULADO:')) {
+    if (pago.estado === 'ANULADO') {
       this.notify.info('Este pago ya se encuentra anulado.');
       return;
     }
