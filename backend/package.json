@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "db:migrate": "node src/db/cli.js migrate",
     "db:drop": "node src/db/cli.js drop",
-    "db:seed": "node src/utils/seedDb.js",
+    "db:seed": "node src/db/cli.js seed",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
   },
   "dependencies": {
