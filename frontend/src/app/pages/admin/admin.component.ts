@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { WhatsAppSesionService } from '../../core/services/whatsapp-sesion.service';
+import { WhatsAppPanelComponent } from '../../shared/whatsapp-panel/whatsapp-panel.component';
 
 /**
  * Contenedor del panel administrativo: menú lateral y encabezado.
@@ -9,11 +11,13 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, WhatsAppPanelComponent],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
 export class AdminComponent {
+  readonly whatsapp = inject(WhatsAppSesionService);
+
   readonly menu = [
     { ruta: '/admin/dashboard', etiqueta: 'Dashboard', icono: 'ri-dashboard-line' },
     { ruta: '/admin/comuneros', etiqueta: 'Comuneros & Lotes', icono: 'ri-group-line' },

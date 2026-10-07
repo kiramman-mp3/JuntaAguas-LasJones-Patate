@@ -23,9 +23,9 @@
         <p class="main-header__subtitle">Junta de Agua y Riego "La Jones" - Patate</p>
       </div>
       <div class="header-actions">
-        <a class="btn btn--outline btn-whatsapp" routerLink="/admin/asistencias" [queryParams]="{ whatsapp: 1 }">
+        <button type="button" class="btn btn--outline btn-whatsapp" (click)="whatsapp.abrir()">
           <i class="ri-whatsapp-line" aria-hidden="true"></i> WhatsApp Web
-        </a>
+        </button>
         <span class="badge badge--success"><i class="ri-pulse-line" aria-hidden="true"></i> Sistema en Línea</span>
       </div>
     </header>
@@ -35,3 +35,5 @@
     </div>
   </main>
 </div>
+
+<app-whatsapp-panel />

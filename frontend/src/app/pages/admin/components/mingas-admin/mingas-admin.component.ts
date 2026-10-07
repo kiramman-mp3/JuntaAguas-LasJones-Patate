@@ -2,9 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
-  EventEmitter,
   OnInit,
-  Output,
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -15,6 +13,7 @@ import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
 import { DialogService } from '../../../../core/services/dialog.service';
+import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
 
 interface Minga {
   id: number;
@@ -51,7 +50,7 @@ import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
   styleUrls: ['./mingas-admin.component.scss'],
 })
 export class MingasAdminComponent implements OnInit {
-  @Output() conectarWhatsApp = new EventEmitter<void>();
+  readonly whatsapp = inject(WhatsAppSesionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(DialogService);
   mingas: Minga[] = [];

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
@@ -6,6 +6,7 @@ import { ConsultaService } from '../../../../core/services/consulta.service';
 import { ActasService } from '../../../../core/services/actas.service';
 import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
 import { DocumentosService } from '../../../../core/services/documentos.service';
+import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
 
 export interface PuntoAsamblea {
   id?: number;
@@ -56,7 +57,7 @@ import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
   styleUrls: ['./asambleas-admin.component.scss']
 })
 export class AsambleasAdminComponent implements OnInit {
-  @Output() conectarWhatsApp = new EventEmitter<void>();
+  readonly whatsapp = inject(WhatsAppSesionService);
 
   asambleas: AsambleaItem[] = [];
   busqueda = '';
