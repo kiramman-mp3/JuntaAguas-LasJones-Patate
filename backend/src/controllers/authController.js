@@ -46,7 +46,7 @@ async function login(req, res, next) {
     await db.query(`UPDATE cuentas SET ultimo_acceso = NOW() WHERE id = ?`, [user.cuenta_id]);
 
     // Generar Token JWT
-    const secret = process.env.JWT_SECRET;
+    const secret = require('../config/env').JWT_SECRET;
     const token = jwt.sign(
       {
         cuentaId: user.cuenta_id,
