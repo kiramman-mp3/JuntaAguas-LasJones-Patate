@@ -12,6 +12,13 @@ const { z } = s;
 const numeroOpcional = (esquema) => z.preprocess((v) => (v === '' || v === null ? undefined : v), esquema.optional()).transform((v) => v ?? null);
 const relacion = z.enum(['PROPIETARIO', 'REPRESENTANTE']).default('PROPIETARIO');
 
+/** Titularidad única: un lote pertenece al 100 % a un solo comunero. Se rechaza cualquier otro valor en lugar de ignorarlo. */
+const PORCENTAJE_TITULARIDAD = 100;
+const porcentajeTitularidad = z.coerce
+  .number({ error: 'El porcentaje de propiedad debe ser 100.' })
+  .refine((v) => v === PORCENTAJE_TITULARIDAD, 'Un lote pertenece al 100 % a un solo comunero; no se admite propiedad compartida.')
+  .optional();
+
 const sugerirQuery = z.object({ sector_id: z.coerce.number({ error: 'Seleccione un sector válido para sugerir el código.' }).int().positive('Seleccione un sector válido para sugerir el código.') });
 
 const sectorSchema = z.object({
@@ -38,12 +45,14 @@ const loteSchema = z.object({
   referencia_ubicacion: s.textoOpcional(255),
   observacion: s.textoOpcional(255),
   persona_id: s.id.optional(),
-  tipo_relacion: relacion
+  tipo_relacion: relacion,
+  porcentaje: porcentajeTitularidad
 });
 
 const vincularSchema = z.object({
   persona_id: s.id,
   tipo_relacion: relacion,
+  porcentaje: porcentajeTitularidad,
   observacion: s.textoOpcional(255)
 });
 const loteParam = z.object({ loteId: s.id });
@@ -157,8 +166,8 @@ async function createLote(req, res) {
       );
       if (datos.persona_id) {
         await conexion.query(
-          `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde) VALUES (?, ?, ?, 100.00, ?)`,
-          [datos.persona_id, r.insertId, datos.tipo_relacion, hoy()]
+          `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde) VALUES (?, ?, ?, ?, ?)`,
+          [datos.persona_id, r.insertId, datos.tipo_relacion, PORCENTAJE_TITULARIDAD, hoy()]
         );
       }
       return r.insertId;
@@ -196,8 +205,8 @@ async function linkPersonaLote(req, res) {
 
     await conexion.query('DELETE FROM persona_lotes WHERE lote_id = ?', [loteId]);
     await conexion.query(
-      `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde, observacion) VALUES (?, ?, ?, 100.00, ?, ?)`,
-      [datos.persona_id, loteId, datos.tipo_relacion, hoy(), datos.observacion]
+      `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde, observacion) VALUES (?, ?, ?, ?, ?, ?)`,
+      [datos.persona_id, loteId, datos.tipo_relacion, PORCENTAJE_TITULARIDAD, hoy(), datos.observacion]
     );
     // Los turnos activos del lote siguen al nuevo titular.
     const [turnos] = await conexion.query(
