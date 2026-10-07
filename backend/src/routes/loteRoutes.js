@@ -1,59 +1,50 @@
 const express = require('express');
-const router = express.Router();
 const loteController = require('../controllers/loteController');
-const { verificarToken, verificarRol } = require('../middlewares/authMiddleware');
+const { verificarToken, soloAdmin } = require('../middlewares/authMiddleware');
 
-// Sectores
-router.get('/sectores', loteController.getSectores);
-router.post('/sectores', verificarToken, verificarRol(['ADMIN']), loteController.createSector);
+const router = express.Router();
 
-// Lotes
 /**
- * @swagger
+ * @openapi
+ * /lotes/sectores:
+ *   get:
+ *     tags: [Lotes y Sectores]
+ *     summary: Catálogo público de sectores (sin datos personales)
+ *   post:
+ *     tags: [Lotes y Sectores]
+ *     summary: Crear sector (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/sectores', loteController.getSectores);
+router.post('/sectores', ...soloAdmin, loteController.createSector);
+
+/**
+ * @openapi
  * /lotes/sugerir-codigo:
  *   get:
- *     summary: Sugerir un código libre de lote para un sector activo
- *     tags: [Lotes]
- *     security:
- *       - bearerAuth: []
+ *     tags: [Lotes y Sectores]
+ *     summary: Sugiere el siguiente código libre para un sector
+ *     security: [{ bearerAuth: [] }]
  *     parameters:
- *       - in: query
- *         name: sector_id
- *         required: true
- *         schema:
- *           type: integer
- *           minimum: 1
- *     responses:
- *       200:
- *         description: Código sugerido (no reservado; se comprueba nuevamente al guardar)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: OK
- *                 data:
- *                   type: object
- *                   properties:
- *                     codigo:
- *                       type: string
- *                       example: LJA-004
- *       400:
- *         description: Sector inválido
- *       401:
- *         description: Token requerido
- *       403:
- *         description: Requiere rol ADMIN o SECRETARIO
- *       404:
- *         description: Sector inexistente o inactivo
- *       409:
- *         description: Consecutivos agotados
+ *       - { in: query, name: sector_id, required: true, schema: { type: integer } }
+ * /lotes:
+ *   get:
+ *     tags: [Lotes y Sectores]
+ *     summary: Listar lotes. El administrador ve todos; un comunero solo los suyos.
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Lotes y Sectores]
+ *     summary: Registrar lote y, opcionalmente, su titular
+ *     security: [{ bearerAuth: [] }]
+ * /lotes/{loteId}/vincular-persona:
+ *   post:
+ *     tags: [Lotes y Sectores]
+ *     summary: Asignar o transferir la titularidad de un lote
+ *     security: [{ bearerAuth: [] }]
  */
-router.get('/sugerir-codigo', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), loteController.sugerirCodigo);
-router.get('/', loteController.getLotes);
-router.post('/', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), loteController.createLote);
-router.post('/:loteId/vincular-persona', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), loteController.linkPersonaLote);
+router.get('/sugerir-codigo', ...soloAdmin, loteController.sugerirCodigo);
+router.get('/', verificarToken, loteController.getLotes);
+router.post('/', ...soloAdmin, loteController.createLote);
+router.post('/:loteId/vincular-persona', ...soloAdmin, loteController.linkPersonaLote);
 
 module.exports = router;

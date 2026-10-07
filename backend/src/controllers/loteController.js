@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const { personaPermitida } = require('../shared/roles');
 const { FORMATO_CODIGO_LOTE, normalizarCodigo, prefijoSector } = require('../utils/loteCodigo');
 
 async function sugerirCodigo(req, res, next) {
@@ -79,7 +80,8 @@ async function createSector(req, res, next) {
  */
 async function getLotes(req, res, next) {
   try {
-    const { sector_id, busqueda, persona_id } = req.query;
+    const { sector_id, busqueda } = req.query;
+    const persona_id = personaPermitida(req.user, req.query.persona_id);
 
     let sql = `SELECT l.id, l.sector_id, l.codigo, l.superficie_m2, l.ancho_m, l.largo_m,
                       l.latitud_aproximada, l.longitud_aproximada, l.radio_error_m,

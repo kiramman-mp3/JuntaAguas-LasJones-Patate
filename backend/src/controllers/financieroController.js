@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const { personaPermitida } = require('../shared/roles');
 
 /**
  * Obtener catálogo de conceptos de cobro y sus tarifas activas
@@ -51,7 +52,8 @@ async function createTarifa(req, res, next) {
  */
 async function getObligaciones(req, res, next) {
   try {
-    const { persona_id, estado, anio, mes } = req.query;
+    const { estado, anio, mes } = req.query;
+    const persona_id = personaPermitida(req.user, req.query.persona_id);
 
     let sql = `SELECT o.*, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,
                       CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula
@@ -274,7 +276,8 @@ async function registrarPago(req, res, next) {
  */
 async function getPagos(req, res, next) {
   try {
-    const { persona_id, desde, hasta } = req.query;
+    const { desde, hasta } = req.query;
+    const persona_id = personaPermitida(req.user, req.query.persona_id);
 
     let sql = `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS comunero_nombre, per.cedula,
                       CONCAT(reg_per.nombres, ' ', reg_per.apellidos) AS registrado_por_usuario
