@@ -1,0 +1,351 @@
+/* Panel administrativo
+   ≥1100px: barra lateral con etiquetas · 760–1099px: riel de iconos · <760px: barra de pestañas inferior.
+   Las barras son materiales translúcidos; el contenido se desplaza por debajo. */
+
+:host {
+  --sidebar-w: 248px;
+  --rail-w: 76px;
+  --tabbar-h: 64px;
+  --nav-global-h: 70px;
+  display: block;
+}
+
+.admin-layout {
+  --admin-sticky-top: calc(var(--nav-global-h) + 0.5rem);
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: calc(100vh - var(--nav-global-h));
+  background: var(--bg-app);
+
+  @media (max-width: 1099px) {
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  }
+
+  @media (max-width: 759px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Barra lateral --- */
+.sidebar {
+  position: sticky;
+  top: var(--nav-global-h);
+  height: calc(100vh - var(--nav-global-h));
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem 0.85rem;
+  background: var(--nav-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-right: 1px solid var(--nav-border);
+  overflow-y: auto;
+  z-index: 30;
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0 0.5rem;
+  }
+
+  &__logo {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: linear-gradient(145deg, var(--color-primary), var(--color-secondary));
+    color: #fff;
+    font-size: 1.3rem;
+    box-shadow: 0 6px 16px -6px rgba(2, 132, 199, 0.6);
+  }
+
+  &__brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+
+    strong { font-size: 1rem; letter-spacing: -0.01em; }
+    span { font-size: 0.74rem; color: var(--text-muted); }
+  }
+
+  &__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  &__status { padding: 0 0.75rem; }
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease-out;
+
+  i {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  &__label { display: none; }
+  &__label--full {
+    display: inline;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-main);
+  }
+
+  /* Respuesta inmediata al presionar */
+  &:active { transform: scale(0.97); }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  &.active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  &--whatsapp:hover { color: #16a34a; }
+}
+
+/* --- Riel de iconos (tablet) --- */
+@media (max-width: 1099px) and (min-width: 760px) {
+  .sidebar {
+    align-items: center;
+    padding: 1rem 0.6rem;
+
+    &__brand { padding: 0; }
+    &__brand-text,
+    &__status { display: none; }
+    &__nav, &__footer { width: 100%; }
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 0.6rem;
+
+    i { font-size: 1.35rem; }
+
+    /* La etiqueta sigue disponible para lectores de pantalla. */
+    &__label--full {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  }
+}
+
+/* --- Barra de pestañas inferior (móvil) --- */
+@media (max-width: 759px) {
+  .sidebar {
+    position: fixed;
+    inset: auto 0 0 0;
+    top: auto;
+    height: auto;
+    flex-direction: row;
+    padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+    border-right: 0;
+    border-top: 1px solid var(--nav-border);
+    overflow: visible;
+    z-index: 90;
+
+    &__brand, &__footer { display: none; }
+
+    &__nav {
+      flex-direction: row;
+      justify-content: space-around;
+      gap: 0;
+    }
+  }
+
+  .nav-item {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: 3.25rem;
+    min-width: 0;
+    padding: 0.3rem 0.15rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+
+    i { font-size: 1.35rem; }
+
+    &__label {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__label--full { display: none; }
+
+    &.active { background: transparent; }
+    &.active i { transform: translateY(-1px); }
+  }
+}
+
+/* --- Contenido --- */
+.main-content {
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 2rem) clamp(1rem, 3vw, 2.5rem) 3rem;
+  animation: admin-fade 0.3s ease backwards;
+
+  @media (max-width: 759px) {
+    /* Deja espacio para la barra de pestañas inferior. */
+    padding-bottom: calc(var(--tabbar-h) + 2rem + env(safe-area-inset-bottom));
+  }
+
+  > * {
+    display: block;
+    max-width: 1320px;
+    margin-inline: auto;
+  }
+}
+
+@keyframes admin-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .sidebar {
+    background: var(--bg-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* --- Grupo "Finanzas" del menú: Cobros y pagos · Ajustes · Historial --- */
+.sidebar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar__group-title {
+  padding: 0 0.75rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* La pestaña "Finanzas" solo existe en la barra inferior del móvil. */
+.tab-more { display: none; }
+
+@media (max-width: 1099px) and (min-width: 760px) {
+  .sidebar__group-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}
+
+@media (max-width: 759px) {
+  .sidebar__group { display: none; }
+
+  .tab-more {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+
+    > .nav-item { width: 100%; }
+
+    &__panel {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 0.6rem);
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 220px;
+      padding: 0.4rem;
+      border-radius: var(--radius-lg);
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+      transform-origin: bottom right;
+
+      &--enter { animation: tab-more-in 0.22s var(--ease-out) both; }
+    }
+
+    &__item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-height: 2.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.92rem;
+      font-weight: 500;
+      text-decoration: none;
+
+      i { font-size: 1.15rem; color: var(--text-muted); }
+
+      &:active { background: var(--bg-surface-hover); }
+
+      &.active {
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        font-weight: 600;
+
+        i { color: var(--color-primary); }
+      }
+    }
+  }
+}
+
+@keyframes tab-more-in {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to { opacity: 1; transform: none; }
+}

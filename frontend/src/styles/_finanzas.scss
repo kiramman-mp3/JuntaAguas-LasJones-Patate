@@ -1,0 +1,798 @@
+/* ==============================================================================
+   MÓDULO FINANCIERO (cobros, pagos, egresos, facturación y tarifas)
+   Criterios de .claude/skills/apple-design: respuesta inmediata al presionar,
+   materiales translúcidos para la barra flotante, cifras con tracking negativo
+   y números tabulares, y alternativas para movimiento/transparencia reducidos.
+   ============================================================================== */
+
+.fin {
+  --fin-gap: 1rem;
+  --fin-radius: 14px;
+  --fin-ease: cubic-bezier(0.32, 0.72, 0, 1); /* curva amortiguada sin rebote */
+  display: flex;
+  flex-direction: column;
+  gap: var(--fin-gap);
+}
+
+/* --- Indicadores --- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.stat-tile {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--fin-radius);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+
+  &__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.01em;
+  }
+
+  &__value {
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  &--positive .stat-tile__value { color: var(--color-success); }
+  &--negative .stat-tile__value { color: var(--color-danger); }
+  &--warning .stat-tile__value { color: #b45309; }
+}
+
+/* --- Barra flotante con control segmentado --- */
+.fin-toolbar {
+  position: sticky;
+  /* Bajo la barra de navegación global, no detrás de ella. */
+  top: var(--admin-sticky-top, 0);
+  z-index: 20;
+  padding: 0.5rem;
+  margin: 0 -0.5rem;
+  border-radius: calc(var(--fin-radius) + 4px);
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.segmented {
+  --n: 5;
+  --i: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-color);
+
+  /* El indicador se desplaza con transform: solo compone, no reacomoda la página. */
+  &__thumb {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc((100% - 6px) / var(--n));
+    transform: translateX(calc(var(--i) * 100%));
+    border-radius: 8px;
+    background: var(--bg-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.06);
+    transition: transform 0.35s var(--fin-ease, ease);
+    pointer-events: none;
+  }
+
+  &__item {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0.35rem 0.6rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.1s ease-out;
+
+    &:active { transform: scale(0.97); }
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+    &--active { color: var(--text-main); }
+
+    i { font-size: 1rem; }
+  }
+
+  /* En pantallas angostas se desplaza horizontalmente y el activo se marca en sí mismo. */
+  @media (max-width: 760px) {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+    &__thumb { display: none; }
+    &__item { flex: 0 0 auto; }
+    &__item--active {
+      background: var(--bg-surface);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+    }
+  }
+}
+
+/* --- Paneles --- */
+.fin-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--fin-radius);
+  padding: 1.25rem;
+  min-width: 0;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__desc {
+    margin: 0.2rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+}
+
+.fin-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: var(--fin-gap);
+  align-items: start;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Botón con respuesta al presionar (no al soltar). */
+.pressable:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s ease-out;
+}
+
+/* --- Búsqueda --- */
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  > i {
+    position: absolute;
+    left: 0.8rem;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .input {
+    padding-left: 2.3rem;
+    min-height: 2.6rem;
+    border-radius: 10px;
+  }
+}
+
+.result-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+
+  &__item + &__item { border-top: 1px solid var(--border-color); }
+
+  &__btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 0;
+    background: var(--bg-surface);
+    color: var(--text-main);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: var(--bg-surface-hover); }
+    &:active { background: var(--color-primary-light); }
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+  }
+
+  &__meta { color: var(--text-muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+}
+
+/* --- Filas seleccionables (obligaciones) --- */
+.check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.check-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease-out;
+
+  &:active { transform: scale(0.99); }
+  &--checked {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+
+  input[type='checkbox'] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--color-primary);
+  }
+
+  &__title { font-weight: 600; font-size: 0.9rem; }
+  &__meta { color: var(--text-muted); font-size: 0.78rem; }
+  &__value { font-weight: 700; font-variant-numeric: tabular-nums; }
+}
+
+.group-label {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* --- Resumen de caja (columna derecha del cobro) --- */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  &__total {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__divider {
+    height: 1px;
+    background: var(--border-color);
+    border: 0;
+    margin: 0.25rem 0;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  > label, > .field__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  &__error {
+    font-size: 0.78rem;
+    color: var(--color-danger);
+  }
+
+  &__hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+/* --- Chips de filtro --- */
+.chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border-radius: var(--radius-full);
+  padding: 0.3rem 0.8rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease-out;
+
+  &:active { transform: scale(0.96); }
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+  &--active {
+    background: var(--text-main);
+    border-color: var(--text-main);
+    color: var(--bg-surface);
+  }
+}
+
+/* --- Tabla compacta --- */
+.fin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: var(--bg-surface-hover); }
+
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .acciones { text-align: right; white-space: nowrap; }
+
+  &__muted { color: var(--text-muted); font-size: 0.78rem; }
+  tr.is-anulado td { color: var(--text-muted); }
+  tr.is-anulado .money { text-decoration: line-through; }
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin: 0 -1.25rem;
+  padding: 0 1.25rem;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.05rem;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease-out;
+
+  &:hover { background: var(--bg-surface-hover); color: var(--text-main); }
+  &:active { transform: scale(0.94); }
+  &:focus-visible { outline: 2px solid var(--color-primary); }
+  &--danger:hover { color: var(--color-danger); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+/* --- Calendario de facturación --- */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+
+.month-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease-out;
+
+  &:hover:not(:disabled) { border-color: var(--color-primary); }
+  &:active:not(:disabled) { transform: scale(0.98); }
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  &:disabled { cursor: default; opacity: 0.45; }
+
+  &--selected {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.18);
+  }
+
+  &__name { font-weight: 700; font-size: 0.95rem; }
+  &__meta { font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+  &__bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-surface-hover);
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: var(--color-success);
+      border-radius: inherit;
+      transform-origin: left;
+      transition: transform 0.4s var(--fin-ease, ease);
+    }
+  }
+}
+
+.status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &--ok { color: var(--color-success); }
+  &--pending { color: #b45309; }
+  &--none { color: var(--text-muted); }
+}
+
+.preview-card {
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--color-primary-light);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* --- Hoja modal: desde abajo en móvil, centrada en escritorio --- */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+  animation: fin-fade 0.2s ease;
+
+  @media (max-width: 600px) {
+    align-items: flex-end;
+    padding: 0;
+  }
+}
+
+.sheet {
+  /* Cabecera y pie fijos; solo el cuerpo se desplaza, así "Guardar" siempre está a la vista. */
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.28);
+  animation: fin-rise 0.35s var(--fin-ease, ease);
+
+  @media (max-width: 600px) {
+    border-radius: 18px 18px 0 0;
+    max-height: 88vh;
+    max-height: 88dvh;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.1rem 1.25rem 0.5rem;
+
+    h3 { margin: 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; }
+  }
+
+  &__header,
+  &__footer { flex-shrink: 0; }
+
+  &__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.75rem 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding: 0.9rem 1.25rem 1.1rem;
+    border-top: 1px solid var(--border-color);
+  }
+}
+
+@keyframes fin-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fin-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fin-toolbar {
+    background: var(--bg-app);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .segmented, .stat-tile, .fin-panel, .check-row, .month-tile { border-color: var(--text-main); }
+}
+
+/* --- Historial financiero en árbol (año → mes → movimientos) --- */
+.fin-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &__total {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+
+    strong { color: var(--text-main); margin-left: 0.25rem; }
+    .is-negativo { color: var(--color-danger); }
+  }
+
+  &__anio {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  &__hijos {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0.5rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  &__nodo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover { background: var(--bg-surface-hover); }
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+    &--anio { font-weight: 700; font-size: 1rem; }
+
+    &[aria-expanded='true'] .fin-tree__chevron { transform: rotate(90deg); }
+  }
+
+  &__chevron {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    transition: transform 0.2s var(--fin-ease, ease);
+  }
+
+  &__etiqueta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__cifras {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  &__ingreso { color: var(--color-success); }
+  &__egreso { color: var(--color-danger); }
+
+  .is-negativo { color: var(--color-danger); }
+
+  .fin-table .badge { margin-right: 0.35rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__chevron { transition: none; }
+  }
+}
+
+/* --- Grupos de secciones: Cobros y pagos | Ajustes | Historial --- */
+.fin-toolbar--grupos {
+  display: grid;
+  /* Tres grupos lado a lado si caben; en pantallas menores se apilan sin apretarse. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 0.75rem;
+}
+
+.fin-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+
+  &__titulo {
+    padding-left: 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  &--activo &__titulo { color: var(--color-primary); }
+}
+
+/* Un grupo sin la sección activa no muestra el indicador. */
+.segmented--inactivo .segmented__thumb { opacity: 0; }
+
+/* --- Cobro en caja: árbol año → mes → concepto con subtotales --- */
+.cobro-tree {
+  &__fila {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding-left: 0.85rem;
+
+    .fin-tree__nodo { padding-left: 0.4rem; }
+
+    &--anio { background: var(--bg-surface-hover); }
+  }
+
+  &__check {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  &__cifra {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__rotulo {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  &__meses {
+    padding: 0.25rem 0.5rem 0.5rem 1rem;
+
+    > li + li { border-top: 1px dashed var(--border-color); }
+  }
+
+  &__conceptos {
+    padding: 0.15rem 0 0.6rem 1.6rem;
+  }
+
+  &__resumen {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    background: var(--bg-surface-hover);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 600px) {
+    &__meses { padding-left: 0.25rem; }
+    &__conceptos { padding-left: 0.5rem; }
+  }
+}

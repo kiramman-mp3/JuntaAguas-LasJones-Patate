@@ -1,25 +1,31 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const env = require('./config/env');
+const db = require('./config/db');
+const app = require('./app');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Ruta base de prueba
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'API del Sistema Integrado de Gestión - Junta La Jones funcionando correctamente.',
-    timestamp: new Date().toISOString()
-  });
+const server = app.listen(env.PORT, () => {
+  console.log(`[Servidor Backend] http://localhost:${env.PORT}/api (${env.NODE_ENV})`);
+  if (!env.esProduccion) console.log(`[Swagger UI] http://localhost:${env.PORT}/api-docs`);
 });
 
-// Inicialización del servidor
-app.listen(PORT, () => {
-  console.log(`[Backend Server] Ejecutándose en http://localhost:${PORT}`);
+// Cierre ordenado: deja de aceptar conexiones, termina las peticiones en curso y libera el pool.
+let cerrando = false;
+async function apagar(senal) {
+  if (cerrando) return;
+  cerrando = true;
+  console.log(`[Servidor Backend] ${senal} recibido, cerrando...`);
+  const forzar = setTimeout(() => process.exit(1), 10000);
+  forzar.unref();
+  server.close(async () => {
+    try {
+      await require('./services/whatsappService').cerrar?.();
+    } catch { /* el servicio puede no estar inicializado */ }
+    await db.end().catch(() => {});
+    process.exit(0);
+  });
+}
+
+process.on('SIGINT', () => apagar('SIGINT'));
+process.on('SIGTERM', () => apagar('SIGTERM'));
+process.on('unhandledRejection', (razon) => {
+  console.error('[Promesa rechazada sin manejar]', razon);
 });

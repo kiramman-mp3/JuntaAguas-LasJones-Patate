@@ -1,0 +1,131 @@
+<section class="module" aria-labelledby="padron-titulo">
+  <div class="section-head">
+    <div>
+      <h3 id="padron-titulo" class="section-head__title">Padrón de comuneros</h3>
+      <p class="section-head__subtitle">{{ total() }} comuneros registrados · datos de contacto, lotes y cuenta de acceso.</p>
+    </div>
+    <div class="section-head__actions">
+      <button type="button" class="btn btn--primary" (click)="formulario.set({ comunero: null })">
+        <i class="ri-user-add-line" aria-hidden="true"></i> Nuevo comunero
+      </button>
+    </div>
+  </div>
+
+  <div class="surface">
+    <div class="surface__head">
+      <div class="toolbar toolbar--flush">
+        <div class="search-field toolbar__grow">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="search" class="input" placeholder="Buscar por cédula o nombre…" [(ngModel)]="busqueda" (ngModelChange)="filtrar()"
+            aria-label="Buscar comunero" />
+        </div>
+        <select class="input toolbar__select" [(ngModel)]="estadoFiltro" (ngModelChange)="filtrar(true)" aria-label="Estado">
+          <option value="">Todos los estados</option>
+          <option value="ACTIVO">Activos</option>
+          <option value="INACTIVO">Inactivos</option>
+        </select>
+      </div>
+    </div>
+
+    @if (cargando() && !comuneros().length) {
+      <app-skeleton [filas]="8" mensaje="Cargando comuneros…" />
+    } @else if (error()) {
+      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudo cargar el padrón" mensaje="Revise su conexión e intente nuevamente.">
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      </app-empty-state>
+    } @else if (!comuneros().length) {
+      @if (busqueda || estadoFiltro) {
+        <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda.">
+          <button type="button" class="btn btn--outline btn--sm" (click)="limpiarFiltros()">Limpiar filtros</button>
+        </app-empty-state>
+      } @else {
+        <app-empty-state icono="ri-team-line" titulo="Aún no hay comuneros" mensaje="Registre al primer comunero para empezar a asignar lotes y turnos.">
+          <button type="button" class="btn btn--primary btn--sm" (click)="formulario.set({ comunero: null })"><i class="ri-user-add-line" aria-hidden="true"></i> Nuevo comunero</button>
+        </app-empty-state>
+      }
+    } @else {
+      <div class="table-container table-container--flush" [class.is-refreshing]="cargando()">
+        <table class="table-custom table-custom--stack">
+          <thead>
+            <tr>
+              <th>Comunero</th>
+              <th>Cédula</th>
+              <th>Contacto</th>
+              <th>Lotes</th>
+              <th>Estado</th>
+              <th><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of comuneros(); track u.id) {
+              <tr>
+                <td data-label="Comunero">
+                  <div class="person">
+                    <span class="avatar" aria-hidden="true">{{ iniciales(u) }}</span>
+                    <div class="person__text">
+                      <strong>{{ u.apellidos }} {{ u.nombres }}</strong>
+                      <span class="person__meta" [title]="u.direccion || ''">{{ u.email || u.direccion || 'Sin correo ni dirección' }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Cédula" class="money">{{ u.cedula }}</td>
+                <td data-label="Contacto">
+                  @if (u.celular || u.telefono) {
+                    {{ u.celular }}@if (u.celular && u.telefono) { · }{{ u.telefono }}
+                  } @else {
+                    <span class="text-muted">N/D</span>
+                  }
+                </td>
+                <td data-label="Lotes">
+                  @if (u.lotes_count > 0) {
+                    <button type="button" class="pill pill--primary pill--button" (click)="lotesDe.set(u)" title="Ver lotes del comunero">
+                      <i class="ri-map-pin-line" aria-hidden="true"></i> {{ u.lotes_count }} {{ u.lotes_count === 1 ? 'lote' : 'lotes' }}
+                    </button>
+                  } @else {
+                    <span class="pill pill--warning">Sin lotes</span>
+                  }
+                </td>
+                <td data-label="Estado">
+                  <span class="badge" [ngClass]="u.estado === 'ACTIVO' ? 'badge--success' : 'badge--danger'">{{ u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span>
+                </td>
+                <td class="cell-actions">
+                  <button type="button" class="icon-btn" (click)="formulario.set({ comunero: u })" title="Editar comunero" [attr.aria-label]="'Editar a ' + u.nombres">
+                    <i class="ri-edit-line" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="icon-btn" (click)="vincularA.set(u)" title="Asignar terreno" [attr.aria-label]="'Asignar terreno a ' + u.nombres">
+                    <i class="ri-map-pin-add-line" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="surface__foot">
+        <span>Página <strong>{{ pagina() }}</strong> de <strong>{{ totalPaginas() }}</strong> · {{ total() }} comuneros</span>
+        <div class="pager">
+          <button type="button" class="btn btn--outline btn--sm" [disabled]="pagina() === 1 || cargando()" (click)="cambiarPagina(pagina() - 1)">
+            <i class="ri-arrow-left-s-line" aria-hidden="true"></i> Anterior
+          </button>
+          <button type="button" class="btn btn--outline btn--sm" [disabled]="pagina() === totalPaginas() || cargando()" (click)="cambiarPagina(pagina() + 1)">
+            Siguiente <i class="ri-arrow-right-s-line" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+@if (formulario(); as f) {
+  <app-comunero-form [comunero]="f.comunero" (cerrar)="formulario.set(null)" (guardado)="onGuardado()" />
+}
+@if (vincularA(); as c) {
+  <app-vincular-lote [comunero]="c" (cerrar)="vincularA.set(null)" (vinculado)="onVinculado()" />
+}
+@if (lotesDe(); as c) {
+  <app-lotes-comunero [comunero]="c" (cerrar)="lotesDe.set(null)" (verLote)="verLoteDesdeComunero($event)" (asignarOtro)="asignarOtroTerreno(c)" />
+}
+@if (loteDetalle(); as l) {
+  <app-lote-detalle [lote]="l" (cerrar)="loteDetalle.set(null)" />
+}

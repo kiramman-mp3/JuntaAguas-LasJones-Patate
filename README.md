@@ -1,105 +1,167 @@
-# Sistema Informático Integrado de Gestión - Junta de Agua y Riego "La Jones"
+# Sistema de Gestión - Junta de Agua y Riego "La Jones"
 
-Sistema web integral desarrollado para la administración eficiente, gestión financiera, georreferenciación de lotes y portal de comunicaciones de la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador).
+Sistema web para administrar la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador): comuneros y lotes, turnos de riego, asambleas y mingas con asistencia y multas, cobros, facturación mensual del agua, egresos y un portal donde cada comunero consulta su cuenta.
 
----
-
-## 🚀 Tecnologías Utilizadas
-
-- **Frontend:** Angular 17+, TypeScript, SCSS, RxJS, Leaflet (Mapas interactivas).
-- **Backend:** Node.js, Express, JWT, CORS, Dotenv.
-- **Base de Datos:** MySQL (Relacional, InnoDB, Utf8mb4).
+La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INSTRUCCIONES.md).
 
 ---
 
-## 📦 Módulos del Sistema
+## Tecnologías
 
-### 1. 📋 Gestión Administrativa
-- **Nómina de Usuarios:** Registro detallado de comuneros/usuarios.
-- **Control de Asistencia:** Asistencia digital a Asambleas Generales y Mingas con generación automática de multas por inasistencia.
-- **Lotes por Usuario:** Dimensiones, sectores, coordenadas (Latitud/Longitud) y mapas satelitales interactivos.
-- **Turnos de Riego:** Calendario semanal y horarios de distribución del agua por sector.
-
-### 2. 💰 Gestión Financiera
-- **Ingresos:** Recaudación por pagos de agua, cuotas y multas por año y concepto.
-- **Cuentas por Cobrar (CxC):** Control de valores pendientes por usuario, año y concepto.
-- **Egresos & Cuentas por Pagar (CxP):** Registro de compras, trabajos, honorarios y tasas pagadas.
-- **Contabilidad & Balance Al Día:** Plan de cuentas, caja/bancos y balance general emitido en tiempo real.
-- **Facturación, Inventarios & Activos Fijos:** Control físico y contable.
-- **Integración SRI:** Generación de anexos y reportes para declaraciones del IVA.
-
-### 3. 📢 Gestión de Comunicaciones & Portal Web
-- **Página Web Pública:** Sitio informativo para comuneros y público general.
-- **Convocatorias:** Publicación digital de avisos para Asambleas y Mingas.
-- **Repositorio Digital:** Archivo de Actas de la Asamblea General, Directiva, resoluciones e informes de cumplimiento.
+- **Frontend:** Angular 22 (componentes standalone, signals, rutas con carga diferida), TypeScript estricto, SCSS, RxJS, Leaflet, pdfmake y jsPDF (cargados bajo demanda), Vitest.
+- **Backend:** Node.js 26, Express 5, mysql2 (SQL parametrizado), zod para validar la entrada, JWT, bcryptjs, helmet, multer, pdfkit, whatsapp-web.js y Swagger (solo fuera de producción).
+- **Base de datos:** MySQL 8 (InnoDB, utf8mb4) en Docker, con migraciones versionadas.
+- **Calidad:** ESLint en backend y frontend; pruebas de integración contra MySQL real; GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
 
-## 🛠️ Estructura del Proyecto
+## Módulos
+
+### Administración (rol ADMIN, en `/admin`)
+Cada sección tiene su propia URL y se carga bajo demanda.
+
+| Ruta | Qué hace |
+|---|---|
+| `/admin/dashboard` | Indicadores reales: recaudado, cartera pendiente y vencida, morosos, egresos, saldo de caja, porcentaje de cobro, asistencia y próximos eventos. |
+| `/admin/comuneros` | Comuneros, cuentas de acceso con contraseña temporal, lotes georreferenciados (mapa) y transferencia de titularidad con auditoría. |
+| `/admin/asistencias` | Asambleas y mingas: convocatoria, padrón de asistencia, finalización con multas automáticas por ausencia, actas por punto, documentos firmados, hoja de asistencia en PDF y convocatorias por WhatsApp. |
+| `/admin/turnos` | Turnos de riego semanales sin cruces de horario; un turno adicional genera su cobro. |
+| `/admin/finanzas/cobrar` | Cobro en caja: búsqueda del comunero, obligaciones pendientes (cuotas, multas y otros rubros), efectivo o transferencia, comprobante en PDF. |
+| `/admin/finanzas/pagos` | Historial de pagos por fechas, reimpresión del comprobante y anulación con motivo. |
+| `/admin/finanzas/egresos` | Registro y consulta de egresos (proveedor, RUC, factura). |
+| `/admin/finanzas/facturacion` | Facturación mensual del agua: estado del año mes a mes, vista previa y emisión de las cuotas. |
+| `/admin/finanzas/tarifas` | Tarifas por concepto con su historial de vigencias. |
+
+### Comunero (rol USUARIO)
+- **Mi cuenta** (`/mi-cuenta`): valores pendientes, historial de pagos y lote del comunero. El servidor solo devuelve los datos de quien inició sesión.
+
+### Portal público
+- **Inicio** y **Eventos** (`/eventos`): próximas asambleas y mingas, y convocatorias firmadas. No expone datos personales.
+
+### Solo API (sin pantalla todavía)
+- Inventario de bienes (`/api/inventario`), plan anual con actividades (`/api/planes`) y auditoría (`/api/auditoria`).
+
+> No forman parte del sistema: contabilidad (plan de cuentas), cuentas por pagar, facturación electrónica ni integración con el SRI.
+
+---
+
+## Arquitectura
 
 ```text
 JuntaAguas-LasJones-Patate/
-├── backend/                  # API REST (Node.js + Express)
-│   ├── database/             # Scripts SQL (schema.sql)
+├── .github/workflows/ci.yml   # Lint, pruebas y build en cada PR a develop o main
+├── bd/docker-compose.yml      # MySQL 8 para desarrollo
+├── backend/
+│   ├── database/migrations/   # Migraciones versionadas (001_baseline.sql, 002…010 .js)
 │   ├── src/
-│   │   ├── config/           # Conexión MySQL y variables globales
-│   │   ├── controllers/      # Controladores de negocio
-│   │   ├── routes/           # Endpoints de la API
-│   │   └── index.js          # Punto de entrada del servidor
-│   ├── .env.example
-│   └── package.json
-├── frontend/                 # Aplicación Cliente (Angular)
-│   ├── src/
-│   │   ├── app/              # Componentes, servicios y rutas de Angular
-│   │   └── styles.scss       # Estilos globales
-│   └── angular.json
-├── .gitignore
-└── README.md
+│   │   ├── app.js             # App Express (sin listen; la usan las pruebas)
+│   │   ├── index.js           # Arranque del servidor
+│   │   ├── config/            # Variables de entorno validadas, pool MySQL (UTC), Swagger
+│   │   ├── db/                # CLI: migrate, drop y seed (datos de prueba realistas)
+│   │   ├── middlewares/       # Autenticación y roles, validación, manejo de errores
+│   │   ├── routes/            # Endpoints y documentación OpenAPI
+│   │   ├── controllers/       # Capa HTTP delgada: valida, llama al servicio, audita y responde
+│   │   ├── schemas/           # Esquemas zod de eventos y finanzas
+│   │   ├── services/          # Reglas de negocio y consultas (eventos, finanzas, turnos, documentos, PDF, WhatsApp, auditoría)
+│   │   └── shared/            # Errores HTTP, transacciones, fechas de Ecuador, roles, esquemas comunes
+│   └── test/{unit,integration}/
+└── frontend/src/app/
+    ├── core/                  # auth (sesión), guard, interceptor del token, modelos tipados, servicios de API, utilidades
+    ├── shared/                # Toasts, diálogos, contraseña temporal, pipe fechaLocal
+    ├── pages/                 # inicio, eventos, login, mi-cuenta, no-encontrado
+    │   └── admin/             # Contenedor del panel + admin.routes.ts (rutas hijas)
+    │       ├── dashboard/
+    │       └── components/    # comuneros, asistencias (asambleas y mingas), turnos, finanzas/{cobro-caja, historial-pagos, egresos, facturacion-mensual, tarifas}
+    └── testing/               # Utilidades para las pruebas
 ```
 
----
-
-## ⚡ Instalación y Configuración Local
-
-### Prerrequisitos
-- **Node.js:** v18.x o superior
-- **MySQL Server:** v8.0 o superior (o MariaDB equivalent)
-- **Angular CLI:** `npm install -g @angular/cli`
+**Principios:**
+- Las reglas de negocio viven en `backend/src/services` y reciben una conexión dentro de una transacción (`shared/transaction.js`). Los controladores no contienen SQL de escritura.
+- Toda entrada se valida con zod; un error de validación responde 400 con el mensaje del campo.
+- Autorización por ruta: `soloAdmin` para la gestión; un comunero solo ve sus propios datos.
+- Fechas: la Junta opera en hora de Ecuador (UTC-5). Las fechas de calendario viajan como `AAAA-MM-DD`; los instantes (por ejemplo, la fecha de un pago) se guardan en UTC y se filtran por día de Ecuador.
+- El frontend usa un único interceptor para el token y clientes de API tipados (`AdminService`, `FinanzasService`, `ConsultaService`).
 
 ---
 
-### 1. Base de Datos
-1. Abre tu gestor de base de datos MySQL (phpMyAdmin, MySQL Workbench, DBeaver, etc.).
-2. Ejecuta el script SQL ubicado en [`backend/database/schema.sql`](backend/database/schema.sql) para crear la base de datos `junta_las_jones` y todas sus tablas.
+## Inicio rápido
 
----
+Requisitos: **Node.js 26** (Angular 22 exige al menos 22.22), **Docker** y **npm**.
 
-### 2. Configurar y Ejecutar Backend
 ```bash
-# Navegar al directorio del backend
-cd backend
+# 1. Base de datos
+cd bd && docker compose up -d
 
-# Copiar el archivo de entorno y configurar credenciales de MySQL
-cp .env.example .env
+# 2. Backend
+cd ../backend
+npm ci
+cp .env.example .env          # y completa JWT_SECRET (ver el comentario del archivo)
+npm run db:migrate            # crea la base y aplica las migraciones
+npm run db:seed -- --reset    # opcional: datos de prueba (borra y recrea la base)
+npm run dev                   # http://localhost:3000  ·  Swagger: http://localhost:3000/api-docs
 
-# Iniciar servidor en modo desarrollo
-npm run dev
-```
-El servidor backend se ejecutará en: `http://localhost:3000`
-
----
-
-### 3. Configurar y Ejecutar Frontend
-```bash
-# Navegar al directorio del frontend
+# 3. Frontend (otra terminal)
 cd frontend
-
-# Ejecutar el servidor de desarrollo de Angular
-ng serve --open
+npm ci
+npm start                     # http://localhost:4200
 ```
-La aplicación cliente estará disponible en: `http://localhost:4200`
+
+El seed imprime al terminar la cédula del administrador, la de un comunero de demostración y la contraseña.
 
 ---
 
-## 📄 Licencia
-Este proyecto es desarrollado exclusivamente para la **Junta de Agua y Riego "La Jones" - Patate**.
+## Despliegue en producción
+
+Un solo comando prepara y arranca todo con una **base de datos limpia**: el backend sirve la API y el frontend compilado desde el mismo origen (sin CORS ni dominio que configurar).
+
+```bash
+cp backend/.env.production.example backend/.env   # complete DB_*, JWT_SECRET y ADMIN_*
+npm run prod                                     # desde la raíz del proyecto
+```
+
+`npm run prod` hace, en orden:
+
+1. Verifica Node.js (22.22.3+, 24.15+ o 26+) y que `backend/.env` sea apto para producción: `NODE_ENV=production`, sin contraseñas de ejemplo y con un `JWT_SECRET` válido.
+2. Instala las dependencias si faltan (`npm run prod -- --instalar` fuerza `npm ci`).
+3. Compila el frontend en modo producción.
+4. Prepara la base (`npm --prefix backend run db:setup`): la crea si no existe, aplica las migraciones (catálogos de roles y conceptos de cobro) y, si no hay ningún administrador, crea el primero con `ADMIN_CEDULA`, `ADMIN_NOMBRES` y `ADMIN_APELLIDOS`. **La contraseña temporal se muestra una sola vez**: anótela; se cambia en el primer ingreso.
+5. Inicia el servidor en `http://localhost:PORT`.
+
+Es seguro repetirlo: nunca siembra datos de prueba ni borra información; en una base en uso solo aplica las migraciones pendientes. Con `npm run prod:preparar` se hacen los pasos 1 a 4 sin iniciar el servidor, para dejarlo en manos de pm2, systemd o un servicio de Windows (`npm start`).
+
+Primeros pasos en el panel, con la base vacía:
+
+- **Ajustes → Tarifas:** registre la cuota de agua y las multas por inasistencia a asamblea y a minga (sin ellas no se pueden facturar meses ni crear eventos con multa).
+- **Comuneros y lotes → Catastro:** cree los sectores y luego los lotes.
+- **Comuneros y lotes → Padrón:** registre a los comuneros y sus cuentas de acceso.
+
+Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1`; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador Chromium en el servidor.
+
+---
+
+## Comandos
+
+| Dónde | Comando | Qué hace |
+|---|---|---|
+| backend | `npm run dev` | Servidor con recarga automática |
+| backend | `npm run lint` | ESLint |
+| backend | `npm test` | Pruebas unitarias y de integración (necesita MySQL; usa la base `junta_las_jones_test`, que crea y borra) |
+| raíz | `npm run prod` | Despliegue de producción con base limpia (ver arriba) |
+| backend | `npm run db:migrate` | Aplica las migraciones pendientes |
+| backend | `npm run db:setup` | Migraciones y primer administrador (producción) |
+| backend | `npm run db:seed [-- --reset]` | Datos de prueba realistas (nunca en producción) |
+| frontend | `npm start` | Servidor de desarrollo |
+| frontend | `npm run lint` | ESLint (angular-eslint) |
+| frontend | `npm test -- --watch=false` | Pruebas con Vitest |
+| frontend | `npm run build` | Build de producción en `dist/` |
+
+---
+
+## Flujo de trabajo
+
+Ramas `main` (estable), `develop` (integración) y `feature/*`, `fix/*`, `refactor/*`, `chore/*`, con Conventional Commits. El detalle está en [`CLAUDE.md`](CLAUDE.md). El CI ejecuta lint, pruebas y build en cada pull request a `develop` o `main`.
+
+---
+
+## Licencia
+Desarrollado exclusivamente para la **Junta de Agua y Riego "La Jones" - Patate**.

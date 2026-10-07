@@ -1,0 +1,138 @@
+<app-modal
+  titulo="Asignar turno de riego"
+  subtitulo="Elija el comunero, uno de sus lotes y el horario semanal."
+  icono="ri-drop-line"
+  tamano="xl"
+  [bloqueado]="guardando()"
+  (cerrar)="cerrar.emit()"
+>
+  <div class="modal__body">
+    <div class="split">
+      <!-- Buscador de comuneros -->
+      <section class="picker" aria-labelledby="picker-titulo">
+        <div class="picker__head">
+          <h4 id="picker-titulo" class="inset-panel__title"><i class="ri-user-search-line" aria-hidden="true"></i> Comunero</h4>
+          <span class="picker__count" aria-live="polite">
+            @if (buscando()) {
+              Buscando…
+            } @else if (comuneros().length < totalComuneros()) {
+              {{ comuneros().length }} de {{ totalComuneros() }}
+            } @else {
+              {{ totalComuneros() }} disponibles
+            }
+          </span>
+        </div>
+        <div class="search-field">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="search" class="input" placeholder="Nombre o cédula…" [(ngModel)]="busqueda" (ngModelChange)="buscar($event)" aria-label="Buscar comunero" />
+        </div>
+        <div class="picker__list" role="listbox" aria-label="Comuneros" [class.is-refreshing]="buscando()">
+          @for (u of comuneros(); track u.id) {
+            <button type="button" role="option" class="picker__option" [class.is-selected]="turno.persona_id === u.id"
+              [attr.aria-selected]="turno.persona_id === u.id" (click)="seleccionar(u)">
+              <span class="avatar" aria-hidden="true">{{ (u.nombres || '').charAt(0) }}{{ (u.apellidos || '').charAt(0) }}</span>
+              <span class="picker__text">
+                <strong>{{ u.nombres }} {{ u.apellidos }}</strong>
+                <span>C.I. {{ u.cedula }}</span>
+              </span>
+              @if (turno.persona_id === u.id) {
+                <i class="ri-checkbox-circle-fill picker__check" aria-hidden="true"></i>
+              }
+            </button>
+          } @empty {
+            @if (!buscando()) {
+              <p class="picker__empty">No se encontraron comuneros que coincidan.</p>
+            }
+          }
+        </div>
+      </section>
+
+      <!-- Datos del turno -->
+      <div class="form-stack">
+        <div class="selected-person" [class.is-empty]="!seleccionado" aria-live="polite">
+          @if (seleccionado) {
+            <span class="avatar" aria-hidden="true"><i class="ri-user-fill"></i></span>
+            <div>
+              <strong>{{ seleccionado.nombres }} {{ seleccionado.apellidos }}</strong>
+              <span>C.I. {{ seleccionado.cedula }}</span>
+            </div>
+          } @else {
+            <i class="ri-cursor-line" aria-hidden="true"></i>
+            <span>Seleccione un comunero de la lista.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="turno-lote">Lote beneficiario *</label>
+          <select id="turno-lote" class="input" [(ngModel)]="turno.lote_id" [disabled]="!turno.persona_id || cargandoLotes()">
+            <option [ngValue]="null">
+              {{ !turno.persona_id ? 'Seleccione primero un comunero…' : cargandoLotes() ? 'Cargando lotes…' : lotes().length === 0 ? 'Sin lotes asignados' : 'Seleccionar lote…' }}
+            </option>
+            @for (l of lotes(); track l.id) {
+              <option [ngValue]="l.id">{{ l.codigo }} · {{ l.sector_nombre || l.sector || 'General' }}{{ l.superficie_m2 ? ' · ' + l.superficie_m2 + ' m²' : '' }}</option>
+            }
+          </select>
+          @if (turno.persona_id && !cargandoLotes() && lotes().length === 0) {
+            <small class="field-error"><i class="ri-alert-line" aria-hidden="true"></i> El comunero no posee lotes registrados.</small>
+          }
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="turno-tipo">Tipo de turno *</label>
+            <select id="turno-tipo" class="input" [(ngModel)]="turno.tipo">
+              <option value="REGULAR">Regular (semanal fijo)</option>
+              <option value="ADICIONAL">Adicional (comprado extra)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="turno-costo">Costo / tarifa ($)</label>
+            <input id="turno-costo" type="number" step="0.50" min="0" class="input" [(ngModel)]="turno.costo" placeholder="0.00" />
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group">
+            <label for="turno-dia">Día *</label>
+            <select id="turno-dia" class="input" [(ngModel)]="turno.dia_semana">
+              @for (d of dias; track d.valor) {
+                <option [ngValue]="d.valor">{{ d.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="turno-inicio">Inicio *</label>
+            <input id="turno-inicio" type="time" class="input" [(ngModel)]="turno.hora_inicio" />
+          </div>
+          <div class="form-group">
+            <label for="turno-fin">Fin *</label>
+            <input id="turno-fin" type="time" class="input" [(ngModel)]="turno.hora_fin" />
+          </div>
+        </div>
+
+        @if (generaCobro) {
+          <div class="alert alert--info" role="note" animate.enter="reveal-enter">
+            <strong><i class="ri-information-line" aria-hidden="true"></i> Cobro automático</strong>
+            Se generará un cobro pendiente por <strong>${{ turno.costo || 5 | number: '1.2-2' }}</strong> en la cuenta del comunero.
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="turno-obs">Observaciones <span class="text-muted">(opcional)</span></label>
+          <textarea id="turno-obs" class="input" [(ngModel)]="turno.observacion" rows="2" placeholder="Ej: Compra extra de turno de agua de riego…"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal__footer">
+    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cancelar</button>
+    <button type="button" class="btn btn--primary" (click)="guardar()" [disabled]="!turno.persona_id || !turno.lote_id || guardando()">
+      @if (guardando()) {
+        <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+      } @else {
+        <i class="ri-save-line" aria-hidden="true"></i> Guardar turno
+      }
+    </button>
+  </div>
+</app-modal>

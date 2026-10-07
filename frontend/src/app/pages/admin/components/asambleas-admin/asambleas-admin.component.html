@@ -1,0 +1,93 @@
+<section class="module" aria-labelledby="asambleas-titulo">
+  <div class="section-head">
+    <div>
+      <h3 id="asambleas-titulo" class="section-head__title">Asambleas generales</h3>
+      <p class="section-head__subtitle">Convocatorias, asistencia oficial y actas resolutivas por punto tratado.</p>
+    </div>
+    <div class="section-head__actions">
+      <button type="button" class="btn btn--whatsapp" (click)="whatsapp.abrir()">
+        <i class="ri-whatsapp-line" aria-hidden="true"></i> WhatsApp
+      </button>
+      <button type="button" class="btn btn--primary" (click)="formularioAbierto.set(true)">
+        <i class="ri-add-line" aria-hidden="true"></i> Nueva asamblea
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar toolbar--panel">
+    <div class="search-field toolbar__grow">
+      <i class="ri-search-line" aria-hidden="true"></i>
+      <input class="input" type="search" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
+        placeholder="Buscar por asunto, lugar o descripción…" aria-label="Buscar asamblea" />
+    </div>
+    <select class="input toolbar__select" [ngModel]="subtipoFiltro()" (ngModelChange)="subtipoFiltro.set($event)" aria-label="Tipo de asamblea">
+      <option value="TODAS">Todos los tipos</option>
+      <option value="ORDINARIA">Ordinarias</option>
+      <option value="EXTRAORDINARIA">Extraordinarias</option>
+    </select>
+    <select class="input toolbar__select" [ngModel]="periodo()" (ngModelChange)="periodo.set($event)" aria-label="Período">
+      <option value="TODAS">Todas las fechas</option>
+      <option value="PROXIMAS">Hoy y próximas</option>
+      <option value="ANTERIORES">Anteriores</option>
+    </select>
+    <button type="button" class="icon-btn icon-btn--bordered" (click)="cargar()" [disabled]="cargando()" aria-label="Actualizar lista" title="Actualizar">
+      <i class="ri-refresh-line" [class.ri-spin]="cargando()" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  @if (cargando() && !asambleas().length) {
+    <app-skeleton variante="tarjetas" [filas]="4" mensaje="Cargando asambleas…" />
+  } @else if (error()) {
+    <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudieron cargar las asambleas" [mensaje]="error()">
+      <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+    </app-empty-state>
+  } @else if (filtradas().length === 0) {
+    @if (hayFiltros()) {
+      <app-empty-state icono="ri-filter-off-line" titulo="Sin coincidencias" mensaje="Ninguna asamblea coincide con los filtros seleccionados.">
+        <button type="button" class="btn btn--outline btn--sm" (click)="limpiarFiltros()">Limpiar filtros</button>
+      </app-empty-state>
+    } @else {
+      <app-empty-state icono="ri-user-voice-line" titulo="Aún no hay asambleas" mensaje="Cree la primera convocatoria para comenzar a registrar asistencia y actas.">
+        <button type="button" class="btn btn--primary btn--sm" (click)="formularioAbierto.set(true)"><i class="ri-add-line" aria-hidden="true"></i> Nueva asamblea</button>
+      </app-empty-state>
+    }
+  } @else {
+    @for (s of secciones(); track s.id) {
+    <section class="event-group" [attr.aria-labelledby]="'asambleas-' + s.id">
+      <h4 class="event-group__title" [id]="'asambleas-' + s.id">{{ s.titulo }} <span class="event-group__count">{{ s.eventos.length }}</span></h4>
+    <div class="card-grid" [class.is-refreshing]="cargando()">
+      @for (a of s.eventos; track a.id) {
+        <app-asamblea-card
+          [asamblea]="a"
+          [ocupada]="ocupadaId() === a.id"
+          (asistencia)="asistenciaDe.set(a)"
+          (actas)="actasDe.set(a)"
+          (convocarWhatsApp)="enviarConvocatoriaWhatsApp(a)"
+          (programar)="cambiarEstado(a, 'PROGRAMADO')"
+          (convocar)="cambiarEstado(a, 'CONVOCADO')"
+          (finalizar)="finalizarAsamblea(a)"
+          (cancelar)="cambiarEstado(a, 'CANCELADO')"
+          (descargarConvocatoria)="descargarConvocatoriaPdf(a)"
+          (descargarPadron)="descargarPadronAsistencia(a)"
+          (subirDocumento)="subirDocumentoFirmado(a, $event)"
+          (verDocumento)="verDocumento(a, $event)"
+        />
+      }
+    </div>
+    </section>
+    }
+  }
+</section>
+
+@if (formularioAbierto()) {
+  <app-asamblea-form (cerrar)="formularioAbierto.set(false)" (creada)="onCreada()" />
+}
+@if (asistenciaDe(); as a) {
+  <app-asamblea-asistencia [asamblea]="a" (cerrar)="asistenciaDe.set(null)" (guardada)="onAsistenciaGuardada()" />
+}
+@if (actasDe(); as a) {
+  <app-asamblea-actas [asamblea]="a" (cerrar)="actasDe.set(null)" />
+}
+@if (documento(); as d) {
+  <app-documento-firmado [documento]="d" (cerrar)="documento.set(null)" />
+}

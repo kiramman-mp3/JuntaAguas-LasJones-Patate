@@ -1,0 +1,113 @@
+@if (!ocultarFormulario) {
+  <app-modal
+    [titulo]="modoEdicion ? 'Editar comunero' : 'Registrar comunero'"
+    [subtitulo]="modoEdicion ? form.apellidos + ' ' + form.nombres + ' · C.I. ' + form.cedula : 'Datos personales y acceso al sistema.'"
+    [icono]="modoEdicion ? 'ri-user-settings-line' : 'ri-user-add-line'"
+    tamano="md"
+    [bloqueado]="guardando()"
+    (cerrar)="cerrar.emit()"
+  >
+    <form (ngSubmit)="guardar()" #usuarioForm="ngForm">
+      <div class="modal__body form-stack">
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="com-cedula">Cédula *</label>
+            <input id="com-cedula" type="text" class="input" name="cedula" [(ngModel)]="form.cedula" required [disabled]="modoEdicion"
+              inputmode="numeric" placeholder="Ej: 1801234567" />
+          </div>
+          <div class="form-group">
+            <label for="com-nacimiento">Fecha de nacimiento</label>
+            <input id="com-nacimiento" type="date" class="input" name="fecha_nacimiento" [(ngModel)]="form.fecha_nacimiento" />
+          </div>
+          <div class="form-group">
+            <label for="com-nombres">Nombres *</label>
+            <input id="com-nombres" type="text" class="input" name="nombres" [(ngModel)]="form.nombres" required />
+          </div>
+          <div class="form-group">
+            <label for="com-apellidos">Apellidos *</label>
+            <input id="com-apellidos" type="text" class="input" name="apellidos" [(ngModel)]="form.apellidos" [required]="!modoEdicion" />
+          </div>
+          <div class="form-group">
+            <label for="com-celular">Celular</label>
+            <input id="com-celular" type="tel" class="input" name="celular" [(ngModel)]="form.celular" inputmode="tel" />
+          </div>
+          <div class="form-group">
+            <label for="com-telefono">Teléfono convencional</label>
+            <input id="com-telefono" type="tel" class="input" name="telefono" [(ngModel)]="form.telefono" inputmode="tel" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="com-email">Correo electrónico <span class="text-muted">(opcional)</span></label>
+          <input id="com-email" type="email" class="input" name="email" [(ngModel)]="form.email" placeholder="ejemplo@correo.com" />
+        </div>
+        <div class="form-group">
+          <label for="com-direccion">Dirección</label>
+          <input id="com-direccion" type="text" class="input" name="direccion" [(ngModel)]="form.direccion" />
+        </div>
+        @if (modoEdicion) {
+          <div class="form-group">
+            <label for="com-estado">Estado</label>
+            <select id="com-estado" class="input" name="estado" [(ngModel)]="form.estado">
+              <option value="ACTIVO">Activo</option>
+              <option value="INACTIVO">Inactivo</option>
+            </select>
+          </div>
+        }
+
+        <section class="inset-panel">
+          <h4 class="inset-panel__title"><i class="ri-key-2-line" aria-hidden="true"></i> Cuenta de acceso web</h4>
+          @if (!modoEdicion) {
+            <label class="switch-row">
+              <input type="checkbox" name="crearCuenta" [(ngModel)]="form.crearCuenta" />
+              <span>Generar cuenta de acceso para este comunero</span>
+            </label>
+            @if (form.crearCuenta) {
+              <div class="form-group">
+                <label for="com-rol">Rol</label>
+                <select id="com-rol" class="input" name="rol" [(ngModel)]="form.rol">
+                  <option value="USUARIO">Comunero (consulta su propia información)</option>
+                  <option value="ADMIN">Administrador (directiva, acceso total)</option>
+                </select>
+              </div>
+              <p class="text-muted small">Se generará una contraseña temporal que verá una sola vez al guardar.</p>
+            }
+          } @else if (cuenta) {
+            <p class="text-muted small">
+              {{ cuenta.rol === 'ADMIN' ? 'Administrador' : 'Comunero' }} · cuenta {{ cuenta.estado | lowercase }}.
+              Si olvidó su contraseña, genere una temporal: deberá cambiarla al ingresar.
+            </p>
+            <div>
+              <button type="button" class="btn btn--outline btn--sm" (click)="restablecerPassword()" [disabled]="gestionandoCuenta()">
+                <i class="ri-lock-unlock-line" aria-hidden="true"></i> Restablecer contraseña
+              </button>
+            </div>
+          } @else {
+            <p class="text-muted small">Este comunero aún no tiene cuenta.</p>
+            <div class="inline-field">
+              <select class="input input--sm" name="rolCuenta" [(ngModel)]="form.rol" aria-label="Rol de la cuenta">
+                <option value="USUARIO">Comunero</option>
+                <option value="ADMIN">Administrador</option>
+              </select>
+              <button type="button" class="btn btn--outline btn--sm" (click)="crearCuenta()" [disabled]="gestionandoCuenta()">
+                <i class="ri-user-add-line" aria-hidden="true"></i> Crear cuenta
+              </button>
+            </div>
+          }
+        </section>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="usuarioForm.invalid || guardando()">
+          @if (guardando()) {
+            <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+          } @else {
+            <i class="ri-save-line" aria-hidden="true"></i> Guardar
+          }
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+<app-password-temporal [credencial]="credencialTemporal" (cerrado)="cerrarCredencial()" />

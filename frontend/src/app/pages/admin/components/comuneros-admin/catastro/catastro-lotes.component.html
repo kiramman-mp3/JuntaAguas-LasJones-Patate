@@ -1,0 +1,111 @@
+<section class="module" aria-labelledby="catastro-titulo">
+  <div class="section-head">
+    <div>
+      <h3 id="catastro-titulo" class="section-head__title">Catastro de lotes</h3>
+      <p class="section-head__subtitle">Terrenos por sector, sus propietarios y su ubicación aproximada.</p>
+    </div>
+    <div class="section-head__actions">
+      <button type="button" class="btn btn--outline" (click)="sectorAbierto.set(true)">
+        <i class="ri-map-2-line" aria-hidden="true"></i> Nuevo sector
+      </button>
+      <button type="button" class="btn btn--primary" (click)="nuevoLote()">
+        <i class="ri-add-line" aria-hidden="true"></i> Nuevo lote
+      </button>
+    </div>
+  </div>
+
+  <div class="surface">
+    <div class="surface__head">
+      <div class="toolbar toolbar--flush">
+        <div class="search-field toolbar__grow">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="search" class="input" placeholder="Buscar por código…" [(ngModel)]="busqueda" (ngModelChange)="filtrar()" aria-label="Buscar lote" />
+        </div>
+        <select class="input toolbar__select" [(ngModel)]="sectorFiltro" (ngModelChange)="filtrar(true)" aria-label="Sector">
+          <option [ngValue]="null">Todos los sectores</option>
+          @for (s of sectores(); track s.id) {
+            <option [ngValue]="s.id">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (cargando() && !lotes().length) {
+      <app-skeleton [filas]="8" mensaje="Cargando lotes…" />
+    } @else if (error()) {
+      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudo cargar el catastro" mensaje="Revise su conexión e intente nuevamente.">
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      </app-empty-state>
+    } @else if (!lotes().length) {
+      @if (busqueda || sectorFiltro) {
+        <app-empty-state icono="ri-map-pin-line" titulo="Sin coincidencias" mensaje="Ningún lote coincide con la búsqueda o el sector.">
+          <button type="button" class="btn btn--outline btn--sm" (click)="limpiarFiltros()">Limpiar filtros</button>
+        </app-empty-state>
+      } @else {
+        @if (!sectores().length) {
+          <app-empty-state icono="ri-map-2-line" titulo="Primero registre los sectores" mensaje="Cada lote pertenece a un sector de riego. Cree al menos un sector para empezar el catastro.">
+            <button type="button" class="btn btn--primary btn--sm" (click)="sectorAbierto.set(true)"><i class="ri-add-line" aria-hidden="true"></i> Nuevo sector</button>
+          </app-empty-state>
+        } @else {
+          <app-empty-state icono="ri-map-2-line" titulo="Aún no hay lotes" mensaje="Registre el primer lote para asignarlo a un comunero.">
+            <button type="button" class="btn btn--primary btn--sm" (click)="formularioAbierto.set(true)"><i class="ri-add-line" aria-hidden="true"></i> Nuevo lote</button>
+          </app-empty-state>
+        }
+      }
+    } @else {
+      <div class="table-container table-container--flush" [class.is-refreshing]="cargando()">
+        <table class="table-custom table-custom--stack">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Sector</th>
+              <th>Titular</th>
+              <th>Superficie</th>
+              <th>Coordenadas</th>
+              <th><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (lote of lotes(); track lote.id) {
+              <tr>
+                <td data-label="Código"><strong class="money">{{ lote.codigo }}</strong></td>
+                <td data-label="Sector">{{ lote.sector_nombre }}</td>
+                <td data-label="Titular">
+                  @if (lote.propietarios) {
+                    <span class="text-truncate-2" [title]="lote.propietarios">{{ lote.propietarios }}</span>
+                  } @else {
+                    <span class="pill pill--warning">Sin dueño</span>
+                  }
+                </td>
+                <td data-label="Superficie" class="money">{{ lote.superficie_m2 ? lote.superficie_m2 + ' m²' : 'N/D' }}</td>
+                <td data-label="Coordenadas">
+                  @if (lote.latitud_aproximada && lote.longitud_aproximada) {
+                    <span class="money text-muted small">{{ lote.latitud_aproximada }}, {{ lote.longitud_aproximada }}</span>
+                  } @else {
+                    <span class="text-muted">N/D</span>
+                  }
+                </td>
+                <td class="cell-actions">
+                  <button type="button" class="btn btn--ghost btn--sm" (click)="detalle.set(lote)"><i class="ri-eye-line" aria-hidden="true"></i> Ver ficha</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="surface__foot">
+        <span>{{ lotes().length }} {{ lotes().length === 1 ? 'lote' : 'lotes' }}</span>
+      </div>
+    }
+  </div>
+</section>
+
+@if (formularioAbierto()) {
+  <app-lote-form [sectores]="sectores()" (cerrar)="formularioAbierto.set(false)" (creado)="onCreado()" />
+}
+@if (sectorAbierto()) {
+  <app-sector-form (cerrar)="sectorAbierto.set(false)" (creado)="onSectorCreado()" />
+}
+@if (detalle(); as l) {
+  <app-lote-detalle [lote]="l" (cerrar)="detalle.set(null)" />
+}

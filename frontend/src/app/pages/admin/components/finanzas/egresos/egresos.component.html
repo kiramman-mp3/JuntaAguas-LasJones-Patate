@@ -1,0 +1,133 @@
+<section class="fin-panel" aria-labelledby="egresos-titulo">
+  <div class="fin-panel__head">
+    <div>
+      <h3 class="fin-panel__title" id="egresos-titulo"><i class="ri-shopping-bag-3-line" aria-hidden="true"></i> Egresos</h3>
+      <p class="fin-panel__desc">
+        {{ filtrados().length }} {{ filtrados().length === 1 ? 'egreso' : 'egresos' }} ·
+        total <strong class="money">${{ total().toFixed(2) }}</strong>
+      </p>
+    </div>
+    <button type="button" class="btn btn--primary pressable" (click)="abrirFormulario()">
+      <i class="ri-add-line" aria-hidden="true"></i> Registrar egreso
+    </button>
+  </div>
+
+  <div class="field-row" style="margin-bottom: 1rem">
+    <div class="field">
+      <label for="egresos-desde">Desde</label>
+      <input id="egresos-desde" class="input" type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event); cargar()" />
+    </div>
+    <div class="field">
+      <label for="egresos-hasta">Hasta</label>
+      <input id="egresos-hasta" class="input" type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event); cargar()" />
+    </div>
+    <div class="field">
+      <label for="egresos-texto">Buscar</label>
+      <input id="egresos-texto" class="input" type="search" placeholder="Concepto, proveedor o factura"
+        [ngModel]="texto()" (ngModelChange)="texto.set($event)" />
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--danger" role="alert">
+      {{ error() }} <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (cargando() && !egresos().length) {
+    <div aria-live="polite"><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--text"></div></div>
+  } @else if (!filtrados().length) {
+    <div class="empty-state">
+      <i class="ri-inbox-line" aria-hidden="true"></i>
+      <strong>Sin egresos</strong>
+      <p>No hay egresos registrados en este rango de fechas.</p>
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="fin-table">
+        <thead>
+          <tr>
+            <th scope="col">N.º</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Concepto</th>
+            <th scope="col">Proveedor</th>
+            <th scope="col">Factura</th>
+            <th scope="col" class="num">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of filtrados(); track e.id) {
+            <tr>
+              <td class="money"><strong>{{ numeroEgreso(e.id) }}</strong></td>
+              <td>{{ e.fecha | fechaLocal }}</td>
+              <td>
+                {{ e.concepto }}
+                @if (e.descripcion) { <br /><span class="fin-table__muted">{{ e.descripcion }}</span> }
+              </td>
+              <td>
+                {{ e.proveedor_nombre || '—' }}
+                @if (e.proveedor_ruc) { <br /><span class="fin-table__muted">{{ e.proveedor_ruc }}</span> }
+              </td>
+              <td class="money">{{ e.numero_factura || '—' }}</td>
+              <td class="num"><span class="money">${{ e.valor.toFixed(2) }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (formularioVisible()) {
+  <div appModalA11y class="sheet-backdrop" aria-labelledby="egreso-form-titulo">
+    <form class="sheet" (ngSubmit)="guardar()" novalidate>
+      <div class="sheet__header">
+        <h3 id="egreso-form-titulo">Registrar egreso</h3>
+        <button type="button" class="btn-close" (click)="cerrarFormulario()" aria-label="Cerrar"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </div>
+      <div class="sheet__body">
+        <div class="field-row">
+          <div class="field">
+            <label for="egreso-fecha">Fecha</label>
+            <input id="egreso-fecha" name="fecha" class="input" type="date" [max]="hoy" [(ngModel)]="form.fecha" />
+            @if (errorDe('fecha')) { <span class="field__error">{{ errorDe('fecha') }}</span> }
+          </div>
+          <div class="field">
+            <label for="egreso-valor">Valor</label>
+            <input id="egreso-valor" name="valor" class="input money" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" [(ngModel)]="form.valor" />
+            @if (errorDe('valor')) { <span class="field__error">{{ errorDe('valor') }}</span> }
+          </div>
+        </div>
+        <div class="field">
+          <label for="egreso-concepto">Concepto</label>
+          <input id="egreso-concepto" name="concepto" class="input" type="text" maxlength="200" placeholder="Ej.: Compra de tubería PVC de 2 pulgadas" [(ngModel)]="form.concepto" />
+          @if (errorDe('concepto')) { <span class="field__error">{{ errorDe('concepto') }}</span> }
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="egreso-proveedor">Proveedor <span class="text-muted">(opcional)</span></label>
+            <input id="egreso-proveedor" name="proveedor" class="input" type="text" maxlength="150" [(ngModel)]="form.proveedor" />
+          </div>
+          <div class="field">
+            <label for="egreso-ruc">RUC / cédula <span class="text-muted">(opcional)</span></label>
+            <input id="egreso-ruc" name="ruc" class="input money" type="text" inputmode="numeric" maxlength="13" [(ngModel)]="form.ruc_proveedor" (input)="soloDigitosRuc($event)" />
+            @if (errorDe('ruc_proveedor')) { <span class="field__error">{{ errorDe('ruc_proveedor') }}</span> }
+          </div>
+        </div>
+        <div class="field">
+          <label for="egreso-factura">N.º de factura <span class="text-muted">(opcional)</span></label>
+          <input id="egreso-factura" name="factura" class="input money" type="text" maxlength="30" placeholder="001-001-000012345" [(ngModel)]="form.numero_factura" />
+          @if (errorDe('numero_factura')) { <span class="field__error">{{ errorDe('numero_factura') }}</span> }
+        </div>
+        <div class="field">
+          <label for="egreso-descripcion">Descripción <span class="text-muted">(opcional)</span></label>
+          <textarea id="egreso-descripcion" name="descripcion" class="input" rows="3" maxlength="2000" [(ngModel)]="form.descripcion"></textarea>
+        </div>
+      </div>
+      <div class="sheet__footer">
+        <button type="button" class="btn btn--outline pressable" (click)="cerrarFormulario()" [disabled]="guardando()">Cancelar</button>
+        <button type="submit" class="btn btn--primary pressable" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Registrar egreso' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}

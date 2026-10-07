@@ -1,0 +1,66 @@
+<div class="fin">
+  <app-page-header [titulo]="grupoActual().etiqueta" [subtitulo]="grupoActual().descripcion" [icono]="grupoActual().icono" />
+
+  <!-- Los indicadores de caja no aplican en Ajustes -->
+  @if (!grupoActual().indicadores) {
+  } @else if (indicadores(); as k) {
+    <div class="stat-grid" aria-label="Indicadores financieros">
+      <div class="stat-tile" [class.stat-tile--positive]="k.historico.balanceAlDia >= 0" [class.stat-tile--negative]="k.historico.balanceAlDia < 0">
+        <span class="stat-tile__label">Saldo de caja</span>
+        <span class="stat-tile__value">${{ k.historico.balanceAlDia.toFixed(2) }}</span>
+        <span class="stat-tile__hint">Ingresos menos egresos históricos</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile__label">Cobrado este mes</span>
+        <span class="stat-tile__value">${{ k.mes.totalIngresos.toFixed(2) }}</span>
+        <span class="stat-tile__hint">Egresos del mes: <span class="money">${{ k.mes.totalEgresos.toFixed(2) }}</span></span>
+      </div>
+      <div class="stat-tile stat-tile--warning">
+        <span class="stat-tile__label">Por cobrar</span>
+        <span class="stat-tile__value">${{ k.historico.totalPendientes.toFixed(2) }}</span>
+        <span class="stat-tile__hint"><span class="money">${{ k.historico.totalVencido.toFixed(2) }}</span> vencido</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile__label">Comuneros con deuda</span>
+        <span class="stat-tile__value">{{ k.historico.comunerosConDeuda }}</span>
+        <span class="stat-tile__hint">Con al menos una obligación pendiente</span>
+      </div>
+    </div>
+  } @else if (errorIndicadores()) {
+    <div class="alert alert--danger" role="alert">
+      No se pudieron cargar los indicadores.
+      <button type="button" class="btn btn--outline btn--sm" (click)="cargarIndicadores()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="stat-grid" aria-hidden="true">
+      @for (s of [1, 2, 3, 4]; track s) { <div class="skeleton skeleton--card" style="height: 92px"></div> }
+    </div>
+  }
+
+  <div class="section-nav">
+    <div class="segmented" role="tablist" [attr.aria-label]="'Secciones de ' + grupoActual().etiqueta"
+      [style.--n]="grupoActual().secciones.length" [style.--i]="indiceActual()">
+      <span class="segmented__thumb" aria-hidden="true"></span>
+      @for (s of grupoActual().secciones; track s.id) {
+        <button type="button" role="tab" class="segmented__item" [id]="'fin-tab-' + s.id"
+          [class.segmented__item--active]="seccionActual() === s.id"
+          [attr.aria-selected]="seccionActual() === s.id" [attr.aria-controls]="'fin-panel-' + s.id"
+          [tabindex]="seccionActual() === s.id ? 0 : -1"
+          (click)="cambiarSeccion(s.id)" (keydown)="onTeclaSegmento($event)">
+          <i [class]="s.icono" aria-hidden="true"></i> <span class="segmented__label">{{ s.etiqueta }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div role="tabpanel" [id]="'fin-panel-' + seccionActual()" [attr.aria-labelledby]="'fin-tab-' + seccionActual()" class="fin">
+    @switch (seccionActual()) {
+      @case ('cobrar') { <app-cobro-caja (cobrado)="onDatosCambiados()" /> }
+      @case ('pagos') { <app-historial-pagos (anulado)="onDatosCambiados()" /> }
+      @case ('egresos') { <app-egresos [abrirNuevo]="abrirEgreso()" (registrado)="onDatosCambiados()" /> }
+      @case ('historial') { <app-historial-financiero /> }
+      @case ('facturacion') { <app-facturacion-mensual (emitido)="onDatosCambiados()" /> }
+      @case ('tarifas') { <app-tarifas /> }
+    }
+  </div>
+</div>

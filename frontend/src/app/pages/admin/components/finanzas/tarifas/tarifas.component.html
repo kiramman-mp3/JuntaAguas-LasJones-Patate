@@ -1,0 +1,124 @@
+<section class="fin-panel" aria-labelledby="tarifas-titulo">
+  <div class="fin-panel__head">
+    <div>
+      <h3 class="fin-panel__title" id="tarifas-titulo"><i class="ri-price-tag-3-line" aria-hidden="true"></i> Tarifas</h3>
+      <p class="fin-panel__desc">La facturación mensual usa la tarifa de agua vigente el primer día de cada mes. Al registrar una tarifa nueva, la anterior deja de regir el día previo.</p>
+    </div>
+    <button type="button" class="btn btn--primary pressable" [disabled]="!conceptos().length" (click)="abrirFormulario()">
+      <i class="ri-add-line" aria-hidden="true"></i> Nueva tarifa
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--danger" role="alert">
+      {{ error() }} <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (cargando() && !conceptos().length) {
+    <div class="stat-grid" aria-live="polite">
+      <div class="skeleton skeleton--card" style="height: 96px"></div>
+      <div class="skeleton skeleton--card" style="height: 96px"></div>
+      <div class="skeleton skeleton--card" style="height: 96px"></div>
+    </div>
+  } @else {
+    <div class="stat-grid">
+      @for (c of conceptos(); track c.id) {
+        <div class="stat-tile">
+          <span class="stat-tile__label">{{ c.nombre }}</span>
+          @if (c.tarifa_actual !== null) {
+            <span class="stat-tile__value money">${{ c.tarifa_actual.toFixed(2) }}</span>
+            <span class="stat-tile__hint">Vigente hoy</span>
+          } @else {
+            <span class="stat-tile__value text-muted">—</span>
+            <span class="stat-tile__hint">Sin tarifa vigente</span>
+          }
+          <button type="button" class="btn btn--outline btn--sm pressable" style="margin-top: 0.5rem; align-self: flex-start" (click)="abrirFormulario(c)">
+            Cambiar tarifa
+          </button>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+@for (grupo of historial(); track grupo.concepto.id) {
+  @if (grupo.tarifas.length) {
+    <section class="fin-panel" [attr.aria-label]="'Historial de ' + grupo.concepto.nombre">
+      <h4 class="fin-panel__title" style="margin-bottom: 0.75rem">{{ grupo.concepto.nombre }}</h4>
+      <div class="table-scroll">
+        <table class="fin-table">
+          <thead>
+            <tr>
+              <th scope="col">Desde</th>
+              <th scope="col">Hasta</th>
+              <th scope="col" class="num">Valor</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Observación</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of grupo.tarifas; track t.id) {
+              <tr>
+                <td>{{ t.vigencia_desde | fechaLocal }}</td>
+                <td>{{ t.vigencia_hasta ? (t.vigencia_hasta | fechaLocal) : 'Sin fecha de fin' }}</td>
+                <td class="num"><span class="money">${{ t.valor.toFixed(2) }}</span></td>
+                <td>
+                  @switch (estado(t)) {
+                    @case ('VIGENTE') { <span class="badge badge--success">Vigente</span> }
+                    @case ('PROGRAMADA') { <span class="badge badge--info">Programada</span> }
+                    @default { <span class="badge">Histórica</span> }
+                  }
+                </td>
+                <td class="fin-table__muted">{{ t.observacion || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+}
+
+@if (formularioVisible()) {
+  <div appModalA11y class="sheet-backdrop" aria-labelledby="tarifa-form-titulo">
+    <form class="sheet" (ngSubmit)="guardar()" novalidate>
+      <div class="sheet__header">
+        <h3 id="tarifa-form-titulo">Nueva tarifa</h3>
+        <button type="button" class="btn-close" (click)="cerrarFormulario()" aria-label="Cerrar"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </div>
+      <div class="sheet__body">
+        <div class="field">
+          <label for="tarifa-concepto">Concepto</label>
+          <select id="tarifa-concepto" name="concepto" class="input" [ngModel]="form.concepto_id" (ngModelChange)="onConcepto($event)">
+            @for (c of conceptos(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+          </select>
+          @if (errorDe('concepto_id')) { <span class="field__error">{{ errorDe('concepto_id') }}</span> }
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="tarifa-valor">Valor</label>
+            <input id="tarifa-valor" name="valor" class="input money" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" [(ngModel)]="form.valor" />
+            @if (errorDe('valor')) { <span class="field__error">{{ errorDe('valor') }}</span> }
+          </div>
+          <div class="field">
+            <label for="tarifa-desde">Rige desde</label>
+            <input id="tarifa-desde" name="desde" class="input" type="date" [(ngModel)]="form.vigencia_desde" />
+            @if (errorDe('vigencia_desde')) { <span class="field__error">{{ errorDe('vigencia_desde') }}</span> }
+          </div>
+        </div>
+        @if (conceptoElegido(); as c) {
+          @if (c.tarifa_actual !== null) {
+            <p class="field__hint">La tarifa actual de {{ c.nombre.toLowerCase() }} (${{ c.tarifa_actual.toFixed(2) }}) dejará de regir el día anterior a la fecha elegida. Las cuotas ya emitidas no cambian.</p>
+          }
+        }
+        <div class="field">
+          <label for="tarifa-observacion">Observación <span class="text-muted">(opcional)</span></label>
+          <input id="tarifa-observacion" name="observacion" class="input" type="text" maxlength="255" placeholder="Ej.: Aprobada en asamblea del 12 de septiembre" [(ngModel)]="form.observacion" />
+        </div>
+      </div>
+      <div class="sheet__footer">
+        <button type="button" class="btn btn--outline pressable" (click)="cerrarFormulario()" [disabled]="guardando()">Cancelar</button>
+        <button type="submit" class="btn btn--primary pressable" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Registrar tarifa' }}</button>
+      </div>
+    </form>
+  </div>
+}

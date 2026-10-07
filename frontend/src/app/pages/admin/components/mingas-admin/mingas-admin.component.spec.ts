@@ -1,0 +1,206 @@
+import { TestBed } from '@angular/core/testing';
+import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
+import { MingasAdminComponent } from './mingas-admin.component';
+import { MingaFormComponent } from './minga-form/minga-form.component';
+import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.component';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { AdminService } from '../../../../core/services/admin.service';
+import { ConsultaService } from '../../../../core/services/consulta.service';
+import { DialogService } from '../../../../core/services/dialog.service';
+
+const minga = {
+  id: 1,
+  tipo: 'MINGA' as const,
+  titulo: 'Limpieza del canal',
+  descripcion: 'Traer palas',
+  fecha: '2020-01-01',
+  hora_inicio: '08:00',
+  lugar: 'Canal principal',
+  estado: 'BORRADOR',
+  genera_multa_ausencia: true,
+  valor_multa: 10,
+  asistentes: 0,
+  totalComuneros: 2,
+};
+
+describe('Gestión de Mingas', () => {
+  let component: MingasAdminComponent;
+  let admin: any;
+  let consulta: any;
+  let notify: any;
+
+  const abrirAsistencia = (m = minga) => {
+    const fixture = TestBed.createComponent(MingaAsistenciaComponent);
+    fixture.componentRef.setInput('minga', m);
+    fixture.componentInstance.ngOnInit();
+    return fixture.componentInstance;
+  };
+
+  beforeEach(async () => {
+    admin = {
+      getEventos: vi.fn(() => of({ data: [minga] })),
+      createEvento: vi.fn(() => of({ eventoId: 1 })),
+      getPersonas: vi.fn(() =>
+        of({
+          data: [
+            { id: 1, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' },
+            { id: 2, nombres: 'Luis', apellidos: 'Mora', cedula: '1800000002' },
+          ],
+        }),
+      ),
+      getAsistencias: vi.fn(() =>
+        of({ data: [{ persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' }] }),
+      ),
+      getAsistenciasMinga: vi.fn(() => of({
+        estado: 'BORRADOR', resumen: { total: 2, presentes: 0, ausentes: 0, justificados: 1, pendientes: 1 },
+        data: [
+          { persona_id: 1, nombre: 'Pérez Ana', cedula: '1800000001', estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
+          { persona_id: 2, nombre: 'Mora Luis', cedula: '1800000002', estado: 'PENDIENTE', motivo_justificacion: '' },
+        ],
+      })),
+      registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
+      registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
+      cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
+      finalizarMinga: vi.fn(() => of({ estado: 'REALIZADO', message: 'Finalizada' })),
+      notificarMingaWhatsApp: vi.fn(() => of({ message: 'Enviado' })),
+    };
+    consulta = {
+      subirDocumentoEvento: vi.fn(),
+      descargarListaAsistencia: vi.fn(),
+      urlDocumento: vi.fn(),
+    };
+    notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
+    await TestBed.configureTestingModule({
+      imports: [MingasAdminComponent],
+      providers: [
+        { provide: AdminService, useValue: admin },
+        { provide: ConsultaService, useValue: consulta },
+        { provide: DialogService, useValue: { confirmar: vi.fn(async () => true) } },
+        { provide: NotificationService, useValue: notify },
+      ],
+    }).compileComponents();
+    component = TestBed.createComponent(MingasAdminComponent).componentInstance;
+  });
+
+  it('carga solo Mingas y permite consultar fechas anteriores', () => {
+    component.cargar();
+    expect(admin.getEventos).toHaveBeenCalledWith('MINGA');
+    expect(component.mingasFiltradas).toHaveLength(1);
+    component.periodo = 'PROXIMAS';
+    expect(component.mingasFiltradas).toHaveLength(0);
+    component.periodo = 'ANTERIORES';
+    expect(component.mingasFiltradas).toHaveLength(1);
+  });
+
+  it('crea una Minga sin campos de Asamblea y sin enviar mensajes automáticamente', () => {
+    const form = TestBed.createComponent(MingaFormComponent).componentInstance;
+    form.formulario = {
+      titulo: ' Limpieza ',
+      descripcion: ' Canal ',
+      fecha: '2026-10-03',
+      hora_inicio: '08:00',
+      lugar: ' Entrada ',
+      genera_multa_ausencia: false,
+    };
+    form.guardar();
+    const payload = admin.createEvento.mock.calls[0][0];
+    expect(payload).toMatchObject({
+      tipo: 'MINGA',
+      titulo: 'Limpieza',
+      lugar: 'Entrada',
+    });
+    expect(payload).not.toHaveProperty('valor_multa');
+    expect(payload).not.toHaveProperty('subtipo_asamblea');
+    expect(payload).not.toHaveProperty('puntos_orden_dia');
+    expect(admin.notificarMingaWhatsApp).not.toHaveBeenCalled();
+  });
+
+  it('conserva justificaciones y deja sin marcar como pendiente', () => {
+    const asistencia = abrirAsistencia();
+    asistencia.guardar();
+    expect(admin.registrarAsistenciasMinga).toHaveBeenCalledWith(1, [
+      { persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
+      { persona_id: 2, estado: 'PENDIENTE', motivo_justificacion: null },
+    ]);
+  });
+
+  it('permite corregir una justificación vacía y volver a guardar', () => {
+    const asistencia = abrirAsistencia();
+    asistencia.asistencias[0].motivo_justificacion = '';
+    asistencia.guardar();
+    expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
+    asistencia.asistencias[0].motivo_justificacion = 'Trabajo';
+    asistencia.guardar();
+    expect(admin.registrarAsistenciasMinga).toHaveBeenCalledOnce();
+  });
+
+  it('no guarda una asistencia vacía cuando falla la carga de registros previos', () => {
+    admin.getAsistenciasMinga.mockReturnValue(throwError(() => new Error('Sin conexión')));
+    const asistencia = abrirAsistencia();
+    asistencia.guardar();
+    expect(asistencia.error).toBeTruthy();
+    expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
+  });
+
+  it('evita el doble envío mientras la convocatoria está en curso', async () => {
+    const respuesta = new Subject();
+    admin.notificarMingaWhatsApp.mockReturnValue(respuesta);
+    const promesa = component.enviarConvocatoria(minga);
+    component.enviarConvocatoria(minga);
+    await promesa;
+    expect(admin.notificarMingaWhatsApp).toHaveBeenCalledOnce();
+    respuesta.next({ message: 'Enviado' });
+    respuesta.complete();
+    expect(component.enviandoId).toBeNull();
+  });
+
+  it('rechaza un archivo incompatible sin subirlo', () => {
+    component.subirLista(minga, {
+      files: [new File(['texto'], 'lista.txt', { type: 'text/plain' })],
+      value: 'lista.txt',
+    } as unknown as HTMLInputElement);
+    expect(notify.warning.mock.calls[0][0]).toContain('PDF');
+    expect(consulta.subirDocumentoEvento).not.toHaveBeenCalled();
+  });
+
+  it('marca convocada después de un envío exitoso', async () => {
+    admin.notificarMingaWhatsApp.mockReturnValue(of({ enviados: 2, message: 'Enviado' }));
+    await component.enviarConvocatoria({ ...minga });
+    expect(admin.cambiarEstadoMinga).toHaveBeenCalledWith(1, 'CONVOCADO');
+  });
+
+  it('impide modificar una asistencia finalizada desde la interfaz', () => {
+    admin.getAsistenciasMinga.mockReturnValue(of({ estado: 'REALIZADO', data: [] }));
+    const asistencia = abrirAsistencia({ ...minga, estado: 'REALIZADO' });
+    asistencia.guardar();
+    expect(asistencia.cerrada).toBe(true);
+    expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
+  });
+
+  it('no finaliza cuando hay asistentes pendientes en el backend', async () => {
+    await component.finalizarMinga({ ...minga });
+    expect(admin.finalizarMinga).not.toHaveBeenCalled();
+    expect(notify.warning.mock.calls[0][0]).toContain('Pendientes: 1');
+    expect(component.actualizandoId).toBeNull();
+  });
+
+  it('confirma el resumen guardado antes de finalizar', async () => {
+    admin.getAsistenciasMinga.mockReturnValue(of({ resumen: { total: 2, presentes: 1, ausentes: 1, justificados: 0, pendientes: 0 } }));
+    const dialog = TestBed.inject(DialogService) as any;
+    await component.finalizarMinga({ ...minga });
+    expect(admin.finalizarMinga).toHaveBeenCalledWith(1);
+    expect(dialog.confirmar.mock.calls[0][0].mensaje).toContain('1 ausentes');
+  });
+
+  it('muestra acciones propias de Minga sin subtipo ni actas', () => {
+    const fixture = TestBed.createComponent(MingasAdminComponent);
+    fixture.detectChanges();
+    const texto = fixture.nativeElement.textContent;
+    expect(texto).toContain('Convocar por WhatsApp');
+    expect(texto).toContain('Lista de asistencia');
+    expect(texto).not.toContain('Actas');
+    expect(texto).not.toContain('ORDINARIA');
+    expect(texto).not.toContain('Acta Resolutiva');
+  });
+});

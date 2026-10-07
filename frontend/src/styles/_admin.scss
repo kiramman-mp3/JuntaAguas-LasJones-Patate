@@ -1,0 +1,716 @@
+/* ==============================================================================
+   BLOQUES DEL PANEL ADMINISTRATIVO
+   Encabezados de sección, barras de filtros, rejillas de tarjetas y piezas de
+   formulario reutilizadas por comuneros, asistencias y turnos.
+   ============================================================================== */
+
+/* --- Encabezado de una sección dentro de un módulo --- */
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+
+  &__title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  &__subtitle {
+    margin: 0.2rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 600px) {
+    &__actions { width: 100%; }
+    &__actions > .btn { flex: 1 1 auto; }
+  }
+}
+
+/* --- Barra de búsqueda y filtros --- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-width: 0;
+
+  &--panel {
+    padding: 0.75rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &__grow {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+
+  &__select {
+    flex: 0 1 200px;
+    width: auto;
+    min-width: 0;
+  }
+
+  &__group {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  /* En móvil cada control ocupa el ancho disponible: nada se desborda. */
+  @media (max-width: 600px) {
+    &__select { flex: 1 1 calc(50% - 0.3rem); }
+    &__group { width: 100%; }
+    &__group > .btn { flex: 1 1 auto; }
+  }
+}
+
+.search-field .input { width: 100%; }
+
+/* --- Rejilla de tarjetas --- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 1rem;
+  transition: opacity 0.2s ease;
+
+  &.is-refreshing { opacity: 0.6; }
+}
+
+/* --- Tarjeta de superficie genérica para listas y tablas --- */
+.surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  min-width: 0;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+}
+
+/* --- Píldoras de categoría --- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+
+  &--primary { background: var(--color-primary-light); color: var(--color-primary); }
+  &--warning { background: var(--color-warning-light); color: var(--color-warning-strong); }
+  &--success { background: var(--color-success-light); color: var(--color-success-strong); }
+}
+
+/* --- Formularios en modales --- */
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  .form-group { margin-bottom: 0; }
+  .grid-2, .grid-3 { gap: 1rem 1.25rem; }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.field-set {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+
+  &__legend {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+}
+
+.label-sm {
+  font-size: 0.78rem !important;
+  font-weight: 600;
+  color: var(--text-muted) !important;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 0.75rem;
+}
+
+.choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+
+  input { margin-top: 0.2rem; accent-color: var(--color-primary); }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+
+    strong { font-size: 0.95rem; }
+    span { font-size: 0.78rem; color: var(--text-muted); }
+  }
+
+  &:hover { border-color: var(--color-primary); }
+
+  &--selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+}
+
+.inset-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-color);
+
+  &--accent {
+    background: var(--color-primary-light);
+    border-color: transparent;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+
+    i { color: var(--color-primary); }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .form-group { margin-bottom: 0; }
+}
+
+.point-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.15rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 230px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__num {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  input { width: 1.1rem; height: 1.1rem; accent-color: var(--color-primary); flex-shrink: 0; }
+}
+
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  label { font-size: 0.875rem; color: var(--text-muted); }
+  .input { max-width: 160px; }
+}
+
+/* --- Archivo adjunto --- */
+.file-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-color);
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    font-size: 1.4rem;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+
+    strong { overflow-wrap: anywhere; }
+  }
+}
+
+/* --- Botón con borde y etiquetas que actúan como botón (subida de archivos) --- */
+.icon-btn {
+  &--bordered {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-color: var(--border-color);
+    background: var(--bg-surface);
+    border-radius: 10px;
+  }
+}
+
+label.icon-btn:focus-within,
+.btn-upload:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn-upload {
+  cursor: pointer;
+  margin: 0;
+
+  &.is-busy { pointer-events: none; opacity: 0.7; }
+}
+
+/* Aparición de un panel que se despliega dentro del flujo. */
+.reveal-enter { animation: ui-rise 0.28s var(--ease-out) backwards; }
+
+.toolbar--flush { width: 100%; }
+
+.is-refreshing {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+/* --- Tablas dentro de una superficie --- */
+.table-container--flush {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.table-custom {
+  .cell-actions {
+    text-align: right;
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  td { vertical-align: middle; }
+}
+
+/* En pantallas angostas cada fila se presenta como una tarjeta con etiquetas: sin scroll horizontal. */
+@media (max-width: 720px) {
+  .table-custom--stack {
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    tbody, tr, td { display: block; width: 100%; }
+
+    tr {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:last-child { border-bottom: 0; }
+    tr:hover td { background: transparent; }
+
+    td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.3rem 0;
+      border: 0;
+      text-align: right;
+      min-width: 0;
+      overflow-wrap: anywhere;
+
+      &::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: left;
+      }
+
+      &:first-child {
+        padding-bottom: 0.5rem;
+        text-align: left;
+
+        &::before { display: none; }
+      }
+
+      &.cell-actions {
+        justify-content: flex-end;
+        width: 100%;
+        padding-top: 0.5rem;
+
+        &::before { content: none; }
+      }
+    }
+
+    .text-truncate-2 { max-width: none; }
+  }
+}
+
+/* --- Persona con avatar de iniciales --- */
+.person {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong { font-weight: 600; }
+  }
+
+  &__meta {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-secondary-light));
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pill--button {
+  border: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease-out;
+
+  &:hover { filter: brightness(0.96); }
+  &:active { transform: scale(0.96); }
+}
+
+.pager {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* --- Fichas de detalle --- */
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-hover);
+
+  dt {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  dd { margin: 0.15rem 0 0; font-weight: 600; }
+
+  &__big {
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+  }
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  &__title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+
+    i { color: var(--color-primary); }
+  }
+}
+
+.tag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-full);
+    background: var(--bg-surface-hover);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+}
+
+.kv-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+
+  > div {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+  }
+
+  dt { color: var(--text-muted); flex-shrink: 0; }
+  dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+}
+
+.prewrap {
+  margin: 0;
+  white-space: pre-line;
+  font-size: 0.9rem;
+}
+
+/* --- Formulario de lote: campos y mapa lado a lado en escritorio --- */
+.lote-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+
+    .form-group { margin-bottom: 0; }
+  }
+
+  &__map {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    position: sticky;
+    top: 0;
+  }
+
+  @media (max-width: 760px) {
+    grid-template-columns: minmax(0, 1fr);
+
+    &__map { position: static; order: -1; }
+  }
+}
+
+.lote-map {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.coord-readout {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+
+  i { color: var(--color-primary); }
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+
+  .input { flex: 1; min-width: 0; }
+  .btn { flex-shrink: 0; }
+}
+
+.field-hint {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.field-error {
+  display: block;
+  color: var(--color-danger);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.surface--padded { padding: 1.25rem; }
+
+/* Icono de los indicadores (dashboard) */
+.stat-tile__icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 1.1rem;
+
+  &--danger { background: var(--color-danger-light); color: var(--color-danger); }
+  &--warning { background: var(--color-warning-light); color: var(--color-warning-strong); }
+  &--success { background: var(--color-success-light); color: var(--color-success-strong); }
+}
+
+/* --- Titularidad única de un lote (100 %) --- */
+.ownership {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-light);
+
+  &__value {
+    flex-shrink: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+
+    strong { color: var(--text-main); font-size: 0.9rem; }
+  }
+}

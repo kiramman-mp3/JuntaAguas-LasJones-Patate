@@ -1,0 +1,101 @@
+<section class="fin-panel" aria-labelledby="pagos-titulo">
+  <div class="fin-panel__head">
+    <div>
+      <h3 class="fin-panel__title" id="pagos-titulo"><i class="ri-file-list-3-line" aria-hidden="true"></i> Historial de pagos</h3>
+      <p class="fin-panel__desc">
+        {{ filtrados().length }} {{ filtrados().length === 1 ? 'pago' : 'pagos' }} ·
+        vigentes <strong class="money">${{ totalVigente().toFixed(2) }}</strong>
+      </p>
+    </div>
+  </div>
+
+  <form class="field-row" style="margin-bottom: 1rem" (ngSubmit)="cargar()">
+    <div class="field">
+      <label for="pagos-desde">Desde</label>
+      <input id="pagos-desde" name="desde" class="input" type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event); cargar()" />
+    </div>
+    <div class="field">
+      <label for="pagos-hasta">Hasta</label>
+      <input id="pagos-hasta" name="hasta" class="input" type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event); cargar()" />
+    </div>
+    <div class="field">
+      <label for="pagos-estado">Estado</label>
+      <select id="pagos-estado" name="estado" class="input" [ngModel]="estado()" (ngModelChange)="estado.set($event); cargar()">
+        <option value="">Todos</option>
+        <option value="VIGENTE">Vigentes</option>
+        <option value="ANULADO">Anulados</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="pagos-texto">Buscar</label>
+      <input id="pagos-texto" name="texto" class="input" type="search" placeholder="Comunero, cédula o REC-…"
+        [ngModel]="texto()" (ngModelChange)="texto.set($event)" />
+    </div>
+  </form>
+
+  @if (error()) {
+    <div class="alert alert--danger" role="alert">
+      {{ error() }} <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (cargando() && !pagos().length) {
+    <div aria-live="polite"><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--text"></div></div>
+  } @else if (!filtrados().length) {
+    <div class="empty-state">
+      <i class="ri-inbox-line" aria-hidden="true"></i>
+      <strong>Sin pagos</strong>
+      <p>No hay pagos que coincidan con los filtros.</p>
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="fin-table">
+        <thead>
+          <tr>
+            <th scope="col">Recibo</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Comunero</th>
+            <th scope="col">Forma</th>
+            <th scope="col" class="num">Valor</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="acciones"><span class="sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filtrados(); track p.id) {
+            <tr [class.is-anulado]="p.estado === 'ANULADO'">
+              <td class="money"><strong>{{ numeroRecibo(p.id) }}</strong></td>
+              <td>{{ p.fecha_pago | fechaLocal:'conHora' }}</td>
+              <td>
+                {{ p.comunero_nombre }}<br />
+                <span class="fin-table__muted">{{ p.cedula }} · {{ p.obligaciones_pagadas }} {{ p.obligaciones_pagadas === 1 ? 'obligación' : 'obligaciones' }}</span>
+              </td>
+              <td>
+                {{ p.metodo | titlecase }}
+                @if (p.referencia) { <br /><span class="fin-table__muted">Ref. {{ p.referencia }}</span> }
+              </td>
+              <td class="num"><span class="money">${{ p.valor_total.toFixed(2) }}</span></td>
+              <td>
+                @if (p.estado === 'ANULADO') {
+                  <span class="badge badge--danger" [attr.title]="p.motivo_anulacion">Anulado</span>
+                } @else {
+                  <span class="badge badge--success">Vigente</span>
+                }
+              </td>
+              <td class="acciones">
+                <button type="button" class="icon-btn" [disabled]="procesandoId() === p.id" (click)="reimprimir(p)"
+                  [attr.aria-label]="'Reimprimir comprobante ' + numeroRecibo(p.id)" title="Reimprimir comprobante">
+                  <i [class]="procesandoId() === p.id ? 'ri-loader-4-line ri-spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                </button>
+                @if (p.estado === 'VIGENTE') {
+                  <button type="button" class="icon-btn icon-btn--danger" [disabled]="procesandoId() === p.id" (click)="anular(p)"
+                    [attr.aria-label]="'Anular pago ' + numeroRecibo(p.id)" title="Anular pago">
+                    <i class="ri-close-circle-line" aria-hidden="true"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

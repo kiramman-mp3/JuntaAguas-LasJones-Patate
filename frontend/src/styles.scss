@@ -1,1 +1,20 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==============================================================================
+   HOJA DE ESTILOS GLOBALES - JUNTA DE AGUA Y RIEGO LA JONES (PATATE)
+   Paleta de docs/hoja_de_estilos.md con el acabado de .claude/skills/apple-design.
+
+   El orden importa: cada capa puede refinar a la anterior sin subir especificidad.
+     1. tokens      variables de color, tipografía, profundidad y movimiento
+     2. base        reinicio, tipografía, foco, utilidades e impresión
+     3. components  botones, tarjetas, insignias, formularios, tablas, modales
+     4. ui          primitivas de shared/ui (encabezados, navegación, estados)
+     5. módulos     panel admin, eventos, turnos y finanzas
+   ============================================================================== */
+
+@use './styles/tokens';
+@use './styles/base';
+@use './styles/components';
+@use './styles/ui';
+@use './styles/admin';
+@use './styles/eventos';
+@use './styles/turnos';
+@use './styles/finanzas';

@@ -1,0 +1,79 @@
+<section class="module">
+  <app-page-header titulo="Turnos de agua" subtitulo="Horarios semanales de riego por comunero y lote." icono="ri-drop-line">
+    <button type="button" class="btn btn--primary" (click)="asignarAbierto.set(true)">
+      <i class="ri-add-circle-line" aria-hidden="true"></i> Asignar turno
+    </button>
+  </app-page-header>
+
+  <div class="section-nav">
+    <div class="segmented segmented--compact" role="tablist" aria-label="Vista de turnos" style="--n: 2" [style.--i]="vista() === 'TABLA' ? 0 : 1">
+      <span class="segmented__thumb" aria-hidden="true"></span>
+      <button type="button" role="tab" class="segmented__item" [class.segmented__item--active]="vista() === 'TABLA'"
+        [attr.aria-selected]="vista() === 'TABLA'" (click)="cambiarVista('TABLA')">
+        <i class="ri-table-line" aria-hidden="true"></i> <span class="segmented__label">Tabla</span>
+      </button>
+      <button type="button" role="tab" class="segmented__item" [class.segmented__item--active]="vista() === 'CALENDARIO'"
+        [attr.aria-selected]="vista() === 'CALENDARIO'" (click)="cambiarVista('CALENDARIO')">
+        <i class="ri-calendar-event-line" aria-hidden="true"></i> <span class="segmented__label">Calendario semanal</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="surface">
+    <div class="surface__head">
+      <div class="toolbar toolbar--flush">
+        <div class="search-field toolbar__grow">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="search" class="input" placeholder="Comunero, lote o sector…" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
+            aria-label="Buscar turno" />
+        </div>
+        <select class="input toolbar__select" [ngModel]="diaFiltro()" (ngModelChange)="diaFiltro.set($event)" aria-label="Día">
+          <option value="">Todos los días</option>
+          @for (d of dias; track d.valor) {
+            <option [value]="d.label">{{ d.label }}</option>
+          }
+        </select>
+        <select class="input toolbar__select" [ngModel]="tipoFiltro()" (ngModelChange)="tipoFiltro.set($event)" aria-label="Tipo">
+          <option value="">Todos los tipos</option>
+          <option value="REGULAR">Regular</option>
+          <option value="ADICIONAL">Adicional</option>
+        </select>
+        <span class="pill pill--primary" aria-live="polite">{{ filtrados().length }} de {{ turnos().length }} turnos</span>
+      </div>
+    </div>
+
+    @if (cargando() && !turnos().length) {
+      <app-skeleton [filas]="7" mensaje="Cargando turnos…" />
+    } @else if (error()) {
+      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudieron cargar los turnos" mensaje="Revise su conexión e intente nuevamente.">
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      </app-empty-state>
+    } @else if (!turnos().length) {
+      <app-empty-state icono="ri-drop-line" titulo="Aún no hay turnos" mensaje="Asigne el primer turno de riego a un comunero.">
+        <button type="button" class="btn btn--primary btn--sm" (click)="asignarAbierto.set(true)"><i class="ri-add-line" aria-hidden="true"></i> Asignar turno</button>
+      </app-empty-state>
+    } @else if (!filtrados().length) {
+      <app-empty-state icono="ri-filter-off-line" titulo="Sin coincidencias" mensaje="No se encontraron turnos con los filtros aplicados.">
+        <button type="button" class="btn btn--outline btn--sm" (click)="limpiarFiltros()">Limpiar filtros</button>
+      </app-empty-state>
+    } @else {
+      <div class="view-swap" [class.is-refreshing]="cargando()">
+        @if (vista() === 'TABLA') {
+          <app-turnos-tabla [turnos]="filtrados()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
+        } @else {
+          <app-turnos-calendario [turnos]="filtrados()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
+        }
+      </div>
+    }
+  </div>
+</section>
+
+@if (asignarAbierto()) {
+  <app-turno-asignar (cerrar)="asignarAbierto.set(false)" (asignado)="onAsignado()" />
+}
+@if (enEdicion(); as t) {
+  <app-turno-editar [turno]="t" (cerrar)="enEdicion.set(null)" (guardado)="onEditado()" />
+}
+@if (enDetalle(); as t) {
+  <app-turno-detalle [turno]="t" (cerrar)="enDetalle.set(null)" (editar)="editarDesdeDetalle(t)" />
+}
