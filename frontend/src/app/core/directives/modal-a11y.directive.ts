@@ -10,7 +10,31 @@ import { Directive, ElementRef, HostListener, OnDestroy, OnInit, AfterViewInit }
  *  - Cierra con la tecla Escape pulsando el botón `.btn-close` interno.
  *  - Cierra al hacer clic en el fondo (backdrop).
  *  - Restaura el foco al elemento que abrió el modal al destruirse.
+ *  - Se mueve a <body> para quedar por encima de todo: ningún ancestro con
+ *    transform, filtro, opacidad animada o z-index propio puede atraparlo.
+ *  - Bloquea el scroll de la página mientras haya al menos un modal abierto.
  */
+
+/** Modales abiertos a la vez (p. ej. un formulario y la contraseña temporal encima). */
+let modalesAbiertos = 0;
+let estiloPrevio: { overflow: string; paddingRight: string } | null = null;
+
+function bloquearScroll(): void {
+  if (modalesAbiertos++ > 0) return;
+  const html = document.documentElement;
+  const anchoBarra = window.innerWidth - html.clientWidth;
+  estiloPrevio = { overflow: html.style.overflow, paddingRight: document.body.style.paddingRight };
+  html.style.overflow = 'hidden';
+  // Compensa la barra de desplazamiento para que el contenido no salte al abrir.
+  if (anchoBarra > 0) document.body.style.paddingRight = `${anchoBarra}px`;
+}
+
+function desbloquearScroll(): void {
+  if (modalesAbiertos === 0 || --modalesAbiertos > 0) return;
+  document.documentElement.style.overflow = estiloPrevio?.overflow ?? '';
+  document.body.style.paddingRight = estiloPrevio?.paddingRight ?? '';
+  estiloPrevio = null;
+}
 @Directive({
   selector: '[appModalA11y]',
   standalone: true
@@ -28,7 +52,8 @@ export class ModalA11yDirective implements OnInit, AfterViewInit, OnDestroy {
     el.setAttribute('aria-modal', 'true');
 
     this.elementoPrevio = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = 'hidden';
+    document.body.appendChild(el);
+    bloquearScroll();
   }
 
   ngAfterViewInit(): void {
@@ -43,7 +68,7 @@ export class ModalA11yDirective implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    document.body.style.overflow = '';
+    desbloquearScroll();
     this.elementoPrevio?.focus?.();
   }
 
