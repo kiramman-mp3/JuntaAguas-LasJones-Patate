@@ -1,4 +1,7 @@
 const whatsappService = require('../services/whatsappService');
+const { z, id } = require('../shared/schemas');
+
+const notificarSchema = z.object({ eventoId: id });
 
 async function getStatus(req, res, next) {
   try {
@@ -32,10 +35,11 @@ async function logoutSession(req, res, next) {
 
 async function notificarMinga(req, res, next) {
   try {
-    const { eventoId } = req.body;
-    if (!eventoId) {
-      return res.status(400).json({ status: 'ERROR', message: 'Se requiere eventoId.' });
+    const parsed = notificarSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ status: 'ERROR', message: 'Se requiere el id del evento (eventoId).' });
     }
+    const { eventoId } = parsed.data;
 
     const resultado = await whatsappService.enviarConvocatoriaMinga(eventoId);
     return res.json(resultado);

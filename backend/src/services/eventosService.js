@@ -175,4 +175,171 @@ async function finalizar(conexion, evento, ahora = new Date()) {
   return { yaFinalizada: false, multasGeneradas, resumen };
 }
 
-module.exports = { ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto };
+/* ------------------------------------------------------------------------------
+ * Consultas y escritura de eventos (antes en eventoController).
+ * ---------------------------------------------------------------------------- */
+
+const COLUMNAS_DOCUMENTOS = `
+  (SELECT d.ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_url,
+  (SELECT d.nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' LIMIT 1) AS convocatoria_firmada_nombre,
+  (SELECT d.ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_url,
+  (SELECT d.nombre_archivo FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'ACTA' LIMIT 1) AS acta_firmada_nombre,
+  (SELECT d.ruta_archivo_firmado FROM documentos_evento d WHERE d.evento_id = e.id AND d.tipo = 'OTRO' LIMIT 1) AS lista_asistencia_firmada_url`;
+
+/** Asambleas y mingas con métricas de asistencia, multas y documentos. */
+async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
+  const filtros = [];
+  const params = [];
+  if (tipo) { filtros.push('e.tipo = ?'); params.push(tipo); }
+  if (estado) { filtros.push('e.estado = ?'); params.push(estado); }
+  if (desde) { filtros.push('e.fecha >= ?'); params.push(desde); }
+  if (hasta) { filtros.push('e.fecha <= ?'); params.push(hasta); }
+
+  const [[{ totalComuneros }]] = await conexion.query("SELECT COUNT(*) AS totalComuneros FROM personas WHERE estado = 'ACTIVO'");
+  const [filas] = await conexion.query(
+    `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
+            e.requiere_asistencia, e.genera_multa_ausencia, e.valor_multa, e.created_by_cuenta_id, e.created_at,
+            CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
+            COALESCE(a.presentes, 0) AS asistentes, COALESCE(a.registrados, 0) AS registrados,
+            COALESCE(m.multas, 0) AS multas_generadas,
+            ${COLUMNAS_DOCUMENTOS}
+     FROM eventos e
+     LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
+     LEFT JOIN personas p ON p.id = c.persona_id
+     LEFT JOIN (SELECT evento_id, SUM(estado = 'PRESENTE') AS presentes, COUNT(*) AS registrados
+                FROM asistencias GROUP BY evento_id) a ON a.evento_id = e.id
+     LEFT JOIN (SELECT evento_id, COUNT(*) AS multas FROM obligaciones
+                WHERE evento_id IS NOT NULL AND estado <> 'ANULADA' GROUP BY evento_id) m ON m.evento_id = e.id
+     ${filtros.length ? `WHERE ${filtros.join(' AND ')}` : ''}
+     ORDER BY e.fecha DESC, e.hora_inicio DESC`,
+    params
+  );
+
+  // Eventos cerrados reportan su padrón real; los abiertos, los comuneros activos actuales.
+  const data = filas.map((e) => ({
+    ...e,
+    asistentes: Number(e.asistentes),
+    registrados: Number(e.registrados),
+    multas_generadas: Number(e.multas_generadas),
+    totalComuneros: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalComuneros
+  }));
+  return data;
+}
+
+/** Próximos eventos anunciados, sin datos personales. */
+async function listarEventosPublicos(conexion, limite) {
+  const [filas] = await conexion.query(
+    `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
+            e.genera_multa_ausencia, e.valor_multa,
+            (SELECT d.ruta_archivo_firmado FROM documentos_evento d
+              WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS convocatoria_firmada_url
+     FROM eventos e
+     WHERE e.estado IN ('PROGRAMADO', 'CONVOCADO') AND e.fecha >= ?
+     ORDER BY e.fecha ASC, e.hora_inicio ASC
+     LIMIT ?`,
+    [hoy(), limite]
+  );
+  return filas;
+}
+
+/** Detalle de un evento con sus puntos y el resumen de asistencia por estado. */
+async function detalleEvento(conexion, id) {
+  const [filas] = await conexion.query(`SELECT e.*, ${COLUMNAS_DOCUMENTOS} FROM eventos e WHERE e.id = ?`, [id]);
+  if (!filas.length) throw notFound('Evento no encontrado.');
+  const [puntos] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden ASC', [id]);
+  const [asistenciaStats] = await conexion.query(
+    'SELECT estado, COUNT(*) AS total FROM asistencias WHERE evento_id = ? GROUP BY estado', [id]
+  );
+  return { evento: filas[0], puntos, asistenciaStats };
+}
+
+/** Crea una asamblea o minga con sus puntos del orden del día. */
+async function crearEvento(conexion, datos, cuentaId) {
+  if (datos.tipo === 'ASAMBLEA' && datos.fecha < hoy()) {
+    throw badRequest('La fecha de la asamblea no puede ser anterior a la fecha actual.');
+  }
+  const valorMulta = datos.genera_multa_ausencia ? (datos.valor_multa ?? 10) : null;
+  const puntos = datos.tipo === 'ASAMBLEA'
+    ? datos.puntos_orden_dia
+      .map((p) => (typeof p === 'string' ? { punto_tratar: p } : p))
+      .map((p) => ({ ...p, punto_tratar: p.punto_tratar.trim() }))
+      .filter((p) => p.punto_tratar)
+    : [];
+
+  const [r] = await conexion.query(
+    `INSERT INTO eventos (tipo, titulo, descripcion, fecha, hora_inicio, hora_fin, lugar, requiere_asistencia,
+                          genera_multa_ausencia, valor_multa, created_by_cuenta_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [datos.tipo, datos.titulo, datos.descripcion, datos.fecha, datos.hora_inicio, datos.hora_fin,
+      datos.lugar || 'Casa Comunal Junta La Jones', datos.requiere_asistencia, datos.genera_multa_ausencia, valorMulta,
+      cuentaId]
+  );
+  if (puntos.length) {
+    await conexion.query(
+      'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion, titulo_acta) VALUES ?',
+      [puntos.map((p, i) => [r.insertId, i + 1, p.punto_tratar, p.tratado || null, p.resolucion || null, p.punto_tratar.slice(0, 255)])]
+    );
+  }
+  return { eventoId: r.insertId, valorMulta, puntos: puntos.length };
+}
+
+/**
+ * Guarda los puntos del orden del día y sus actas: actualiza los existentes por id,
+ * crea los nuevos y elimina los que ya no se envían.
+ * @returns {{ data: object[], archivosEliminados: string[] }} archivos firmados que quedaron huérfanos
+ */
+async function guardarPuntos(conexion, id, puntos) {
+  const evento = await obtenerEvento(conexion, id, { tipo: 'ASAMBLEA' });
+  if (evento.estado === 'CANCELADO') throw conflict('La asamblea está cancelada.');
+
+  const [existentes] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? FOR UPDATE', [id]);
+  const porId = new Map(existentes.map((p) => [p.id, p]));
+  const validos = puntos
+    .map((p) => ({ ...p, texto: (p.punto_tratar || p.titulo_acta || '').trim() }))
+    .filter((p) => p.texto)
+    .map((p, i) => ({ ...p, orden: i + 1 }));
+  if (validos.some((p) => p.id && !porId.has(p.id))) throw badRequest('Uno de los puntos no pertenece a esta asamblea.');
+
+  const conservados = new Set(validos.filter((p) => p.id).map((p) => p.id));
+  const eliminados = existentes.filter((p) => !conservados.has(p.id));
+  if (eliminados.length) {
+    await conexion.query('DELETE FROM puntos_asamblea WHERE id IN (?)', [eliminados.map((p) => p.id)]);
+  }
+  // Liberar los números de orden antes de reasignarlos (clave única evento + orden).
+  await conexion.query('UPDATE puntos_asamblea SET orden = -orden - 1000 WHERE evento_id = ?', [id]);
+
+  for (const p of validos) {
+    const previo = p.id ? porId.get(p.id) : null;
+    const valores = {
+      orden: p.orden,
+      punto_tratar: p.texto,
+      titulo_acta: (p.titulo_acta || p.texto).slice(0, 255),
+      tratado: p.tratado !== undefined ? p.tratado : previo?.tratado ?? null,
+      resolucion: p.resolucion !== undefined ? p.resolucion : previo?.resolucion ?? null,
+      responsables: p.responsables !== undefined ? p.responsables : previo?.responsables ?? null,
+      estado_acta: p.estado_acta || previo?.estado_acta || 'BORRADOR'
+    };
+    if (previo) {
+      await conexion.query('UPDATE puntos_asamblea SET ? WHERE id = ?', [valores, previo.id]);
+    } else {
+      await conexion.query('INSERT INTO puntos_asamblea SET ?', [{ ...valores, evento_id: id }]);
+    }
+  }
+
+  const [actualizados] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden ASC', [id]);
+  return { data: actualizados, archivosEliminados: eliminados.map((p) => p.acta_firmada_url).filter(Boolean) };
+}
+
+/** Actualiza los datos del acta de un punto. */
+async function actualizarActaPunto(conexion, eventoId, puntoId, cambios) {
+  if (!Object.keys(cambios).length) throw badRequest('No se enviaron cambios para el acta.');
+  const [r] = await conexion.query('UPDATE puntos_asamblea SET ? WHERE id = ? AND evento_id = ?', [cambios, puntoId, eventoId]);
+  if (!r.affectedRows) throw notFound('Punto de asamblea no encontrado.');
+  const [[actualizado]] = await conexion.query('SELECT * FROM puntos_asamblea WHERE id = ?', [puntoId]);
+  return actualizado;
+}
+
+module.exports = {
+  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos, actualizarActaPunto,
+  ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto
+};

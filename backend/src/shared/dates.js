@@ -37,4 +37,25 @@ function yaOcurrio(fecha, hora = '00:00:00', ahora = new Date()) {
   return `${fecha} ${normalizarHora(hora) ?? '00:00:00'}` <= actual;
 }
 
-module.exports = { ZONA, hoy, horaActual, normalizarHora, esFechaValida, yaOcurrio };
+/** Desfase fijo de Ecuador continental respecto de UTC (no tiene horario de verano). */
+const DESFASE_HORAS = 5;
+/** Para MySQL: CONVERT_TZ(columna_utc, '+00:00', ZONA_MYSQL) da la hora local de la Junta. */
+const ZONA_MYSQL = '-05:00';
+
+/**
+ * Instante (UTC) en que empieza el día 'YYYY-MM-DD' en Ecuador. Las columnas DATETIME
+ * como pagos.fecha_pago se guardan en UTC, así que un filtro por día local debe usar este instante:
+ * el 7 de octubre en Ecuador va de 2026-10-07T05:00Z a 2026-10-08T05:00Z.
+ */
+function inicioDelDiaUtc(fecha) {
+  const [a, m, d] = fecha.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, d, DESFASE_HORAS));
+}
+
+/** Instante (UTC) en que termina el día local, exclusivo: el inicio del día siguiente. */
+function finDelDiaUtc(fecha) {
+  const inicio = inicioDelDiaUtc(fecha);
+  return new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
+}
+
+module.exports = { ZONA, ZONA_MYSQL, hoy, horaActual, normalizarHora, esFechaValida, yaOcurrio, inicioDelDiaUtc, finDelDiaUtc };

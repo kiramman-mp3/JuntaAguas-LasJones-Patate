@@ -48,3 +48,34 @@ test('crea el lote con el código normalizado', async () => {
   const [[lote]] = await db.query('SELECT codigo FROM lotes WHERE id = ?', [res.body.loteId]);
   assert.equal(lote.codigo, 'LJA-020');
 });
+
+test('transferir un lote queda auditado con el titular anterior y mueve sus turnos activos', async () => {
+  const anterior = await crearUsuario();
+  const nuevo = await crearUsuario();
+  const loteId = await crearLote({ sectorId: sectorAlto, personaId: anterior.personaId, codigo: 'LJA-030' });
+  await db.query("INSERT INTO turnos_riego (persona_id, lote_id, dia_semana, hora_inicio, hora_fin) VALUES (?, ?, 1, '06:00', '07:00')", [anterior.personaId, loteId]);
+  const vincular = (body) => request(app).post(`/api/lotes/${loteId}/vincular-persona`).set(auth(admin)).send(body);
+
+  const res = await vincular({ persona_id: nuevo.personaId });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.turnosReasignados, 1);
+  const [[titular]] = await db.query('SELECT persona_id FROM persona_lotes WHERE lote_id = ?', [loteId]);
+  assert.equal(titular.persona_id, nuevo.personaId);
+  const [[turno]] = await db.query('SELECT persona_id FROM turnos_riego WHERE lote_id = ?', [loteId]);
+  assert.equal(turno.persona_id, nuevo.personaId);
+  const [[auditoria]] = await db.query("SELECT accion, detalle FROM auditoria WHERE entidad = 'persona_lotes' AND entidad_id = ? ORDER BY id DESC LIMIT 1", [loteId]);
+  assert.equal(auditoria.accion, 'TRANSFERIR');
+  const detalle = typeof auditoria.detalle === 'string' ? JSON.parse(auditoria.detalle) : auditoria.detalle;
+  assert.equal(detalle.anterior.persona_id, anterior.personaId);
+
+  assert.equal((await vincular({ persona_id: nuevo.personaId })).status, 400, 'ya es el titular');
+  assert.equal((await vincular({ persona_id: 999999 })).status, 404);
+  assert.equal((await request(app).post('/api/lotes/999999/vincular-persona').set(auth(admin)).send({ persona_id: nuevo.personaId })).status, 404);
+});
+
+test('valida las coordenadas y el sector al crear un lote', async () => {
+  const crear = (body) => request(app).post('/api/lotes').set(auth(admin)).send({ sector_id: sectorAlto, ...body });
+  assert.equal((await crear({ codigo: 'LJA-040', latitud_aproximada: 120 })).status, 400);
+  assert.equal((await crear({ codigo: 'LJA-041', latitud_aproximada: '', longitud_aproximada: '' })).status, 201, 'vacíos se guardan como null');
+  assert.equal((await request(app).post('/api/lotes').set(auth(admin)).send({ sector_id: 999999, codigo: 'LJA-042' })).status, 404);
+});

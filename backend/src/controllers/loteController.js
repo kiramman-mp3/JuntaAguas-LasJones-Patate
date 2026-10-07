@@ -1,39 +1,77 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
 const { personaPermitida } = require('../shared/roles');
+const { withTransaction } = require('../shared/transaction');
+const { hoy } = require('../shared/dates');
+const { badRequest, notFound, conflict } = require('../shared/errors');
 const { FORMATO_CODIGO_LOTE, normalizarCodigo, prefijoSector } = require('../utils/loteCodigo');
+const s = require('../shared/schemas');
+const { z } = s;
 
-async function sugerirCodigo(req, res, next) {
-  try {
-    const sectorId = Number(req.query.sector_id);
-    if (!Number.isSafeInteger(sectorId) || sectorId <= 0) {
-      return res.status(400).json({ status: 'ERROR', message: 'Seleccione un sector válido para sugerir el código.' });
-    }
-    const [sectores] = await db.query('SELECT nombre FROM sectores WHERE id = ? AND activo = TRUE', [sectorId]);
-    if (!sectores.length) {
-      return res.status(404).json({ status: 'ERROR', message: 'El sector seleccionado no existe o está inactivo.' });
-    }
-    // Incluye lotes inactivos: sus códigos también están sujetos al UNIQUE global.
-    const prefijo = prefijoSector(sectores[0].nombre);
-    const [codigos] = await db.query('SELECT codigo FROM lotes WHERE codigo LIKE ?', [`${prefijo}-%`]);
-    let consecutivo = 0;
-    for (const lote of codigos) {
-      const codigo = normalizarCodigo(lote.codigo);
-      if (FORMATO_CODIGO_LOTE.test(codigo)) consecutivo = Math.max(consecutivo, Number(codigo.slice(4)));
-    }
-    if (consecutivo >= 99999999) {
-      return res.status(409).json({ status: 'ERROR', message: 'Se agotaron los códigos para este prefijo.' });
-    }
-    const codigo = `${prefijo}-${String(consecutivo + 1).padStart(3, '0')}`;
-    return res.json({ status: 'OK', data: { codigo } });
-  } catch (error) {
-    next(error);
-  }
+/** Número opcional: '' y null se guardan como null. */
+const numeroOpcional = (esquema) => z.preprocess((v) => (v === '' || v === null ? undefined : v), esquema.optional()).transform((v) => v ?? null);
+const relacion = z.enum(['PROPIETARIO', 'REPRESENTANTE']).default('PROPIETARIO');
+
+const sugerirQuery = z.object({ sector_id: z.coerce.number({ error: 'Seleccione un sector válido para sugerir el código.' }).int().positive('Seleccione un sector válido para sugerir el código.') });
+
+const sectorSchema = z.object({
+  nombre: z.string({ error: 'El nombre del sector es obligatorio.' }).trim().min(2, 'El nombre del sector es obligatorio.').max(100),
+  descripcion: s.textoOpcional(255)
+});
+
+const lotesQuery = z.object({
+  sector_id: s.id.optional(),
+  persona_id: s.id.optional(),
+  busqueda: z.string().trim().max(100).optional()
+});
+
+const loteSchema = z.object({
+  sector_id: s.id,
+  codigo: z.string({ error: 'El código del lote es obligatorio.' }).transform(normalizarCodigo)
+    .refine((c) => FORMATO_CODIGO_LOTE.test(c), 'El código debe tener tres letras y de tres a ocho dígitos separados por un guion. Ejemplo: LJA-001.'),
+  superficie_m2: numeroOpcional(z.coerce.number().positive('La superficie debe ser mayor a cero.').max(10_000_000)),
+  ancho_m: numeroOpcional(z.coerce.number().positive().max(100_000)),
+  largo_m: numeroOpcional(z.coerce.number().positive().max(100_000)),
+  latitud_aproximada: numeroOpcional(z.coerce.number().min(-90).max(90)),
+  longitud_aproximada: numeroOpcional(z.coerce.number().min(-180).max(180)),
+  radio_error_m: numeroOpcional(z.coerce.number().min(0).max(10_000)),
+  referencia_ubicacion: s.textoOpcional(255),
+  observacion: s.textoOpcional(255),
+  persona_id: s.id.optional(),
+  tipo_relacion: relacion
+});
+
+const vincularSchema = z.object({
+  persona_id: s.id,
+  tipo_relacion: relacion,
+  observacion: s.textoOpcional(255)
+});
+const loteParam = z.object({ loteId: s.id });
+
+async function verificarPersonaActiva(conexion, personaId) {
+  const [filas] = await conexion.query("SELECT id, CONCAT(nombres, ' ', apellidos) AS nombre FROM personas WHERE id = ? AND estado = 'ACTIVO'", [personaId]);
+  if (!filas.length) throw notFound('El comunero no existe o está inactivo.');
+  return filas[0];
 }
 
-/**
- * Obtener catálogo de sectores
- */
+/** Próximo código libre del prefijo del sector (cuenta también lotes inactivos y de otros sectores). */
+async function sugerirCodigo(req, res) {
+  const { sector_id: sectorId } = sugerirQuery.parse(req.query);
+  const [sectores] = await db.query('SELECT nombre FROM sectores WHERE id = ? AND activo = TRUE', [sectorId]);
+  if (!sectores.length) throw notFound('El sector seleccionado no existe o está inactivo.');
+  // Incluye lotes inactivos: sus códigos también están sujetos al UNIQUE global.
+  const prefijo = prefijoSector(sectores[0].nombre);
+  const [codigos] = await db.query('SELECT codigo FROM lotes WHERE codigo LIKE ?', [`${prefijo}-%`]);
+  let consecutivo = 0;
+  for (const lote of codigos) {
+    const codigo = normalizarCodigo(lote.codigo);
+    if (FORMATO_CODIGO_LOTE.test(codigo)) consecutivo = Math.max(consecutivo, Number(codigo.slice(4)));
+  }
+  if (consecutivo >= 99999999) throw conflict('Se agotaron los códigos para este prefijo.');
+  return res.json({ status: 'OK', data: { codigo: `${prefijo}-${String(consecutivo + 1).padStart(3, '0')}` } });
+}
+
+/** Catálogo de sectores con el número de lotes activos y su superficie. */
 async function getSectores(req, res) {
   const [sectores] = await db.query(
     `SELECT s.id, s.nombre, s.descripcion,
@@ -48,160 +86,142 @@ async function getSectores(req, res) {
   return res.json({ status: 'OK', data: sectores.map((x) => ({ ...x, lotesCount: Number(x.lotesCount), superficieHa: Number(x.superficieHa) })) });
 }
 
-/**
- * Crear sector
- */
-async function createSector(req, res, next) {
+async function createSector(req, res) {
+  const { nombre, descripcion } = sectorSchema.parse(req.body);
+  let sectorId;
   try {
-    const { nombre, descripcion } = req.body;
-    if (!nombre) {
-      return res.status(400).json({ status: 'ERROR', message: 'El nombre del sector es obligatorio.' });
-    }
-
-    const [result] = await db.query(`INSERT INTO sectores (nombre, descripcion) VALUES (?, ?)`, [nombre.trim(), descripcion || null]);
-    return res.status(201).json({ status: 'OK', message: 'Sector creado exitosamente.', sectorId: result.insertId });
+    const [r] = await db.query('INSERT INTO sectores (nombre, descripcion) VALUES (?, ?)', [nombre, descripcion]);
+    sectorId = r.insertId;
   } catch (error) {
-    next(error);
+    if (error.code === 'ER_DUP_ENTRY') throw conflict(`Ya existe el sector ${nombre}.`);
+    throw error;
   }
+  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'sectores', entidadId: sectorId, ip: req.ip, detalle: { nombre } });
+  return res.status(201).json({ status: 'OK', message: 'Sector creado exitosamente.', sectorId });
 }
 
-/**
- * Listar lotes georreferenciados
- */
-async function getLotes(req, res, next) {
-  try {
-    const { sector_id, busqueda } = req.query;
-    const persona_id = personaPermitida(req.user, req.query.persona_id);
-
-    let sql = `SELECT l.id, l.sector_id, l.codigo, l.superficie_m2, l.ancho_m, l.largo_m,
-                      l.latitud_aproximada, l.longitud_aproximada, l.radio_error_m,
-                      l.referencia_ubicacion, l.observacion, l.activo, l.created_at,
-                      s.nombre AS sector_nombre,
-                      pl.tipo_relacion, pl.porcentaje,
-                      p.id AS propietario_id, p.cedula AS propietario_cedula,
-                      CONCAT(p.nombres, ' ', p.apellidos) AS propietario_nombre,
-                      CASE WHEN p.id IS NOT NULL THEN CONCAT(p.nombres, ' ', p.apellidos, ' (C.I. ', p.cedula, ')') ELSE 'Sin propietario asignado' END AS propietario,
-                      CONCAT(p.nombres, ' ', p.apellidos) AS propietarios
-               FROM lotes l
-               JOIN sectores s ON s.id = l.sector_id
-               LEFT JOIN persona_lotes pl ON pl.lote_id = l.id
-               LEFT JOIN personas p ON p.id = pl.persona_id
-               WHERE l.activo = TRUE`;
-    const params = [];
-
-    if (persona_id) {
-      sql += ` AND EXISTS (SELECT 1 FROM persona_lotes pl WHERE pl.lote_id = l.id AND pl.persona_id = ?)`;
-      params.push(persona_id);
-    }
-
-    if (sector_id) {
-      sql += ` AND l.sector_id = ?`;
-      params.push(sector_id);
-    }
-
-    if (busqueda) {
-      sql += ` AND (l.codigo LIKE ? OR l.referencia_ubicacion LIKE ?)`;
-      const term = `%${busqueda.trim()}%`;
-      params.push(term, term);
-    }
-
-    sql += ` ORDER BY s.nombre ASC, l.codigo ASC`;
-
-    const [lotes] = await db.query(sql, params);
-    return res.json({ status: 'OK', data: lotes });
-  } catch (error) {
-    next(error);
+/** Lotes activos con su titular. Un comunero solo recibe los suyos. */
+async function getLotes(req, res) {
+  const filtros = lotesQuery.parse(req.query);
+  const personaId = personaPermitida(req.user, filtros.persona_id);
+  const condiciones = ['l.activo = TRUE'];
+  const params = [];
+  if (personaId) {
+    condiciones.push('EXISTS (SELECT 1 FROM persona_lotes x WHERE x.lote_id = l.id AND x.persona_id = ?)');
+    params.push(personaId);
   }
+  if (filtros.sector_id) { condiciones.push('l.sector_id = ?'); params.push(filtros.sector_id); }
+  if (filtros.busqueda) {
+    condiciones.push('(l.codigo LIKE ? OR l.referencia_ubicacion LIKE ?)');
+    params.push(`%${filtros.busqueda}%`, `%${filtros.busqueda}%`);
+  }
+
+  const [lotes] = await db.query(
+    `SELECT l.id, l.sector_id, l.codigo, l.superficie_m2, l.ancho_m, l.largo_m,
+            l.latitud_aproximada, l.longitud_aproximada, l.radio_error_m,
+            l.referencia_ubicacion, l.observacion, l.activo, l.created_at,
+            s.nombre AS sector_nombre,
+            pl.tipo_relacion, pl.porcentaje,
+            p.id AS propietario_id, p.cedula AS propietario_cedula,
+            CONCAT(p.nombres, ' ', p.apellidos) AS propietario_nombre,
+            CASE WHEN p.id IS NOT NULL THEN CONCAT(p.nombres, ' ', p.apellidos, ' (C.I. ', p.cedula, ')') ELSE 'Sin propietario asignado' END AS propietario,
+            CONCAT(p.nombres, ' ', p.apellidos) AS propietarios
+     FROM lotes l
+     JOIN sectores s ON s.id = l.sector_id
+     LEFT JOIN persona_lotes pl ON pl.lote_id = l.id
+     LEFT JOIN personas p ON p.id = pl.persona_id
+     WHERE ${condiciones.join(' AND ')}
+     ORDER BY s.nombre ASC, l.codigo ASC`,
+    params
+  );
+  return res.json({ status: 'OK', data: lotes });
 }
 
-/**
- * Crear lote y asociar a comunero (Titular Único)
- */
-async function createLote(req, res, next) {
+/** Crear un lote y, si se indica, asignarle su titular en la misma transacción. */
+async function createLote(req, res) {
+  const datos = loteSchema.parse(req.body);
+  let loteId;
   try {
-    const { sector_id, codigo, superficie_m2, ancho_m, largo_m, latitud_aproximada, longitud_aproximada, radio_error_m, referencia_ubicacion, observacion, persona_id, tipo_relacion } = req.body;
+    loteId = await withTransaction(async (conexion) => {
+      const [sectores] = await conexion.query('SELECT id FROM sectores WHERE id = ? AND activo = TRUE', [datos.sector_id]);
+      if (!sectores.length) throw notFound('El sector seleccionado no existe o está inactivo.');
+      const [existentes] = await conexion.query('SELECT id FROM lotes WHERE codigo = ?', [datos.codigo]);
+      if (existentes.length) throw conflict('Este código de lote ya está registrado. Solicite otra sugerencia o ingrese un código diferente.');
+      if (datos.persona_id) await verificarPersonaActiva(conexion, datos.persona_id);
 
-    if (!sector_id || !codigo) {
-      return res.status(400).json({ status: 'ERROR', message: 'Sector y Código del Lote son campos obligatorios.' });
-    }
-
-    const codigoNormalizado = normalizarCodigo(codigo);
-    if (!FORMATO_CODIGO_LOTE.test(codigoNormalizado)) {
-      return res.status(400).json({ status: 'ERROR', message: 'El código debe tener tres letras y de tres a ocho dígitos separados por un guion. Ejemplo: LJA-001.' });
-    }
-    const [existentes] = await db.query('SELECT id FROM lotes WHERE codigo = ?', [codigoNormalizado]);
-    if (existentes.length) {
-      return res.status(409).json({ status: 'ERROR', message: 'Este código de lote ya está registrado. Solicite otra sugerencia o ingrese un código diferente.' });
-    }
-
-    const [result] = await db.query(
-      `INSERT INTO lotes (sector_id, codigo, superficie_m2, ancho_m, largo_m, latitud_aproximada, longitud_aproximada, radio_error_m, referencia_ubicacion, observacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [sector_id, codigoNormalizado, superficie_m2 || null, ancho_m || null, largo_m || null, latitud_aproximada || null, longitud_aproximada || null, radio_error_m || null, referencia_ubicacion || null, observacion || null]
-    );
-
-    const loteId = result.insertId;
-
-    if (persona_id) {
-      // Garantizar que solo tenga 1 dueño registrado
-      await db.query(`DELETE FROM persona_lotes WHERE lote_id = ?`, [loteId]);
-      await db.query(
-        `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde)
-         VALUES (?, ?, ?, 100.00, CURDATE())`,
-        [persona_id, loteId, tipo_relacion || 'PROPIETARIO']
+      const [r] = await conexion.query(
+        `INSERT INTO lotes (sector_id, codigo, superficie_m2, ancho_m, largo_m, latitud_aproximada, longitud_aproximada, radio_error_m, referencia_ubicacion, observacion)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [datos.sector_id, datos.codigo, datos.superficie_m2, datos.ancho_m, datos.largo_m, datos.latitud_aproximada,
+          datos.longitud_aproximada, datos.radio_error_m, datos.referencia_ubicacion, datos.observacion]
       );
-    }
-
-    await registrarAuditoria({
-      cuentaId: req.user ? req.user.cuentaId : null,
-      accion: 'CREAR',
-      entidad: 'lotes',
-      entidadId: loteId,
-      ip: req.ip,
-      detalle: { codigo: codigoNormalizado, sector_id, latitud_aproximada, longitud_aproximada }
+      if (datos.persona_id) {
+        await conexion.query(
+          `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde) VALUES (?, ?, ?, 100.00, ?)`,
+          [datos.persona_id, r.insertId, datos.tipo_relacion, hoy()]
+        );
+      }
+      return r.insertId;
     });
-
-    return res.status(201).json({ status: 'OK', message: 'Lote georreferenciado creado correctamente.', loteId });
   } catch (error) {
     // La restricción UNIQUE cubre la carrera entre sugerir/comprobar y el INSERT.
-    if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ status: 'ERROR', message: 'Este código de lote acaba de ser registrado. Solicite otra sugerencia.' });
-    }
-    next(error);
+    if (error.code === 'ER_DUP_ENTRY') throw conflict('Este código de lote acaba de ser registrado. Solicite otra sugerencia.');
+    throw error;
   }
+
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'lotes', entidadId: loteId, ip: req.ip,
+    detalle: { codigo: datos.codigo, sector_id: datos.sector_id, persona_id: datos.persona_id ?? null, latitud: datos.latitud_aproximada, longitud: datos.longitud_aproximada }
+  });
+  return res.status(201).json({ status: 'OK', message: 'Lote georreferenciado creado correctamente.', loteId });
 }
 
 /**
- * Vincular persona a lote existente (Legalmente un terreno solo tendrá 1 dueño)
+ * Asignar o transferir la titularidad de un lote (un lote tiene un solo titular).
+ * La transferencia queda en la auditoría con el titular anterior y la fecha desde la que tenía el lote.
  */
-async function linkPersonaLote(req, res, next) {
-  try {
-    const { loteId } = req.params;
-    const { persona_id, tipo_relacion } = req.body;
+async function linkPersonaLote(req, res) {
+  const { loteId } = loteParam.parse(req.params);
+  const datos = vincularSchema.parse(req.body);
 
-    if (!persona_id) {
-      return res.status(400).json({ status: 'ERROR', message: 'ID de comunero requerido.' });
+  const resultado = await withTransaction(async (conexion) => {
+    const [lotes] = await conexion.query('SELECT id, codigo, activo FROM lotes WHERE id = ? FOR UPDATE', [loteId]);
+    if (!lotes.length || !lotes[0].activo) throw notFound('El lote no existe o está inactivo.');
+    const nuevo = await verificarPersonaActiva(conexion, datos.persona_id);
+    const [previos] = await conexion.query('SELECT persona_id, tipo_relacion, fecha_desde FROM persona_lotes WHERE lote_id = ? FOR UPDATE', [loteId]);
+    const anterior = previos[0] ?? null;
+    if (anterior && Number(anterior.persona_id) === datos.persona_id && anterior.tipo_relacion === datos.tipo_relacion) {
+      throw badRequest('El lote ya pertenece a este comunero.');
     }
 
-    // Como legalmente un terreno solo puede tener un dueño, se reemplaza la titularidad previa
-    await db.query(`DELETE FROM persona_lotes WHERE lote_id = ?`, [loteId]);
-    await db.query(
-      `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde)
-       VALUES (?, ?, ?, 100.00, CURDATE())`,
-      [persona_id, loteId, tipo_relacion || 'PROPIETARIO']
+    await conexion.query('DELETE FROM persona_lotes WHERE lote_id = ?', [loteId]);
+    await conexion.query(
+      `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde, observacion) VALUES (?, ?, ?, 100.00, ?, ?)`,
+      [datos.persona_id, loteId, datos.tipo_relacion, hoy(), datos.observacion]
     );
+    // Los turnos activos del lote siguen al nuevo titular.
+    const [turnos] = await conexion.query(
+      "UPDATE turnos_riego SET persona_id = ? WHERE lote_id = ? AND estado = 'ACTIVO' AND persona_id <> ?",
+      [datos.persona_id, loteId, datos.persona_id]
+    );
+    return { lote: lotes[0], nuevo, anterior, turnosReasignados: turnos.affectedRows };
+  });
 
-    return res.json({ status: 'OK', message: 'Titularidad asignada correctamente. El lote ahora pertenece al comunero seleccionado.' });
-  } catch (error) {
-    next(error);
-  }
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId,
+    accion: resultado.anterior ? 'TRANSFERIR' : 'CREAR',
+    entidad: 'persona_lotes', entidadId: loteId, ip: req.ip,
+    detalle: {
+      lote: resultado.lote.codigo,
+      anterior: resultado.anterior && { persona_id: resultado.anterior.persona_id, tipo_relacion: resultado.anterior.tipo_relacion, desde: resultado.anterior.fecha_desde },
+      nuevo: { persona_id: datos.persona_id, tipo_relacion: datos.tipo_relacion },
+      turnosReasignados: resultado.turnosReasignados
+    }
+  });
+  const message = resultado.anterior
+    ? `Titularidad transferida a ${resultado.nuevo.nombre}.${resultado.turnosReasignados ? ` ${resultado.turnosReasignados} turno(s) de riego pasaron al nuevo titular.` : ''}`
+    : 'Titularidad asignada correctamente. El lote ahora pertenece al comunero seleccionado.';
+  return res.json({ status: 'OK', message, turnosReasignados: resultado.turnosReasignados });
 }
 
-module.exports = {
-  sugerirCodigo,
-  getSectores,
-  createSector,
-  getLotes,
-  createLote,
-  linkPersonaLote
-};
+module.exports = { sugerirCodigo, getSectores, createSector, getLotes, createLote, linkPersonaLote };

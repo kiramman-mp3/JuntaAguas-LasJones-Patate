@@ -173,4 +173,50 @@ async function anularPago(conexion, { pagoId, motivo, cuentaId }) {
   return { pago: pagos[0], obligaciones: detalles.length };
 }
 
-module.exports = { redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, generarFacturacionMensual, resumenFacturacionAnual, registrarPago, anularPago };
+/** Crea una obligación manual (cuota extraordinaria, reposición, etc.). */
+async function crearObligacionManual(conexion, datos) {
+  const [personas] = await conexion.query("SELECT id FROM personas WHERE id = ? AND estado = 'ACTIVO'", [datos.persona_id]);
+  if (!personas.length) throw notFound('El comunero no existe o está inactivo.');
+  const [conceptos] = await conexion.query('SELECT id FROM conceptos_cobro WHERE id = ? AND activo = TRUE', [datos.concepto_id]);
+  if (!conceptos.length) throw notFound('Concepto de cobro no encontrado.');
+  try {
+    const [r] = await conexion.query(
+      `INSERT INTO obligaciones (persona_id, concepto_id, periodo_anio, periodo_mes, fecha_emision, fecha_vencimiento, valor, origen, estado, observacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'MANUAL', 'PENDIENTE', ?)`,
+      [datos.persona_id, datos.concepto_id, datos.periodo_anio ?? Number(datos.fecha_emision.slice(0, 4)), datos.periodo_mes ?? null,
+        datos.fecha_emision, datos.fecha_vencimiento, datos.valor, datos.observacion]
+    );
+    return r.insertId;
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') throw conflict('El comunero ya tiene una obligación de ese concepto para el mismo período.');
+    throw error;
+  }
+}
+
+/** Anula una obligación pendiente (las pagadas se revierten anulando su pago). */
+async function anularObligacion(conexion, { obligacionId, motivo, cuentaId }) {
+  const [filas] = await conexion.query('SELECT estado FROM obligaciones WHERE id = ? FOR UPDATE', [obligacionId]);
+  if (!filas.length) throw notFound('Obligación no encontrada.');
+  if (filas[0].estado !== 'PENDIENTE') {
+    throw conflict(`Solo se pueden anular obligaciones pendientes; esta se encuentra ${filas[0].estado}.`);
+  }
+  await conexion.query(
+    `UPDATE obligaciones SET estado = 'ANULADA', anulada_por_cuenta_id = ?, fecha_anulacion = UTC_TIMESTAMP(), motivo_anulacion = ?
+     WHERE id = ?`,
+    [cuentaId, motivo, obligacionId]
+  );
+}
+
+/** Registra un egreso de caja. */
+async function registrarEgreso(conexion, datos, cuentaId) {
+  const [r] = await conexion.query(
+    `INSERT INTO egresos (proveedor, ruc_proveedor, fecha, concepto, descripcion, numero_factura, valor, registrado_por_cuenta_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [datos.proveedor, datos.ruc_proveedor, datos.fecha, datos.concepto, datos.descripcion, datos.numero_factura, datos.valor, cuentaId]
+  );
+  return r.insertId;
+}
+
+module.exports = {
+  crearObligacionManual, anularObligacion, registrarEgreso,
+  redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, generarFacturacionMensual, resumenFacturacionAnual, registrarPago, anularPago };
