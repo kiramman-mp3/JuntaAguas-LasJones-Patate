@@ -1,0 +1,166 @@
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Menú del panel administrativo">
+    <div class="sidebar__logo">
+      <i class="ri-drop-fill" aria-hidden="true"></i>
+      <h2>La Jones</h2>
+    </div>
+
+    <nav class="sidebar__nav">
+
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'DASHBOARD'" (click)="cambiarTab('DASHBOARD')">
+        <i class="ri-dashboard-line"></i> Dashboard
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'USUARIOS'" (click)="cambiarTab('USUARIOS')">
+        <i class="ri-group-line"></i> Comuneros & Lotes
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'ASISTENCIAS'" (click)="cambiarTab('ASISTENCIAS')">
+        <i class="ri-calendar-check-line"></i> Asistencias
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'TURNOS'" (click)="cambiarTab('TURNOS')">
+        <i class="ri-drop-line"></i> Turnos de Agua
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'COBROS'" (click)="cambiarTab('COBROS')">
+        <i class="ri-hand-coin-line"></i> Cobros
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'GESTIONCONTRATACION'" (click)="cambiarTab('GESTIONCONTRATACION')">
+        <i class="ri-money-dollar-circle-line"></i> Gestion de Contratación
+      </a>
+      <a class="nav-item" [class.nav-item--active]="tabActiva === 'FINANZAS'" (click)="cambiarTab('FINANZAS')">
+        <i class="ri-money-dollar-circle-line"></i> Finanzas
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="main-header">
+      <div>
+        <h1 class="main-header__title">Sistema Integrado de Gestión</h1>
+        <p class="main-header__subtitle">Junta de Agua y Riego "La Jones" - Patate</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn--outline btn-whatsapp" (click)="abrirModalWhatsApp()">
+          <i class="ri-whatsapp-line" aria-hidden="true"></i> WhatsApp Web
+        </button>
+        <span class="badge badge--success"><i class="ri-pulse-line" aria-hidden="true"></i> Sistema en Línea</span>
+      </div>
+    </header>
+
+    <!-- VISTA 0: DASHBOARD -->
+    <section *ngIf="tabActiva === 'DASHBOARD'" class="tab-view">
+      <div class="alert alert--danger" *ngIf="errorCarga" role="alert">
+        <i class="ri-error-warning-line" aria-hidden="true"></i> {{ errorCarga }}
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargarDatosBackend()" style="margin-left: auto;">
+          <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
+        </button>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-card__icon"><i class="ri-hand-coin-line" aria-hidden="true"></i></div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">${{ kpis.recaudadoMes.toFixed(2) }}</span>
+            <span class="kpi-card__label">Recaudado este Mes</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--danger"><i class="ri-error-warning-line" aria-hidden="true"></i></div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value text-danger">${{ kpis.pendientesCobro.toFixed(2) }}</span>
+            <span class="kpi-card__label">Pendientes por Cobrar</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--warning"><i class="ri-shopping-bag-line" aria-hidden="true"></i></div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">${{ kpis.egresosMes.toFixed(2) }}</span>
+            <span class="kpi-card__label">Egresos / Gastos</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--success"><i class="ri-scales-3-line" aria-hidden="true"></i></div>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value text-success">${{ kpis.balanceAlDia.toFixed(2) }}</span>
+            <span class="kpi-card__label">Balance General Al Día</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-2">
+        <div class="card__header dashboard-header">
+          <h3 class="card__title">
+            <i class="ri-flashlight-line text-primary" aria-hidden="true"></i> Acciones Rápidas
+          </h3>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn btn--primary" (click)="prepararNuevoCobroDashboard()">
+            <i class="ri-add-line" aria-hidden="true"></i> Registrar Nuevo Cobro
+          </button>
+          <button type="button" class="btn btn-egreso" (click)="abrirModalEgresoDashboard()">
+            <i class="ri-subtract-line" aria-hidden="true"></i> Registrar Nuevo Egreso
+          </button>
+          <button type="button" class="btn btn--secondary" (click)="abrirModalNuevoUsuarioDashboard()">
+            <i class="ri-user-add-line" aria-hidden="true"></i> Registrar Comunero
+          </button>
+          <button type="button" class="btn btn--secondary" (click)="cambiarTab('TURNOS')">
+            <i class="ri-calendar-event-line" aria-hidden="true"></i> Asignar Turno de Agua
+          </button>
+        </div>
+      </div>
+
+      <div class="card mb-2">
+        <h3 class="card__title dashboard-subtitle">
+          <i class="ri-group-line text-primary" aria-hidden="true"></i> Resumen Operativo
+        </h3>
+        <div class="resumen-grid">
+          <div class="resumen-item">
+            <span class="resumen-item__label">Comuneros Registrados</span>
+            <div class="resumen-item__value">{{ usuariosTotalRegistros }}</div>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-item__label">Lotes Registrados</span>
+            <div class="resumen-item__value">{{ totalLotes }}</div>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-item__label">Turnos Programados</span>
+            <div class="resumen-item__value">{{ totalTurnos }}</div>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-item__label">Asambleas / Mingas</span>
+            <div class="resumen-item__value">{{ totalEventos }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA 1: COMUNEROS -->
+    <section *ngIf="tabActiva === 'USUARIOS'" class="tab-view">
+      <app-comuneros-admin (comunerosChanged)="cargarDashboard()"></app-comuneros-admin>
+    </section>
+
+    <!-- VISTA 2: ASISTENCIAS -->
+    <section *ngIf="tabActiva === 'ASISTENCIAS'" class="tab-view">
+      <app-asistencias-admin></app-asistencias-admin>
+    </section>
+
+    <!-- VISTA 3: TURNOS -->
+    <section *ngIf="tabActiva === 'TURNOS'" class="tab-view">
+      <app-turnos-admin></app-turnos-admin>
+    </section>
+
+    <!-- VISTA 4: FINANZAS -->
+    <section *ngIf="tabActiva === 'FINANZAS'" class="tab-view">
+      <app-finanzas-admin></app-finanzas-admin>
+    </section>
+
+    <!-- VISTA 5: COBROS -->
+    <section *ngIf="tabActiva === 'COBROS'" class="tab-view">
+      <app-cobros></app-cobros>
+    </section>
+
+    <!-- VISTA 6: GESTIÓN CONTRATACIÓN -->
+    <section *ngIf="tabActiva === 'GESTIONCONTRATACION'" class="tab-view">
+      <app-gestioncontratacion></app-gestioncontratacion>
+    </section>
+  </main>
+</div>

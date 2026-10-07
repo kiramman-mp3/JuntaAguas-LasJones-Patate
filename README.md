@@ -6,7 +6,7 @@ Sistema web integral desarrollado para la administración eficiente, gestión fi
 
 ## 🚀 Tecnologías Utilizadas
 
-- **Frontend:** Angular 17+, TypeScript, SCSS, RxJS, Leaflet (Mapas interactivas).
+- **Frontend:** Angular 22, TypeScript, SCSS, RxJS, Leaflet (Mapas interactivas).
 - **Backend:** Node.js, Express, JWT, CORS, Dotenv.
 - **Base de Datos:** MySQL (Relacional, InnoDB, Utf8mb4).
 
@@ -62,15 +62,24 @@ JuntaAguas-LasJones-Patate/
 ## ⚡ Instalación y Configuración Local
 
 ### Prerrequisitos
-- **Node.js:** v18.x o superior
+- **Node.js:** v24.15 o superior (requerido por Angular 22). Guía detallada en [`INSTRUCCIONES.md`](INSTRUCCIONES.md)
 - **MySQL Server:** v8.0 o superior (o MariaDB equivalent)
 - **Angular CLI:** `npm install -g @angular/cli`
 
 ---
 
 ### 1. Base de Datos
-1. Abre tu gestor de base de datos MySQL (phpMyAdmin, MySQL Workbench, DBeaver, etc.).
-2. Ejecuta el script SQL ubicado en [`backend/database/schema.sql`](backend/database/schema.sql) para crear la base de datos `junta_las_jones` y todas sus tablas.
+1. Asegúrate de tener tu servidor MySQL activo.
+2. Inicializa la base de datos y sus tablas:
+   ```bash
+   cd backend
+   npm run init-db
+   ```
+3. Opcional: Siembra datos de prueba realistas para pruebas iniciales:
+   ```bash
+   npm run seed-db
+   ```
+   *Alternativamente, puedes importar manualmente el archivo [`backend/database/schema.sql`](backend/database/schema.sql) en tu cliente MySQL.*
 
 ---
 
@@ -86,6 +95,7 @@ cp .env.example .env
 npm run dev
 ```
 El servidor backend se ejecutará en: `http://localhost:3000`
+Documentación Swagger UI interactiva: `http://localhost:3000/api-docs`
 
 ---
 

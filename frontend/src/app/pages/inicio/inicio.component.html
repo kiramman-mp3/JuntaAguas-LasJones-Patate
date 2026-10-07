@@ -1,0 +1,112 @@
+<!-- HERO SECTION -->
+<section class="hero hero-carousel" id="inicio">
+  <div class="hero__overlay"></div>
+  <div class="hero__container">
+    <div class="hero__content">
+      <span class="badge badge--info mb-3"><i aria-hidden="true" class="ri-calendar-event-line"></i> Junta La Jones</span>
+      <h1 class="hero__title">
+        Gestión del Agua de Riego y Servicios Comunitarios
+      </h1>
+      <p class="hero__description">
+        Plataforma oficial para la administración de los comuneros, turnos de agua, convocatorias a mingas y consulta
+        pública de obligaciones.
+      </p>
+    </div>
+    <div class="hero__card-preview">
+      <div class="card card--glass">
+        <div class="preview-header">
+          <div class="preview-icon">
+            <i aria-hidden="true" class="ri-water-flash-fill"></i>
+          </div>
+          <div>
+            <h4>Canal de Riego La Jones</h4>
+          </div>
+        </div>
+        <div class="preview-stats">
+          <div class="stat-box">
+            <span class="stat-number">{{ totalComuneros || 0 }}</span>
+            <span class="stat-label">Comuneros activos</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number">3</span>
+            <span class="stat-label">Sectores</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number">55.7 L/s</span>
+            <span class="stat-label">Caudal Total</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN DE CONSULTA RÁPIDA DENTRO DEL HERO -->
+  <div class="quick-search-section container">
+    <div class="search-banner card card--glass hover-effect">
+      <div class="search-banner__text">
+        <h3><i aria-hidden="true" class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus obligaciones?</h3>
+        <p>Inicia sesión para consultar tus pagos pendientes de agua de riego, asistencia a mingas y asambleas.</p>
+      </div>
+      <a routerLink="/login" class="btn btn--secondary btn--lg">
+        <i aria-hidden="true" class="ri-user-settings-line"></i> Inicia sesión para verificarlas
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- SECCIÓN DE PRÓXIMOS EVENTOS -->
+<section class="section-events" id="eventos" *ngIf="proximosEventos.length > 0">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <span class="badge badge--warning"><i aria-hidden="true" class="ri-notification-3-line"></i> Avisos Importantes</span>
+        <h2>Próximas Mingas y Asambleas</h2>
+      </div>
+    </div>
+    <div class="events-grid">
+      <div class="card event-card" *ngFor="let ev of proximosEventos">
+        <div class="event-card__header">
+          <span class="badge" [ngClass]="ev.tipo === 'ASAMBLEA' ? 'badge--info' : 'badge--success'">
+            {{ ev.tipo }}
+          </span>
+          <span class="event-date"><i aria-hidden="true" class="ri-calendar-2-line"></i> {{ ev.fecha | date:'longDate' }}</span>
+        </div>
+        <h3>{{ ev.titulo }}</h3>
+        <p class="event-time"><i aria-hidden="true" class="ri-time-line"></i> Hora de inicio: {{ ev.hora_inicio }}</p>
+        <p class="event-location"><i aria-hidden="true" class="ri-map-pin-line"></i> {{ ev.lugar }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTORES Y CANALES -->
+<section class="section-sectors" id="sectores">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <span class="badge badge--success"><i aria-hidden="true" class="ri-map-2-line"></i> Geografía y Riego</span>
+        <h2>Sectores y Distribución de Agua</h2>
+      </div>
+    </div>
+
+    <div class="sectors-grid">
+      <div class="card sector-card" *ngFor="let s of sectores">
+        <div class="sector-card__icon">
+          <i aria-hidden="true" class="ri-drop-line"></i>
+        </div>
+        <h3>{{ s.nombre }}</h3>
+        <p class="caption">Abastecimiento: {{ s.canal }}</p>
+        <div class="sector-card__info">
+          <div>
+            <small>Lotes Registrados</small>
+            <strong>{{ s.lotesCount }} lotes</strong>
+          </div>
+          <div>
+            <small>Caudal Asignado</small>
+            <strong>{{ s.caudal }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

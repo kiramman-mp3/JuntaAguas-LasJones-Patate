@@ -1,0 +1,372 @@
+const db = require('../config/db');
+const { registrarAuditoria } = require('../services/auditService');
+const bcrypt = require('bcryptjs');
+
+/**
+ * Validar estructura básica de Cédula Ecuatoriana (10 dígitos)
+ */
+function validarCedulaEcuatoriana(cedula) {
+  if (!cedula || typeof cedula !== 'string') return false;
+  const clean = cedula.trim();
+  if (!/^\d{10}$/.test(clean)) return false;
+
+  const provincia = parseInt(clean.substring(0, 2), 10);
+  if ((provincia < 1 || provincia > 24) && provincia !== 30) return false;
+
+  const tercerDigito = parseInt(clean.substring(2, 3), 10);
+  if (tercerDigito >= 6) return false; // Persona natural
+
+  const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+  const verificador = parseInt(clean.substring(9, 10), 10);
+  let suma = 0;
+
+  for (let i = 0; i < 9; i++) {
+    let valor = parseInt(clean.substring(i, i + 1), 10) * coeficientes[i];
+    if (valor >= 10) valor -= 9;
+    suma += valor;
+  }
+
+  const digitoObtenido = (suma % 10 === 0) ? 0 : 10 - (suma % 10);
+  return digitoObtenido === verificador;
+}
+
+/**
+ * Listar y buscar personas / comuneros
+ */
+async function getPersonas(req, res, next) {
+  try {
+    const { busqueda, estado, page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Filtros compartidos por la consulta de datos y la del total (paginación)
+    let where = ` WHERE 1=1`;
+    const filtroParams = [];
+
+    if (estado) {
+      where += ` AND p.estado = ?`;
+      filtroParams.push(estado);
+    }
+
+    if (busqueda) {
+      where += ` AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ?)`;
+      const term = `%${busqueda.trim()}%`;
+      filtroParams.push(term, term, term);
+    }
+
+    const sql = `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.direccion, p.telefono, p.celular, p.email, p.fecha_nacimiento, p.estado, p.created_at,
+                      (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count
+               FROM personas p` + where +
+               ` ORDER BY p.apellidos ASC, p.nombres ASC LIMIT ? OFFSET ?`;
+
+    const [personas] = await db.query(sql, [...filtroParams, parseInt(limit), parseInt(offset)]);
+
+    const [totalRows] = await db.query(`SELECT COUNT(*) AS total FROM personas p` + where, filtroParams);
+
+    return res.json({
+      status: 'OK',
+      data: personas,
+      pagination: {
+        total: totalRows[0].total,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Obtener detalle completo de una persona (lotes, turnos, deudas)
+ */
+async function getPersonaById(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.query(`SELECT * FROM personas WHERE id = ?`, [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'Comunero no encontrado.' });
+    }
+
+    const persona = rows[0];
+
+    // Obtener lotes vinculados con campos especificos
+    const [lotes] = await db.query(
+      `SELECT l.id, l.sector_id, l.codigo, l.superficie_m2, l.ancho_m, l.largo_m,
+              l.latitud_aproximada, l.longitud_aproximada, l.referencia_ubicacion,
+              s.nombre AS sector_nombre, pl.tipo_relacion, pl.porcentaje
+       FROM persona_lotes pl
+       JOIN lotes l ON l.id = pl.lote_id
+       JOIN sectores s ON s.id = l.sector_id
+       WHERE pl.persona_id = ?`,
+      [id]
+    );
+
+    // Obtener turnos de agua optimizados
+    const [turnos] = await db.query(
+      `SELECT t.id, t.dia_semana, t.hora_inicio, t.hora_fin, t.tipo, t.estado, t.observacion,
+              l.codigo AS lote_codigo, s.nombre AS sector_nombre
+       FROM turnos_riego t
+       LEFT JOIN lotes l ON l.id = t.lote_id
+       LEFT JOIN sectores s ON s.id = l.sector_id
+       WHERE t.persona_id = ? AND t.estado = 'ACTIVO'
+       ORDER BY t.dia_semana ASC, t.hora_inicio ASC`,
+      [id]
+    );
+
+    // Obtener obligaciones pendientes optimizadas
+    const [obligaciones] = await db.query(
+      `SELECT o.id, o.periodo_anio, o.periodo_mes, o.fecha_emision, o.fecha_vencimiento,
+              o.valor, o.estado, o.observacion, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre
+       FROM obligaciones o
+       JOIN conceptos_cobro c ON c.id = o.concepto_id
+       WHERE o.persona_id = ? AND o.estado = 'PENDIENTE'
+       ORDER BY o.fecha_emision DESC`,
+      [id]
+    );
+
+    return res.json({
+      status: 'OK',
+      persona,
+      lotes,
+      turnos,
+      obligaciones
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * ENDPOINT PÚBLICO: Consulta de Deudas y Multas por Cédula (Utilizado por la consulta web)
+ */
+async function consultaPublicaPorCedula(req, res, next) {
+  try {
+    const { cedula } = req.params;
+    const cleanCedula = cedula ? cedula.trim() : '';
+
+    if (!cleanCedula) {
+      return res.status(400).json({ status: 'ERROR', message: 'Se requiere número de cédula.' });
+    }
+
+    // Validar que el usuario sea ADMIN o el dueño de la cédula
+    if (req.user && req.user.rol !== 'ADMIN' && req.user.cedula !== cleanCedula) {
+      return res.status(403).json({ status: 'ERROR', message: 'Acceso denegado. Solo puede consultar sus propias deudas.' });
+    }
+
+    const [personaRows] = await db.query(
+      `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.estado
+       FROM personas p
+       WHERE p.cedula = ?`,
+      [cleanCedula]
+    );
+
+    if (personaRows.length === 0) {
+      return res.status(404).json({
+        status: 'ERROR',
+        message: 'No se encontró ningún comunero registrado con la cédula ingresada.'
+      });
+    }
+
+    const persona = personaRows[0];
+
+    // Obtener información del sector y lote principal
+    const [lotesRows] = await db.query(
+      `SELECT l.codigo AS lote_codigo, s.nombre AS sector_nombre
+       FROM persona_lotes pl
+       JOIN lotes l ON l.id = pl.lote_id
+       JOIN sectores s ON s.id = l.sector_id
+       WHERE pl.persona_id = ? LIMIT 1`,
+      [persona.id]
+    );
+
+    const loteInfo = lotesRows.length > 0 ? lotesRows[0] : { lote_codigo: 'N/A', sector_nombre: 'Sin sector asignado' };
+
+    // Obtener todas las obligaciones (PENDIENTE y PAGADA recientes)
+    const [obligaciones] = await db.query(
+      `SELECT o.id, o.periodo_anio, o.periodo_mes, o.fecha_emision, o.valor, o.estado, o.observacion,
+              c.nombre AS concepto_nombre, c.codigo AS concepto_codigo
+       FROM obligaciones o
+       JOIN conceptos_cobro c ON c.id = o.concepto_id
+       WHERE o.persona_id = ?
+       ORDER BY o.estado DESC, o.fecha_emision DESC`,
+      [persona.id]
+    );
+
+    const totalPendiente = obligaciones
+      .filter(o => o.estado === 'PENDIENTE')
+      .reduce((sum, o) => sum + Number(o.valor), 0);
+
+    return res.json({
+      status: 'OK',
+      resultado: {
+        cedula: persona.cedula,
+        nombres: `${persona.nombres} ${persona.apellidos}`,
+        sector: loteInfo.sector_nombre,
+        loteCodigo: loteInfo.lote_codigo,
+        totalPendiente,
+        deudas: obligaciones.map(o => ({
+          id: o.id,
+          concepto: o.concepto_nombre,
+          anio: o.periodo_anio || new Date(o.fecha_emision).getFullYear(),
+          periodo: o.periodo_mes ? `Mes ${o.periodo_mes}` : (o.observacion || 'Cuota/Multa'),
+          valor: Number(o.valor),
+          estado: o.estado,
+          fechaEmision: o.fecha_emision
+        }))
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Crear nueva persona / comunero
+ */
+async function createPersona(req, res, next) {
+  try {
+    const { cedula, nombres, apellidos, direccion, telefono, celular, email, fecha_nacimiento, crearCuenta, rol_id } = req.body;
+
+    if (!cedula || !nombres || !apellidos) {
+      return res.status(400).json({ status: 'ERROR', message: 'Cédula, nombres y apellidos son campos obligatorios.' });
+    }
+
+    const cleanCedula = cedula.trim();
+
+    // Validar cédula única
+    const [exist] = await db.query(`SELECT id FROM personas WHERE cedula = ?`, [cleanCedula]);
+    if (exist.length > 0) {
+      return res.status(400).json({ status: 'ERROR', message: `Ya existe un comunero registrado con la cédula ${cleanCedula}.` });
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO personas (cedula, nombres, apellidos, direccion, telefono, celular, email, fecha_nacimiento)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [cleanCedula, nombres.trim(), apellidos.trim(), direccion || null, telefono || null, celular || null, email || null, fecha_nacimiento || null]
+    );
+
+    const personaId = result.insertId;
+
+    // Crear cuenta opcional si se especifica
+    if (crearCuenta) {
+      let roleId = rol_id;
+      if (roleId) {
+        const [roleCheck] = await db.query(`SELECT id FROM roles WHERE id = ?`, [roleId]);
+        if (roleCheck.length === 0) {
+          roleId = null;
+        }
+      }
+      if (!roleId) {
+        const [defaultRole] = await db.query(
+          `SELECT id FROM roles WHERE codigo = 'USUARIO' OR codigo = 'COMUNERO' OR nombre LIKE '%Comunero%' ORDER BY id ASC LIMIT 1`
+        );
+        roleId = defaultRole.length > 0 ? defaultRole[0].id : 2;
+      }
+
+      const bcrypt = require('bcryptjs');
+      const tempPassword = cleanCedula; // Contraseña por defecto igual a la cédula
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+      await db.query(
+        `INSERT INTO cuentas (persona_id, rol_id, password_hash, debe_cambiar_password, creada_por_cuenta_id)
+         VALUES (?, ?, ?, TRUE, ?)`,
+        [personaId, roleId, passwordHash, req.user ? req.user.cuentaId : null]
+      );
+    }
+
+    await registrarAuditoria({
+      cuentaId: req.user ? req.user.cuentaId : null,
+      accion: 'CREAR',
+      entidad: 'personas',
+      entidadId: personaId,
+      ip: req.ip,
+      detalle: { cedula: cleanCedula, nombres, apellidos }
+    });
+
+    return res.status(201).json({
+      status: 'OK',
+      message: 'Comunero registrado exitosamente.',
+      personaId
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Actualizar persona
+ */
+async function updatePersona(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { nombres, apellidos, direccion, telefono, celular, email, fecha_nacimiento, estado, nuevaContrasena } = req.body;
+
+    const [rows] = await db.query(`SELECT id, cedula FROM personas WHERE id = ?`, [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'Comunero no encontrado.' });
+    }
+
+    const persona = rows[0];
+
+    await db.query(
+      `UPDATE personas
+       SET nombres = ?, apellidos = ?, direccion = ?, telefono = ?, celular = ?, email = ?, fecha_nacimiento = ?, estado = ?
+       WHERE id = ?`,
+      [nombres, apellidos, direccion || null, telefono || null, celular || null, email || null, fecha_nacimiento || null, estado || 'ACTIVO', id]
+    );
+
+    // Actualizar o crear contraseña si se proporciona
+    if (nuevaContrasena && nuevaContrasena.trim() !== '') {
+      const passwordHash = await bcrypt.hash(nuevaContrasena.trim(), 10);
+      
+      const [cuentas] = await db.query(`SELECT id FROM cuentas WHERE persona_id = ?`, [id]);
+      
+      if (cuentas.length > 0) {
+        await db.query(`UPDATE cuentas SET password_hash = ? WHERE persona_id = ?`, [passwordHash, id]);
+      } else {
+        await db.query(
+          `INSERT INTO cuentas (persona_id, password_hash, rol_id, estado, debe_cambiar_password)
+           VALUES (?, ?, COALESCE((SELECT id FROM roles WHERE codigo = 'USUARIO' LIMIT 1), 2), 'ACTIVO', FALSE)`,
+          [id, passwordHash]
+        );
+      }
+    }
+
+    await registrarAuditoria({
+      cuentaId: req.user ? req.user.cuentaId : null,
+      accion: 'MODIFICAR',
+      entidad: 'personas',
+      entidadId: parseInt(id),
+      ip: req.ip,
+      detalle: { nombres, apellidos, estado }
+    });
+
+    return res.json({ status: 'OK', message: 'Datos del comunero actualizados correctamente.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Obtener estadísticas públicas
+ */
+async function getStatsPublicos(req, res, next) {
+  try {
+    const [rows] = await db.query(`SELECT COUNT(*) as total FROM personas WHERE estado = 'ACTIVO'`);
+    return res.json({ status: 'OK', stats: { totalComuneros: rows[0].total } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  getPersonas,
+  getPersonaById,
+  consultaPublicaPorCedula,
+  createPersona,
+  updatePersona,
+  getStatsPublicos
+};

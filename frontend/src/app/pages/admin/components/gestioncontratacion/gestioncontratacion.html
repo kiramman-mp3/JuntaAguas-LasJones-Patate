@@ -1,0 +1,211 @@
+<div>
+  <div class="card">
+    <div class="card__header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0;">
+
+      <!-- Top Row: Title and Main Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 class="card__title" style="margin: 0; font-size: 1.3rem;">
+          <i class="ri-bank-line" style="color: var(--color-primary); margin-right: 0.5rem;"></i>Gestión de contratación ( Egresos)
+        </h3>
+      </div>
+
+      <!-- Bottom Row: Tabs and Filters inside a toolbar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface-hover); padding: 0.75rem 1.5rem; margin: 0 -1.5rem 1.5rem -1.5rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+
+        <!-- Filters EGRESOS -->
+        <div *ngIf="subTabFinanzas === 'EGRESOS'" class="filters" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; width: 100%; justify-content: space-between;">
+          <div style="position: relative; display: flex; align-items: center;">
+            <i class="ri-search-line" style="position: absolute; left: 0.75rem; color: var(--text-muted);"></i>
+            <input type="text" class="input input--sm" placeholder="Buscar por concepto, factura..."
+              [(ngModel)]="historialEgresosFiltroBusqueda"
+              style="padding-left: 2rem; width: 280px;">
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button *ngIf="subTabFinanzas === 'EGRESOS'" class="btn btn--primary" (click)="abrirModalEgreso()">
+              <i class="ri-add-line"></i> Registrar Nuevo Egreso
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB : EGRESOS Y COMPRAS (HISTORIAL) -->
+    <div *ngIf="subTabFinanzas === 'EGRESOS'" class="finanzas-egresos">
+      
+      <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto; background: var(--bg-surface, #ffffff); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
+          <thead>
+            <tr style="background: var(--bg-surface-hover); border-bottom: 1.5px solid var(--border-color); text-align: left;">
+              <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">No. Egreso</th>
+              <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Fecha</th>
+              <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Concepto / Detalle</th>
+              <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">No. Factura</th>
+              <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Monto Total</th>
+              <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Registrado por</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of historialEgresosFiltrado" style="border-bottom: 1px solid var(--border-color);">
+              <!-- No. Egreso -->
+              <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
+                <span class="badge badge--danger" style="font-family: monospace; font-size: 0.82rem; padding: 0.25rem 0.55rem; font-weight: 700;">
+                  {{ formatEgresoNo(e.id) }}
+                </span>
+              </td>
+              
+              <!-- Fecha -->
+              <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
+                <strong style="color: var(--text-color); font-size: 0.85rem;">
+                  <i class="ri-calendar-line text-muted" style="margin-right: 0.2rem;"></i> {{ e.fecha | date:'dd/MM/yyyy' }}
+                </strong>
+              </td>
+
+              <!-- Concepto y Detalle -->
+              <td style="padding: 0.9rem 1rem; vertical-align: middle;">
+                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                  <strong style="color: var(--text-color); font-size: 0.88rem;">{{ e.concepto }}</strong>
+                  <span *ngIf="e.descripcion" style="font-size: 0.78rem; color: var(--text-muted);">{{ e.descripcion }}</span>
+                </div>
+              </td>
+
+              <!-- No. Factura -->
+              <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
+                <span style="font-size: 0.82rem; font-family: monospace; color: var(--text-color);">
+                  {{ e.numero_factura || 'N/A' }}
+                </span>
+              </td>
+
+              <!-- Monto Total -->
+              <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
+                <strong style="color: var(--color-danger, #ef4444); font-size: 0.95rem;">-${{ formatValor(e.valor) }}</strong>
+              </td>
+
+              <!-- Registrado por -->
+              <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
+                <span style="font-size: 0.8rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-hover); padding: 0.25rem 0.6rem; border-radius: var(--radius-full); border: 1px solid var(--border-color);">
+                  <i class="ri-user-line text-primary"></i> {{ e.registrado_por_usuario || 'Administración' }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="historialEgresosFiltrado.length === 0">
+              <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                <i class="ri-file-search-line" style="font-size: 2.2rem; opacity: 0.3; display: block; margin-bottom: 0.4rem;"></i>
+                No se encontraron egresos registrados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: REGISTRAR NUEVO EGRESO -->
+<div class="modal-backdrop" *ngIf="modalEgresoVisible" (click)="cerrarModalEgreso()"
+  style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+  
+  <div (click)="$event.stopPropagation()"
+    style="background: var(--bg-surface, #ffffff); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); max-width: 580px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border-color, #e2e8f0);">
+    
+    <!-- Header del Modal -->
+    <div style="padding: 1.1rem 1.5rem; background: var(--bg-surface, #ffffff); border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+      <div>
+        <h4 style="margin: 0; color: var(--text-color, #0f172a); font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="ri-upload-2-line text-danger" style="color: var(--color-danger, #ef4444);"></i> Registrar Nuevo Egreso / Compra
+        </h4>
+        <p style="margin: 0.2rem 0 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b);">
+          Ingresa la información del egreso o gasto para actualizar el balance financiero.
+        </p>
+      </div>
+      <button (click)="cerrarModalEgreso()" style="background: var(--bg-surface-hover, #f1f5f9); border: 1px solid var(--border-color, #cbd5e1); border-radius: 50%; width: 34px; height: 34px; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    <!-- Body del Formulario -->
+    <div style="padding: 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem; background: var(--bg-app, #f8fafc);">
+      
+      <!-- Fecha del Egreso -->
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">Fecha del Egreso *</label>
+        <input type="date" class="input input--sm" [(ngModel)]="nuevoEgreso.fecha" style="width: 100%; font-weight: 600;" />
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">Proveedor</label>
+        <input
+          type="text"
+          class="input input--sm"
+          placeholder="Nombre del proveedor"
+          [(ngModel)]="nuevoEgreso.proveedor"
+          style="width: 100%;"
+        />
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">RUC del proveedor</label>
+        <input
+          type="text"
+          class="input input--sm"
+          placeholder="RUC"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="13"
+          [value]="nuevoEgreso.ruc_proveedor"
+          (input)="actualizarRucProveedor($event)"
+          style="width: 100%;"
+        />
+      </div>
+
+      <!-- Concepto / Motivo -->
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">Concepto / Motivo del Gasto *</label>
+        <input type="text" class="input input--sm" placeholder="Ej: Compra de tuberías de PVC de 2 pulgadas" [(ngModel)]="nuevoEgreso.concepto" style="width: 100%;" />
+      </div>
+
+      <!-- No. Factura o Comprobante (Opcional) -->
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">No. Factura / Comprobante (Opcional)</label>
+        <input type="text" class="input input--sm" placeholder="Ej: 001-002-00012345" [(ngModel)]="nuevoEgreso.numero_factura" style="width: 100%; font-family: monospace;" />
+      </div>
+
+      <!-- Monto Total ($) -->
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">Monto Total ($) *</label>
+        <input type="number" step="0.01" min="0" class="input input--sm" placeholder="0.00" [(ngModel)]="nuevoEgreso.valor" style="width: 100%; font-size: 1.15rem; font-weight: 700; color: var(--color-danger, #ef4444);" />
+      </div>
+
+      <!-- Descripción o Detalle Adicional -->
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">Descripción o Observaciones Adicionales</label>
+        <textarea class="input input--sm" rows="3" placeholder="Detalles de la compra, proveedor o justificación del gasto..." [(ngModel)]="nuevoEgreso.descripcion" style="width: 100%; resize: vertical;"></textarea>
+      </div>
+
+    </div>
+
+    <!-- Footer del Modal -->
+    <div style="padding: 1rem 1.5rem; background: var(--bg-surface, #ffffff); border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; gap: 0.75rem; flex-shrink: 0;">
+      <button class="btn btn--outline" (click)="cerrarModalEgreso()">Cancelar</button>
+      <button
+        class="btn btn--primary"
+        (click)="guardarEgreso()"
+        [disabled]="
+          guardandoEgreso ||
+          !nuevoEgreso.fecha ||
+          !nuevoEgreso.concepto.trim() ||
+          !nuevoEgreso.valor ||
+          nuevoEgreso.valor <= 0
+        "
+        style="display: flex; align-items: center; gap: 0.4rem;"
+      >
+        <i class="ri-save-line"></i>
+        {{ guardandoEgreso ? 'Guardando...' : 'Guardar Egreso en Sistema' }}
+      </button>
+    </div>
+
+  </div>
+</div>

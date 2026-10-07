@@ -1,0 +1,225 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AdminService {
+  private baseUrl = environment.apiUrl;
+
+  constructor(private http: HttpClient, private authService: AuthService) {}
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
+  getPersonas(page: number = 1, limit: number = 25, busqueda: string = '', estado: string = ''): Observable<any> {
+    let url = `${this.baseUrl}/personas?page=${page}&limit=${limit}`;
+    if (busqueda) url += `&busqueda=${encodeURIComponent(busqueda)}`;
+    if (estado) url += `&estado=${encodeURIComponent(estado)}`;
+    return this.http.get(url, { headers: this.getAuthHeaders() });
+  }
+
+  createPersona(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/personas`, data, { headers: this.getAuthHeaders() });
+  }
+
+  updatePersona(id: number, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/personas/${id}`, data, { headers: this.getAuthHeaders() });
+  }
+
+  getPersona(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/personas/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  getLotes(sector_id?: number, busqueda?: string, persona_id?: number): Observable<any> {
+    let url = `${this.baseUrl}/lotes?`;
+    if (sector_id) url += `sector_id=${sector_id}&`;
+    if (busqueda) url += `busqueda=${encodeURIComponent(busqueda)}&`;
+    if (persona_id) url += `persona_id=${persona_id}&`;
+    return this.http.get(url, { headers: this.getAuthHeaders() });
+  }
+
+  createLote(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/lotes`, data, { headers: this.getAuthHeaders() });
+  }
+
+  sugerirCodigoLote(sectorId: number): Observable<{ status: string; data: { codigo: string } }> {
+    return this.http.get<{ status: string; data: { codigo: string } }>(
+      `${this.baseUrl}/lotes/sugerir-codigo?sector_id=${sectorId}`, { headers: this.getAuthHeaders() }
+    );
+  }
+
+  vincularPersonaLote(loteId: number, data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/lotes/${loteId}/vincular-persona`, data, { headers: this.getAuthHeaders() });
+  }
+
+  getSectores(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/lotes/sectores`, { headers: this.getAuthHeaders() });
+  }
+
+  getTurnos(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/turnos`, { headers: this.getAuthHeaders() });
+  }
+
+  asignarTurno(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/turnos`, payload, { headers: this.getAuthHeaders() });
+  }
+
+  actualizarTurno(id: number, payload: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/turnos/${id}`, payload, { headers: this.getAuthHeaders() });
+  }
+
+  eliminarTurno(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/turnos/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  getEventos(tipo?: 'ASAMBLEA' | 'MINGA'): Observable<any> {
+    const filtro = tipo ? `?tipo=${tipo}` : '';
+    return this.http.get(`${this.baseUrl}/eventos${filtro}`, { headers: this.getAuthHeaders() });
+  }
+
+  createEvento(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos`, payload, { headers: this.getAuthHeaders() });
+  }
+
+  getEventoById(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/eventos/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  registrarAsistencias(id: number, asistencias: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
+  }
+
+  getAsistencias(eventoId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/eventos/${eventoId}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
+  cambiarEstadoAsamblea(id: number, estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/estado`, { estado }, { headers: this.getAuthHeaders() });
+  }
+
+  finalizarAsamblea(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/finalizar`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  guardarPuntosAsamblea(id: number, puntos: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/puntos`, { puntos }, { headers: this.getAuthHeaders() });
+  }
+
+  cambiarEstadoActaPunto(id: number, puntoId: number, payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/puntos/${puntoId}/estado`, payload, { headers: this.getAuthHeaders() });
+  }
+
+  subirDocumentoFirmado(id: number, tipo: string, nombre_archivo: string, contenido_base64: string, punto_id?: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/eventos/${id}/documentos`, {
+      tipo,
+      nombre_archivo,
+      contenido_base64,
+      punto_id,
+      estado: 'FIRMADO'
+    }, { headers: this.getAuthHeaders() });
+  }
+
+  cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/estado`, { estado }, { headers: this.getAuthHeaders() });
+  }
+
+  finalizarMinga(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/finalizar`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  getAsistenciasMinga(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/mingas/${id}/asistencias`, { headers: this.getAuthHeaders() });
+  }
+
+  registrarAsistenciasMinga(id: number, asistencias: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias }, { headers: this.getAuthHeaders() });
+  }
+
+  getBalance(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/financiero/balance`, { headers: this.getAuthHeaders() });
+  }
+
+  getObligaciones(personaId?: number, anio?: number | null): Observable<any> {
+    let url = `${this.baseUrl}/financiero/obligaciones?`;
+    const params: string[] = [];
+
+    if (personaId) {
+      params.push(`persona_id=${personaId}`);
+    }
+    if (anio) {
+      params.push(`anio=${anio}`);
+    }
+
+    return this.http.get(url + params.join('&'), { headers: this.getAuthHeaders() });
+  }
+
+  registrarPago(payload: { persona_id: number; metodo: string; referencia?: string; observacion?: string; observaciones?: string; obligacionesIds: number[] }): Observable<any> {
+    const body = {
+      ...payload,
+      observacion: payload.observacion || payload.observaciones || 'Pago procesado desde panel administrativo.'
+    };
+    return this.http.post(`${this.baseUrl}/financiero/pagos`, body, { headers: this.getAuthHeaders() });
+  }
+
+  getPagos(personaId?: number): Observable<any> {
+    const url = personaId ? `${this.baseUrl}/financiero/pagos?persona_id=${personaId}` : `${this.baseUrl}/financiero/pagos`;
+    return this.http.get(url, { headers: this.getAuthHeaders() });
+  }
+
+  anularPago(pagoId: number, motivo: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/financiero/pagos/${pagoId}/anular`, { motivo }, { headers: this.getAuthHeaders() });
+  }
+
+  getEgresos(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/financiero/egresos`, { headers: this.getAuthHeaders() });
+  }
+
+  registrarEgreso(payload: { fecha?: string; concepto: string; descripcion?: string; numero_factura?: string; valor: number; proveedor_id?: number; proveedor?: string; ruc_proveedor?: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/financiero/egresos`, payload, { headers: this.getAuthHeaders() });
+  }
+
+  // --- SERVICIOS WHATSAPP WEB ---
+  getWhatsAppStatus(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/whatsapp/status`, { headers: this.getAuthHeaders() });
+  }
+
+  initWhatsApp(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/whatsapp/init`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  logoutWhatsApp(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/whatsapp/logout`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  notificarMingaWhatsApp(eventoId: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/whatsapp/notificar-minga`, { eventoId }, { headers: this.getAuthHeaders() });
+  }
+
+  getPeriodosObligaciones(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/financiero/periodosobligaciones`, { headers: this.getAuthHeaders() });
+  }
+
+  // Sustituye estos métodos dentro de AdminService.
+// Conserva los imports HttpClient y Observable que ya utiliza tu servicio.
+getObligacionesMultas(cedula: string, anio: number): Observable<any> {
+  return this.http.get(`${this.baseUrl}/financiero/obligaciones/multas`, {
+    headers: this.getAuthHeaders(),
+    params: { cedula, anio: String(anio) },
+  });
+}
+
+getObligacionesMensualidades(cedula: string, anio: number): Observable<any> {
+  return this.http.get(`${this.baseUrl}/financiero/obligaciones/mensualidades`, {
+    headers: this.getAuthHeaders(),
+    params: { cedula, anio: String(anio) },
+  });
+}
+}

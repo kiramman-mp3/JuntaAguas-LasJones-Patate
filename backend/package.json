@@ -6,15 +6,26 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "init-db": "node src/utils/initDb.js",
+    "seed-db": "node src/utils/seedDb.js",
+    "seed": "node src/utils/seedDb.js",
+    "start:whatsapp": "node src/utils/seedWhatsAppDb.js && nodemon src/index.js",
+    "db:reset": "node src/utils/cleanDb.js && npm run init-db && npm run seed-db",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.7.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.9.7"
+    "mysql2": "^3.9.7",
+    "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "whatsapp-web.js": "^1.34.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
