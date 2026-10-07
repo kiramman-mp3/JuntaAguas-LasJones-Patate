@@ -1,0 +1,68 @@
+<div class="fin">
+  <header class="fin-header">
+    <div>
+      <h2 class="fin-header__title">Finanzas</h2>
+      <p class="fin-header__subtitle">Cobros, pagos, egresos, facturación de agua y tarifas de la Junta.</p>
+    </div>
+  </header>
+
+  @if (indicadores(); as k) {
+    <div class="stat-grid" aria-label="Indicadores financieros">
+      <div class="stat-tile" [class.stat-tile--positive]="k.historico.balanceAlDia >= 0" [class.stat-tile--negative]="k.historico.balanceAlDia < 0">
+        <span class="stat-tile__label">Saldo de caja</span>
+        <span class="stat-tile__value">${{ k.historico.balanceAlDia.toFixed(2) }}</span>
+        <span class="stat-tile__hint">Ingresos menos egresos históricos</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile__label">Cobrado este mes</span>
+        <span class="stat-tile__value">${{ k.mes.totalIngresos.toFixed(2) }}</span>
+        <span class="stat-tile__hint">Egresos del mes: <span class="money">${{ k.mes.totalEgresos.toFixed(2) }}</span></span>
+      </div>
+      <div class="stat-tile stat-tile--warning">
+        <span class="stat-tile__label">Por cobrar</span>
+        <span class="stat-tile__value">${{ k.historico.totalPendientes.toFixed(2) }}</span>
+        <span class="stat-tile__hint"><span class="money">${{ k.historico.totalVencido.toFixed(2) }}</span> vencido</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile__label">Comuneros con deuda</span>
+        <span class="stat-tile__value">{{ k.historico.comunerosConDeuda }}</span>
+        <span class="stat-tile__hint">Con al menos una obligación pendiente</span>
+      </div>
+    </div>
+  } @else if (errorIndicadores()) {
+    <div class="alert alert--danger" role="alert">
+      No se pudieron cargar los indicadores.
+      <button type="button" class="btn btn--outline btn--sm" (click)="cargarIndicadores()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="stat-grid" aria-hidden="true">
+      @for (s of [1, 2, 3, 4]; track s) { <div class="skeleton skeleton--card" style="height: 92px"></div> }
+    </div>
+  }
+
+  <div class="fin-toolbar">
+    <div class="segmented" role="tablist" aria-label="Secciones de finanzas"
+      [style.--n]="secciones.length" [style.--i]="indiceSeccion()" (keydown)="onTeclaSegmento($event)">
+      <span class="segmented__thumb" aria-hidden="true"></span>
+      @for (s of secciones; track s.id) {
+        <button type="button" role="tab" class="segmented__item" [id]="'fin-tab-' + s.id"
+          [class.segmented__item--active]="seccion() === s.id"
+          [attr.aria-selected]="seccion() === s.id" [attr.aria-controls]="'fin-panel-' + s.id"
+          [tabindex]="seccion() === s.id ? 0 : -1"
+          (click)="cambiarSeccion(s.id)">
+          <i [class]="s.icono" aria-hidden="true"></i> {{ s.etiqueta }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div role="tabpanel" [id]="'fin-panel-' + seccion()" [attr.aria-labelledby]="'fin-tab-' + seccion()" class="fin">
+    @switch (seccion()) {
+      @case ('COBRAR') { <app-cobro-caja (cobrado)="onDatosCambiados()" /> }
+      @case ('PAGOS') { <app-historial-pagos (anulado)="onDatosCambiados()" /> }
+      @case ('EGRESOS') { <app-egresos [abrirNuevo]="egresoPendiente()" (registrado)="onDatosCambiados()" /> }
+      @case ('FACTURACION') { <app-facturacion-mensual (emitido)="onDatosCambiados()" /> }
+      @case ('TARIFAS') { <app-tarifas /> }
+    }
+  </div>
+</div>
