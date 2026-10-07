@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
-import { AdminComponent } from './admin.component';
-import { DashboardResumen } from '../../core/models/api-payloads';
+import { DashboardComponent } from './dashboard.component';
+import { DashboardResumen } from '../../../core/models/api-payloads';
 
 const resumen = {
   fecha: '2026-10-06',
@@ -20,7 +20,7 @@ const cdr = { detectChanges: vi.fn() } as any;
 describe('Dashboard de administración', () => {
   it('muestra el resumen real del backend', () => {
     const admin = { getDashboardResumen: vi.fn(() => of({ status: 'OK', data: resumen })) };
-    const component = new AdminComponent(admin as any, cdr);
+    const component = new DashboardComponent(admin as any, cdr);
     component.ngOnInit();
     expect(admin.getDashboardResumen).toHaveBeenCalled();
     expect(component.resumen?.finanzas.carteraPendiente).toBe(1200);
@@ -31,7 +31,7 @@ describe('Dashboard de administración', () => {
 
   it('informa el error sin inventar valores', () => {
     const admin = { getDashboardResumen: vi.fn(() => throwError(() => new Error('sin red'))) };
-    const component = new AdminComponent(admin as any, cdr);
+    const component = new DashboardComponent(admin as any, cdr);
     component.ngOnInit();
     expect(component.resumen).toBeNull();
     expect(component.errorCarga).not.toBe('');

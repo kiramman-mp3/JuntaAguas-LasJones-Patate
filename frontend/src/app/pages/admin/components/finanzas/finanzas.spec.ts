@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { FinanzasService } from '../../../../core/services/finanzas.service';
@@ -26,6 +27,7 @@ function configurar(api: Partial<Record<keyof FinanzasService, unknown>>, dialog
   const notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
+      provideRouter([]),
       { provide: FinanzasService, useValue: { getBalance: () => of({ status: 'OK', balance, resumenMensual: [], carteraPorConcepto: [] }), ...api } },
       { provide: DialogService, useValue: dialog },
       { provide: NotificationService, useValue: notify },
@@ -157,17 +159,26 @@ describe('Egresos', () => {
 });
 
 describe('Módulo de finanzas', () => {
-  it('abre la sección pedida y el formulario de egreso una sola vez', () => {
+  it('toma la sección de la URL y abre el egreso solo con ?nuevo=egreso', () => {
     configurar({ getEgresos: () => of({ status: 'OK', data: [] }) });
     const fixture = TestBed.createComponent(FinanzasComponent);
-    fixture.componentRef.setInput('seccionInicial', 'EGRESOS');
-    fixture.componentRef.setInput('nuevoEgreso', true);
     const c = fixture.componentInstance;
-    expect(c.seccion()).toBe('EGRESOS');
-    expect(c.egresoPendiente()).toBe(true);
-    c.cambiarSeccion('PAGOS');
-    c.cambiarSeccion('EGRESOS');
-    expect(c.egresoPendiente()).toBe(false);
+    fixture.componentRef.setInput('seccion', 'egresos');
+    fixture.componentRef.setInput('nuevo', 'egreso');
+    expect(c.seccion()).toBe('egresos');
+    expect(c.abrirEgreso()).toBe(true);
+    fixture.componentRef.setInput('nuevo', undefined);
+    expect(c.abrirEgreso()).toBe(false);
+    fixture.componentRef.setInput('seccion', 'inventada');
+    expect(c.seccion()).toBe('cobrar');
     expect(c.indicadores()?.historico.balanceAlDia).toBe(60);
+  });
+
+  it('cambiar de sección navega a su URL', () => {
+    configurar({});
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const c = TestBed.createComponent(FinanzasComponent).componentInstance;
+    c.cambiarSeccion('tarifas');
+    expect(navigate).toHaveBeenCalledWith(['/admin/finanzas', 'tarifas']);
   });
 });

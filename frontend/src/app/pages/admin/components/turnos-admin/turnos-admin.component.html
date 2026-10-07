@@ -372,18 +372,19 @@
 
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
           <label style="margin: 0; font-weight: 600; font-size: 0.9rem;">Buscar Comunero</label>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">{{ usuariosTurnoModalFiltrados.length }}
-            disponibles</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);" aria-live="polite">
+            {{ buscandoComunerosTurno ? 'Buscando…' : (usuariosTurnoModal.length < usuariosTurnoModalTotal ? usuariosTurnoModal.length + ' de ' + usuariosTurnoModalTotal : usuariosTurnoModalTotal + ' disponibles') }}
+          </span>
         </div>
 
         <div class="form-group" style="margin-bottom: 0.65rem;">
           <input type="text" class="input" placeholder="Buscar por nombre o cédula..."
-            [(ngModel)]="busquedaComuneroTurnoModal" style="font-size: 0.85rem; padding: 0.45rem 0.75rem;">
+            [(ngModel)]="busquedaComuneroTurnoModal" (ngModelChange)="buscarComunerosTurno($event)" style="font-size: 0.85rem; padding: 0.45rem 0.75rem;">
         </div>
 
         <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 2px;">
 
-          <div *ngFor="let u of usuariosTurnoModalFiltrados" (click)="seleccionarComuneroTurnoModal(u)"
+          <div *ngFor="let u of usuariosTurnoModal" (click)="seleccionarComuneroTurnoModal(u)"
             [style.border-color]="nuevoTurno.persona_id === u.id ? 'var(--color-primary, #0284c7)' : 'var(--border-color)'"
             [style.background]="nuevoTurno.persona_id === u.id ? 'var(--color-primary-light, rgba(2, 132, 199, 0.12))' : 'var(--bg-surface)'"
             style="padding: 0.6rem 0.8rem; border-radius: var(--radius-md); border-width: 2px; border-style: solid; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: space-between;">
@@ -398,7 +399,7 @@
               style="font-size: 1.15rem; font-weight: bold; color: var(--color-primary, #0284c7); flex-shrink: 0;"></i>
           </div>
 
-          <div *ngIf="usuariosTurnoModalFiltrados.length === 0"
+          <div *ngIf="!buscandoComunerosTurno && usuariosTurnoModal.length === 0"
             style="text-align: center; padding: 2rem 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
             No se encontraron comuneros que coincidan.
           </div>

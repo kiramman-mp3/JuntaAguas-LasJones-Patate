@@ -66,6 +66,25 @@ describe('Login con contraseña temporal', () => {
     expect(component.errorMensaje).toBe('La contraseña actual ingresada es incorrecta.');
   });
 
+  it('distingue una falla de red de una contraseña incorrecta', () => {
+    const { component } = crear({ login: () => throwError(() => ({ status: 0, error: null })) });
+    component.usuario = '1803456789';
+    component.password = 'Riego2026';
+    component.iniciarSesion();
+    expect(component.errorMensaje).toContain('No hay conexión con el servidor');
+    expect(component.cargando).toBe(false);
+  });
+
+  it('pasa la opción "Recordar mi sesión" al servicio', () => {
+    const login = vi.fn(() => of({ status: 'OK', token: 't', user: usuario(false) }));
+    const { component } = crear({ login });
+    component.usuario = '1803456789';
+    component.password = 'Riego2026';
+    component.recordarSesion = false;
+    component.iniciarSesion();
+    expect(login).toHaveBeenCalledWith('1803456789', 'Riego2026', false);
+  });
+
   it('al volver al login con una sesión temporal muestra directamente el cambio', () => {
     const { component, router } = crear({ isLoggedIn: () => true, debeCambiarPassword: () => true, getUser: () => usuario(true) });
     component.ngOnInit();

@@ -29,10 +29,11 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(cedula: string, password: string): Observable<LoginResponse> {
+  /** Con `recordar` la sesión sobrevive al cierre del navegador; sin él dura lo que la pestaña. */
+  login(cedula: string, password: string, recordar = true): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { cedula, password }).pipe(
       tap(res => {
-        if (res.token) session.guardar(res.token, res.user);
+        if (res.token) session.guardar(res.token, res.user, recordar);
       })
     );
   }

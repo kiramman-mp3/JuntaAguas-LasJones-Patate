@@ -4,7 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ROLES } from '../../core/auth/session';
+import { HttpErrorResponse } from '@angular/common/http';
 import { REQUISITOS_PASSWORD, problemaConPassword } from '../../core/auth/password-policy';
+
+/**
+ * Mensaje para el usuario según el error HTTP. Sin respuesta (status 0) el problema es la red
+ * o el servidor apagado, no las credenciales: se dice así para que no reintente la contraseña.
+ */
+export function mensajeDeError(err: HttpErrorResponse, porDefecto: string): string {
+  if (err.status === 0) return 'No hay conexión con el servidor. Revise su conexión a internet e intente de nuevo.';
+  if (err.error?.message) return err.error.message;
+  if (err.status === 429) return 'Demasiados intentos. Espere unos minutos e intente de nuevo.';
+  if (err.status >= 500) return 'El servidor tuvo un problema. Intente de nuevo en unos minutos.';
+  return porDefecto;
+}
 
 @Component({
   selector: 'app-login',
@@ -52,7 +65,7 @@ export class LoginComponent implements OnInit {
     this.errorMensaje = '';
 
     // Petición al backend REST /api/v1/auth/login
-    this.authService.login(this.usuario.trim(), this.password).subscribe({
+    this.authService.login(this.usuario.trim(), this.password, this.recordarSesion).subscribe({
       next: (res) => {
         this.cargando = false;
         if (res.status === 'OK') {
@@ -65,11 +78,9 @@ export class LoginComponent implements OnInit {
         }
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         this.cargando = false;
-        if (err.error && err.error.message) {
-          this.errorMensaje = err.error.message;
-        }
+        this.errorMensaje = mensajeDeError(err, 'No se pudo iniciar sesión. Intente de nuevo.');
         this.cdr.detectChanges();
       }
     });
@@ -115,7 +126,7 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
          this.cargando = false;
-         this.errorMensaje = err.error?.message || 'Error al cambiar contraseña.';
+         this.errorMensaje = mensajeDeError(err, 'No se pudo cambiar la contraseña. Intente de nuevo.');
          this.cdr.detectChanges();
       }
     });

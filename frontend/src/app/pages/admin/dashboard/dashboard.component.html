@@ -1,0 +1,114 @@
+<section aria-label="Dashboard">
+  <div class="alert alert--danger" *ngIf="errorCarga" role="alert">
+    <i class="ri-error-warning-line" aria-hidden="true"></i> {{ errorCarga }}
+    <button type="button" class="btn btn--outline btn--sm" (click)="cargarDatosBackend()" style="margin-left: auto;">
+      <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
+    </button>
+  </div>
+  <p class="text-muted" *ngIf="cargandoResumen && !resumen" aria-live="polite">Cargando indicadores...</p>
+  <ng-container *ngIf="resumen as r">
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card__icon"><i class="ri-hand-coin-line" aria-hidden="true"></i></div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__value">${{ r.finanzas.recaudadoMes | number:'1.2-2' }}</span>
+        <span class="kpi-card__label">Recaudado este mes</span>
+        <span class="kpi-card__hint">${{ r.finanzas.recaudadoAnio | number:'1.2-2' }} en el año</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--danger"><i class="ri-error-warning-line" aria-hidden="true"></i></div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__value text-danger">${{ r.finanzas.carteraPendiente | number:'1.2-2' }}</span>
+        <span class="kpi-card__label">Pendiente por cobrar</span>
+        <span class="kpi-card__hint">${{ r.finanzas.carteraVencida | number:'1.2-2' }} vencido · {{ r.finanzas.comunerosEnMora }} comuneros en mora</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--warning"><i class="ri-shopping-bag-line" aria-hidden="true"></i></div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__value">${{ r.finanzas.egresosMes | number:'1.2-2' }}</span>
+        <span class="kpi-card__label">Egresos este mes</span>
+        <span class="kpi-card__hint">${{ r.finanzas.egresosAnio | number:'1.2-2' }} en el año</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--success"><i class="ri-scales-3-line" aria-hidden="true"></i></div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__value" [class.text-success]="r.finanzas.saldoCaja >= 0" [class.text-danger]="r.finanzas.saldoCaja < 0">${{ r.finanzas.saldoCaja | number:'1.2-2' }}</span>
+        <span class="kpi-card__label">Saldo de caja</span>
+        <span class="kpi-card__hint">Ingresos menos egresos históricos</span>
+      </div>
+    </div>
+  </div>
+  </ng-container>
+
+  <div class="card mb-2">
+    <div class="card__header dashboard-header">
+      <h3 class="card__title">
+        <i class="ri-flashlight-line text-primary" aria-hidden="true"></i> Acciones Rápidas
+      </h3>
+    </div>
+    <div class="quick-actions">
+      <a class="btn btn--primary" routerLink="/admin/finanzas/cobrar">
+        <i class="ri-add-line" aria-hidden="true"></i> Registrar Nuevo Cobro
+      </a>
+      <a class="btn btn-egreso" routerLink="/admin/finanzas/egresos" [queryParams]="{ nuevo: 'egreso' }">
+        <i class="ri-subtract-line" aria-hidden="true"></i> Registrar Nuevo Egreso
+      </a>
+      <a class="btn btn--secondary" routerLink="/admin/comuneros" [queryParams]="{ nuevo: 'comunero' }">
+        <i class="ri-user-add-line" aria-hidden="true"></i> Registrar Comunero
+      </a>
+      <a class="btn btn--secondary" routerLink="/admin/turnos">
+        <i class="ri-calendar-event-line" aria-hidden="true"></i> Asignar Turno de Agua
+      </a>
+    </div>
+  </div>
+
+  <div class="card mb-2" *ngIf="resumen as r">
+    <h3 class="card__title dashboard-subtitle">
+      <i class="ri-group-line text-primary" aria-hidden="true"></i> Resumen operativo
+    </h3>
+    <div class="resumen-grid">
+      <div class="resumen-item">
+        <span class="resumen-item__label">Comuneros activos</span>
+        <div class="resumen-item__value">{{ r.comunidad.comunerosActivos }}</div>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-item__label">Lotes en {{ r.comunidad.sectores }} sectores</span>
+        <div class="resumen-item__value">{{ r.comunidad.lotes }}</div>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-item__label">Turnos de riego activos</span>
+        <div class="resumen-item__value">{{ r.comunidad.turnosActivos }}</div>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-item__label">Asambleas y mingas del año</span>
+        <div class="resumen-item__value">{{ r.comunidad.eventosAnio }}</div>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-item__label">Cobro de cuotas de agua del año</span>
+        <div class="resumen-item__value">{{ r.cobranza.porcentaje === null ? '—' : (r.cobranza.porcentaje | percent:'1.0-0') }}</div>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-item__label">Asistencia promedio (últimos eventos)</span>
+        <div class="resumen-item__value">{{ r.asistencia.promedio === null ? '—' : (r.asistencia.promedio | percent:'1.0-0') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-2" *ngIf="resumen as r">
+    <h3 class="card__title dashboard-subtitle">
+      <i class="ri-calendar-event-line text-primary" aria-hidden="true"></i> Próximos eventos
+    </h3>
+    <p class="text-muted" *ngIf="!r.proximosEventos.length">No hay asambleas ni mingas programadas.</p>
+    <ul class="proximos-eventos" *ngIf="r.proximosEventos.length">
+      <li *ngFor="let e of r.proximosEventos" class="proximos-eventos__item">
+        <span class="badge" [class.badge--info]="e.tipo === 'ASAMBLEA'" [class.badge--warning]="e.tipo === 'MINGA'">{{ e.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}</span>
+        <span class="proximos-eventos__titulo">{{ e.titulo }}</span>
+        <span class="text-muted">{{ e.fecha | fechaLocal:'larga' }} · {{ e.hora_inicio.slice(0, 5) }}</span>
+        <span class="text-muted proximos-eventos__estado">{{ e.estado | titlecase }}</span>
+      </li>
+    </ul>
+  </div>
+</section>

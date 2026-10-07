@@ -220,8 +220,9 @@ export class MingasAdminComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.mingas = (res.data || [])
-            .filter((m: Minga) => m.tipo === 'MINGA')
-            .map((m: Minga) => ({
+            .filter((m) => m.tipo === 'MINGA')
+            .map((evento) => evento as unknown as Minga)
+            .map((m) => ({
               ...m,
               fecha: String(m.fecha || '').split('T')[0],
               asistentes: Number(m.asistentes) || 0,

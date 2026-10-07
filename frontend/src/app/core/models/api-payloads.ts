@@ -142,3 +142,80 @@ export interface DashboardResumen {
     estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO';
   }[];
 }
+
+/* ------------------------------------------------------------------------------
+ * Envolturas de respuesta y contratos usados por AdminService.
+ * ---------------------------------------------------------------------------- */
+
+export interface Paginacion {
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface RespuestaApi<T> {
+  status: 'OK' | 'ERROR';
+  message?: string;
+  data: T;
+}
+
+export interface RespuestaPaginada<T> extends RespuestaApi<T[]> {
+  pagination: Paginacion;
+}
+
+/** Respuesta de una operación que solo informa el resultado. */
+export interface RespuestaMensaje {
+  status: 'OK' | 'ERROR';
+  message: string;
+}
+
+/** Fila de GET /personas: incluye el estado de la cuenta de acceso. */
+export interface PersonaListado extends PersonaItem {
+  created_at?: string;
+  cuenta_estado: 'ACTIVA' | 'BLOQUEADA' | 'INACTIVA' | null;
+  rol: 'ADMIN' | 'USUARIO' | null;
+}
+
+export interface SectorItem {
+  id: number;
+  nombre: string;
+  descripcion?: string | null;
+  lotesCount: number;
+  superficieHa: number;
+}
+
+export type EstadoAsistencia = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO' | 'PENDIENTE';
+
+/** Persona del padrón de un evento con su asistencia registrada (o PENDIENTE). */
+export interface AsistenciaPadron {
+  persona_id: number;
+  nombre: string;
+  cedula: string;
+  estado: EstadoAsistencia;
+  motivo_justificacion: string;
+  hora_registro: string | null;
+}
+
+export interface AsistenciaRegistro {
+  persona_id: number;
+  estado: EstadoAsistencia;
+  motivo_justificacion?: string | null;
+}
+
+export interface PadronRespuesta extends RespuestaApi<AsistenciaPadron[]> {
+  resumen: { total: number; presentes: number; ausentes: number; justificados: number; pendientes: number };
+  estado: EventoItem['estado'];
+}
+
+export interface FinalizacionRespuesta extends RespuestaMensaje {
+  estado: 'REALIZADO';
+  multasGeneradas: number;
+  yaFinalizada: boolean;
+}
+
+export interface EstadoWhatsApp {
+  status: string;
+  statusMessage: string;
+  isReady: boolean;
+  qrCodeDataUrl: string;
+}

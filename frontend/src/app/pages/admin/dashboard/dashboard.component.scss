@@ -1,0 +1,110 @@
+.kpi-card__icon--danger {
+  background: #fee2e2;
+  color: var(--color-danger);
+}
+
+.kpi-card__icon--warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.kpi-card__icon--success {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.mb-2 {
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-header {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dashboard-subtitle {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.btn-egreso {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #ffedd5;
+
+  &:hover {
+    background: #ffedd5;
+  }
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.resumen-item {
+  background: var(--bg-app);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+
+  &__label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 0.25rem;
+  }
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.kpi-card__hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.proximos-eventos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  &__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+
+    &:last-child { border-bottom: none; }
+  }
+
+  &__titulo {
+    font-weight: 600;
+    flex: 1 1 14rem;
+  }
+}

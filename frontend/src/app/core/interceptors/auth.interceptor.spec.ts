@@ -6,19 +6,8 @@ import { vi } from 'vitest';
 import { authInterceptor } from './auth.interceptor';
 import { session } from '../auth/session';
 import { environment } from '../../../environments/environment';
+import { almacenamientoEnMemoria } from '../../testing/almacenamiento-en-memoria';
 
-/** Node 26 expone un localStorage global sin almacenamiento que oculta el de jsdom. */
-function almacenamientoEnMemoria(): Storage {
-  const datos = new Map<string, string>();
-  return {
-    get length() { return datos.size; },
-    clear: () => datos.clear(),
-    getItem: (k) => datos.get(k) ?? null,
-    key: (i) => [...datos.keys()][i] ?? null,
-    removeItem: (k) => { datos.delete(k); },
-    setItem: (k, v) => { datos.set(k, String(v)); }
-  };
-}
 
 describe('authInterceptor', () => {
   let http: HttpClient;
@@ -26,6 +15,7 @@ describe('authInterceptor', () => {
 
   beforeEach(() => {
     vi.stubGlobal('localStorage', almacenamientoEnMemoria());
+    vi.stubGlobal('sessionStorage', almacenamientoEnMemoria());
     TestBed.configureTestingModule({
       providers: [provideRouter([]), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()]
     });

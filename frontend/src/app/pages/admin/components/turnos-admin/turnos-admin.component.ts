@@ -1,4 +1,6 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
@@ -68,7 +70,12 @@ export class TurnosAdminComponent implements OnInit {
   };
 
   usuariosTurnoModal: any[] = [];
+  /** Total de comuneros activos que coinciden con la búsqueda (el servidor devuelve como máximo 20). */
+  usuariosTurnoModalTotal = 0;
+  buscandoComunerosTurno = false;
   busquedaComuneroTurnoModal: string = '';
+  private busquedaTurno$ = new Subject<string>();
+  private destroyRef = inject(DestroyRef);
   comuneroSeleccionadoTurno: any = null;
   lotesDisponiblesTurno: any[] = [];
 
@@ -86,6 +93,25 @@ export class TurnosAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarTurnos();
+    // La búsqueda se hace en el servidor: no se descarga el padrón completo.
+    this.busquedaTurno$.pipe(
+      debounceTime(250),
+      switchMap((termino) => {
+        this.buscandoComunerosTurno = true;
+        return this.adminService.getPersonas(1, 20, termino, 'ACTIVO').pipe(catchError(() => of(null)));
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((res: any) => {
+      this.buscandoComunerosTurno = false;
+      this.usuariosTurnoModal = res?.data ?? [];
+      this.usuariosTurnoModalTotal = res?.pagination?.total ?? this.usuariosTurnoModal.length;
+      if (!res) this.notify.error('No se pudo buscar comuneros. Revise su conexión.');
+      this.cdr.detectChanges();
+    });
+  }
+
+  buscarComunerosTurno(termino: string) {
+    this.busquedaTurno$.next(termino.trim());
   }
 
   cargarTurnos() {
@@ -111,16 +137,6 @@ export class TurnosAdminComponent implements OnInit {
     });
   }
 
-  get usuariosTurnoModalFiltrados() {
-    if (!this.busquedaComuneroTurnoModal) return this.usuariosTurnoModal;
-    const term = this.busquedaComuneroTurnoModal.toLowerCase();
-    return this.usuariosTurnoModal.filter(u => 
-      u.nombres?.toLowerCase().includes(term) || 
-      u.apellidos?.toLowerCase().includes(term) ||
-      u.cedula?.includes(term)
-    );
-  }
-
   abrirModalTurno() {
     this.busquedaComuneroTurnoModal = '';
     this.nuevoTurno = {
@@ -135,13 +151,8 @@ export class TurnosAdminComponent implements OnInit {
     this.lotesDisponiblesTurno = [];
     this.modalTurnoVisible = true;
 
-    this.adminService.getPersonas(1, 1000).subscribe({
-      next: (res: any) => {
-        this.usuariosTurnoModal = res.data || [];
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => console.error('Error al cargar comuneros para modal de turno', err)
-    });
+    this.usuariosTurnoModal = [];
+    this.busquedaTurno$.next('');
   }
 
   cerrarModalTurno() {
