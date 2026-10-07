@@ -82,6 +82,48 @@ describe('Cobro en caja', () => {
     expect(c.comprobante()?.numero).toBe('REC-000015');
   });
 
+  it('agrupa lo pendiente en árbol año → mes → concepto con subtotal por mes y total por año', () => {
+    configurar({
+      getObligaciones: () => of({ status: 'OK', data: [
+        obligacion(1, 'AGUA_MENSUAL', 3.5, 2),
+        obligacion(2, 'MULTA_MINGA', 10, 2),
+        obligacion(3, 'AGUA_MENSUAL', 3.5, 1),
+        { ...obligacion(4, 'AGUA_MENSUAL', 3, 12), periodo_anio: 2025 },
+        { ...obligacion(5, 'OTRO', 2, null), periodo_anio: undefined }
+      ] })
+    });
+    const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
+    c.seleccionarComunero(comunero);
+
+    const arbol = c.arbol();
+    expect(arbol.map((a) => [a.etiqueta, a.total])).toEqual([['2025', 3], ['2026', 17], ['Sin período', 2]]);
+    const [, anio2026] = arbol;
+    expect(anio2026.meses.map((m) => [m.etiqueta, m.subtotal])).toEqual([['Enero', 3.5], ['Febrero', 13.5]]);
+    expect(anio2026.meses[1].obligaciones.map((o) => o.concepto_nombre)).toEqual(['AGUA_MENSUAL', 'MULTA_MINGA']);
+  });
+
+  it('marca o desmarca un mes o un año completo y refleja la selección parcial', () => {
+    configurar({ getObligaciones: () => of({ status: 'OK', data: [obligacion(1, 'AGUA_MENSUAL', 3.5, 1), obligacion(2, 'MULTA_MINGA', 5, 2)] }) });
+    const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
+    c.seleccionarComunero(comunero);
+    const [anio] = c.arbol();
+    const [enero, febrero] = anio.meses;
+
+    c.alternarGrupo(c.idsDe(enero));
+    expect(c.total()).toBe(5);
+    expect(c.estadoSeleccion(c.idsDe(anio))).toBe('algunas');
+    expect(c.estadoSeleccion(c.idsDe(enero))).toBe('ninguna');
+
+    c.alternarGrupo(c.idsDe(anio));
+    expect(c.estadoSeleccion(c.idsDe(anio))).toBe('todas');
+    c.alternarGrupo(c.idsDe(anio));
+    expect(c.total()).toBe(0);
+    expect(c.estadoSeleccion(c.idsDe(febrero))).toBe('ninguna');
+
+    c.alternarNodo(anio.clave);
+    expect(c.estaAbierto(anio.clave)).toBe(false);
+  });
+
   it('si el servidor rechaza el pago no muestra comprobante', () => {
     const { c } = crear(vi.fn(() => throwError(() => ({ error: { message: 'La obligación #1 ya se encuentra PAGADA' } }))));
     c.valorExacto();
