@@ -2,7 +2,7 @@
   <header class="fin-header">
     <div>
       <h2 class="fin-header__title">Finanzas</h2>
-      <p class="fin-header__subtitle">Cobros, pagos, egresos, facturación de agua y tarifas de la Junta.</p>
+      <p class="fin-header__subtitle">Cobros a los comuneros y finanzas de la Junta: egresos e historial anual.</p>
     </div>
   </header>
 
@@ -40,20 +40,26 @@
     </div>
   }
 
-  <div class="fin-toolbar">
-    <div class="segmented" role="tablist" aria-label="Secciones de finanzas"
-      [style.--n]="secciones.length" [style.--i]="indiceSeccion()">
-      <span class="segmented__thumb" aria-hidden="true"></span>
-      @for (s of secciones; track s.id) {
-        <button type="button" role="tab" class="segmented__item" [id]="'fin-tab-' + s.id"
-          [class.segmented__item--active]="seccionActual() === s.id"
-          [attr.aria-selected]="seccionActual() === s.id" [attr.aria-controls]="'fin-panel-' + s.id"
-          [tabindex]="seccionActual() === s.id ? 0 : -1"
-          (click)="cambiarSeccion(s.id)" (keydown)="onTeclaSegmento($event)">
-          <i [class]="s.icono" aria-hidden="true"></i> {{ s.etiqueta }}
-        </button>
-      }
-    </div>
+  <div class="fin-toolbar fin-toolbar--grupos">
+    @for (g of grupos; track g.id) {
+      <div class="fin-grupo" [class.fin-grupo--activo]="grupoActual().id === g.id">
+        <span class="fin-grupo__titulo" [id]="'fin-grupo-' + g.id">{{ g.etiqueta }}</span>
+        <div class="segmented" role="tablist" [attr.aria-labelledby]="'fin-grupo-' + g.id"
+          [class.segmented--inactivo]="indiceEn(g) < 0"
+          [style.--n]="g.secciones.length" [style.--i]="indiceEn(g) < 0 ? 0 : indiceEn(g)">
+          <span class="segmented__thumb" aria-hidden="true"></span>
+          @for (s of g.secciones; track s.id) {
+            <button type="button" role="tab" class="segmented__item" [id]="'fin-tab-' + s.id"
+              [class.segmented__item--active]="seccionActual() === s.id"
+              [attr.aria-selected]="seccionActual() === s.id" [attr.aria-controls]="'fin-panel-' + s.id"
+              [tabindex]="tabEnfocable(g, s.id) ? 0 : -1"
+              (click)="cambiarSeccion(s.id)" (keydown)="onTeclaSegmento($event, g)">
+              <i [class]="s.icono" aria-hidden="true"></i> {{ s.etiqueta }}
+            </button>
+          }
+        </div>
+      </div>
+    }
   </div>
 
   <div role="tabpanel" [id]="'fin-panel-' + seccionActual()" [attr.aria-labelledby]="'fin-tab-' + seccionActual()" class="fin">

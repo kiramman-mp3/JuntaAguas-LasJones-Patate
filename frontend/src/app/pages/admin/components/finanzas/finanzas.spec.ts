@@ -219,6 +219,28 @@ describe('Módulo de finanzas', () => {
     expect(c.indicadores()?.historico.balanceAlDia).toBe(60);
   });
 
+  it('separa Cobros y Finanzas y las flechas recorren solo el grupo', () => {
+    configurar({ getHistorialAnual: () => of({ status: 'OK', data: { anios: [], total: { ingresos: 0, egresos: 0, balance: 0 } } }) });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(FinanzasComponent);
+    const c = fixture.componentInstance;
+    expect(c.grupos.map((g) => g.secciones.map((s) => s.id))).toEqual([['cobrar', 'pagos', 'facturacion', 'tarifas'], ['egresos', 'historial']]);
+
+    fixture.componentRef.setInput('seccion', 'historial');
+    const [cobros, finanzas] = c.grupos;
+    expect(c.grupoActual().id).toBe('finanzas');
+    expect(c.indiceEn(cobros)).toBe(-1);
+    expect(c.tabEnfocable(cobros, 'cobrar')).toBe(true);
+    expect(c.tabEnfocable(finanzas, 'egresos')).toBe(false);
+
+    const tab = document.createElement('button');
+    tab.id = 'fin-tab-historial';
+    const evento = new KeyboardEvent('keydown', { key: 'ArrowRight' });
+    Object.defineProperty(evento, 'target', { value: tab });
+    c.onTeclaSegmento(evento, finanzas);
+    expect(navigate).toHaveBeenCalledWith(['/admin/finanzas', 'egresos']);
+  });
+
   it('cambiar de sección navega a su URL', () => {
     configurar({});
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
