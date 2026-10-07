@@ -210,7 +210,7 @@
              {{ ob.concepto_nombre || ob.concepto || 'Obligación' }}
            </strong>
            <span style="font-size: 0.75rem; color: var(--text-muted);">
-             Pagado en: {{ ob.fecha_pago ? ob.fecha_pago : 'Recientemente' }}
+             Pagado en: {{ ob.fecha_pago ? (ob.fecha_pago | fechaLocal:'conHora') : 'Recientemente' }}
            </span>
          </div>
          <div style="text-align: right;">
@@ -303,7 +303,7 @@
                   <!-- Fecha -->
                   <td style="padding: 0.9rem 1rem; vertical-align: middle; white-space: nowrap;">
                     <strong style="color: var(--text-color); font-size: 0.85rem;">
-                      <i aria-hidden="true" class="ri-calendar-line text-muted" style="margin-right: 0.2rem;"></i> {{ e.fecha | date:'dd/MM/yyyy' }}
+                      <i aria-hidden="true" class="ri-calendar-line text-muted" style="margin-right: 0.2rem;"></i> {{ e.fecha | fechaLocal }}
                     </strong>
                   </td>
 

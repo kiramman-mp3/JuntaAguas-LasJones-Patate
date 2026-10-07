@@ -57,6 +57,12 @@ export function hoyEnEcuador(ahora: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_JUNTA, year: 'numeric', month: '2-digit', day: '2-digit' }).format(ahora);
 }
 
+/** Suma días a una fecha 'AAAA-MM-DD' sin pasar por la zona horaria. */
+export function sumarDias(fecha: string, dias: number): string {
+  const [anio, mes, dia] = fecha.split('-').map(Number);
+  return new Date(Date.UTC(anio, mes - 1, dia + dias)).toISOString().slice(0, 10);
+}
+
 /** Convierte un Date en 'AAAA-MM-DD' según su día local (sin pasar por UTC como toISOString). */
 export function aFechaIso(fecha: Date): string {
   const dos = (n: number) => String(n).padStart(2, '0');

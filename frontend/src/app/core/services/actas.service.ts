@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
+import { aFecha } from '../utils/fechas';
 
 type PdfMake = { createPdf(documento: unknown): { download(nombre: string): void } };
 
@@ -50,7 +51,7 @@ export class ActasService {
    * @param asistenciaStats Opcional: Estadísticas de asistencia
    */
   generarActaPDF(evento: any, puntos: any[] = [], asistenciaStats?: any[]): Promise<void> {
-    const fechaObj = evento.fecha ? new Date(evento.fecha) : new Date();
+    const fechaObj = aFecha(evento.fecha) ?? new Date();
     // Prevenir desfasaje UTC
     const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
     const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
@@ -297,7 +298,7 @@ export class ActasService {
    * Generar y descargar el PDF de Convocatoria a una Asamblea o Minga
    */
   generarConvocatoriaPDF(evento: any): Promise<void> {
-    const fechaObj = evento.fecha ? new Date(evento.fecha) : new Date();
+    const fechaObj = aFecha(evento.fecha) ?? new Date();
     const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
     const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
     const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();
@@ -383,7 +384,7 @@ export class ActasService {
    * Generar y descargar el PDF oficial de un acta por punto tratado específico o tema nuevo (F07)
    */
   generarActaPuntoPDF(evento: any, punto: any, asistenciaStats?: any[]): Promise<void> {
-    const fechaObj = evento.fecha ? new Date(evento.fecha) : new Date();
+    const fechaObj = aFecha(evento.fecha) ?? new Date();
     const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
     const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
     const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();

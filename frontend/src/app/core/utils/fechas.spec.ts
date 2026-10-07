@@ -1,4 +1,4 @@
-import { aFecha, aFechaIso, formatearFecha, hoyEnEcuador } from './fechas';
+import { aFecha, aFechaIso, formatearFecha, hoyEnEcuador, sumarDias } from './fechas';
 
 describe('fechas de la Junta', () => {
   it('una fecha AAAA-MM-DD se muestra el mismo día, sin restar un día por la zona horaria', () => {
@@ -23,5 +23,10 @@ describe('fechas de la Junta', () => {
   it('hoy se calcula en la zona de la Junta', () => {
     expect(hoyEnEcuador(new Date('2026-10-06T03:30:00Z'))).toBe('2026-10-05');
     expect(hoyEnEcuador(new Date('2026-10-06T05:30:00Z'))).toBe('2026-10-06');
+  });
+
+  it('suma días cruzando meses y años', () => {
+    expect(sumarDias('2026-12-28', 7)).toBe('2027-01-04');
+    expect(sumarDias('2026-03-01', -1)).toBe('2026-02-28');
   });
 });

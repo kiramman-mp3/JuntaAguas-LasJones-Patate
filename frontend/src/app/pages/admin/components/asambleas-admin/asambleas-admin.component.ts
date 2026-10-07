@@ -45,11 +45,13 @@ export interface AsambleaItem {
   lista_asistencia_firmada_url?: string;
   puntos?: PuntoAsamblea[];
 }
+import { aFecha, aFechaIso, hoyEnEcuador, sumarDias } from '../../../../core/utils/fechas';
+import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
 
 @Component({
   selector: 'app-asambleas-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalA11yDirective],
+  imports: [CommonModule, FechaLocalPipe, FormsModule, ModalA11yDirective],
   templateUrl: './asambleas-admin.component.html',
   styleUrls: ['./asambleas-admin.component.scss']
 })
@@ -212,7 +214,7 @@ export class AsambleasAdminComponent implements OnInit {
             subtipo_asamblea: subtipo,
             titulo: e.titulo,
             descripcion: e.descripcion || '',
-            fecha: e.fecha ? (typeof e.fecha === 'string' ? e.fecha.split('T')[0] : new Date(e.fecha).toISOString().split('T')[0]) : '',
+            fecha: e.fecha ? (typeof e.fecha === 'string' ? e.fecha.split('T')[0] : aFechaIso(aFecha(e.fecha) ?? new Date())) : '',
             hora_inicio: e.hora_inicio ? e.hora_inicio.substring(0, 5) : '18:00',
             hora_fin: e.hora_fin ? e.hora_fin.substring(0, 5) : '',
             lugar: e.lugar || 'Casa Comunal Junta La Jones',
@@ -240,7 +242,7 @@ export class AsambleasAdminComponent implements OnInit {
   }
 
   get asambleasFiltradas(): AsambleaItem[] {
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = hoyEnEcuador();
     return this.asambleas.filter(a => {
       // Filtro Subtipo
       if (this.subtipoFiltro !== 'TODAS' && a.subtipo_asamblea !== this.subtipoFiltro) {
@@ -298,20 +300,11 @@ export class AsambleasAdminComponent implements OnInit {
   // ============== NUEVA ASAMBLEA ==============
 
   get fechaMinima(): string {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return hoyEnEcuador();
   }
 
   abrirNueva(): void {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const proximaSemana = `${year}-${month}-${day}`;
+    const proximaSemana = sumarDias(hoyEnEcuador(), 7);
 
     this.formulario = {
       subtipo_asamblea: 'ORDINARIA',

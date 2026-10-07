@@ -11,11 +11,12 @@ interface UsuarioResultado {
   loteCodigo: string;
   deudas: DeudaItem[];
 }
+import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 
 @Component({
   selector: 'app-mi-cuenta',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FechaLocalPipe],
   templateUrl: './mi-cuenta.component.html',
   styleUrls: ['./mi-cuenta.component.scss']
 })

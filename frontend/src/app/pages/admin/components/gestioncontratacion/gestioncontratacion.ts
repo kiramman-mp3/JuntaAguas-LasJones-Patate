@@ -9,10 +9,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FechaLocalPipe, FormsModule],
   selector: 'app-gestioncontratacion',
   styleUrl: './gestioncontratacion.scss',
   templateUrl: './gestioncontratacion.html',
@@ -49,12 +51,7 @@ export class Gestioncontratacion implements OnInit {
 
   // Fecha local para el input de tipo date.
   private fechaActual(): string {
-    const fecha = new Date();
-    const anio = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const dia = String(fecha.getDate()).padStart(2, '0');
-
-    return `${anio}-${mes}-${dia}`;
+    return hoyEnEcuador();
   }
 
   private crearNuevoEgreso() {

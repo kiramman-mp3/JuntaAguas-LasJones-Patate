@@ -69,7 +69,7 @@
           <span class="badge" [ngClass]="ev.tipo === 'ASAMBLEA' ? 'badge--info' : 'badge--success'">
             {{ ev.tipo }}
           </span>
-          <span class="event-date"><i aria-hidden="true" class="ri-calendar-2-line"></i> {{ ev.fecha | date:'longDate' }}</span>
+          <span class="event-date"><i aria-hidden="true" class="ri-calendar-2-line"></i> {{ ev.fecha | fechaLocal:'larga' }}</span>
         </div>
         <h3>{{ ev.titulo }}</h3>
         <p class="event-time"><i aria-hidden="true" class="ri-time-line"></i> Hora de inicio: {{ ev.hora_inicio }}</p>
