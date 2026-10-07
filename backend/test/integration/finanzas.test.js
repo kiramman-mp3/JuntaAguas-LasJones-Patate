@@ -71,6 +71,19 @@ test('la facturación mensual emite una cuota por comunero con lote, con la tari
   assert.equal((await facturar({ anio: 2024, mes: 1 })).status, 409, 'sin tarifa vigente');
 });
 
+test('el resumen de facturación muestra los 12 meses con emitidas, cobradas y pendientes', async () => {
+  const res = await request(app).get('/api/financiero/facturacion/mensual?anio=2025').set(auth(admin));
+  assert.equal(res.status, 200);
+  assert.equal(res.body.data.anio, 2025);
+  assert.equal(res.body.data.meses.length, 12);
+  const marzo = res.body.data.meses[2];
+  assert.deepEqual(marzo, { mes: 3, emitidas: 2, pagadas: 0, pendientes: 2, total: 8, recaudado: 0 });
+  assert.equal(res.body.data.meses[0].emitidas, 0);
+
+  assert.equal((await request(app).get('/api/financiero/facturacion/mensual').set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get('/api/financiero/facturacion/mensual?anio=abc').set(auth(admin))).status, 400);
+});
+
 test('el pago valida pertenencia, estado y referencia; ignora ids repetidos', async () => {
   const propia = await crearObligacion({ personaId: comunero.personaId, anio: 2024, mes: 5, valor: 4 });
   const ajena = await crearObligacion({ personaId: vecino.personaId, anio: 2024, mes: 5, valor: 4 });
