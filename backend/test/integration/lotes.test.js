@@ -73,6 +73,29 @@ test('transferir un lote queda auditado con el titular anterior y mueve sus turn
   assert.equal((await request(app).post('/api/lotes/999999/vincular-persona').set(auth(admin)).send({ persona_id: nuevo.personaId })).status, 404);
 });
 
+test('un lote pertenece al 100 % a un solo comunero: no admite propiedad compartida', async () => {
+  const titular = await crearUsuario();
+  const otro = await crearUsuario();
+  const loteId = await crearLote({ sectorId: sectorAlto, codigo: 'LJA-050' });
+  const vincular = (body) => request(app).post(`/api/lotes/${loteId}/vincular-persona`).set(auth(admin)).send(body);
+
+  const parcial = await vincular({ persona_id: titular.personaId, porcentaje: 50 });
+  assert.equal(parcial.status, 400);
+  assert.match(JSON.stringify(parcial.body), /100 %/);
+  assert.equal((await request(app).post('/api/lotes').set(auth(admin)).send({ sector_id: sectorAlto, codigo: 'LJA-051', persona_id: titular.personaId, porcentaje: 60 })).status, 400);
+
+  assert.equal((await vincular({ persona_id: titular.personaId, porcentaje: 100 })).status, 200);
+  // Vincular a otro comunero transfiere el lote completo: nunca quedan dos dueños.
+  assert.equal((await vincular({ persona_id: otro.personaId })).status, 200);
+  const [filas] = await db.query('SELECT persona_id, porcentaje FROM persona_lotes WHERE lote_id = ?', [loteId]);
+  assert.equal(filas.length, 1);
+  assert.equal(filas[0].persona_id, otro.personaId);
+  assert.equal(Number(filas[0].porcentaje), 100);
+
+  // La base de datos también rechaza un porcentaje distinto de 100.
+  await assert.rejects(db.query('UPDATE persona_lotes SET porcentaje = 40 WHERE lote_id = ?', [loteId]));
+});
+
 test('valida las coordenadas y el sector al crear un lote', async () => {
   const crear = (body) => request(app).post('/api/lotes').set(auth(admin)).send({ sector_id: sectorAlto, ...body });
   assert.equal((await crear({ codigo: 'LJA-040', latitud_aproximada: 120 })).status, 400);

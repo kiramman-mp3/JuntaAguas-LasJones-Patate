@@ -50,7 +50,7 @@
             <tr>
               <th>Código</th>
               <th>Sector</th>
-              <th>Propietarios</th>
+              <th>Titular</th>
               <th>Superficie</th>
               <th>Coordenadas</th>
               <th><span class="sr-only">Acciones</span></th>
@@ -61,7 +61,7 @@
               <tr>
                 <td data-label="Código"><strong class="money">{{ lote.codigo }}</strong></td>
                 <td data-label="Sector">{{ lote.sector_nombre }}</td>
-                <td data-label="Propietarios">
+                <td data-label="Titular">
                   @if (lote.propietarios) {
                     <span class="text-truncate-2" [title]="lote.propietarios">{{ lote.propietarios }}</span>
                   } @else {
