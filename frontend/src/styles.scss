@@ -3,6 +3,8 @@
    Basado estrictamente en docs/hoja_de_estilos.md
    ============================================================================== */
 
+@use './styles/finanzas';
+
 :root {
   /* --- Colores Primarios (Agua / Junta) --- */
   --color-primary: #0284c7;
