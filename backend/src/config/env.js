@@ -26,7 +26,9 @@ const esquema = z.object({
   JWT_EXPIRES_IN: z.string().default('8h'),
   FRONTEND_URL: z.string().default('http://localhost:4200'),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
-  UPLOADS_DIR: z.string().default(path.join(__dirname, '../../uploads'))
+  UPLOADS_DIR: z.string().default(path.join(__dirname, '../../uploads')),
+  // Carpeta del frontend compilado que el backend sirve en producción (mismo origen que la API).
+  FRONTEND_DIST: z.string().default(path.join(__dirname, '../../../frontend/dist/frontend/browser'))
 });
 
 const resultado = esquema.safeParse(process.env);

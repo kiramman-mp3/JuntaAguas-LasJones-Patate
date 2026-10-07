@@ -1,7 +1,8 @@
 // Configuración de producción (ng build).
-// TODO: reemplazar por el dominio real del backend cuando se defina el despliegue.
+// El backend sirve esta aplicación desde su mismo origen, así que la API es relativa:
+// funciona con cualquier dominio o IP sin recompilar y sin configurar CORS.
 export const environment = {
   production: true,
-  serverUrl: 'http://localhost:3000',
-  apiUrl: 'http://localhost:3000/api'
+  serverUrl: '',
+  apiUrl: '/api'
 };

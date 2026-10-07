@@ -110,6 +110,35 @@ El seed imprime al terminar la cédula del administrador, la de un comunero de d
 
 ---
 
+## Despliegue en producción
+
+Un solo comando prepara y arranca todo con una **base de datos limpia**: el backend sirve la API y el frontend compilado desde el mismo origen (sin CORS ni dominio que configurar).
+
+```bash
+cp backend/.env.production.example backend/.env   # complete DB_*, JWT_SECRET y ADMIN_*
+npm run prod                                     # desde la raíz del proyecto
+```
+
+`npm run prod` hace, en orden:
+
+1. Verifica Node.js (22.22.3+, 24.15+ o 26+) y que `backend/.env` sea apto para producción: `NODE_ENV=production`, sin contraseñas de ejemplo y con un `JWT_SECRET` válido.
+2. Instala las dependencias si faltan (`npm run prod -- --instalar` fuerza `npm ci`).
+3. Compila el frontend en modo producción.
+4. Prepara la base (`npm --prefix backend run db:setup`): la crea si no existe, aplica las migraciones (catálogos de roles y conceptos de cobro) y, si no hay ningún administrador, crea el primero con `ADMIN_CEDULA`, `ADMIN_NOMBRES` y `ADMIN_APELLIDOS`. **La contraseña temporal se muestra una sola vez**: anótela; se cambia en el primer ingreso.
+5. Inicia el servidor en `http://localhost:PORT`.
+
+Es seguro repetirlo: nunca siembra datos de prueba ni borra información; en una base en uso solo aplica las migraciones pendientes. Con `npm run prod:preparar` se hacen los pasos 1 a 4 sin iniciar el servidor, para dejarlo en manos de pm2, systemd o un servicio de Windows (`npm start`).
+
+Primeros pasos en el panel, con la base vacía:
+
+- **Ajustes → Tarifas:** registre la cuota de agua y las multas por inasistencia a asamblea y a minga (sin ellas no se pueden facturar meses ni crear eventos con multa).
+- **Comuneros y lotes → Catastro:** cree los sectores y luego los lotes.
+- **Comuneros y lotes → Padrón:** registre a los comuneros y sus cuentas de acceso.
+
+Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1`; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador Chromium en el servidor.
+
+---
+
 ## Comandos
 
 | Dónde | Comando | Qué hace |
@@ -117,7 +146,9 @@ El seed imprime al terminar la cédula del administrador, la de un comunero de d
 | backend | `npm run dev` | Servidor con recarga automática |
 | backend | `npm run lint` | ESLint |
 | backend | `npm test` | Pruebas unitarias y de integración (necesita MySQL; usa la base `junta_las_jones_test`, que crea y borra) |
+| raíz | `npm run prod` | Despliegue de producción con base limpia (ver arriba) |
 | backend | `npm run db:migrate` | Aplica las migraciones pendientes |
+| backend | `npm run db:setup` | Migraciones y primer administrador (producción) |
 | backend | `npm run db:seed [-- --reset]` | Datos de prueba realistas (nunca en producción) |
 | frontend | `npm start` | Servidor de desarrollo |
 | frontend | `npm run lint` | ESLint (angular-eslint) |

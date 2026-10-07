@@ -1,0 +1,16 @@
+{
+  "name": "junta-las-jones",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema Integrado de Gestión - Junta de Agua y Riego La Jones (Patate)",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "prod": "node scripts/prod.js",
+    "prod:preparar": "node scripts/prod.js --preparar",
+    "start": "npm --prefix backend start",
+    "test": "npm --prefix backend test && npm --prefix frontend test -- --watch=false",
+    "lint": "npm --prefix backend run lint && npm --prefix frontend run lint"
+  }
+}
