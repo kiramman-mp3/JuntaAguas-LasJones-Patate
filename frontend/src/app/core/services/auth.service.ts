@@ -41,8 +41,16 @@ export class AuthService {
     session.limpiar();
   }
 
-  changePassword(actualPassword: string, nuevaPassword: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/change-password`, { actualPassword, nuevaPassword });
+  /**
+   * Cambia la contraseña. El servidor revoca los tokens anteriores y devuelve uno nuevo
+   * con acceso completo, que reemplaza al de la sesión.
+   */
+  changePassword(actualPassword: string, nuevaPassword: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/change-password`, { actualPassword, nuevaPassword }).pipe(
+      tap(res => {
+        if (res.token) session.guardar(res.token, res.user);
+      })
+    );
   }
 
   getToken(): string | null {
@@ -55,6 +63,11 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!this.getToken();
+  }
+
+  /** La sesión tiene un token temporal que solo sirve para cambiar la contraseña. */
+  debeCambiarPassword(): boolean {
+    return this.getUser()?.debeCambiarPassword === true;
   }
 
   esAdmin(): boolean {

@@ -15,6 +15,7 @@ const esDelBackend = (url: string) => url.startsWith(environment.apiUrl) || url.
  * - Ante un 401 (sesión expirada o token inválido) limpia la sesión y redirige al
  *   login conservando la URL actual como returnUrl. Un 401 del propio login
  *   (credenciales incorrectas) se deja al formulario.
+ * - Ante un 403 CAMBIO_PASSWORD_REQUERIDO lleva al login, que muestra el cambio de contraseña.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -32,6 +33,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         if (!urlActual.startsWith('/login')) {
           router.navigate(['/login'], { queryParams: { returnUrl: urlActual } });
         }
+      }
+      if (error?.status === 403 && error.error?.codigo === 'CAMBIO_PASSWORD_REQUERIDO' && !router.url.startsWith('/login')) {
+        router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
       }
       return throwError(() => error);
     })

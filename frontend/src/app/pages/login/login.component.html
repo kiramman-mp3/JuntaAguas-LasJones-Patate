@@ -76,7 +76,21 @@
     <form *ngIf="requiereCambioPassword" (submit)="cambiarPassword(); $event.preventDefault();" class="login-form">
       <div class="alert alert--info" role="status">
         <i aria-hidden="true" class="ri-information-line"></i>
-        Por seguridad, debe cambiar su contraseña por defecto para poder ingresar al sistema.
+        Está usando una contraseña temporal. Por seguridad, elija una nueva para ingresar al sistema.
+      </div>
+
+      <div class="form-group" *ngIf="!password">
+        <label for="passwordActual"><i aria-hidden="true" class="ri-key-2-line"></i> Contraseña temporal</label>
+        <input
+          type="password"
+          id="passwordActual"
+          class="form-control"
+          placeholder="La que le entregó la directiva"
+          [(ngModel)]="passwordActual"
+          name="passwordActual"
+          autocomplete="current-password"
+          required
+        />
       </div>
 
       <div class="form-group">
@@ -85,13 +99,15 @@
           type="password"
           id="nuevaPassword1"
           class="form-control"
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Mínimo 8 caracteres, letras y números"
           [(ngModel)]="nuevaPassword1"
           name="nuevaPassword1"
           autocomplete="new-password"
+          aria-describedby="requisitosPassword"
           required
-          minlength="6"
+          minlength="8"
         />
+        <small id="requisitosPassword" class="text-muted">{{ requisitosPassword }}</small>
       </div>
 
       <div class="form-group">
@@ -112,6 +128,9 @@
         <i aria-hidden="true" class="ri-save-line" *ngIf="!cargando"></i>
         <i aria-hidden="true" class="ri-loader-4-line spin" *ngIf="cargando"></i>
         {{ cargando ? 'Guardando...' : 'Cambiar Contraseña' }}
+      </button>
+      <button type="button" class="btn btn--outline btn-block" (click)="cancelarCambioPassword()" [disabled]="cargando">
+        Cancelar y salir
       </button>
     </form>
 
