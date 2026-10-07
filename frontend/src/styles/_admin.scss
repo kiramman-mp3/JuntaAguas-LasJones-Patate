@@ -366,8 +366,6 @@ label.icon-btn:focus-within,
   &.is-busy { pointer-events: none; opacity: 0.7; }
 }
 
-.text-main { color: var(--text-main); }
-
 /* Aparición de un panel que se despliega dentro del flujo. */
 .reveal-enter { animation: ui-rise 0.28s var(--ease-out) both; }
 

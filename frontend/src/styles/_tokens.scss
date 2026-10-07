@@ -1,0 +1,166 @@
+/* ==============================================================================
+   TOKENS DE DISEÑO
+   Paleta de marca de docs/hoja_de_estilos.md. Radios, sombras, materiales y
+   movimiento siguen .claude/skills/apple-design: superficies suaves con sombras
+   en capas, materiales translúcidos para la navegación y curvas amortiguadas.
+   ============================================================================== */
+
+:root {
+  /* --- Marca: agua y vertiente --- */
+  --color-primary: #0284c7;
+  --color-primary-hover: #0369a1;
+  --color-primary-light: #e0f2fe;
+  /* Relleno de botones: mantiene contraste con texto blanco en ambos temas */
+  --color-primary-solid: #0284c7;
+  --color-primary-solid-hover: #0369a1;
+  --color-secondary: #06b6d4;
+  --color-secondary-hover: #0891b2;
+  --color-secondary-light: #ecfeff;
+
+  /* --- Estados y agricultura --- */
+  --color-agricultural: #10b981;
+  --color-accent-amber: #f59e0b;
+  --color-danger: #ef4444;
+  --color-success: #10b981;
+
+  /* Fondos suaves y texto de alto contraste para insignias y alertas */
+  --color-success-light: #d1fae5;
+  --color-success-strong: #047857;
+  --color-warning-light: #fef3c7;
+  --color-warning-strong: #b45309;
+  --color-danger-light: #fee2e2;
+  --color-danger-strong: #b91c1c;
+  --color-info-strong: #075985;
+
+  /* --- Neutros --- */
+  --bg-app: #f5f7fa;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+  --border-color: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* --- Texto --- */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-white: #ffffff;
+
+  /* --- Tipografía: Inter para la interfaz, Outfit para títulos --- */
+  --font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* --- Profundidad: sombras en capas, nunca un solo borde duro --- */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 2px 4px -1px rgba(15, 23, 42, 0.05), 0 8px 20px -4px rgba(15, 23, 42, 0.1);
+  --shadow-lg: 0 12px 24px -8px rgba(15, 23, 42, 0.14), 0 32px 64px -16px rgba(15, 23, 42, 0.24);
+  --shadow-glass: 0 8px 32px rgba(2, 132, 199, 0.08);
+
+  /* --- Materiales translúcidos --- */
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --nav-bg: rgba(255, 255, 255, 0.78);
+  --nav-border: rgba(15, 23, 42, 0.06);
+  --scrim: rgba(15, 23, 42, 0.38);
+
+  /* --- Radios: más generosos cuanto mayor es la superficie --- */
+  --radius-sm: 0.5rem; /* 8px  · chips y controles pequeños */
+  --radius-md: 0.625rem; /* 10px · botones e inputs */
+  --radius-lg: 0.875rem; /* 14px · paneles internos */
+  --radius-xl: 1.125rem; /* 18px · tarjetas */
+  --radius-2xl: 1.375rem; /* 22px · modales */
+  --radius-full: 9999px;
+
+  /* --- Movimiento: curva amortiguada sin rebote --- */
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-fast: 0.15s;
+  --duration: 0.3s;
+
+  /* --- Foco y carga --- */
+  --focus-ring: rgba(2, 132, 199, 0.22);
+  --skeleton-base: #e8edf3;
+  --skeleton-shine: #f5f7fa;
+
+  /* Alias heredados que aún usan algunas vistas */
+  --text-color: var(--text-main);
+  --primary-color: var(--color-primary);
+  --warning-color: var(--color-accent-amber);
+  --bg-card: var(--bg-surface);
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --color-primary: #38bdf8;
+  --color-primary-hover: #7dd3fc;
+  --color-primary-light: rgba(56, 189, 248, 0.16);
+  --color-secondary-light: rgba(6, 182, 212, 0.16);
+
+  --color-success-light: rgba(16, 185, 129, 0.16);
+  --color-success-strong: #34d399;
+  --color-warning-light: rgba(245, 158, 11, 0.16);
+  --color-warning-strong: #fbbf24;
+  --color-danger-light: rgba(239, 68, 68, 0.16);
+  --color-danger-strong: #fca5a5;
+  --color-info-strong: #7dd3fc;
+
+  --bg-app: #0b1120;
+  --bg-surface: #151e2e;
+  --bg-surface-hover: #1e293b;
+  --border-color: #263245;
+  --border-strong: #334155;
+
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 64px -12px rgba(0, 0, 0, 0.7);
+
+  --glass-bg: rgba(21, 30, 46, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --nav-bg: rgba(11, 17, 32, 0.78);
+  --nav-border: rgba(255, 255, 255, 0.07);
+  --scrim: rgba(0, 0, 0, 0.55);
+
+  --focus-ring: rgba(56, 189, 248, 0.3);
+  --skeleton-base: #1e293b;
+  --skeleton-shine: #283548;
+
+  --bg-card: var(--bg-surface);
+  color-scheme: dark;
+}
+
+/* --- Accesibilidad: movimiento, transparencia y contraste --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --nav-bg: #ffffff;
+    --glass-bg: #ffffff;
+  }
+
+  [data-theme='dark'] {
+    --nav-bg: #0b1120;
+    --glass-bg: #151e2e;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border-color: #94a3b8;
+    --text-muted: #475569;
+  }
+
+  [data-theme='dark'] {
+    --border-color: #64748b;
+    --text-muted: #cbd5e1;
+  }
+}

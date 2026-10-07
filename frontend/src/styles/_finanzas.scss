@@ -14,12 +14,6 @@
   gap: var(--fin-gap);
 }
 
-/* Números de dinero: alineados en columnas y sin saltos al actualizarse. */
-.money {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 /* --- Encabezado de sección --- */
 .fin-header {
   display: flex;
