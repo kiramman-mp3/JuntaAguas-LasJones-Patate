@@ -44,7 +44,7 @@ module.exports = defineConfig([
   {
     // En las pruebas los dobles de servicios se escriben con `as any` a propósito.
     files: ['**/*.spec.ts', 'src/app/testing/**'],
-    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+    rules: { '@typescript-eslint/no-explicit-any': 'off', '@typescript-eslint/no-empty-function': 'off' },
   },
   {
     files: ['**/*.html'],

@@ -239,7 +239,7 @@ export class ComunerosAdminComponent implements OnInit {
 
     if (this.modoEdicionUsuario && this.formUsuario.id) {
       this.adminService.updatePersona(this.formUsuario.id, this.formUsuario).subscribe({
-        next: (res) => {
+        next: () => {
           this.notify.success('Comunero actualizado exitosamente.');
           this.cerrarModalUsuario();
           this.cargarUsuarios();
@@ -439,7 +439,7 @@ export class ComunerosAdminComponent implements OnInit {
     }
     this.guardandoLote = true;
     this.adminService.createLote(this.formLote).subscribe({
-      next: (res) => {
+      next: () => {
         this.guardandoLote = false;
         this.notify.success('Lote creado exitosamente.');
         this.cerrarModalLote();
@@ -487,7 +487,7 @@ export class ComunerosAdminComponent implements OnInit {
     };
 
     this.adminService.vincularPersonaLote(this.formVincular.lote_id, payload).subscribe({
-      next: (res) => {
+      next: () => {
         this.notify.success('Lote vinculado exitosamente.');
         this.cerrarModalVincular();
       },

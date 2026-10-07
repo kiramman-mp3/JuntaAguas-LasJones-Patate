@@ -28,7 +28,7 @@ export class InicioComponent implements OnInit {
           this.cdr.detectChanges();
         }
       },
-      error: (err) => {
+      error: () => {
         this.totalComuneros = 165; // fallback
         this.cdr.detectChanges();
       }

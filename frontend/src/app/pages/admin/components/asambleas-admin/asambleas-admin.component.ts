@@ -137,7 +137,7 @@ export class AsambleasAdminComponent implements OnInit {
     textoConfirmar: 'Entendido',
     textoCancelar: 'Cancelar',
     esConfirmacion: false,
-    onConfirmar: () => {}
+    onConfirmar: () => undefined
   };
 
   mostrarMensaje(titulo: string, mensaje: string, tipo: 'INFO' | 'WARNING' | 'DANGER' = 'INFO'): void {
@@ -541,8 +541,8 @@ export class AsambleasAdminComponent implements OnInit {
   }
 
   abrirValidacionDoc(tipo: 'CONVOCATORIA' | 'ASISTENCIA' | 'ACTA', asamblea: AsambleaItem): void {
-    let url = '';
-    let nombre = '';
+    let url: string;
+    let nombre: string;
     if (tipo === 'CONVOCATORIA') {
       url = asamblea.convocatoria_firmada_url || '';
       nombre = asamblea.convocatoria_firmada_nombre || 'Convocatoria_Firmada.pdf';
@@ -824,7 +824,7 @@ export class AsambleasAdminComponent implements OnInit {
         next: () => {
           this.cdr.detectChanges();
         },
-        error: () => {}
+        error: (err) => this.mostrarMensaje('Acta', err.error?.message || 'No se pudo actualizar el estado del acta.', 'WARNING')
       });
     }
   }

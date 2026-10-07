@@ -165,12 +165,12 @@ describe('Módulo de finanzas', () => {
     const c = fixture.componentInstance;
     fixture.componentRef.setInput('seccion', 'egresos');
     fixture.componentRef.setInput('nuevo', 'egreso');
-    expect(c.seccion()).toBe('egresos');
+    expect(c.seccionActual()).toBe('egresos');
     expect(c.abrirEgreso()).toBe(true);
     fixture.componentRef.setInput('nuevo', undefined);
     expect(c.abrirEgreso()).toBe(false);
     fixture.componentRef.setInput('seccion', 'inventada');
-    expect(c.seccion()).toBe('cobrar');
+    expect(c.seccionActual()).toBe('cobrar');
     expect(c.indicadores()?.historico.balanceAlDia).toBe(60);
   });
 
