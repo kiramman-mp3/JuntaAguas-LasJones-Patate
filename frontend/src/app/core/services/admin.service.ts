@@ -27,6 +27,16 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/personas/${id}`, data);
   }
 
+  /** Crea la cuenta de acceso de un comunero; la respuesta trae la contraseña temporal. */
+  crearCuenta(personaId: number, rol: 'ADMIN' | 'USUARIO'): Observable<{ status: string; message: string; passwordTemporal: string }> {
+    return this.http.post<{ status: string; message: string; passwordTemporal: string }>(`${this.baseUrl}/personas/${personaId}/cuenta`, { rol });
+  }
+
+  /** Genera una contraseña temporal nueva y obliga a cambiarla en el próximo ingreso. */
+  restablecerPassword(personaId: number): Observable<{ status: string; message: string; passwordTemporal: string }> {
+    return this.http.post<{ status: string; message: string; passwordTemporal: string }>(`${this.baseUrl}/personas/${personaId}/cuenta/restablecer-password`, {});
+  }
+
   getPersona(id: number): Observable<any> {
     return this.http.get(`${this.baseUrl}/personas/${id}`);
   }
