@@ -12,12 +12,13 @@ export const ZONA_JUNTA = 'America/Guayaquil';
 
 const SOLO_FECHA = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-export type FormatoFecha = 'corta' | 'larga' | 'mesAnio' | 'conHora';
+export type FormatoFecha = 'corta' | 'larga' | 'mesAnio' | 'conHora' | 'diaMes';
 
 const OPCIONES: Record<FormatoFecha, Intl.DateTimeFormatOptions> = {
   corta: { day: '2-digit', month: '2-digit', year: 'numeric' },
   larga: { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
   mesAnio: { month: 'long', year: 'numeric' },
+  diaMes: { day: 'numeric', month: 'short' },
   conHora: { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }
 };
 

@@ -1,172 +1,119 @@
-<section aria-label="Dashboard">
-  @if (errorCarga) {
-    <div class="alert alert--danger" role="alert">
-      <i class="ri-error-warning-line" aria-hidden="true"></i> {{ errorCarga }}
-      <button
-        type="button"
-        class="btn btn--outline btn--sm"
-        (click)="cargarDatosBackend()"
-        style="margin-left: auto"
-      >
-        <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
-      </button>
-    </div>
-  }
-  @if (cargandoResumen && !resumen) {
-    <p class="text-muted" aria-live="polite">Cargando indicadores...</p>
-  }
-  @if (resumen; as r) {
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-card__icon"><i class="ri-hand-coin-line" aria-hidden="true"></i></div>
-        <div class="kpi-card__content">
-          <span class="kpi-card__value">${{ r.finanzas.recaudadoMes | number: '1.2-2' }}</span>
-          <span class="kpi-card__label">Recaudado este mes</span>
-          <span class="kpi-card__hint"
-            >${{ r.finanzas.recaudadoAnio | number: '1.2-2' }} en el año</span
-          >
-        </div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-card__icon kpi-card__icon--danger">
-          <i class="ri-error-warning-line" aria-hidden="true"></i>
-        </div>
-        <div class="kpi-card__content">
-          <span class="kpi-card__value text-danger"
-            >${{ r.finanzas.carteraPendiente | number: '1.2-2' }}</span
-          >
-          <span class="kpi-card__label">Pendiente por cobrar</span>
-          <span class="kpi-card__hint"
-            >${{ r.finanzas.carteraVencida | number: '1.2-2' }} vencido ·
-            {{ r.finanzas.comunerosEnMora }} comuneros en mora</span
-          >
-        </div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-card__icon kpi-card__icon--warning">
-          <i class="ri-shopping-bag-line" aria-hidden="true"></i>
-        </div>
-        <div class="kpi-card__content">
-          <span class="kpi-card__value">${{ r.finanzas.egresosMes | number: '1.2-2' }}</span>
-          <span class="kpi-card__label">Egresos este mes</span>
-          <span class="kpi-card__hint"
-            >${{ r.finanzas.egresosAnio | number: '1.2-2' }} en el año</span
-          >
-        </div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-card__icon kpi-card__icon--success">
-          <i class="ri-scales-3-line" aria-hidden="true"></i>
-        </div>
-        <div class="kpi-card__content">
-          <span
-            class="kpi-card__value"
-            [class.text-success]="r.finanzas.saldoCaja >= 0"
-            [class.text-danger]="r.finanzas.saldoCaja < 0"
-            >${{ r.finanzas.saldoCaja | number: '1.2-2' }}</span
-          >
-          <span class="kpi-card__label">Saldo de caja</span>
-          <span class="kpi-card__hint">Ingresos menos egresos históricos</span>
-        </div>
-      </div>
-    </div>
-  }
+<section class="module" aria-label="Dashboard">
+  <app-page-header titulo="Resumen de la Junta" subtitulo="Indicadores del mes, accesos directos y próximos eventos." icono="ri-dashboard-line">
+    <button type="button" class="icon-btn icon-btn--bordered" (click)="cargarDatosBackend()" [disabled]="cargandoResumen" aria-label="Actualizar indicadores" title="Actualizar">
+      <i class="ri-refresh-line" [class.ri-spin]="cargandoResumen" aria-hidden="true"></i>
+    </button>
+  </app-page-header>
 
-  <div class="card mb-2">
-    <div class="card__header dashboard-header">
-      <h3 class="card__title">
-        <i class="ri-flashlight-line text-primary" aria-hidden="true"></i> Acciones Rápidas
-      </h3>
+  @if (errorCarga && !resumen) {
+    <div class="surface">
+      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudieron cargar los indicadores" [mensaje]="errorCarga">
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargarDatosBackend()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      </app-empty-state>
     </div>
-    <div class="quick-actions">
-      <a class="btn btn--primary" routerLink="/admin/finanzas/cobrar">
-        <i class="ri-add-line" aria-hidden="true"></i> Registrar Nuevo Cobro
-      </a>
-      <a
-        class="btn btn-egreso"
-        routerLink="/admin/finanzas/egresos"
-        [queryParams]="{ nuevo: 'egreso' }"
-      >
-        <i class="ri-subtract-line" aria-hidden="true"></i> Registrar Nuevo Egreso
-      </a>
-      <a
-        class="btn btn--secondary"
-        routerLink="/admin/comuneros/padron"
-        [queryParams]="{ nuevo: 'comunero' }"
-      >
-        <i class="ri-user-add-line" aria-hidden="true"></i> Registrar Comunero
-      </a>
-      <a class="btn btn--secondary" routerLink="/admin/turnos">
-        <i class="ri-calendar-event-line" aria-hidden="true"></i> Asignar Turno de Agua
-      </a>
-    </div>
-  </div>
-
-  @if (resumen; as r) {
-    <div class="card mb-2">
-      <h3 class="card__title dashboard-subtitle">
-        <i class="ri-group-line text-primary" aria-hidden="true"></i> Resumen operativo
-      </h3>
-      <div class="resumen-grid">
-        <div class="resumen-item">
-          <span class="resumen-item__label">Comuneros activos</span>
-          <div class="resumen-item__value">{{ r.comunidad.comunerosActivos }}</div>
-        </div>
-        <div class="resumen-item">
-          <span class="resumen-item__label">Lotes en {{ r.comunidad.sectores }} sectores</span>
-          <div class="resumen-item__value">{{ r.comunidad.lotes }}</div>
-        </div>
-        <div class="resumen-item">
-          <span class="resumen-item__label">Turnos de riego activos</span>
-          <div class="resumen-item__value">{{ r.comunidad.turnosActivos }}</div>
-        </div>
-        <div class="resumen-item">
-          <span class="resumen-item__label">Asambleas y mingas del año</span>
-          <div class="resumen-item__value">{{ r.comunidad.eventosAnio }}</div>
-        </div>
-        <div class="resumen-item">
-          <span class="resumen-item__label">Cobro de cuotas de agua del año</span>
-          <div class="resumen-item__value">
-            {{ r.cobranza.porcentaje === null ? '—' : (r.cobranza.porcentaje | percent: '1.0-0') }}
-          </div>
-        </div>
-        <div class="resumen-item">
-          <span class="resumen-item__label">Asistencia promedio (últimos eventos)</span>
-          <div class="resumen-item__value">
-            {{ r.asistencia.promedio === null ? '—' : (r.asistencia.promedio | percent: '1.0-0') }}
-          </div>
-        </div>
-      </div>
-    </div>
-  }
-
-  @if (resumen; as r) {
-    <div class="card mb-2">
-      <h3 class="card__title dashboard-subtitle">
-        <i class="ri-calendar-event-line text-primary" aria-hidden="true"></i> Próximos eventos
-      </h3>
-      @if (!r.proximosEventos.length) {
-        <p class="text-muted">No hay asambleas ni mingas programadas.</p>
+  } @else if (!resumen) {
+    <div class="stat-grid" aria-hidden="true">
+      @for (s of [1, 2, 3, 4]; track s) {
+        <div class="skeleton skeleton--card stat-skeleton"></div>
       }
-      @if (r.proximosEventos.length) {
-        <ul class="proximos-eventos">
-          @for (e of r.proximosEventos; track e) {
-            <li class="proximos-eventos__item">
-              <span
-                class="badge"
-                [class.badge--info]="e.tipo === 'ASAMBLEA'"
-                [class.badge--warning]="e.tipo === 'MINGA'"
-                >{{ e.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}</span
-              >
-              <span class="proximos-eventos__titulo">{{ e.titulo }}</span>
-              <span class="text-muted"
-                >{{ e.fecha | fechaLocal: 'larga' }} · {{ e.hora_inicio.slice(0, 5) }}</span
-              >
-              <span class="text-muted proximos-eventos__estado">{{ e.estado | titlecase }}</span>
-            </li>
-          }
-        </ul>
-      }
+    </div>
+    <span class="sr-only" role="status">Cargando indicadores…</span>
+  } @else {
+    @let r = resumen;
+    <div class="stat-grid" aria-label="Indicadores financieros" [class.is-refreshing]="cargandoResumen">
+      <div class="stat-tile">
+        <span class="stat-tile__icon" aria-hidden="true"><i class="ri-hand-coin-line"></i></span>
+        <span class="stat-tile__label">Recaudado este mes</span>
+        <span class="stat-tile__value">${{ r.finanzas.recaudadoMes | number: '1.2-2' }}</span>
+        <span class="stat-tile__hint">${{ r.finanzas.recaudadoAnio | number: '1.2-2' }} en el año</span>
+      </div>
+      <div class="stat-tile stat-tile--negative">
+        <span class="stat-tile__icon stat-tile__icon--danger" aria-hidden="true"><i class="ri-error-warning-line"></i></span>
+        <span class="stat-tile__label">Pendiente por cobrar</span>
+        <span class="stat-tile__value">${{ r.finanzas.carteraPendiente | number: '1.2-2' }}</span>
+        <span class="stat-tile__hint">${{ r.finanzas.carteraVencida | number: '1.2-2' }} vencido · {{ r.finanzas.comunerosEnMora }} en mora</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile__icon stat-tile__icon--warning" aria-hidden="true"><i class="ri-shopping-bag-line"></i></span>
+        <span class="stat-tile__label">Egresos este mes</span>
+        <span class="stat-tile__value">${{ r.finanzas.egresosMes | number: '1.2-2' }}</span>
+        <span class="stat-tile__hint">${{ r.finanzas.egresosAnio | number: '1.2-2' }} en el año</span>
+      </div>
+      <div class="stat-tile" [class.stat-tile--positive]="r.finanzas.saldoCaja >= 0" [class.stat-tile--negative]="r.finanzas.saldoCaja < 0">
+        <span class="stat-tile__icon stat-tile__icon--success" aria-hidden="true"><i class="ri-scales-3-line"></i></span>
+        <span class="stat-tile__label">Saldo de caja</span>
+        <span class="stat-tile__value">${{ r.finanzas.saldoCaja | number: '1.2-2' }}</span>
+        <span class="stat-tile__hint">Ingresos menos egresos históricos</span>
+      </div>
+    </div>
+  }
+
+  <section aria-labelledby="acciones-titulo">
+    <h3 id="acciones-titulo" class="section-head__title section-gap">Acciones rápidas</h3>
+    <div class="quick-grid">
+      <a class="quick-tile" routerLink="/admin/finanzas/cobrar">
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-hand-coin-line"></i></span>
+        <span class="quick-tile__text"><strong>Registrar cobro</strong><span>Cobro en caja a un comunero</span></span>
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
+      <a class="quick-tile quick-tile--warning" routerLink="/admin/finanzas/egresos" [queryParams]="{ nuevo: 'egreso' }">
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-shopping-bag-3-line"></i></span>
+        <span class="quick-tile__text"><strong>Registrar egreso</strong><span>Gasto o pago de la Junta</span></span>
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
+      <a class="quick-tile quick-tile--secondary" routerLink="/admin/comuneros/padron" [queryParams]="{ nuevo: 'comunero' }">
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-user-add-line"></i></span>
+        <span class="quick-tile__text"><strong>Registrar comunero</strong><span>Alta en el padrón</span></span>
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
+      <a class="quick-tile quick-tile--success" routerLink="/admin/turnos">
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-drop-line"></i></span>
+        <span class="quick-tile__text"><strong>Asignar turno de agua</strong><span>Horario semanal de riego</span></span>
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
+    </div>
+  </section>
+
+  @if (resumen; as r) {
+    <div class="dashboard-columns">
+      <section class="surface surface--padded" aria-labelledby="operativo-titulo">
+        <h3 id="operativo-titulo" class="section-head__title">Resumen operativo</h3>
+        <dl class="metric-list">
+          <div><dt>Comuneros activos</dt><dd>{{ r.comunidad.comunerosActivos }}</dd></div>
+          <div><dt>Lotes en {{ r.comunidad.sectores }} sectores</dt><dd>{{ r.comunidad.lotes }}</dd></div>
+          <div><dt>Turnos de riego activos</dt><dd>{{ r.comunidad.turnosActivos }}</dd></div>
+          <div><dt>Asambleas y mingas del año</dt><dd>{{ r.comunidad.eventosAnio }}</dd></div>
+          <div><dt>Cobro de cuotas del año</dt><dd>{{ r.cobranza.porcentaje === null ? '—' : (r.cobranza.porcentaje | percent: '1.0-0') }}</dd></div>
+          <div><dt>Asistencia promedio</dt><dd>{{ r.asistencia.promedio === null ? '—' : (r.asistencia.promedio | percent: '1.0-0') }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="surface surface--padded" aria-labelledby="eventos-titulo">
+        <div class="section-head">
+          <h3 id="eventos-titulo" class="section-head__title">Próximos eventos</h3>
+          <a class="btn btn--ghost btn--sm" routerLink="/admin/asistencias">Ver todos</a>
+        </div>
+        @if (!r.proximosEventos.length) {
+          <app-empty-state icono="ri-calendar-line" titulo="Sin eventos programados" mensaje="No hay asambleas ni mingas próximas." />
+        } @else {
+          <ul class="event-list">
+            @for (e of r.proximosEventos; track e.id) {
+              <li class="event-list__item">
+                <span class="event-list__date" aria-hidden="true">
+                  <strong>{{ e.fecha | fechaLocal: 'diaMes' }}</strong>
+                </span>
+                <div class="event-list__text">
+                  <strong>{{ e.titulo }}</strong>
+                  <span>{{ e.fecha | fechaLocal: 'larga' }} · {{ e.hora_inicio.slice(0, 5) }} · {{ e.estado | titlecase }}</span>
+                </div>
+                <span class="pill" [class.pill--primary]="e.tipo === 'ASAMBLEA'" [class.pill--success]="e.tipo === 'MINGA'">
+                  {{ e.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
     </div>
   }
 </section>

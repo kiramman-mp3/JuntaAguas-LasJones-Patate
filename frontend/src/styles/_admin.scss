@@ -668,3 +668,22 @@ label.icon-btn:focus-within,
   font-size: 0.78rem;
   font-weight: 500;
 }
+
+.surface--padded { padding: 1.25rem; }
+
+/* Icono de los indicadores (dashboard) */
+.stat-tile__icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 1.1rem;
+
+  &--danger { background: var(--color-danger-light); color: var(--color-danger); }
+  &--warning { background: var(--color-warning-light); color: var(--color-warning-strong); }
+  &--success { background: var(--color-success-light); color: var(--color-success-strong); }
+}

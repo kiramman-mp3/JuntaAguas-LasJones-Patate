@@ -4,12 +4,14 @@ import { RouterLink } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
 import { DashboardResumen } from '../../../core/models/api-payloads';
 import { FechaLocalPipe } from '../../../shared/pipes/fecha-local.pipe';
+import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 
 /** Indicadores reales de /dashboard/resumen y accesos directos a las tareas frecuentes. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FechaLocalPipe],
+  imports: [CommonModule, RouterLink, FechaLocalPipe, PageHeaderComponent, EmptyStateComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
