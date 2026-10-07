@@ -5,6 +5,7 @@ import { AdminService } from '../../../../core/services/admin.service';
 import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { DialogService } from '../../../../core/services/dialog.service';
+import { ROLES, Rol } from '../../../../core/auth/session';
 import * as L from 'leaflet';
 
 
@@ -76,7 +77,7 @@ export class ComunerosAdminComponent implements OnInit {
     fecha_nacimiento: '',
     estado: 'ACTIVO',
     crearCuenta: false,
-    rol_id: 2, // 2 = USUARIO por defecto (asumiendo que 1 es ADMIN)
+    rol: ROLES.USUARIO as Rol,
     nuevaContrasena: ''
   };
 
@@ -193,7 +194,7 @@ export class ComunerosAdminComponent implements OnInit {
       fecha_nacimiento: '',
       estado: 'ACTIVO',
       crearCuenta: true,
-      rol_id: 2, // 2 = USUARIO (Comunero)
+      rol: ROLES.USUARIO,
       nuevaContrasena: ''
     };
     this.modalUsuarioVisible = true;
@@ -213,7 +214,7 @@ export class ComunerosAdminComponent implements OnInit {
       fecha_nacimiento: u.fecha_nacimiento,
       estado: u.estado,
       crearCuenta: false,
-      rol_id: 2,
+      rol: ROLES.USUARIO,
       nuevaContrasena: ''
     };
     this.modalUsuarioVisible = true;

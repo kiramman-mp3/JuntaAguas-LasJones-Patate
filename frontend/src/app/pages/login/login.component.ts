@@ -67,7 +67,7 @@ export class LoginComponent {
       this.router.navigateByUrl(returnUrl);
       return;
     }
-    if (rol === 'ADMIN' || rol === 'SECRETARIO') {
+    if (rol === ROLES.ADMIN) {
       this.router.navigate(['/admin']);
     } else {
       this.router.navigate(['/mi-cuenta']);

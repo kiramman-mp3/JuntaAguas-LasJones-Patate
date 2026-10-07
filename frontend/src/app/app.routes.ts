@@ -4,6 +4,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { EventosComponent } from './pages/eventos/eventos.component';
 import { NoEncontradoComponent } from './pages/no-encontrado/no-encontrado.component';
 import { authGuard } from './core/guards/auth.guard';
+import { ROLES } from './core/auth/session';
 
 export const routes: Routes = [
   { path: '', component: InicioComponent },
@@ -18,7 +19,7 @@ export const routes: Routes = [
     path: 'admin',
     loadComponent: () => import('./pages/admin/admin.component').then(m => m.AdminComponent),
     canActivate: [authGuard],
-    data: { roles: ['ADMIN', 'SECRETARIO'] }
+    data: { roles: [ROLES.ADMIN] }
   },
   { path: '**', component: NoEncontradoComponent }
 ];

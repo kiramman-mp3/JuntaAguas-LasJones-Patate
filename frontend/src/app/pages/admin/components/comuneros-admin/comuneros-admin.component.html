@@ -266,10 +266,9 @@
           <div *ngIf="formUsuario.crearCuenta" class="grid-2" style="margin-top: 1rem;">
             <div class="form-group">
               <label>Rol de Usuario</label>
-              <select class="input" name="rol_id" [(ngModel)]="formUsuario.rol_id">
-                <option [ngValue]="3">Comunero / Usuario Normal</option>
-                <option [ngValue]="2">Directiva</option>
-                <option [ngValue]="1">Administrador</option>
+              <select class="input" name="rol" [(ngModel)]="formUsuario.rol">
+                <option value="USUARIO">Comunero (consulta su propia información)</option>
+                <option value="ADMIN">Administrador (directiva, acceso total)</option>
               </select>
             </div>
             <div class="form-group" style="justify-content: center;">

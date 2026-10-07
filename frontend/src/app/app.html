@@ -10,7 +10,7 @@
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a></li>
       <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
       <li *ngIf="authService.isLoggedIn()">
-        <a *ngIf="authService.getUser()?.rol === 'ADMIN' || authService.getUser()?.rol === 'SECRETARIO'" routerLink="/admin" routerLinkActive="active">Panel de Control</a>
+        <a *ngIf="authService.esAdmin()" routerLink="/admin" routerLinkActive="active">Panel de Control</a>
         <a *ngIf="authService.getUser()?.rol === 'USUARIO'" routerLink="/mi-cuenta" routerLinkActive="active">Mi cuenta</a>
       </li>
     </ul>
@@ -41,7 +41,7 @@
     <ul>
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="cerrarMenu()">Inicio</a></li>
       <li><a routerLink="/eventos" routerLinkActive="active" (click)="cerrarMenu()">Eventos y Actas</a></li>
-      <li *ngIf="authService.isLoggedIn() && (authService.getUser()?.rol === 'ADMIN' || authService.getUser()?.rol === 'SECRETARIO')">
+      <li *ngIf="authService.isLoggedIn() && authService.esAdmin()">
         <a routerLink="/admin" routerLinkActive="active" (click)="cerrarMenu()">Panel de Control</a>
       </li>
       <li *ngIf="authService.isLoggedIn() && authService.getUser()?.rol === 'USUARIO'">
