@@ -77,8 +77,9 @@ JuntaAguas-LasJones-Patate/
    ```
 3. Opcional: Siembra datos de prueba realistas para pruebas iniciales:
    ```bash
-   npm run seed-db
+   npm run db:seed -- --reset
    ```
+   *Imprime al terminar las credenciales del administrador y de un comunero de demostración.*
    *Alternativamente, puedes importar manualmente el archivo [`backend/database/schema.sql`](backend/database/schema.sql) en tu cliente MySQL.*
 
 ---

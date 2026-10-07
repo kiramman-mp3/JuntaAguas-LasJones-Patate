@@ -55,9 +55,8 @@ Cuando ellos levanten su base de datos usando el procedimiento normal del proyec
 2. (Opcional) Correr los seeds si quieren datos de prueba:
    ```bash
    cd backend
-   npm run seed-db
+   npm run db:seed -- --reset
    ```
-   *(O insertar el script `seed.sql` manualmente).*
 
 ---
 
