@@ -6,8 +6,7 @@ import { ViewChild } from '@angular/core';
 import { ActasService } from '../../../../core/services/actas.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import * as L from 'leaflet';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { cargarJsPdf } from '../../../../core/utils/jspdf';
 import { MingasAdminComponent } from '../mingas-admin/mingas-admin.component';
 import { AsambleasAdminComponent } from '../asambleas-admin/asambleas-admin.component';
 import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
@@ -464,7 +463,8 @@ export class AsistenciasAdminComponent implements OnInit {
         } else {
           // Para Asamblea se sigue generando el PDF oficial de convocatoria
           this.notify.info('Asamblea creada exitosamente. Descargando Convocatoria Oficial en PDF...');
-          this.generarConvocatoriaPdf(this.formEvento);
+          this.generarConvocatoriaPdf(this.formEvento).catch(() =>
+            this.notify.error('La asamblea se creó, pero no se pudo generar el PDF de la convocatoria.'));
         }
       },
       error: (err: any) => {
@@ -473,7 +473,8 @@ export class AsistenciasAdminComponent implements OnInit {
     });
   }
 
-  generarConvocatoriaPdf(evento: any) {
+  async generarConvocatoriaPdf(evento: any) {
+    const { jsPDF, autoTable } = await cargarJsPdf();
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 

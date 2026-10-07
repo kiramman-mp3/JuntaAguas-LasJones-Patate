@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { cargarJsPdf } from '../utils/jspdf';
 
 export interface ComprobanteLinea {
   concepto: string;
@@ -52,7 +53,7 @@ export class ComprobantePdfService {
   }
 
   private async construir(c: Comprobante) {
-    const [{ jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
+    const { jsPDF, autoTable } = await cargarJsPdf();
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
     const centro = doc.internal.pageSize.getWidth() / 2;
     const dinero = (n: number) => `$${n.toFixed(2)}`;
