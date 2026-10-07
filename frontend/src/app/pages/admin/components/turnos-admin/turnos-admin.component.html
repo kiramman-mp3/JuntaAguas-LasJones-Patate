@@ -159,7 +159,7 @@
           <!-- Lista de Tarjetas de Turnos del Día -->
           <div style="flex: 1; padding: 0.6rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem;">
 
-            <div *ngFor="let t of getTurnosPorDia(diaNum)" (click)="verDetalleTurno(t)"
+            <div *ngFor="let t of getTurnosPorDia(diaNum)" role="button" tabindex="0" (click)="verDetalleTurno(t)" (keydown.enter)="verDetalleTurno(t)" (keydown.space)="$event.preventDefault(); verDetalleTurno(t)"
               [style.borderLeftColor]="t.tipo === 'REGULAR' ? 'var(--color-primary, #2563eb)' : '#f59e0b'"
               style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color); border-left-width: 4px; border-radius: 8px; padding: 0.75rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.03);"
               onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.08)'"
@@ -384,7 +384,7 @@
 
         <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 2px;">
 
-          <div *ngFor="let u of usuariosTurnoModal" (click)="seleccionarComuneroTurnoModal(u)"
+          <div *ngFor="let u of usuariosTurnoModal" role="button" tabindex="0" [attr.aria-pressed]="nuevoTurno.persona_id === u.id" (click)="seleccionarComuneroTurnoModal(u)" (keydown.enter)="seleccionarComuneroTurnoModal(u)" (keydown.space)="$event.preventDefault(); seleccionarComuneroTurnoModal(u)"
             [style.border-color]="nuevoTurno.persona_id === u.id ? 'var(--color-primary, #0284c7)' : 'var(--border-color)'"
             [style.background]="nuevoTurno.persona_id === u.id ? 'var(--color-primary-light, rgba(2, 132, 199, 0.12))' : 'var(--bg-surface)'"
             style="padding: 0.6rem 0.8rem; border-radius: var(--radius-md); border-width: 2px; border-style: solid; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: space-between;">

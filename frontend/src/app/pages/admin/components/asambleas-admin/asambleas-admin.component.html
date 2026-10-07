@@ -763,7 +763,7 @@
 <!-- ========================================================================= -->
 <!-- MODAL: CUADRO DE DIÁLOGO / MENSAJE AMIGABLE (REEMPLAZO DE ALERT/CONFIRM)   -->
 <!-- ========================================================================= -->
-<div class="modal-backdrop modal-backdrop--dialog" *ngIf="dialogo.visible" (click)="cerrarDialogo()">
+<div appModalA11y class="modal-backdrop modal-backdrop--dialog" *ngIf="dialogo.visible">
   <div
     class="modal card dialog-modal"
     [class.dialog-modal--info]="dialogo.tipo === 'INFO'"
@@ -772,7 +772,6 @@
     [class.dialog-modal--confirm]="dialogo.tipo === 'CONFIRM'"
     role="dialog"
     aria-modal="true"
-    (click)="$event.stopPropagation()"
   >
     <div class="dialog-modal__header">
       <div class="dialog-modal__icon">
