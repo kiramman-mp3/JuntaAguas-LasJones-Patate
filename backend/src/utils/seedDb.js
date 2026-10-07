@@ -44,7 +44,6 @@ async function sembrarDatosPrueba() {
     
     const [conceptos] = await connection.query(`SELECT id, codigo FROM conceptos_cobro`);
     const conceptoAgua = conceptos.find(c => c.codigo === 'AGUA_MENSUAL');
-    const conceptoMinga = conceptos.find(c => c.codigo === 'MULTA_MINGA');
     const conceptoAsamblea = conceptos.find(c => c.codigo === 'MULTA_ASAMBLEA');
 
     // 2. CREAR SECTORES
@@ -80,12 +79,12 @@ async function sembrarDatosPrueba() {
     }
 
     // Insertar personas en bloques
-    let valuesPersonas = personas.map(p => `(${p.id}, '${p.cedula}', '${p.nombres}', '${p.apellidos}', 'Sector ${p.sectorId}', '099${getRandomInt(1000000, 9999999)}', 'ACTIVO')`).join(',');
+    const valuesPersonas = personas.map(p => `(${p.id}, '${p.cedula}', '${p.nombres}', '${p.apellidos}', 'Sector ${p.sectorId}', '099${getRandomInt(1000000, 9999999)}', 'ACTIVO')`).join(',');
     await connection.query(`INSERT INTO personas (id, cedula, nombres, apellidos, direccion, celular, estado) VALUES ${valuesPersonas} ON DUPLICATE KEY UPDATE id=id`);
 
     // 4. CREAR CUENTAS
     console.log('[DB Seed] Generando cuentas de usuario...');
-    let valuesCuentas = personas.map(p => `(${p.id}, ${p.id}, ${p.rol}, '${passwordHash}', FALSE, 'ACTIVA')`).join(',');
+    const valuesCuentas = personas.map(p => `(${p.id}, ${p.id}, ${p.rol}, '${passwordHash}', FALSE, 'ACTIVA')`).join(',');
     await connection.query(`INSERT INTO cuentas (id, persona_id, rol_id, password_hash, debe_cambiar_password, estado) VALUES ${valuesCuentas} ON DUPLICATE KEY UPDATE id=id`);
 
     // 5. GENERAR LOTES GEORREFERENCIADOS (~200)
@@ -95,8 +94,8 @@ async function sembrarDatosPrueba() {
     const personaLotesData = [];
     for (let i = 1; i <= TOTAL_LOTES; i++) {
       const sectorId = getRandomInt(1, 3);
-      let lat = -1.33 + (Math.random() * 0.02) - 0.01;
-      let lng = -78.51 + (Math.random() * 0.02) - 0.01;
+      const lat = -1.33 + (Math.random() * 0.02) - 0.01;
+      const lng = -78.51 + (Math.random() * 0.02) - 0.01;
       lotesData.push(`(${i}, ${sectorId}, 'LOT-${i}', ${getRandomInt(1000, 5000)}.00, ${lat}, ${lng}, 5.00)`);
       
       // Asignar lote a una persona aleatoria (algunas pueden tener 2 lotes)

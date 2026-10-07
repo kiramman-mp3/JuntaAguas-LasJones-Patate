@@ -1,11 +1,11 @@
 -- ==============================================================================
 -- SISTEMA INTEGRADO DE GESTIÓN - JUNTA DE AGUA Y RIEGO LA JONES (PATATE)
--- ESQUEMA DE BASE DE DATOS ACTUALIZADO (25 TABLAS - DBML VIGENTE)
--- Motor: MySQL 8.0+ / MariaDB 10.5+
+-- MIGRACIÓN 001: ESQUEMA BASE (22 TABLAS)
+-- Motor: MySQL 8.0+
+-- Es idempotente (CREATE TABLE IF NOT EXISTS) para poder registrarse sobre bases
+-- creadas antes de existir el sistema de migraciones. Los cambios posteriores
+-- viven en migraciones numeradas; no edites este archivo.
 -- ==============================================================================
-
-CREATE DATABASE IF NOT EXISTS junta_las_jones CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE junta_las_jones;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
