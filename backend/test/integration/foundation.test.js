@@ -36,9 +36,9 @@ test('el esquema incluye las columnas que usa el código', async () => {
   assert.ok(!existe('documentos_evento', 'contenido_base64'));
 });
 
-test('los roles usados por las rutas existen', async () => {
+test('solo existen los roles ADMIN y USUARIO', async () => {
   const [roles] = await db.query('SELECT codigo FROM roles ORDER BY codigo');
-  assert.deepEqual(roles.map((r) => r.codigo), ['ADMIN', 'SECRETARIO', 'TESORERO', 'USUARIO']);
+  assert.deepEqual(roles.map((r) => r.codigo), ['ADMIN', 'USUARIO']);
 });
 
 test('health comprueba la base de datos', async () => {
