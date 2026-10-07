@@ -31,6 +31,8 @@ export class Gestioncontratacion implements OnInit {
 
   nuevoEgreso: {
     fecha: string;
+    proveedor: string;
+    ruc_proveedor: string;
     concepto: string;
     numero_factura: string;
     valor: number | null;
@@ -60,6 +62,8 @@ export class Gestioncontratacion implements OnInit {
   private crearNuevoEgreso() {
     return {
       fecha: this.fechaActual(),
+      proveedor: '',
+      ruc_proveedor: '',
       concepto: '',
       numero_factura: '',
       valor: null as number | null,
@@ -139,6 +143,15 @@ export class Gestioncontratacion implements OnInit {
     });
   }
 
+  actualizarRucProveedor(event: Event): void {
+    const input = event.currentTarget;
+    if (!(input instanceof HTMLInputElement)) return;
+
+    const soloNumeros = input.value.replace(/[^0-9]/g, '').slice(0, 13);
+    input.value = soloNumeros;
+    this.nuevoEgreso.ruc_proveedor = soloNumeros;
+  }
+
   // Registro de un egreso.
 guardarEgreso(): void {
   if (this.guardandoEgreso) return;
@@ -161,8 +174,26 @@ guardarEgreso(): void {
     return;
   }
 
+  if (
+    this.nuevoEgreso.ruc_proveedor &&
+    !/^[0-9]+$/.test(this.nuevoEgreso.ruc_proveedor)
+  ) {
+    this.notify.warning('El RUC solo puede contener números.');
+    return;
+  }
+
+  if (
+    this.nuevoEgreso.ruc_proveedor &&
+    !/^\d{13}$/.test(this.nuevoEgreso.ruc_proveedor)
+  ) {
+    this.notify.warning('El RUC del proveedor debe contener exactamente 13 números.');
+    return;
+  }
+
   const payload = {
     fecha: this.nuevoEgreso.fecha,
+    proveedor: this.nuevoEgreso.proveedor.trim() || undefined,
+    ruc_proveedor: this.nuevoEgreso.ruc_proveedor || undefined,
     concepto,
     descripcion: this.nuevoEgreso.descripcion.trim() || undefined,
     numero_factura: this.nuevoEgreso.numero_factura.trim() || undefined,

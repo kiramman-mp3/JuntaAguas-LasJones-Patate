@@ -135,6 +135,32 @@
         <input type="date" class="input input--sm" [(ngModel)]="nuevoEgreso.fecha" style="width: 100%; font-weight: 600;" />
       </div>
 
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">Proveedor</label>
+        <input
+          type="text"
+          class="input input--sm"
+          placeholder="Nombre del proveedor"
+          [(ngModel)]="nuevoEgreso.proveedor"
+          style="width: 100%;"
+        />
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">RUC del proveedor</label>
+        <input
+          type="text"
+          class="input input--sm"
+          placeholder="RUC"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="13"
+          [value]="nuevoEgreso.ruc_proveedor"
+          (input)="actualizarRucProveedor($event)"
+          style="width: 100%;"
+        />
+      </div>
+
       <!-- Concepto / Motivo -->
       <div class="form-group">
         <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-color);">Concepto / Motivo del Gasto *</label>

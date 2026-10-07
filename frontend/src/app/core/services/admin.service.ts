@@ -182,7 +182,7 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/financiero/egresos`, { headers: this.getAuthHeaders() });
   }
 
-  registrarEgreso(payload: { fecha?: string; concepto: string; descripcion?: string; numero_factura?: string; valor: number; proveedor_id?: number }): Observable<any> {
+  registrarEgreso(payload: { fecha?: string; concepto: string; descripcion?: string; numero_factura?: string; valor: number; proveedor_id?: number; proveedor?: string; ruc_proveedor?: string }): Observable<any> {
     return this.http.post(`${this.baseUrl}/financiero/egresos`, payload, { headers: this.getAuthHeaders() });
   }
 

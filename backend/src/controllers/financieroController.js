@@ -359,6 +359,29 @@ async function createEgreso(req, res, next) {
       return res.status(400).json({ status: 'ERROR', message: 'El valor del egreso debe ser mayor a cero.' });
     }
 
+    if (ruc_proveedor != null && ruc_proveedor !== '') {
+      if (typeof ruc_proveedor !== 'string' || !/^[0-9]+$/.test(ruc_proveedor)) {
+        return res.status(400).json({
+          status: 'ERROR',
+          message: 'El RUC solo puede contener números.',
+        });
+      }
+
+      if (ruc_proveedor.length !== 13) {
+        return res.status(400).json({
+          status: 'ERROR',
+          message: 'El RUC del proveedor debe contener exactamente 13 números.',
+        });
+      }
+    }
+
+    if (proveedor != null && typeof proveedor !== 'string') {
+      return res.status(400).json({
+        status: 'ERROR',
+        message: 'El nombre del proveedor debe ser texto.',
+      });
+    }
+
     const [result] = await db.query(
       `INSERT INTO egresos (proveedor, ruc_proveedor, fecha, concepto, descripcion, numero_factura, archivo_factura, valor, registrado_por_cuenta_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,

@@ -158,7 +158,8 @@ router.post('/pagos/:id/anular', verificarToken, verificarRol(['ADMIN', 'TESORER
  *             type: object
  *             required: [fecha, concepto, valor]
  *             properties:
- *               proveedor_id: { type: integer, example: 1 }
+ *               proveedor: { type: string, example: "Ferretería San José" }
+ *               ruc_proveedor: { type: string, pattern: "^[0-9]{13}$", example: "1790012345001" }
  *               fecha: { type: string, example: "2026-08-10" }
  *               concepto: { type: string, example: "Compra de tubería PVC para canal secundario" }
  *               numero_factura: { type: string, example: "001-002-00045612" }
