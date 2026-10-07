@@ -42,7 +42,7 @@ function initWhatsApp(force = false) {
   if (!force && (isInitializing || isReady)) return;
 
   if (force && client) {
-    try { client.destroy(); } catch (e) {}
+    try { client.destroy(); } catch { /* el cliente ya estaba cerrado */ }
     client = null;
     isReady = false;
   }

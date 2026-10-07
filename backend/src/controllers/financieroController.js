@@ -391,9 +391,9 @@ async function getBalanceReport(req, res, next) {
 
     let sqlIngresos = `SELECT COALESCE(SUM(valor_total), 0) AS total_ingresos FROM pagos WHERE 1=1 AND (observacion IS NULL OR observacion NOT LIKE '%[ANULADO:%')`;
     let sqlEgresos = `SELECT COALESCE(SUM(valor), 0) AS total_egresos FROM egresos WHERE 1=1`;
-    let sqlPendientes = `SELECT COALESCE(SUM(valor), 0) AS total_pendientes FROM obligaciones WHERE estado = 'PENDIENTE'`;
+    const sqlPendientes = `SELECT COALESCE(SUM(valor), 0) AS total_pendientes FROM obligaciones WHERE estado = 'PENDIENTE'`;
 
-    let sqlResumenMensual = `
+    const sqlResumenMensual = `
       SELECT 
         DATE_FORMAT(fecha, '%Y-%m') as mes,
         SUM(ingresos) as ingresos,
