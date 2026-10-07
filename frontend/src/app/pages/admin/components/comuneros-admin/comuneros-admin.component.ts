@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
@@ -44,7 +44,10 @@ export class ComunerosAdminComponent implements OnInit {
     }
   }
 
-  @Output() comunerosChanged = new EventEmitter<void>();
+  /** ?nuevo=comunero abre el registro de un comunero (atajo del dashboard). */
+  @Input() set nuevo(valor: string | undefined) {
+    if (valor === 'comunero') this.abrirModalNuevoUsuario();
+  }
 
 // --- VISTA 1: NÓMINA & LOTES ---
   subTabUsuarios: 'COMUNEROS' | 'LOTES' = 'COMUNEROS';

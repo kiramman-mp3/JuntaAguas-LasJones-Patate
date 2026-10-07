@@ -58,11 +58,11 @@
 
   <div role="tabpanel" [id]="'fin-panel-' + seccion()" [attr.aria-labelledby]="'fin-tab-' + seccion()" class="fin">
     @switch (seccion()) {
-      @case ('COBRAR') { <app-cobro-caja (cobrado)="onDatosCambiados()" /> }
-      @case ('PAGOS') { <app-historial-pagos (anulado)="onDatosCambiados()" /> }
-      @case ('EGRESOS') { <app-egresos [abrirNuevo]="egresoPendiente()" (registrado)="onDatosCambiados()" /> }
-      @case ('FACTURACION') { <app-facturacion-mensual (emitido)="onDatosCambiados()" /> }
-      @case ('TARIFAS') { <app-tarifas /> }
+      @case ('cobrar') { <app-cobro-caja (cobrado)="onDatosCambiados()" /> }
+      @case ('pagos') { <app-historial-pagos (anulado)="onDatosCambiados()" /> }
+      @case ('egresos') { <app-egresos [abrirNuevo]="abrirEgreso()" (registrado)="onDatosCambiados()" /> }
+      @case ('facturacion') { <app-facturacion-mensual (emitido)="onDatosCambiados()" /> }
+      @case ('tarifas') { <app-tarifas /> }
     }
   </div>
 </div>

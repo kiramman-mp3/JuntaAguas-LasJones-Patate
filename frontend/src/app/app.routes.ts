@@ -19,7 +19,9 @@ export const routes: Routes = [
     path: 'admin',
     loadComponent: () => import('./pages/admin/admin.component').then(m => m.AdminComponent),
     canActivate: [authGuard],
-    data: { roles: [ROLES.ADMIN] }
+    canActivateChild: [authGuard],
+    data: { roles: [ROLES.ADMIN] },
+    loadChildren: () => import('./pages/admin/admin.routes').then(m => m.ADMIN_ROUTES)
   },
   { path: '**', component: NoEncontradoComponent }
 ];
