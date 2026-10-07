@@ -279,3 +279,69 @@ fieldset.modal__body {
   margin: 0;
   min-width: 0;
 }
+
+/* --- Menú contextual "⋯": material que crece desde su botón --- */
+.menu {
+  position: relative;
+  display: inline-flex;
+
+  &__panel {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    padding: 0.35rem;
+    border-radius: var(--radius-lg);
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    transform-origin: top right;
+
+    &--enter { animation: menu-in 0.2s var(--ease-out) both; }
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+
+    i { font-size: 1.05rem; color: var(--text-muted); }
+
+    &:hover:not(:disabled),
+    &:focus-visible { background: var(--bg-surface-hover); outline: none; }
+
+    &:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    &--danger,
+    &--danger i { color: var(--color-danger); }
+  }
+
+  &__divider {
+    margin: 0.3rem 0.4rem;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+  }
+}
+
+@keyframes menu-in {
+  from { opacity: 0; transform: scale(0.94) translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}

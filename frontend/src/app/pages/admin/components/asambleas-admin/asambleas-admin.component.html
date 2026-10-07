@@ -52,8 +52,11 @@
       </app-empty-state>
     }
   } @else {
+    @for (s of secciones(); track s.id) {
+    <section class="event-group" [attr.aria-labelledby]="'asambleas-' + s.id">
+      <h4 class="event-group__title" [id]="'asambleas-' + s.id">{{ s.titulo }} <span class="event-group__count">{{ s.eventos.length }}</span></h4>
     <div class="card-grid" [class.is-refreshing]="cargando()">
-      @for (a of filtradas(); track a.id) {
+      @for (a of s.eventos; track a.id) {
         <app-asamblea-card
           [asamblea]="a"
           [ocupada]="ocupadaId() === a.id"
@@ -71,6 +74,8 @@
         />
       }
     </div>
+    </section>
+    }
   }
 </section>
 

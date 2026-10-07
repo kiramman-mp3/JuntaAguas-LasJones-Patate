@@ -7,6 +7,7 @@ import { DocumentosService } from '../../../../core/services/documentos.service'
 import { NotificationService } from '../../../../core/services/notification.service';
 import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
 import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { agruparPorFecha } from '../../../../core/utils/eventos';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
 import { AsambleaItem, DocumentoFirmado, estadoTexto } from './asamblea.model';
@@ -78,6 +79,9 @@ export class AsambleasAdminComponent implements OnInit {
         (!q || a.titulo.toLowerCase().includes(q) || !!a.lugar?.toLowerCase().includes(q) || !!a.descripcion?.toLowerCase().includes(q))
     );
   });
+
+  /** Próximas (la más cercana primero) y anteriores (la más reciente primero), sin grupos vacíos. */
+  readonly secciones = computed(() => agruparPorFecha(this.filtradas(), hoyEnEcuador()));
 
   readonly hayFiltros = computed(() => !!this.busqueda().trim() || this.subtipoFiltro() !== 'TODAS' || this.periodo() !== 'TODAS');
 

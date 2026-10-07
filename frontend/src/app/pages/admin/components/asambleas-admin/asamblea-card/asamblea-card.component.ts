@@ -1,5 +1,6 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
+import { MenuComponent } from '../../../../../shared/ui/menu.component';
 import { AsambleaItem, estadoBadge, estadoIcono, estadoTexto } from '../asamblea.model';
 
 export type TipoDocumentoAsamblea = 'CONVOCATORIA' | 'ASISTENCIA';
@@ -11,11 +12,13 @@ export interface SubidaDocumento {
 /**
  * Tarjeta de una asamblea: estado, datos de la sesión, la siguiente acción del flujo
  * (programar → convocar → finalizar) y los documentos firmados. Solo presenta y emite intenciones.
+ * Para no saturar, solo el siguiente paso queda a la vista; lo demás va en el menú "⋯"
+ * y los documentos se despliegan a pedido.
  */
 @Component({
   selector: 'app-asamblea-card',
   standalone: true,
-  imports: [FechaLocalPipe],
+  imports: [FechaLocalPipe, MenuComponent],
   templateUrl: './asamblea-card.component.html'
 })
 export class AsambleaCardComponent {
@@ -38,6 +41,12 @@ export class AsambleaCardComponent {
   readonly estadoTexto = estadoTexto;
   readonly estadoIcono = estadoIcono;
   readonly estadoBadge = estadoBadge;
+
+  readonly documentosAbiertos = signal(false);
+
+  /** Documentos firmados de 2 (convocatoria y padrón). */
+  readonly firmados = computed(() =>
+    [this.asamblea().convocatoria_firmada_url, this.asamblea().lista_asistencia_firmada_url].filter(Boolean).length);
 
   readonly abierta = computed(() => !['CANCELADO', 'REALIZADO'].includes(this.asamblea().estado));
   readonly porcentajeAsistencia = computed(() => {
