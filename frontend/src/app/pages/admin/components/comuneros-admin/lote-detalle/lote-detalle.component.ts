@@ -18,15 +18,17 @@ import { LotesMapComponent } from '../../lotes-map/lotes-map.component';
         </dl>
 
         <section class="detail-section">
-          <h4 class="detail-section__title"><i class="ri-user-star-line" aria-hidden="true"></i> Comuneros vinculados</h4>
-          @if (propietarios().length) {
-            <ul class="tag-list">
-              @for (p of propietarios(); track p) {
-                <li class="tag-list__item"><i class="ri-user-line" aria-hidden="true"></i> {{ p }}</li>
-              }
-            </ul>
+          <h4 class="detail-section__title"><i class="ri-user-star-line" aria-hidden="true"></i> Titular</h4>
+          @if (l.propietario_nombre || propietarios().length) {
+            <div class="ownership">
+              <span class="ownership__value">100 %</span>
+              <span class="ownership__text">
+                <strong>{{ l.propietario_nombre || propietarios()[0] }}</strong>
+                {{ l.tipo_relacion === 'REPRESENTANTE' ? 'Representante' : 'Propietario titular' }}{{ l.propietario_cedula ? ' · C.I. ' + l.propietario_cedula : '' }}
+              </span>
+            </div>
           } @else {
-            <p class="text-muted small">No hay comuneros vinculados: el lote figura como "Sin dueño".</p>
+            <p class="text-muted small">El lote no tiene titular asignado ("Sin dueño").</p>
           }
         </section>
 

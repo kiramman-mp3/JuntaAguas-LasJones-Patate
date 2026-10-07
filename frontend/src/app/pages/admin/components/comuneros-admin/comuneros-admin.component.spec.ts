@@ -7,6 +7,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { LoteFormComponent } from './lote-form/lote-form.component';
 import { ComuneroFormComponent } from './comunero-form/comunero-form.component';
 import { LotesComuneroComponent } from './lotes-comunero/lotes-comunero.component';
+import { VincularLoteComponent } from './vincular-lote/vincular-lote.component';
 
 let admin: any;
 const notifyStub = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
@@ -119,6 +120,42 @@ describe('Contraseña temporal de cuentas (ComuneroFormComponent)', () => {
     expect(admin.crearCuenta).toHaveBeenCalledWith(4, 'USUARIO');
     expect(component.cuenta).toEqual({ estado: 'ACTIVA', rol: 'USUARIO' });
     expect(component.credencialTemporal?.password).toBe('Cuenta9New');
+  });
+});
+
+describe('Titularidad única (VincularLoteComponent)', () => {
+  const comunero = { id: 3, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' };
+  const crear = () => {
+    const fixture = TestBed.createComponent(VincularLoteComponent);
+    fixture.componentRef.setInput('comunero', comunero);
+    fixture.componentInstance.ngOnInit();
+    return fixture.componentInstance;
+  };
+
+  beforeEach(() => configurar({
+    getLotes: vi.fn(() => of({ data: [
+      { id: 10, codigo: 'LJA-010', propietario_id: 8, propietario_nombre: 'Luis Mora', propietarios: 'Luis Mora' },
+      { id: 11, codigo: 'LJA-011' },
+      { id: 12, codigo: 'LJA-012', propietario_id: 3, propietario_nombre: 'Ana Pérez', propietarios: 'Ana Pérez' }
+    ] })),
+    vincularPersonaLote: vi.fn(() => of({ status: 'OK', message: 'Titularidad transferida' }))
+  }));
+
+  it('siempre asigna el 100 % de la propiedad, sin porcentajes parciales', () => {
+    const c = crear();
+    c.loteId.set(11);
+    c.guardar();
+    expect(admin.vincularPersonaLote).toHaveBeenCalledWith(11, { persona_id: 3, tipo_relacion: 'PROPIETARIO', porcentaje: 100 });
+  });
+
+  it('advierte que asignar un lote con dueño transfiere la propiedad completa', () => {
+    const c = crear();
+    c.loteId.set(10);
+    expect(c.titularActual()).toBe('Luis Mora');
+    c.loteId.set(11);
+    expect(c.titularActual()).toBeNull();
+    c.loteId.set(12);
+    expect(c.titularActual()).toBeNull();
   });
 });
 
