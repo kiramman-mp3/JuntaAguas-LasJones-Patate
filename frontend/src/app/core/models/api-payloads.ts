@@ -105,3 +105,40 @@ export interface ObligacionItem {
   comunero_nombre?: string;
   cedula?: string;
 }
+
+/** Respuesta de GET /dashboard/resumen. Las fechas llegan como AAAA-MM-DD. */
+export interface DashboardResumen {
+  fecha: string;
+  comunidad: {
+    comunerosActivos: number;
+    lotes: number;
+    sectores: number;
+    turnosActivos: number;
+    cuentasActivas: number;
+    eventosAnio: number;
+  };
+  finanzas: {
+    recaudadoMes: number;
+    recaudadoAnio: number;
+    egresosMes: number;
+    egresosAnio: number;
+    saldoCaja: number;
+    carteraPendiente: number;
+    carteraVencida: number;
+    comunerosEnMora: number;
+  };
+  cobranza: { emitido: number; cobrado: number; porcentaje: number | null };
+  asistencia: {
+    promedio: number | null;
+    ultimosEventos: { id: number; tipo: 'ASAMBLEA' | 'MINGA'; titulo: string; fecha: string; presentes: number; registrados: number }[];
+  };
+  proximosEventos: {
+    id: number;
+    tipo: 'ASAMBLEA' | 'MINGA';
+    titulo: string;
+    fecha: string;
+    hora_inicio: string;
+    lugar: string | null;
+    estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO';
+  }[];
+}

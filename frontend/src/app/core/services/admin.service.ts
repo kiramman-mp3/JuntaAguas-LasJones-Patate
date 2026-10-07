@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { DashboardResumen } from '../models/api-payloads';
 
 @Injectable({
   providedIn: 'root'
@@ -123,6 +124,10 @@ export class AdminService {
 
   registrarAsistenciasMinga(id: number, asistencias: any[]): Observable<any> {
     return this.http.post(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias });
+  }
+
+  getDashboardResumen(): Observable<{ status: string; data: DashboardResumen }> {
+    return this.http.get<{ status: string; data: DashboardResumen }>(`${this.baseUrl}/dashboard/resumen`);
   }
 
   getBalance(): Observable<any> {
