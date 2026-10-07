@@ -1,829 +1,258 @@
-import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
-import { ConsultaService } from '../../../../core/services/consulta.service';
 import { ActasService } from '../../../../core/services/actas.service';
-import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
+import { DialogService } from '../../../../core/services/dialog.service';
 import { DocumentosService } from '../../../../core/services/documentos.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
+import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
+import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
+import { AsambleaItem, DocumentoFirmado, estadoTexto } from './asamblea.model';
+import { AsambleasService } from './asambleas.service';
+import { AsambleaCardComponent, SubidaDocumento, TipoDocumentoAsamblea } from './asamblea-card/asamblea-card.component';
+import { AsambleaFormComponent } from './asamblea-form/asamblea-form.component';
+import { AsambleaAsistenciaComponent } from './asamblea-asistencia/asamblea-asistencia.component';
+import { AsambleaActasComponent } from './asamblea-actas/asamblea-actas.component';
+import { DocumentoFirmadoComponent } from './documento-firmado/documento-firmado.component';
 
-export interface PuntoAsamblea {
-  id?: number;
-  evento_id?: number;
-  orden: number;
-  punto_tratar: string;
-  tratado?: string;
-  resolucion?: string;
-  titulo_acta?: string;
-  estado_acta?: 'BORRADOR' | 'APROBADA' | 'FIRMADA';
-  acta_firmada_url?: string;
-  acta_firmada_nombre?: string;
-  responsables?: string;
-  fecha_acta?: string;
-}
+export type { AsambleaItem, PuntoAsamblea } from './asamblea.model';
 
-export interface AsambleaItem {
-  id: number;
-  tipo: 'ASAMBLEA';
-  subtipo_asamblea: 'ORDINARIA' | 'EXTRAORDINARIA';
-  titulo: string;
-  descripcion?: string;
-  fecha: string;
-  hora_inicio: string;
-  hora_fin?: string;
-  lugar?: string;
-  estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'REALIZADO' | 'CANCELADO';
-  genera_multa_ausencia: boolean;
-  valor_multa: number;
-  asistentes: number;
-  totalComuneros: number;
-  convocatoria_firmada_url?: string;
-  convocatoria_firmada_nombre?: string;
-  acta_firmada_url?: string;
-  acta_firmada_nombre?: string;
-  lista_asistencia_url?: string;
-  lista_asistencia_firmada_url?: string;
-  puntos?: PuntoAsamblea[];
-}
-import { aFecha, aFechaIso, hoyEnEcuador, sumarDias } from '../../../../core/utils/fechas';
-import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
+type EstadoDestino = 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO';
 
+/**
+ * Listado de asambleas y su flujo (borrador → programada → convocada → realizada).
+ * El formulario, la asistencia, las actas y el visor de documentos son componentes propios;
+ * aquí solo se coordinan y se aplican las reglas de transición de estado.
+ */
 @Component({
   selector: 'app-asambleas-admin',
   standalone: true,
-  imports: [CommonModule, FechaLocalPipe, FormsModule, ModalA11yDirective],
-  templateUrl: './asambleas-admin.component.html',
-  styleUrls: ['./asambleas-admin.component.scss']
+  imports: [
+    FormsModule,
+    EmptyStateComponent,
+    SkeletonComponent,
+    AsambleaCardComponent,
+    AsambleaFormComponent,
+    AsambleaAsistenciaComponent,
+    AsambleaActasComponent,
+    DocumentoFirmadoComponent
+  ],
+  templateUrl: './asambleas-admin.component.html'
 })
 export class AsambleasAdminComponent implements OnInit {
+  private servicio = inject(AsambleasService);
+  private admin = inject(AdminService);
+  private actasService = inject(ActasService);
+  private documentos = inject(DocumentosService);
+  private dialog = inject(DialogService);
+  private notify = inject(NotificationService);
   readonly whatsapp = inject(WhatsAppSesionService);
 
-  asambleas: AsambleaItem[] = [];
-  busqueda = '';
-  subtipoFiltro: 'TODAS' | 'ORDINARIA' | 'EXTRAORDINARIA' = 'TODAS';
-  periodo: 'TODAS' | 'PROXIMAS' | 'ANTERIORES' = 'TODAS';
+  readonly asambleas = signal<AsambleaItem[]>([]);
+  readonly cargando = signal(false);
+  readonly error = signal('');
+  readonly ocupadaId = signal<number | null>(null);
 
-  cargando = false;
-  mensaje = '';
-  error = '';
+  readonly busqueda = signal('');
+  readonly subtipoFiltro = signal<'TODAS' | 'ORDINARIA' | 'EXTRAORDINARIA'>('TODAS');
+  readonly periodo = signal<'TODAS' | 'PROXIMAS' | 'ANTERIORES'>('TODAS');
 
-  enviandoId: number | null = null;
-  actualizandoId: number | null = null;
-  descargandoId: number | null = null;
-  subiendoId: number | null = null;
+  // Modales abiertos (cada uno es un componente independiente)
+  readonly formularioAbierto = signal(false);
+  readonly asistenciaDe = signal<AsambleaItem | null>(null);
+  readonly actasDe = signal<AsambleaItem | null>(null);
+  readonly documento = signal<DocumentoFirmado | null>(null);
 
-  // Modales
-  modalNueva = false;
-  modalAsistencia = false;
-  modalActas = false;
-  modalValidacionDoc = false;
+  readonly filtradas = computed(() => {
+    const hoy = hoyEnEcuador();
+    const q = this.busqueda().toLowerCase().trim();
+    const subtipo = this.subtipoFiltro();
+    const periodo = this.periodo();
+    return this.asambleas().filter(
+      (a) =>
+        (subtipo === 'TODAS' || a.subtipo_asamblea === subtipo) &&
+        !(periodo === 'PROXIMAS' && a.fecha < hoy) &&
+        !(periodo === 'ANTERIORES' && a.fecha >= hoy) &&
+        (!q || a.titulo.toLowerCase().includes(q) || !!a.lugar?.toLowerCase().includes(q) || !!a.descripcion?.toLowerCase().includes(q))
+    );
+  });
 
-  asambleaSeleccionada: AsambleaItem | null = null;
-
-  // Formulario Nueva Asamblea
-  formulario = {
-    subtipo_asamblea: 'ORDINARIA' as 'ORDINARIA' | 'EXTRAORDINARIA',
-    titulo: '',
-    descripcion: '',
-    fecha: '',
-    hora_inicio: '18:00',
-    hora_fin: '21:00',
-    lugar: 'Casa Comunal Junta La Jones',
-    genera_multa_ausencia: true,
-    valor_multa: 10.00,
-    puntos_orden_dia: [
-      '1. Constatación del cuórum reglamentario',
-      '2. Lectura y aprobación del acta de la asamblea anterior',
-      '3. Informe de presidencia y tesorería',
-      '4. Asuntos varios y resoluciones'
-    ] as string[]
-  };
-
-  // Asistencia Masiva
-  personasAsistencia: any[] = [];
-  filtroAsistencia = '';
-  estadoFiltroAsistencia: 'TODOS' | 'PENDIENTE' | 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO' = 'TODOS';
-  resumenAsistencia = { total: 0, presentes: 0, ausentes: 0, justificados: 0, pendientes: 0 };
-  guardandoAsistencia = false;
-
-  // Múltiples Actas (F07)
-  puntosAsamblea: PuntoAsamblea[] = [];
-  cargandoPuntos = false;
-  guardandoPuntos = false;
-  puntoActaSeleccionado: PuntoAsamblea | null = null;
-  mostrarNuevoTema = false;
-  nuevoTema = {
-    punto_tratar: '',
-    tratado: '',
-    resolucion: '',
-    responsables: ''
-  };
-
-  // Visor y Validación de Documentos Firmados
-  docParaValidar: {
-    tipo: 'CONVOCATORIA' | 'ASISTENCIA' | 'ACTA';
-    titulo: string;
-    url: string;
-    nombre: string;
-    validado: boolean;
-  } | null = null;
-
-  // Diálogo y Alertas Amigables (Reemplazo moderno de alert y confirm)
-  dialogo = {
-    visible: false,
-    tipo: 'INFO' as 'INFO' | 'WARNING' | 'DANGER' | 'CONFIRM',
-    titulo: '',
-    mensaje: '',
-    textoConfirmar: 'Entendido',
-    textoCancelar: 'Cancelar',
-    esConfirmacion: false,
-    onConfirmar: () => undefined
-  };
-
-  mostrarMensaje(titulo: string, mensaje: string, tipo: 'INFO' | 'WARNING' | 'DANGER' = 'INFO'): void {
-    this.dialogo = {
-      visible: true,
-      tipo,
-      titulo,
-      mensaje,
-      textoConfirmar: 'Entendido',
-      textoCancelar: '',
-      esConfirmacion: false,
-      onConfirmar: () => {
-        this.dialogo.visible = false;
-        this.cdr.detectChanges();
-      }
-    };
-    this.cdr.detectChanges();
-  }
-
-  mostrarConfirmacion(
-    titulo: string,
-    mensaje: string,
-    accion: () => void,
-    textoConfirmar = 'Confirmar',
-    tipo: 'CONFIRM' | 'DANGER' = 'CONFIRM'
-  ): void {
-    this.dialogo = {
-      visible: true,
-      tipo,
-      titulo,
-      mensaje,
-      textoConfirmar,
-      textoCancelar: 'Cancelar',
-      esConfirmacion: true,
-      onConfirmar: () => {
-        this.dialogo.visible = false;
-        this.cdr.detectChanges();
-        accion();
-      }
-    };
-    this.cdr.detectChanges();
-  }
-
-  cerrarDialogo(): void {
-    this.dialogo.visible = false;
-    this.cdr.detectChanges();
-  }
-
-  constructor(
-    private adminService: AdminService,
-    private consultaService: ConsultaService,
-    private actasService: ActasService,
-    private documentos: DocumentosService,
-    private cdr: ChangeDetectorRef
-  ) {}
+  readonly hayFiltros = computed(() => !!this.busqueda().trim() || this.subtipoFiltro() !== 'TODAS' || this.periodo() !== 'TODAS');
 
   ngOnInit(): void {
     this.cargar();
   }
 
   cargar(): void {
-    this.cargando = true;
-    this.error = '';
-    this.adminService.getEventos('ASAMBLEA').subscribe({
-      next: (res: any) => {
-        this.cargando = false;
-        const lista = res && res.data ? res.data : [];
-        this.asambleas = lista.map((e: any) => {
-          const subtipo: 'ORDINARIA' | 'EXTRAORDINARIA' =
-            (e.subtipo_asamblea || (e.titulo && e.titulo.toUpperCase().includes('EXTRAORDINARIA') ? 'EXTRAORDINARIA' : 'ORDINARIA'));
-          return {
-            id: e.id,
-            tipo: 'ASAMBLEA',
-            subtipo_asamblea: subtipo,
-            titulo: e.titulo,
-            descripcion: e.descripcion || '',
-            fecha: e.fecha ? (typeof e.fecha === 'string' ? e.fecha.split('T')[0] : aFechaIso(aFecha(e.fecha) ?? new Date())) : '',
-            hora_inicio: e.hora_inicio ? e.hora_inicio.substring(0, 5) : '18:00',
-            hora_fin: e.hora_fin ? e.hora_fin.substring(0, 5) : '',
-            lugar: e.lugar || 'Casa Comunal Junta La Jones',
-            estado: e.estado || 'BORRADOR',
-            genera_multa_ausencia: e.genera_multa_ausencia !== false && e.genera_multa_ausencia !== 0,
-            valor_multa: Number(e.valor_multa) || 0,
-            asistentes: Number(e.asistentes) || 0,
-            totalComuneros: Number(e.totalComuneros) || 0,
-            convocatoria_firmada_url: e.convocatoria_firmada_url || null,
-            convocatoria_firmada_nombre: e.convocatoria_firmada_nombre || null,
-            acta_firmada_url: e.acta_firmada_url || null,
-            acta_firmada_nombre: e.acta_firmada_nombre || null,
-            lista_asistencia_url: e.lista_asistencia_url || null,
-            lista_asistencia_firmada_url: e.lista_asistencia_firmada_url || null
-          };
-        });
-        this.cdr.detectChanges();
+    this.cargando.set(true);
+    this.error.set('');
+    this.servicio.listar().subscribe({
+      next: (lista) => {
+        this.asambleas.set(lista);
+        this.cargando.set(false);
       },
       error: () => {
-        this.cargando = false;
-        this.error = 'No se pudo cargar la lista de asambleas. Intente nuevamente.';
-        this.cdr.detectChanges();
+        this.cargando.set(false);
+        this.error.set('No se pudo cargar la lista de asambleas. Intente nuevamente.');
       }
     });
   }
 
-  get asambleasFiltradas(): AsambleaItem[] {
-    const hoy = hoyEnEcuador();
-    return this.asambleas.filter(a => {
-      // Filtro Subtipo
-      if (this.subtipoFiltro !== 'TODAS' && a.subtipo_asamblea !== this.subtipoFiltro) {
-        return false;
-      }
-      // Filtro Fecha
-      if (this.periodo === 'PROXIMAS' && a.fecha < hoy) return false;
-      if (this.periodo === 'ANTERIORES' && a.fecha >= hoy) return false;
-      // Filtro Búsqueda
-      if (this.busqueda.trim()) {
-        const q = this.busqueda.toLowerCase().trim();
-        const coincide =
-          a.titulo.toLowerCase().includes(q) ||
-          (a.lugar && a.lugar.toLowerCase().includes(q)) ||
-          (a.descripcion && a.descripcion.toLowerCase().includes(q));
-        if (!coincide) return false;
-      }
-      return true;
-    });
+  limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.subtipoFiltro.set('TODAS');
+    this.periodo.set('TODAS');
   }
 
-  estadoBadgeClass(estado: string): string {
-    switch (estado) {
-      case 'BORRADOR': return 'badge--neutral';
-      case 'PROGRAMADO': return 'badge--info';
-      case 'CONVOCADO': return 'badge--warning';
-      case 'REALIZADO': return 'badge--success';
-      case 'CANCELADO': return 'badge--danger';
-      default: return 'badge--info';
-    }
+  // ============== MODALES ==============
+
+  onCreada(): void {
+    this.formularioAbierto.set(false);
+    this.notify.success('Asamblea creada con sus puntos del orden del día.');
+    this.cargar();
   }
 
-  estadoIcon(estado: string): string {
-    switch (estado) {
-      case 'BORRADOR': return 'ri-draft-line';
-      case 'PROGRAMADO': return 'ri-calendar-line';
-      case 'CONVOCADO': return 'ri-megaphone-line';
-      case 'REALIZADO': return 'ri-checkbox-circle-line';
-      case 'CANCELADO': return 'ri-close-circle-line';
-      default: return 'ri-information-line';
-    }
+  onAsistenciaGuardada(): void {
+    this.asistenciaDe.set(null);
+    this.notify.success('Asistencias registradas y sincronizadas.');
+    this.cargar();
   }
 
-  estadoTexto(estado: string): string {
-    switch (estado) {
-      case 'BORRADOR': return 'Borrador';
-      case 'PROGRAMADO': return 'Programada';
-      case 'CONVOCADO': return 'Convocada';
-      case 'REALIZADO': return 'Realizada';
-      case 'CANCELADO': return 'Cancelada';
-      default: return estado;
-    }
-  }
-
-  // ============== NUEVA ASAMBLEA ==============
-
-  get fechaMinima(): string {
-    return hoyEnEcuador();
-  }
-
-  abrirNueva(): void {
-    const proximaSemana = sumarDias(hoyEnEcuador(), 7);
-
-    this.formulario = {
-      subtipo_asamblea: 'ORDINARIA',
-      titulo: 'ASAMBLEA GENERAL ORDINARIA DE USUARIOS',
-      descripcion: 'Tratamiento del informe de gestión, estado de cuentas y resoluciones de riego.',
-      fecha: proximaSemana,
-      hora_inicio: '18:00',
-      hora_fin: '21:00',
-      lugar: 'Casa Comunal Junta La Jones',
-      genera_multa_ausencia: true,
-      valor_multa: 10.00,
-      puntos_orden_dia: [
-        '1. Constatación del cuórum reglamentario',
-        '2. Lectura y aprobación del acta de la asamblea anterior',
-        '3. Informe de presidencia y balance financiero',
-        '4. Asuntos varios y resoluciones'
-      ]
-    };
-    this.modalNueva = true;
-    this.cdr.detectChanges();
-  }
-
-  cerrarModalNueva(): void {
-    this.modalNueva = false;
-  }
-
-  agregarPuntoOrdenDia(): void {
-    const num = this.formulario.puntos_orden_dia.length + 1;
-    this.formulario.puntos_orden_dia.push(`${num}. Nuevo punto del orden del día`);
-    this.cdr.detectChanges();
-    setTimeout(() => {
-      const container = document.querySelector('.puntos-inputs-list');
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }, 50);
-  }
-
-  eliminarPuntoOrdenDia(idx: number): void {
-    if (this.formulario.puntos_orden_dia.length > 1) {
-      this.formulario.puntos_orden_dia.splice(idx, 1);
-      this.cdr.detectChanges();
-    }
-  }
-
-
-  guardarNueva(): void {
-    if (!this.formulario.titulo.trim() || !this.formulario.fecha || !this.formulario.hora_inicio) {
-      this.mostrarMensaje('Campos Incompletos', 'Por favor complete los campos obligatorios: Título o Asunto, Fecha de la sesión y Hora de inicio.', 'WARNING');
-      return;
-    }
-
-    if (this.formulario.fecha < this.fechaMinima) {
-      this.mostrarMensaje('Fecha No Válida', `La fecha de la asamblea (${this.formulario.fecha}) no puede ser anterior a la fecha actual (${this.fechaMinima}).`, 'WARNING');
-      return;
-    }
-
-    const payload = {
-      tipo: 'ASAMBLEA',
-      subtipo_asamblea: this.formulario.subtipo_asamblea,
-      titulo: this.formulario.titulo.trim(),
-      descripcion: this.formulario.descripcion.trim(),
-      fecha: this.formulario.fecha,
-      hora_inicio: this.formulario.hora_inicio,
-      hora_fin: this.formulario.hora_fin || null,
-      lugar: this.formulario.lugar.trim(),
-      genera_multa_ausencia: this.formulario.genera_multa_ausencia,
-      valor_multa: this.formulario.genera_multa_ausencia ? Number(this.formulario.valor_multa) : 0,
-      puntos_orden_dia: this.formulario.puntos_orden_dia.filter(p => p.trim().length > 0)
-    };
-
-    this.actualizandoId = -1;
-    this.adminService.createEvento(payload).subscribe({
-      next: () => {
-        this.actualizandoId = null;
-        this.modalNueva = false;
-        this.mensaje = 'Asamblea creada exitosamente con sus puntos de orden del día.';
-        this.cargar();
-        setTimeout(() => this.mensaje = '', 4000);
-      },
-      error: (err: any) => {
-        this.actualizandoId = null;
-        this.mostrarMensaje('Error al Guardar', err?.error?.message || 'Error al registrar la asamblea.', 'DANGER');
-      }
-    });
+  verDocumento(asamblea: AsambleaItem, tipo: TipoDocumentoAsamblea): void {
+    this.documento.set(
+      tipo === 'CONVOCATORIA'
+        ? { titulo: 'Convocatoria firmada', url: asamblea.convocatoria_firmada_url || '', nombre: asamblea.convocatoria_firmada_nombre || 'Convocatoria_Firmada.pdf' }
+        : { titulo: 'Lista de asistencia firmada', url: asamblea.lista_asistencia_firmada_url || '', nombre: 'Lista_Asistencia_Firmada.pdf' }
+    );
   }
 
   // ============== GESTIÓN DE ESTADOS (C10) ==============
 
-  cambiarEstado(asamblea: AsambleaItem, nuevoEstado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): void {
+  async cambiarEstado(asamblea: AsambleaItem, nuevoEstado: EstadoDestino): Promise<void> {
     if (nuevoEstado === 'CANCELADO') {
-      this.mostrarConfirmacion(
-        '¿Cancelar Asamblea?',
-        `¿Está seguro de cancelar la asamblea "${asamblea.titulo}"?\n\nEsta asamblea quedará archivada como cancelada y no generará sanciones económicas a los comuneros.`,
-        () => this.ejecutarCambioEstado(asamblea, nuevoEstado),
-        'Sí, Cancelar Asamblea',
-        'DANGER'
-      );
-      return;
+      const confirmado = await this.dialog.confirmar({
+        tipo: 'DANGER',
+        titulo: '¿Cancelar asamblea?',
+        mensaje: `La asamblea "${asamblea.titulo}" quedará archivada como cancelada y no generará multas a los comuneros.`,
+        textoConfirmar: 'Sí, cancelar asamblea'
+      });
+      if (!confirmado) return;
     }
-    this.ejecutarCambioEstado(asamblea, nuevoEstado);
-  }
-
-  private ejecutarCambioEstado(asamblea: AsambleaItem, nuevoEstado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): void {
-    this.actualizandoId = asamblea.id;
-    this.adminService.cambiarEstadoAsamblea(asamblea.id, nuevoEstado).subscribe({
+    this.ocupadaId.set(asamblea.id);
+    this.admin.cambiarEstadoAsamblea(asamblea.id, nuevoEstado).subscribe({
       next: () => {
-        this.actualizandoId = null;
-        asamblea.estado = nuevoEstado;
-        this.mensaje = `Estado actualizado a: ${this.estadoTexto(nuevoEstado)}.`;
-        this.cdr.detectChanges();
-        setTimeout(() => this.mensaje = '', 3500);
+        this.ocupadaId.set(null);
+        this.actualizar(asamblea.id, { estado: nuevoEstado });
+        this.notify.success(`Estado actualizado a: ${estadoTexto(nuevoEstado)}.`);
       },
       error: (err: any) => {
-        this.actualizandoId = null;
-        this.mostrarMensaje('Error de Estado', err?.error?.message || 'Error al actualizar el estado de la asamblea.', 'DANGER');
+        this.ocupadaId.set(null);
+        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo cambiar el estado', mensaje: err?.error?.message || 'Error al actualizar el estado de la asamblea.' });
       }
     });
   }
 
-  finalizarAsamblea(asamblea: AsambleaItem): void {
+  async finalizarAsamblea(asamblea: AsambleaItem): Promise<void> {
     if (asamblea.estado !== 'CONVOCADO') {
-      this.mostrarMensaje('Acción No Permitida', 'Solo se puede finalizar una asamblea que haya sido CONVOCADA previamente.', 'WARNING');
+      this.dialog.aviso({ tipo: 'WARNING', titulo: 'Acción no permitida', mensaje: 'Solo se puede finalizar una asamblea convocada.' });
       return;
     }
-
-    if (asamblea.fecha > this.fechaMinima) {
-      this.mostrarMensaje(
-        'Fecha de Sesión No Alcanzada',
-        `No se puede finalizar la asamblea "${asamblea.titulo}" porque su fecha programada (${asamblea.fecha}) aún no ha llegado.\n\nUna asamblea solo puede darse por realizada una vez que ha llegado la fecha de la sesión.\n\nSi la asamblea no se va a llevar a cabo o fue suspendida, use la opción "Cancelar".`,
-        'WARNING'
-      );
+    if (asamblea.fecha > hoyEnEcuador()) {
+      this.dialog.aviso({
+        tipo: 'WARNING',
+        titulo: 'La sesión aún no ocurre',
+        mensaje: `La asamblea "${asamblea.titulo}" está programada para el ${asamblea.fecha}. Solo puede darse por realizada desde esa fecha. Si se suspendió, use "Cancelar".`
+      });
       return;
     }
-
-    if (!asamblea.asistentes || asamblea.asistentes === 0) {
-      this.mostrarMensaje(
-        'Asistencia Requerida',
-        `No se puede finalizar la asamblea sin haber registrado la asistencia de los comuneros (constan 0 asistentes).\n\nPor favor, haga clic en "Tomar Asistencia Digital" y guarde el pase de lista antes de finalizar la sesión.\n\nSi la asamblea no se realizó por falta de cuórum, use la opción "Cancelar".`,
-        'WARNING'
-      );
+    if (!asamblea.asistentes) {
+      this.dialog.aviso({
+        tipo: 'WARNING',
+        titulo: 'Asistencia requerida',
+        mensaje: 'Registre y guarde el pase de lista antes de finalizar (constan 0 asistentes). Si no hubo cuórum, use "Cancelar".'
+      });
       return;
     }
+    const multa = asamblea.genera_multa_ausencia
+      ? ` Se emitirán multas de $${asamblea.valor_multa.toFixed(2)} a los ausentes sin justificación.`
+      : '';
+    const confirmado = await this.dialog.confirmar({
+      tipo: 'CONFIRM',
+      titulo: 'Finalizar asamblea',
+      mensaje: `Se cerrará la asistencia con ${asamblea.asistentes} comuneros presentes.${multa} Esta acción es irreversible.`,
+      textoConfirmar: 'Dar por realizada'
+    });
+    if (!confirmado) return;
 
-    this.mostrarConfirmacion(
-      'Confirmar Finalización de Asamblea',
-      `¿Desea dar por REALIZADA la asamblea "${asamblea.titulo}"?\n\n• Se cerrará la asistencia definitiva con ${asamblea.asistentes} comuneros presentes.\n` +
-      (asamblea.genera_multa_ausencia ? `• Se emitirán automáticamente las multas de $${asamblea.valor_multa.toFixed(2)} a los comuneros ausentes sin justificación.\n` : '') +
-      `\nEsta acción registrará la asamblea como concluida de manera irreversible. ¿Desea proceder?`,
-      () => this.ejecutarFinalizarAsamblea(asamblea),
-      'Dar por Realizada',
-      'CONFIRM'
-    );
-  }
-
-  private ejecutarFinalizarAsamblea(asamblea: AsambleaItem): void {
-    this.actualizandoId = asamblea.id;
-    this.adminService.finalizarAsamblea(asamblea.id).subscribe({
+    this.ocupadaId.set(asamblea.id);
+    this.admin.finalizarAsamblea(asamblea.id).subscribe({
       next: (res: any) => {
-        this.actualizandoId = null;
-        asamblea.estado = 'REALIZADO';
-        const multas = res?.multasGeneradas || 0;
-        this.mensaje = `Asamblea finalizada con éxito. Se generaron ${multas} multas automáticas.`;
-        this.cdr.detectChanges();
-        setTimeout(() => this.mensaje = '', 5000);
+        this.ocupadaId.set(null);
+        this.actualizar(asamblea.id, { estado: 'REALIZADO' });
+        this.notify.success(`Asamblea finalizada. Se generaron ${res?.multasGeneradas || 0} multas automáticas.`);
       },
       error: (err: any) => {
-        this.actualizandoId = null;
-        this.mostrarMensaje('Error al Finalizar', err?.error?.message || 'Error al finalizar la asamblea.', 'DANGER');
+        this.ocupadaId.set(null);
+        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo finalizar', mensaje: err?.error?.message || 'Error al finalizar la asamblea.' });
       }
     });
   }
 
   enviarConvocatoriaWhatsApp(asamblea: AsambleaItem): void {
-    const fechaFmt = asamblea.fecha;
-    const subtipo = asamblea.subtipo_asamblea || 'ORDINARIA';
     const msg = encodeURIComponent(
       `📢 *CONVOCATORIA OFICIAL - JUNTA DE RIEGO LA JONES*\n\n` +
-      `Se convoca a todos los comuneros a la *ASAMBLEA GENERAL ${subtipo}*:\n` +
-      `🗓 *Fecha:* ${fechaFmt}\n` +
-      `🕐 *Hora:* ${asamblea.hora_inicio} hs\n` +
-      `📍 *Lugar:* ${asamblea.lugar || 'Casa Comunal Junta La Jones'}\n` +
-      (asamblea.genera_multa_ausencia ? `⚠️ *Multa por inasistencia:* $${asamblea.valor_multa.toFixed(2)}\n\n` : '\n') +
-      `Agradecemos su puntual y comprometida asistencia.`
+        `Se convoca a todos los comuneros a la *ASAMBLEA GENERAL ${asamblea.subtipo_asamblea || 'ORDINARIA'}*:\n` +
+        `🗓 *Fecha:* ${asamblea.fecha}\n` +
+        `🕐 *Hora:* ${asamblea.hora_inicio} hs\n` +
+        `📍 *Lugar:* ${asamblea.lugar || 'Casa Comunal Junta La Jones'}\n` +
+        (asamblea.genera_multa_ausencia ? `⚠️ *Multa por inasistencia:* $${asamblea.valor_multa.toFixed(2)}\n\n` : '\n') +
+        `Agradecemos su puntual y comprometida asistencia.`
     );
     window.open(`https://wa.me/?text=${msg}`, '_blank');
   }
 
-  // ============== FLUJOS DE DOCUMENTOS: CONVOCATORIA & ASISTENCIA ==============
+  // ============== DOCUMENTOS: CONVOCATORIA Y PADRÓN ==============
 
   descargarConvocatoriaPdf(asamblea: AsambleaItem): void {
     this.actasService.generarConvocatoriaPDF(asamblea);
-  }
-
-  subirDocumentoFirmado(asamblea: AsambleaItem, tipo: 'CONVOCATORIA' | 'OTRO', input: HTMLInputElement): void {
-    const file = input.files?.[0];
-    input.value = '';
-    const problema = this.documentos.validarArchivo(file);
-    if (!file || problema) {
-      if (file) this.mostrarMensaje('Archivo no válido', problema!, 'WARNING');
-      return;
-    }
-    this.subiendoId = asamblea.id;
-
-    this.documentos.subir(asamblea.id, tipo, file).subscribe({
-      next: (res) => {
-        this.subiendoId = null;
-        if (tipo === 'CONVOCATORIA') {
-          asamblea.convocatoria_firmada_url = res.url;
-          asamblea.convocatoria_firmada_nombre = res.nombre_archivo;
-        } else {
-          asamblea.lista_asistencia_firmada_url = res.url;
-        }
-        this.mensaje = 'Documento firmado subido y registrado exitosamente.';
-        this.cdr.detectChanges();
-        setTimeout(() => this.mensaje = '', 4000);
-      },
-      error: (err: any) => {
-        this.subiendoId = null;
-        this.mostrarMensaje('Error de Carga', err?.error?.message || 'Error al subir el documento firmado.', 'DANGER');
-      }
-    });
   }
 
   descargarPadronAsistencia(asamblea: AsambleaItem): void {
     this.documentos.abrirListaAsistencia(asamblea.id);
   }
 
-  verDocumento(url?: string): void {
-    this.documentos.abrir(url);
-  }
-
-  abrirValidacionDoc(tipo: 'CONVOCATORIA' | 'ASISTENCIA' | 'ACTA', asamblea: AsambleaItem): void {
-    let url: string;
-    let nombre: string;
-    if (tipo === 'CONVOCATORIA') {
-      url = asamblea.convocatoria_firmada_url || '';
-      nombre = asamblea.convocatoria_firmada_nombre || 'Convocatoria_Firmada.pdf';
-    } else if (tipo === 'ASISTENCIA') {
-      url = asamblea.lista_asistencia_firmada_url || '';
-      nombre = 'Lista_Asistencia_Firmada.pdf';
-    } else {
-      url = asamblea.acta_firmada_url || '';
-      nombre = asamblea.acta_firmada_nombre || 'Acta_Firmada.pdf';
-    }
-
-    this.asambleaSeleccionada = asamblea;
-    this.docParaValidar = {
-      tipo,
-      titulo: tipo === 'CONVOCATORIA' ? 'Convocatoria Oficial Firmada' : (tipo === 'ASISTENCIA' ? 'Lista de Asistencia Firmada' : 'Acta Resolutiva Firmada'),
-      url,
-      nombre,
-      validado: true
-    };
-    this.modalValidacionDoc = true;
-  }
-
-  cerrarValidacionDoc(): void {
-    this.modalValidacionDoc = false;
-    this.docParaValidar = null;
-  }
-
-  // ============== ASISTENCIA DIGITAL MASIVA ==============
-
-  abrirAsistencia(asamblea: AsambleaItem): void {
-    this.asambleaSeleccionada = asamblea;
-    this.guardandoAsistencia = false;
-    this.filtroAsistencia = '';
-    this.estadoFiltroAsistencia = 'TODOS';
-    this.personasAsistencia = [];
-
-    // El servidor devuelve el padrón completo con el estado ya guardado de cada comunero.
-    this.adminService.getAsistencias(asamblea.id).subscribe({
-      next: (res: any) => {
-        const padron: any[] = Array.isArray(res?.data) ? res.data : [];
-        this.personasAsistencia = padron.map((p) => ({
-          persona_id: Number(p.persona_id),
-          cedula: p.cedula,
-          nombre: p.nombre,
-          estado: p.estado || 'PENDIENTE',
-          motivo_justificacion: p.motivo_justificacion || ''
-        }));
-        this.calcularResumenAsistencia();
-        this.modalAsistencia = true;
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        this.mostrarMensaje('Error de Consulta', err?.error?.message || 'No se pudo cargar el padrón de asistencia.', 'DANGER');
-      }
-    });
-  }
-
-  cerrarModalAsistencia(): void {
-    this.modalAsistencia = false;
-    this.asambleaSeleccionada = null;
-  }
-
-  calcularResumenAsistencia(): void {
-    const res = { total: this.personasAsistencia.length, presentes: 0, ausentes: 0, justificados: 0, pendientes: 0 };
-    for (const p of this.personasAsistencia) {
-      if (p.estado === 'PRESENTE') res.presentes++;
-      else if (p.estado === 'AUSENTE') res.ausentes++;
-      else if (p.estado === 'JUSTIFICADO') res.justificados++;
-      else res.pendientes++;
-    }
-    this.resumenAsistencia = res;
-    if (this.asambleaSeleccionada) {
-      this.asambleaSeleccionada.asistentes = res.presentes;
-      this.asambleaSeleccionada.totalComuneros = res.total;
-    }
-  }
-
-  marcarTodos(estado: 'PRESENTE' | 'AUSENTE'): void {
-    for (const p of this.personasAsistencia) {
-      p.estado = estado;
-      p.motivo_justificacion = '';
-    }
-    this.calcularResumenAsistencia();
-  }
-
-  setEstadoPersona(p: any, estado: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO'): void {
-    p.estado = estado;
-    if (estado !== 'JUSTIFICADO') {
-      p.motivo_justificacion = '';
-    }
-    this.calcularResumenAsistencia();
-  }
-
-  get personasAsistenciaFiltradas(): any[] {
-    return this.personasAsistencia.filter(p => {
-      if (this.estadoFiltroAsistencia !== 'TODOS' && p.estado !== this.estadoFiltroAsistencia) {
-        return false;
-      }
-      if (this.filtroAsistencia.trim()) {
-        const q = this.filtroAsistencia.toLowerCase().trim();
-        return p.nombre.toLowerCase().includes(q) || p.cedula.includes(q) || (p.sector && p.sector.toLowerCase().includes(q));
-      }
-      return true;
-    });
-  }
-
-  guardarAsistencia(): void {
-    if (!this.asambleaSeleccionada) return;
-
-    // Validar que los justificados tengan motivo
-    const sinMotivo = this.personasAsistencia.filter(p => p.estado === 'JUSTIFICADO' && !p.motivo_justificacion.trim());
-    if (sinMotivo.length > 0) {
-      this.mostrarMensaje(
-        'Justificación Requerida',
-        `Hay ${sinMotivo.length} comunero(s) marcados como JUSTIFICADOS sin motivo escrito. Ingrese el justificativo correspondiente antes de guardar.`,
-        'WARNING'
-      );
-      return;
-    }
-
-    this.guardandoAsistencia = true;
-    const payload = this.personasAsistencia.map(p => ({
-      persona_id: p.persona_id,
-      estado: p.estado,
-      motivo_justificacion: p.estado === 'JUSTIFICADO' ? p.motivo_justificacion.trim() : null
-    }));
-
-    this.adminService.registrarAsistencias(this.asambleaSeleccionada.id, payload).subscribe({
-      next: () => {
-        this.guardandoAsistencia = false;
-        this.modalAsistencia = false;
-        this.mensaje = 'Asistencias registradas y sincronizadas exitosamente.';
-        this.cargar();
-        setTimeout(() => this.mensaje = '', 4000);
-      },
-      error: (err: any) => {
-        this.guardandoAsistencia = false;
-        this.mostrarMensaje('Error de Guardado', err?.error?.message || 'Error al guardar asistencias.', 'DANGER');
-      }
-    });
-  }
-
-  // ============== MÚLTIPLES ACTAS POR ASAMBLEA (F07) ==============
-
-  abrirModalActas(asamblea: AsambleaItem): void {
-    this.asambleaSeleccionada = asamblea;
-    this.cargandoPuntos = true;
-    this.mostrarNuevoTema = false;
-    this.puntoActaSeleccionado = null;
-    this.puntosAsamblea = [];
-
-    this.consultaService.getEventoDetalle(asamblea.id).subscribe({
-      next: (res: any) => {
-        this.cargandoPuntos = false;
-        const pts = res && res.puntos ? res.puntos : [];
-        if (pts.length === 0) {
-          // Si no tiene puntos guardados, inicializar con estructura estándar
-          this.puntosAsamblea = [
-            { orden: 1, punto_tratar: '1. Constatación del cuórum reglamentario', tratado: 'Se procede con el llamado a lista.', resolucion: 'Se declara formalmente instalada la asamblea.', titulo_acta: 'Acta de Cuórum e Instalación', estado_acta: 'APROBADA' },
-            { orden: 2, punto_tratar: '2. Lectura y aprobación del acta anterior', tratado: 'Se da lectura al acta previa.', resolucion: 'Aprobada por unanimidad sin objeciones.', titulo_acta: 'Acta de Aprobación de Sesión Anterior', estado_acta: 'APROBADA' }
-          ];
-        } else {
-          this.puntosAsamblea = pts.map((p: any) => ({
-            id: p.id,
-            evento_id: p.evento_id,
-            orden: p.orden,
-            punto_tratar: p.punto_tratar || '',
-            tratado: p.tratado || '',
-            resolucion: p.resolucion || '',
-            titulo_acta: p.titulo_acta || p.punto_tratar || '',
-            estado_acta: p.estado_acta || (p.resolucion ? 'APROBADA' : 'BORRADOR'),
-            acta_firmada_url: p.acta_firmada_url || undefined,
-            acta_firmada_nombre: p.acta_firmada_nombre || undefined,
-            responsables: p.responsables || '',
-            fecha_acta: p.fecha_acta || undefined
-          }));
-        }
-        this.modalActas = true;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.cargandoPuntos = false;
-        this.mostrarMensaje('Error de Consulta', 'Error al cargar puntos y actas de la asamblea.', 'DANGER');
-      }
-    });
-  }
-
-  cerrarModalActas(): void {
-    this.modalActas = false;
-    this.asambleaSeleccionada = null;
-    this.puntosAsamblea = [];
-    this.puntoActaSeleccionado = null;
-  }
-
-  agregarTemaNuevo(): void {
-    if (!this.nuevoTema.punto_tratar.trim()) {
-      this.mostrarMensaje('Campo Requerido', 'Ingrese el asunto o título del nuevo tema a tratar.', 'WARNING');
-      return;
-    }
-    const nuevoOrden = this.puntosAsamblea.length + 1;
-    this.puntosAsamblea.push({
-      orden: nuevoOrden,
-      punto_tratar: `${nuevoOrden}. ${this.nuevoTema.punto_tratar.trim()}`,
-      titulo_acta: `Acta del Punto ${nuevoOrden}: ${this.nuevoTema.punto_tratar.trim()}`,
-      tratado: this.nuevoTema.tratado.trim(),
-      resolucion: this.nuevoTema.resolucion.trim(),
-      responsables: this.nuevoTema.responsables.trim(),
-      estado_acta: this.nuevoTema.resolucion.trim() ? 'APROBADA' : 'BORRADOR'
-    });
-    this.nuevoTema = { punto_tratar: '', tratado: '', resolucion: '', responsables: '' };
-    this.mostrarNuevoTema = false;
-  }
-
-  guardarTodosLosPuntos(): void {
-    if (!this.asambleaSeleccionada) return;
-    this.guardandoPuntos = true;
-
-    this.adminService.guardarPuntosAsamblea(this.asambleaSeleccionada.id, this.puntosAsamblea).subscribe({
-      next: (res: any) => {
-        this.guardandoPuntos = false;
-        this.mensaje = 'Todas las actas y puntos de la asamblea se guardaron correctamente.';
-        if (res && res.data) {
-          this.puntosAsamblea = res.data.map((p: any) => ({
-            ...p,
-            acta_firmada_url: p.acta_firmada_url || undefined
-          }));
-        }
-        this.cdr.detectChanges();
-        setTimeout(() => this.mensaje = '', 4000);
-      },
-      error: (err: any) => {
-        this.guardandoPuntos = false;
-        this.mostrarMensaje('Error de Guardado', err?.error?.message || 'Error al guardar puntos de asamblea.', 'DANGER');
-      }
-    });
-  }
-
-  descargarActaPorPunto(punto: PuntoAsamblea): void {
-    if (!this.asambleaSeleccionada) return;
-    this.actasService.generarActaPuntoPDF(this.asambleaSeleccionada, punto);
-  }
-
-  descargarActaGeneral(): void {
-    if (!this.asambleaSeleccionada) return;
-    this.actasService.generarActaPDF(this.asambleaSeleccionada, this.puntosAsamblea);
-  }
-
-  subirActaPuntoFirmada(punto: PuntoAsamblea, input: HTMLInputElement): void {
-    const file = input.files?.[0];
+  subirDocumentoFirmado(asamblea: AsambleaItem, { tipo, input }: SubidaDocumento): void {
+    const archivo = input.files?.[0];
     input.value = '';
-    if (!file || !this.asambleaSeleccionada || !punto.id) return;
-    const problema = this.documentos.validarArchivo(file);
+    if (!archivo) return;
+    const problema = this.documentos.validarArchivo(archivo);
     if (problema) {
-      this.mostrarMensaje('Archivo no válido', problema, 'WARNING');
+      this.dialog.aviso({ tipo: 'WARNING', titulo: 'Archivo no válido', mensaje: problema });
       return;
     }
-
-    this.documentos.subir(this.asambleaSeleccionada.id, 'ACTA', file, punto.id).subscribe({
+    this.ocupadaId.set(asamblea.id);
+    this.documentos.subir(asamblea.id, tipo === 'CONVOCATORIA' ? 'CONVOCATORIA' : 'OTRO', archivo).subscribe({
       next: (res) => {
-        punto.acta_firmada_url = res.url;
-        punto.acta_firmada_nombre = res.nombre_archivo;
-        punto.estado_acta = 'FIRMADA';
-        this.mensaje = `Acta firmada del Punto ${punto.orden} subida y validada.`;
-        this.cdr.detectChanges();
-        setTimeout(() => this.mensaje = '', 4000);
+        this.ocupadaId.set(null);
+        this.actualizar(
+          asamblea.id,
+          tipo === 'CONVOCATORIA'
+            ? { convocatoria_firmada_url: res.url, convocatoria_firmada_nombre: res.nombre_archivo }
+            : { lista_asistencia_firmada_url: res.url }
+        );
+        this.notify.success('Documento firmado subido y registrado.');
       },
       error: (err: any) => {
-        this.mostrarMensaje('Error al Subir Acta', err?.error?.message || 'Error al subir el acta firmada.', 'DANGER');
+        this.ocupadaId.set(null);
+        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo subir el documento', mensaje: err?.error?.message || 'Error al subir el documento firmado.' });
       }
     });
   }
 
-  cambiarEstadoActaPunto(punto: PuntoAsamblea, nuevoEstado: 'BORRADOR' | 'APROBADA' | 'FIRMADA'): void {
-    punto.estado_acta = nuevoEstado;
-    if (punto.id && this.asambleaSeleccionada) {
-      this.adminService.cambiarEstadoActaPunto(this.asambleaSeleccionada.id, punto.id, {
-        estado_acta: nuevoEstado
-      }).subscribe({
-        next: () => {
-          this.cdr.detectChanges();
-        },
-        error: (err) => this.mostrarMensaje('Acta', err.error?.message || 'No se pudo actualizar el estado del acta.', 'WARNING')
-      });
-    }
+  /** Aplica un cambio a una asamblea de la lista sin volver a pedirla al servidor. */
+  private actualizar(id: number, cambios: Partial<AsambleaItem>): void {
+    this.asambleas.update((lista) => lista.map((a) => (a.id === id ? { ...a, ...cambios } : a)));
   }
 }

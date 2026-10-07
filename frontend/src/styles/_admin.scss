@@ -1,0 +1,372 @@
+/* ==============================================================================
+   BLOQUES DEL PANEL ADMINISTRATIVO
+   Encabezados de sección, barras de filtros, rejillas de tarjetas y piezas de
+   formulario reutilizadas por comuneros, asistencias y turnos.
+   ============================================================================== */
+
+/* --- Encabezado de una sección dentro de un módulo --- */
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+
+  &__title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  &__subtitle {
+    margin: 0.2rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 600px) {
+    &__actions { width: 100%; }
+    &__actions > .btn { flex: 1 1 auto; }
+  }
+}
+
+/* --- Barra de búsqueda y filtros --- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-width: 0;
+
+  &--panel {
+    padding: 0.75rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &__grow {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+
+  &__select {
+    flex: 0 1 200px;
+    width: auto;
+    min-width: 0;
+  }
+
+  &__group {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  /* En móvil cada control ocupa el ancho disponible: nada se desborda. */
+  @media (max-width: 600px) {
+    &__select { flex: 1 1 calc(50% - 0.3rem); }
+    &__group { width: 100%; }
+    &__group > .btn { flex: 1 1 auto; }
+  }
+}
+
+.search-field .input { width: 100%; }
+
+/* --- Rejilla de tarjetas --- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 1rem;
+  transition: opacity 0.2s ease;
+
+  &.is-refreshing { opacity: 0.6; }
+}
+
+/* --- Tarjeta de superficie genérica para listas y tablas --- */
+.surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  min-width: 0;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+}
+
+/* --- Píldoras de categoría --- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+
+  &--primary { background: var(--color-primary-light); color: var(--color-primary); }
+  &--warning { background: var(--color-warning-light); color: var(--color-warning-strong); }
+  &--success { background: var(--color-success-light); color: var(--color-success-strong); }
+}
+
+/* --- Formularios en modales --- */
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  .form-group { margin-bottom: 0; }
+  .grid-2, .grid-3 { gap: 1rem 1.25rem; }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.field-set {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+
+  &__legend {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+}
+
+.label-sm {
+  font-size: 0.78rem !important;
+  font-weight: 600;
+  color: var(--text-muted) !important;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 0.75rem;
+}
+
+.choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+
+  input { margin-top: 0.2rem; accent-color: var(--color-primary); }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+
+    strong { font-size: 0.95rem; }
+    span { font-size: 0.78rem; color: var(--text-muted); }
+  }
+
+  &:hover { border-color: var(--color-primary); }
+
+  &--selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+}
+
+.inset-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-color);
+
+  &--accent {
+    background: var(--color-primary-light);
+    border-color: transparent;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+
+    i { color: var(--color-primary); }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .form-group { margin-bottom: 0; }
+}
+
+.point-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.15rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 230px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__num {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  input { width: 1.1rem; height: 1.1rem; accent-color: var(--color-primary); flex-shrink: 0; }
+}
+
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  label { font-size: 0.875rem; color: var(--text-muted); }
+  .input { max-width: 160px; }
+}
+
+/* --- Archivo adjunto --- */
+.file-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-color);
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    font-size: 1.4rem;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+
+    strong { overflow-wrap: anywhere; }
+  }
+}
+
+/* --- Botón con borde y etiquetas que actúan como botón (subida de archivos) --- */
+.icon-btn {
+  &--bordered {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-color: var(--border-color);
+    background: var(--bg-surface);
+    border-radius: 10px;
+  }
+}
+
+label.icon-btn:focus-within,
+.btn-upload:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn-upload {
+  cursor: pointer;
+  margin: 0;
+
+  &.is-busy { pointer-events: none; opacity: 0.7; }
+}
+
+.text-main { color: var(--text-main); }
+
+/* Aparición de un panel que se despliega dentro del flujo. */
+.reveal-enter { animation: ui-rise 0.28s var(--ease-out) both; }

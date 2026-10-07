@@ -1,0 +1,99 @@
+<app-modal
+  titulo="Registro de asistencia"
+  [subtitulo]="asamblea().titulo + ' · ' + (asamblea().fecha | fechaLocal) + (asamblea().genera_multa_ausencia ? ' · Multa $' + asamblea().valor_multa.toFixed(2) : '')"
+  icono="ri-checkbox-circle-line"
+  tono="success"
+  tamano="lg"
+  [bloqueado]="guardando()"
+  (cerrar)="cerrar.emit()"
+>
+  <div class="modal__body form-stack">
+    <div class="summary-chips" aria-live="polite">
+      <div class="summary-chip"><span>Padrón</span><strong>{{ resumen().total }}</strong></div>
+      <div class="summary-chip summary-chip--present"><span>Presentes</span><strong>{{ resumen().presentes }}</strong></div>
+      <div class="summary-chip summary-chip--absent"><span>Ausentes</span><strong>{{ resumen().ausentes }}</strong></div>
+      <div class="summary-chip summary-chip--justified"><span>Justificados</span><strong>{{ resumen().justificados }}</strong></div>
+      <div class="summary-chip summary-chip--pending"><span>Pendientes</span><strong>{{ resumen().pendientes }}</strong></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-field toolbar__grow">
+        <i class="ri-search-line" aria-hidden="true"></i>
+        <input class="input input--sm" type="search" [ngModel]="filtro()" (ngModelChange)="filtro.set($event)"
+          placeholder="Nombre, cédula o sector…" aria-label="Filtrar comuneros" />
+      </div>
+      <select class="input input--sm toolbar__select" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event)" aria-label="Filtrar por estado">
+        <option value="TODOS">Todos los estados</option>
+        <option value="PENDIENTE">Pendientes</option>
+        <option value="PRESENTE">Presentes</option>
+        <option value="AUSENTE">Ausentes</option>
+        <option value="JUSTIFICADO">Justificados</option>
+      </select>
+      @if (!soloLectura()) {
+        <div class="toolbar__group">
+          <button type="button" class="btn btn--ghost btn--sm" (click)="marcarTodos('PRESENTE')">
+            <i class="ri-check-double-line" aria-hidden="true"></i> Todos presentes
+          </button>
+          <button type="button" class="btn btn--ghost btn--sm" (click)="marcarTodos('AUSENTE')">
+            <i class="ri-close-line" aria-hidden="true"></i> Todos ausentes
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (cargando()) {
+      <app-skeleton [filas]="6" mensaje="Cargando padrón de asistencia…" />
+    } @else if (errorCarga()) {
+      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudo cargar el padrón" mensaje="Revise su conexión e intente nuevamente.">
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      </app-empty-state>
+    } @else if (filtradas().length === 0) {
+      <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda o el estado elegido." />
+    } @else {
+      <ul class="roster">
+        @for (p of filtradas(); track p.persona_id; let i = $index) {
+          <li class="roster__row" [class]="'roster__row--' + p.estado.toLowerCase()">
+            <div class="roster__who">
+              <span class="roster__index">{{ i + 1 }}</span>
+              <div>
+                <strong>{{ p.nombre }}</strong>
+                <span class="roster__meta">{{ p.cedula }}</span>
+              </div>
+            </div>
+            <div class="attendance-toggle" role="group" [attr.aria-label]="'Asistencia de ' + p.nombre">
+              <button type="button" class="attendance-toggle__btn attendance-toggle__btn--present" [class.is-active]="p.estado === 'PRESENTE'"
+                [attr.aria-pressed]="p.estado === 'PRESENTE'" (click)="setEstado(p, 'PRESENTE')" [disabled]="soloLectura()" title="Presente">
+                <i class="ri-check-line" aria-hidden="true"></i><span>Presente</span>
+              </button>
+              <button type="button" class="attendance-toggle__btn attendance-toggle__btn--absent" [class.is-active]="p.estado === 'AUSENTE'"
+                [attr.aria-pressed]="p.estado === 'AUSENTE'" (click)="setEstado(p, 'AUSENTE')" [disabled]="soloLectura()" title="Ausente (genera multa)">
+                <i class="ri-close-line" aria-hidden="true"></i><span>Ausente</span>
+              </button>
+              <button type="button" class="attendance-toggle__btn attendance-toggle__btn--justified" [class.is-active]="p.estado === 'JUSTIFICADO'"
+                [attr.aria-pressed]="p.estado === 'JUSTIFICADO'" (click)="setEstado(p, 'JUSTIFICADO')" [disabled]="soloLectura()" title="Justificado (no genera multa)">
+                <i class="ri-information-line" aria-hidden="true"></i><span>Justificado</span>
+              </button>
+            </div>
+            @if (p.estado === 'JUSTIFICADO') {
+              <input type="text" class="input input--sm roster__reason" [ngModel]="p.motivo_justificacion" (ngModelChange)="setMotivo(p, $event)"
+                placeholder="Motivo (salud, trabajo…)" [attr.aria-label]="'Motivo de ' + p.nombre" [disabled]="soloLectura()" />
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="modal__footer">
+    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cerrar</button>
+    @if (!soloLectura()) {
+      <button type="button" class="btn btn--primary" (click)="guardar()" [disabled]="guardando() || cargando() || errorCarga()">
+        @if (guardando()) {
+          <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+        } @else {
+          <i class="ri-save-line" aria-hidden="true"></i> Guardar asistencia
+        }
+      </button>
+    }
+  </div>
+</app-modal>
