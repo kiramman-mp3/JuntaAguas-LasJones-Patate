@@ -21,7 +21,7 @@ interface Seccion {
 }
 
 export interface GrupoSecciones {
-  id: 'cobros' | 'finanzas';
+  id: 'cobros' | 'ajustes' | 'historial';
   etiqueta: string;
   secciones: Seccion[];
 }
@@ -32,9 +32,10 @@ interface Indicadores {
 }
 
 /**
- * Módulo financiero: reemplaza a "Finanzas", "Cobros" y "Gestión de Contratación" y los separa en dos grupos.
- * Cobros: cobro en caja, historial de pagos, facturación mensual y tarifas.
- * Finanzas: egresos e historial financiero anual.
+ * Módulo financiero en tres grupos:
+ * Cobros y pagos: cobro en caja y egresos de la Junta.
+ * Ajustes: tarifas por concepto (agua, multas…) y facturación mensual de las cuotas de agua.
+ * Historial: recibos de cobro e ingresos y egresos por año.
  * Cada sección tiene su URL (/admin/finanzas/egresos); `?nuevo=egreso` abre el formulario de egreso.
  */
 @Component({
@@ -53,19 +54,22 @@ export class FinanzasComponent {
   readonly nuevo = input<string | undefined>();
 
   /**
-   * Dos áreas independientes (F08, C12): Cobros, lo que se cobra a los comuneros,
-   * y Finanzas, lo que sale de caja y el historial de la Junta.
+   * Tres áreas independientes: Cobros y pagos (el movimiento de caja del día),
+   * Ajustes (tarifas y emisión mensual de cuotas de agua) e Historial (recibos e ingresos/egresos anuales).
+   * Los id de sección son las URL y no cambian aunque cambie el grupo.
    */
   readonly grupos: GrupoSecciones[] = [
-    { id: 'cobros', etiqueta: 'Cobros', secciones: [
+    { id: 'cobros', etiqueta: 'Cobros y pagos', secciones: [
       { id: 'cobrar', etiqueta: 'Cobrar', icono: 'ri-hand-coin-line' },
-      { id: 'pagos', etiqueta: 'Pagos', icono: 'ri-file-list-3-line' },
-      { id: 'facturacion', etiqueta: 'Facturación', icono: 'ri-calendar-2-line' },
-      { id: 'tarifas', etiqueta: 'Tarifas', icono: 'ri-price-tag-3-line' }
+      { id: 'egresos', etiqueta: 'Egresos', icono: 'ri-shopping-bag-3-line' }
     ] },
-    { id: 'finanzas', etiqueta: 'Finanzas', secciones: [
-      { id: 'egresos', etiqueta: 'Egresos', icono: 'ri-shopping-bag-3-line' },
-      { id: 'historial', etiqueta: 'Historial', icono: 'ri-git-branch-line' }
+    { id: 'ajustes', etiqueta: 'Ajustes', secciones: [
+      { id: 'tarifas', etiqueta: 'Tarifas', icono: 'ri-price-tag-3-line' },
+      { id: 'facturacion', etiqueta: 'Facturación', icono: 'ri-calendar-2-line' }
+    ] },
+    { id: 'historial', etiqueta: 'Historial', secciones: [
+      { id: 'pagos', etiqueta: 'Recibos', icono: 'ri-file-list-3-line' },
+      { id: 'historial', etiqueta: 'Ingresos y egresos', icono: 'ri-git-branch-line' }
     ] }
   ];
   readonly secciones = this.grupos.flatMap((g) => g.secciones);
