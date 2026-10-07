@@ -21,7 +21,7 @@ const ICONOS: Record<DialogTipo, string> = {
     @if (dialogService.estado().visible) {
       @let d = dialogService.estado();
       <div appModalA11y class="modal-backdrop dialog-backdrop" animate.enter="modal-backdrop--enter" animate.leave="modal-backdrop--leave"
-        aria-labelledby="dialogo-titulo" aria-describedby="dialogo-mensaje"
+        tabindex="-1" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-mensaje"
         (keydown.escape)="dialogService.responder(false)" (mousedown)="$event.target === $event.currentTarget && dialogService.responder(false)">
         <div class="modal card dialog" [class]="'dialog--' + d.tipo.toLowerCase()">
           <div class="dialog__icon" aria-hidden="true"><i [class]="icono()"></i></div>
