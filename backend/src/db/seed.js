@@ -416,6 +416,13 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
       const { anio, mes } = sumarMeses(actual, -t.mesesAtras);
       await finanzas.registrarTarifa(conexion, { conceptoId: agua.id, valor: t.valor, vigenciaDesde: fechaIso(anio, mes, 1), observacion: t.observacion });
     }
+    // Las multas por inasistencia también se configuran como tarifas (Ajustes → Tarifas).
+    const inicioMultas = TARIFAS_AGUA.reduce((a, t) => Math.max(a, t.mesesAtras), 0);
+    const { anio: anioMultas, mes: mesMultas } = sumarMeses(actual, -inicioMultas);
+    for (const [codigo, valor] of [['MULTA_ASAMBLEA', MULTA_ASAMBLEA], ['MULTA_MINGA', MULTA_MINGA]]) {
+      const concepto = await finanzas.conceptoPorCodigo(conexion, codigo);
+      await finanzas.registrarTarifa(conexion, { conceptoId: concepto.id, valor, vigenciaDesde: fechaIso(anioMultas, mesMultas, 1), observacion: 'Multa por inasistencia' });
+    }
 
     // Algunos comuneros dejan la Junta a mitad del período (venta del terreno, fallecimiento).
     const retiros = new Map();
