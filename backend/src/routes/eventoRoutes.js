@@ -1,23 +1,39 @@
 const express = require('express');
-const router = express.Router();
 const eventoController = require('../controllers/eventoController');
 const mingaController = require('../controllers/mingaController');
-const { verificarToken, verificarRol } = require('../middlewares/authMiddleware');
+const { soloAdmin } = require('../middlewares/authMiddleware');
 
-router.get('/', eventoController.getEventos);
+const router = express.Router();
+
+/**
+ * @openapi
+ * /eventos/publicos:
+ *   get:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Próximas asambleas y mingas publicadas (sin datos personales)
+ * /eventos:
+ *   get:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Listar eventos (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Crear asamblea o minga
+ *     security: [{ bearerAuth: [] }]
+ */
 router.get('/publicos', eventoController.getEventosPublicos);
-router.get('/:id', eventoController.getEventoById);
+router.get('/', ...soloAdmin, eventoController.getEventos);
+router.post('/', ...soloAdmin, eventoController.createEvento);
 
-router.post('/', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.createEvento);
-router.post('/:id/estado', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.cambiarEstado);
-router.post('/:id/finalizar', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.finalizarEventoYGenerarMultas);
-router.post('/:id/puntos', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.savePuntosAsamblea);
-router.post('/:id/puntos/:puntoId/estado', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.cambiarEstadoActaPunto);
-router.post('/:id/asistencias', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), mingaController.encaminarAsistencias, eventoController.registrarAsistencias);
-router.get('/:id/asistencias', verificarToken, eventoController.getAsistencias);
-router.get('/:id/pdf-asistencia', eventoController.descargarPDFAsistencia);
-router.post('/:id/documentos', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), eventoController.guardarDocumentoEvento);
-router.get('/:id/documentos', eventoController.getDocumentosEvento);
+router.get('/:id', ...soloAdmin, eventoController.getEventoById);
+router.post('/:id/estado', ...soloAdmin, eventoController.cambiarEstado);
+router.post('/:id/finalizar', ...soloAdmin, eventoController.finalizarEventoYGenerarMultas);
+router.post('/:id/puntos', ...soloAdmin, eventoController.savePuntosAsamblea);
+router.post('/:id/puntos/:puntoId/estado', ...soloAdmin, eventoController.cambiarEstadoActaPunto);
+router.post('/:id/asistencias', ...soloAdmin, mingaController.encaminarAsistencias, eventoController.registrarAsistencias);
+router.get('/:id/asistencias', ...soloAdmin, eventoController.getAsistencias);
+router.get('/:id/pdf-asistencia', ...soloAdmin, eventoController.descargarPDFAsistencia);
+router.post('/:id/documentos', ...soloAdmin, eventoController.guardarDocumentoEvento);
+router.get('/:id/documentos', ...soloAdmin, eventoController.getDocumentosEvento);
 
 module.exports = router;
-

@@ -1,11 +1,33 @@
 const express = require('express');
-const router = express.Router();
 const turnoController = require('../controllers/turnoController');
-const { verificarToken, verificarRol } = require('../middlewares/authMiddleware');
+const { verificarToken, soloAdmin } = require('../middlewares/authMiddleware');
 
-router.get('/', turnoController.getTurnos);
-router.post('/', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), turnoController.createTurno);
-router.put('/:id', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), turnoController.updateTurno);
-router.delete('/:id', verificarToken, verificarRol(['ADMIN', 'SECRETARIO']), turnoController.deleteTurno);
+const router = express.Router();
+
+/**
+ * @openapi
+ * /turnos:
+ *   get:
+ *     tags: [Turnos de Agua]
+ *     summary: Turnos activos. El administrador ve todos; un comunero solo los suyos.
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Turnos de Agua]
+ *     summary: Asignar turno (genera cobro si es adicional)
+ *     security: [{ bearerAuth: [] }]
+ * /turnos/{id}:
+ *   put:
+ *     tags: [Turnos de Agua]
+ *     summary: Modificar turno
+ *     security: [{ bearerAuth: [] }]
+ *   delete:
+ *     tags: [Turnos de Agua]
+ *     summary: Desactivar turno
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/', verificarToken, turnoController.getTurnos);
+router.post('/', ...soloAdmin, turnoController.createTurno);
+router.put('/:id', ...soloAdmin, turnoController.updateTurno);
+router.delete('/:id', ...soloAdmin, turnoController.deleteTurno);
 
 module.exports = router;

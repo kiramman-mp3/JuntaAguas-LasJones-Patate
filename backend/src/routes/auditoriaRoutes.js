@@ -1,8 +1,17 @@
 const express = require('express');
-const router = express.Router();
 const auditoriaController = require('../controllers/auditoriaController');
-const { verificarToken, verificarRol } = require('../middlewares/authMiddleware');
+const { soloAdmin } = require('../middlewares/authMiddleware');
 
-router.get('/', verificarToken, verificarRol(['ADMIN']), auditoriaController.getAuditoria);
+const router = express.Router();
+
+/**
+ * @openapi
+ * /auditoria:
+ *   get:
+ *     tags: [Auditoría]
+ *     summary: Bitácora de auditoría (ADMIN, máximo 500 registros)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/', ...soloAdmin, auditoriaController.getAuditoria);
 
 module.exports = router;

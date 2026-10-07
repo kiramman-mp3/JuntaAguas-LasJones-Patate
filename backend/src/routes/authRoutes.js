@@ -1,14 +1,18 @@
 const express = require('express');
-const router = express.Router();
-const authController = require('../controllers/authController');
-const { verificarToken } = require('../middlewares/authMiddleware');
 const rateLimit = require('express-rate-limit');
+const authController = require('../controllers/authController');
+const { verificarToken, verificarTokenOCambioPassword } = require('../middlewares/authMiddleware');
+const env = require('../config/env');
 
-// Rate limiter para login (máximo 10 intentos por cada 15 minutos)
+const router = express.Router();
+
+// Límite por IP; además cada cuenta se bloquea tras 5 intentos fallidos (ver authController).
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { status: 'ERROR', message: 'Demasiados intentos de inicio de sesión desde esta IP, por favor intente de nuevo en 15 minutos.' }
+  limit: env.esTest ? 1000 : 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { status: 'ERROR', message: 'Demasiados intentos de inicio de sesión desde esta red. Intente de nuevo en 15 minutos.' }
 });
 
 /**
@@ -17,6 +21,7 @@ const loginLimiter = rateLimit({
  *   post:
  *     tags: [Autenticación]
  *     summary: Iniciar sesión con cédula y contraseña
+ *     description: Si la contraseña es temporal, el token devuelto solo permite llamar a /auth/change-password.
  *     requestBody:
  *       required: true
  *       content:
@@ -25,11 +30,11 @@ const loginLimiter = rateLimit({
  *             type: object
  *             required: [cedula, password]
  *             properties:
- *               cedula: { type: string, example: "1801234567" }
- *               password: { type: string, example: "123456" }
+ *               cedula: { type: string, example: "1802345678" }
+ *               password: { type: string }
  *     responses:
- *       200: { description: Login exitoso, retorna JWT token. }
- *       401: { description: Credenciales inválidas. }
+ *       200: { description: Token JWT y datos del usuario. }
+ *       401: { description: Credenciales inválidas o cuenta bloqueada. }
  */
 router.post('/login', loginLimiter, authController.login);
 
@@ -38,11 +43,8 @@ router.post('/login', loginLimiter, authController.login);
  * /auth/me:
  *   get:
  *     tags: [Autenticación]
- *     summary: Obtener información del usuario autenticado
+ *     summary: Perfil de la cuenta autenticada
  *     security: [{ bearerAuth: [] }]
- *     responses:
- *       200: { description: Perfil de usuario. }
- *       401: { description: Token no provisto o inválido. }
  */
 router.get('/me', verificarToken, authController.getMe);
 
@@ -51,7 +53,7 @@ router.get('/me', verificarToken, authController.getMe);
  * /auth/change-password:
  *   post:
  *     tags: [Autenticación]
- *     summary: Cambiar contraseña de la cuenta activa
+ *     summary: Cambiar la contraseña (también con el token temporal)
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
  *       required: true
@@ -59,13 +61,11 @@ router.get('/me', verificarToken, authController.getMe);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [nuevaPassword]
+ *             required: [actualPassword, nuevaPassword]
  *             properties:
- *               actualPassword: { type: string, example: "123456" }
- *               nuevaPassword: { type: string, example: "NuevaClave2026*" }
- *     responses:
- *       200: { description: Contraseña actualizada correctamente. }
+ *               actualPassword: { type: string }
+ *               nuevaPassword: { type: string, description: 'Mínimo 8 caracteres, letras y números.' }
  */
-router.post('/change-password', verificarToken, authController.changePassword);
+router.post('/change-password', verificarTokenOCambioPassword, authController.changePassword);
 
 module.exports = router;

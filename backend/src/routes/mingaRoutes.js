@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const controller = require('../controllers/mingaController');
-const { verificarToken, verificarRol } = require('../middlewares/authMiddleware');
+const { soloAdmin } = require('../middlewares/authMiddleware');
 
-router.use(verificarToken, verificarRol(['ADMIN', 'SECRETARIO']));
+router.use(...soloAdmin);
 router.get('/:id/asistencias', controller.getAsistencias);
 router.post('/:id/estado', controller.cambiarEstado);
 router.post('/:id/finalizar', controller.finalizar);

@@ -59,19 +59,22 @@ async function getEventos(req, res, next) {
 /**
  * Obtener eventos próximos para la landing page (solo Programados)
  */
-async function getEventosPublicos(req, res, next) {
-  try {
-    const [eventos] = await db.query(
-      `SELECT id, tipo, titulo, descripcion, fecha, hora_inicio, lugar
-       FROM eventos
-       WHERE estado = 'PROGRAMADO' AND fecha >= CURDATE()
-       ORDER BY fecha ASC, hora_inicio ASC
-       LIMIT 3`
-    );
-    return res.json({ status: 'OK', eventos });
-  } catch (error) {
-    next(error);
-  }
+async function getEventosPublicos(req, res) {
+  const limite = Math.min(Math.max(Number.parseInt(req.query.limite, 10) || 20, 1), 50);
+  // Solo eventos ya anunciados y sin datos personales. La convocatoria firmada se expone
+  // porque es un documento público dirigido a todos los comuneros.
+  const [eventos] = await db.query(
+    `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
+            e.genera_multa_ausencia, e.valor_multa,
+            (SELECT d.ruta_archivo_firmado FROM documentos_evento d
+              WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS convocatoria_firmada_url
+     FROM eventos e
+     WHERE e.estado IN ('PROGRAMADO', 'CONVOCADO') AND e.fecha >= ?
+     ORDER BY e.fecha ASC, e.hora_inicio ASC
+     LIMIT ?`,
+    [require('../shared/dates').hoy(), limite]
+  );
+  return res.json({ status: 'OK', data: eventos, eventos });
 }
 
 /**

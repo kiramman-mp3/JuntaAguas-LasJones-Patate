@@ -1,12 +1,14 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const { personaPermitida } = require('../shared/roles');
 
 /**
  * Obtener turnos de agua de riego
  */
 async function getTurnos(req, res, next) {
   try {
-    const { dia_semana, persona_id, lote_id, sector_id } = req.query;
+    const { dia_semana, lote_id, sector_id } = req.query;
+    const persona_id = personaPermitida(req.user, req.query.persona_id);
 
     let sql = `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
                       t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,

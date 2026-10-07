@@ -1,175 +1,154 @@
+const { z } = require('zod');
 const db = require('../config/db');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { registrarAuditoria } = require('../services/auditService');
+const { firmarToken, ALCANCE_CAMBIO_PASSWORD } = require('../middlewares/authMiddleware');
+const { compararPassword, hashPassword, problemaConPassword, HASH_FICTICIO } = require('../shared/passwords');
+const { badRequest, unauthorized, notFound } = require('../shared/errors');
 
-/**
- * Iniciar sesión con cédula y contraseña
- */
-async function login(req, res, next) {
-  try {
-    const { cedula, password } = req.body;
+const MAX_INTENTOS = 5;
+const MINUTOS_BLOQUEO = 15;
+const MENSAJE_CREDENCIALES = 'Cédula o contraseña incorrectas, o la cuenta no está habilitada.';
 
-    if (!cedula || !password) {
-      return res.status(400).json({ status: 'ERROR', message: 'Se requiere cédula y contraseña.' });
-    }
+const loginSchema = z.object({
+  cedula: z.string().trim().min(1, 'Ingrese su cédula.').max(20),
+  password: z.string().min(1, 'Ingrese su contraseña.').max(200)
+});
 
-    // Buscar persona y cuenta asociada
-    const [rows] = await db.query(
-      `SELECT c.id AS cuenta_id, c.password_hash, c.estado AS estado_cuenta, c.debe_cambiar_password,
-              p.id AS persona_id, p.cedula, p.nombres, p.apellidos, p.email, p.estado AS estado_persona,
-              r.codigo AS rol_codigo, r.nombre AS rol_nombre
-       FROM personas p
-       JOIN cuentas c ON c.persona_id = p.id
-       JOIN roles r ON r.id = c.rol_id
-       WHERE p.cedula = ?`,
-      [cedula.trim()]
-    );
+const cambioPasswordSchema = z.object({
+  actualPassword: z.string().min(1, 'Debe proporcionar su contraseña actual.'),
+  nuevaPassword: z.string()
+});
 
-    if (rows.length === 0) {
-      return res.status(401).json({ status: 'ERROR', message: 'Credenciales inválidas. Cédula no registrada o sin cuenta.' });
-    }
+function usuarioPublico(fila) {
+  return {
+    cuentaId: fila.cuenta_id,
+    personaId: fila.persona_id,
+    cedula: fila.cedula,
+    nombres: fila.nombres,
+    apellidos: fila.apellidos,
+    email: fila.email,
+    rol: fila.rol_codigo,
+    rolNombre: fila.rol_nombre,
+    debeCambiarPassword: Boolean(fila.debe_cambiar_password)
+  };
+}
 
-    const user = rows[0];
-
-    if (user.estado_cuenta !== 'ACTIVA' || user.estado_persona !== 'ACTIVO') {
-      return res.status(403).json({ status: 'ERROR', message: 'La cuenta o el comunero se encuentra inactivo/bloqueado.' });
-    }
-
-    // Comparar hash bcrypt
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
-    if (!passwordMatch) {
-      return res.status(401).json({ status: 'ERROR', message: 'Credenciales inválidas. Contraseña incorrecta.' });
-    }
-
-    // Actualizar último acceso
-    await db.query(`UPDATE cuentas SET ultimo_acceso = NOW() WHERE id = ?`, [user.cuenta_id]);
-
-    // Generar Token JWT
-    const secret = require('../config/env').JWT_SECRET;
-    const token = jwt.sign(
-      {
-        cuentaId: user.cuenta_id,
-        personaId: user.persona_id,
-        cedula: user.cedula,
-        nombres: user.nombres,
-        apellidos: user.apellidos,
-        rol: user.rol_codigo
-      },
-      secret,
-      { expiresIn: '24h' }
-    );
-
-    // Auditoría
-    await registrarAuditoria({
-      cuentaId: user.cuenta_id,
-      accion: 'LOGIN',
-      entidad: 'cuentas',
-      entidadId: user.cuenta_id,
-      ip: req.ip,
-      detalle: { cedula: user.cedula, rol: user.rol_codigo }
-    });
-
-    return res.json({
-      status: 'OK',
-      message: 'Inicio de sesión exitoso.',
-      token,
-      user: {
-        cuentaId: user.cuenta_id,
-        personaId: user.persona_id,
-        cedula: user.cedula,
-        nombres: user.nombres,
-        apellidos: user.apellidos,
-        email: user.email,
-        rol: user.rol_codigo,
-        rolNombre: user.rol_nombre,
-        debeCambiarPassword: Boolean(user.debe_cambiar_password)
-      }
-    });
-
-  } catch (error) {
-    next(error);
-  }
+async function buscarCuentaPorCedula(cedula) {
+  const [rows] = await db.query(
+    `SELECT c.id AS cuenta_id, c.password_hash, c.estado AS estado_cuenta, c.debe_cambiar_password,
+            c.intentos_fallidos, c.bloqueada_hasta, c.bloqueada_hasta > UTC_TIMESTAMP() AS bloqueada,
+            p.id AS persona_id, p.cedula, p.nombres, p.apellidos, p.email, p.estado AS estado_persona,
+            r.codigo AS rol_codigo, r.nombre AS rol_nombre
+     FROM personas p
+     JOIN cuentas c ON c.persona_id = p.id
+     JOIN roles r ON r.id = c.rol_id
+     WHERE p.cedula = ?`,
+    [cedula]
+  );
+  return rows[0] || null;
 }
 
 /**
- * Cambiar contraseña de la cuenta activa
+ * Inicio de sesión. Responde siempre el mismo mensaje ante credenciales inválidas,
+ * bloquea la cuenta tras varios intentos fallidos y, si la contraseña es temporal,
+ * emite un token que solo sirve para cambiarla.
  */
-async function changePassword(req, res, next) {
-  try {
-    const { actualPassword, nuevaPassword } = req.body;
-    const cuentaId = req.user.cuentaId;
+async function login(req, res) {
+  const { cedula, password } = loginSchema.parse(req.body);
+  const cuenta = await buscarCuentaPorCedula(cedula);
 
-    if (!nuevaPassword || nuevaPassword.length < 6) {
-      return res.status(400).json({ status: 'ERROR', message: 'La nueva contraseña debe tener al menos 6 caracteres.' });
-    }
+  // Igualar el tiempo de respuesta aunque la cédula no exista.
+  const coincide = await compararPassword(password, cuenta ? cuenta.password_hash : HASH_FICTICIO);
 
-    if (!actualPassword) {
-      return res.status(400).json({ status: 'ERROR', message: 'Debe proporcionar su contraseña actual.' });
-    }
-
-    const [rows] = await db.query(`SELECT password_hash FROM cuentas WHERE id = ?`, [cuentaId]);
-    if (rows.length === 0) {
-      return res.status(404).json({ status: 'ERROR', message: 'Cuenta no encontrada.' });
-    }
-
-    const match = await bcrypt.compare(actualPassword, rows[0].password_hash);
-    if (!match) {
-      return res.status(400).json({ status: 'ERROR', message: 'La contraseña actual ingresada es incorrecta.' });
-    }
-
-    const newHash = await bcrypt.hash(nuevaPassword, 10);
-
-    await db.query(
-      `UPDATE cuentas
-       SET password_hash = ?, debe_cambiar_password = FALSE, password_updated_at = NOW()
-       WHERE id = ?`,
-      [newHash, cuentaId]
-    );
-
-    await registrarAuditoria({
-      cuentaId,
-      accion: 'MODIFICAR',
-      entidad: 'cuentas',
-      entidadId: cuentaId,
-      ip: req.ip,
-      detalle: { cambioPassword: true }
-    });
-
-    return res.json({ status: 'OK', message: 'Contraseña actualizada correctamente.' });
-  } catch (error) {
-    next(error);
+  if (!cuenta || cuenta.estado_cuenta !== 'ACTIVA' || cuenta.estado_persona !== 'ACTIVO') {
+    throw unauthorized(MENSAJE_CREDENCIALES);
   }
+
+  if (Number(cuenta.bloqueada)) {
+    throw unauthorized(`Demasiados intentos fallidos. Intente de nuevo en ${MINUTOS_BLOQUEO} minutos.`);
+  }
+
+  if (!coincide) {
+    const intentos = Number(cuenta.intentos_fallidos) + 1;
+    if (intentos >= MAX_INTENTOS) {
+      await db.query(
+        'UPDATE cuentas SET intentos_fallidos = 0, bloqueada_hasta = UTC_TIMESTAMP() + INTERVAL ? MINUTE WHERE id = ?',
+        [MINUTOS_BLOQUEO, cuenta.cuenta_id]
+      );
+      await registrarAuditoria({ cuentaId: cuenta.cuenta_id, accion: 'BLOQUEO', entidad: 'cuentas', entidadId: cuenta.cuenta_id, ip: req.ip });
+    } else {
+      await db.query('UPDATE cuentas SET intentos_fallidos = ? WHERE id = ?', [intentos, cuenta.cuenta_id]);
+    }
+    throw unauthorized(MENSAJE_CREDENCIALES);
+  }
+
+  await db.query(
+    'UPDATE cuentas SET ultimo_acceso = UTC_TIMESTAMP(), intentos_fallidos = 0, bloqueada_hasta = NULL WHERE id = ?',
+    [cuenta.cuenta_id]
+  );
+
+  const user = usuarioPublico(cuenta);
+  const token = firmarToken(user, user.debeCambiarPassword ? { alcance: ALCANCE_CAMBIO_PASSWORD } : undefined);
+
+  await registrarAuditoria({
+    cuentaId: cuenta.cuenta_id, accion: 'LOGIN', entidad: 'cuentas', entidadId: cuenta.cuenta_id, ip: req.ip,
+    detalle: { rol: user.rol }
+  });
+
+  return res.json({ status: 'OK', message: 'Inicio de sesión exitoso.', token, user });
 }
 
 /**
- * Obtener datos del perfil autenticado
+ * Cambia la contraseña de la cuenta autenticada y devuelve un token de sesión completo.
+ * Los tokens emitidos antes del cambio dejan de ser válidos.
  */
-async function getMe(req, res, next) {
-  try {
-    const [rows] = await db.query(
-      `SELECT c.id AS cuenta_id, c.debe_cambiar_password, c.ultimo_acceso,
-              p.id AS persona_id, p.cedula, p.nombres, p.apellidos, p.email, p.telefono, p.celular, p.direccion,
-              r.codigo AS rol_codigo, r.nombre AS rol_nombre
-       FROM cuentas c
-       JOIN personas p ON p.id = c.persona_id
-       JOIN roles r ON r.id = c.rol_id
-       WHERE c.id = ?`,
-      [req.user.cuentaId]
-    );
+async function changePassword(req, res) {
+  const { actualPassword, nuevaPassword } = cambioPasswordSchema.parse(req.body);
 
-    if (rows.length === 0) {
-      return res.status(404).json({ status: 'ERROR', message: 'Usuario no encontrado.' });
-    }
+  const problema = problemaConPassword(nuevaPassword, { cedula: req.user.cedula });
+  if (problema) throw badRequest(problema);
+  if (actualPassword === nuevaPassword) throw badRequest('La nueva contraseña debe ser distinta de la actual.');
 
-    return res.json({ status: 'OK', user: rows[0] });
-  } catch (error) {
-    next(error);
+  const [rows] = await db.query('SELECT password_hash FROM cuentas WHERE id = ?', [req.user.cuentaId]);
+  if (!rows.length) throw notFound('Cuenta no encontrada.');
+  if (!(await compararPassword(actualPassword, rows[0].password_hash))) {
+    throw badRequest('La contraseña actual ingresada es incorrecta.');
   }
+
+  await db.query(
+    `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = FALSE, password_updated_at = UTC_TIMESTAMP(3)
+     WHERE id = ?`,
+    [await hashPassword(nuevaPassword), req.user.cuentaId]
+  );
+
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: req.user.cuentaId, ip: req.ip,
+    detalle: { cambioPassword: true }
+  });
+
+  const cuenta = await buscarCuentaPorCedula(req.user.cedula);
+  const user = usuarioPublico(cuenta);
+  return res.json({ status: 'OK', message: 'Contraseña actualizada correctamente.', token: firmarToken(user), user });
 }
 
-module.exports = {
-  login,
-  changePassword,
-  getMe
-};
+/** Perfil de la cuenta autenticada. */
+async function getMe(req, res) {
+  const [rows] = await db.query(
+    `SELECT c.id AS cuenta_id, c.debe_cambiar_password, c.ultimo_acceso,
+            p.id AS persona_id, p.cedula, p.nombres, p.apellidos, p.email, p.telefono, p.celular, p.direccion,
+            r.codigo AS rol_codigo, r.nombre AS rol_nombre
+     FROM cuentas c
+     JOIN personas p ON p.id = c.persona_id
+     JOIN roles r ON r.id = c.rol_id
+     WHERE c.id = ?`,
+    [req.user.cuentaId]
+  );
+  if (!rows.length) throw notFound('Usuario no encontrado.');
+  const fila = rows[0];
+  return res.json({
+    status: 'OK',
+    user: { ...usuarioPublico(fila), telefono: fila.telefono, celular: fila.celular, direccion: fila.direccion, ultimoAcceso: fila.ultimo_acceso }
+  });
+}
+
+module.exports = { login, changePassword, getMe };
