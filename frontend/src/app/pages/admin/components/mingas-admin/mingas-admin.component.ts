@@ -9,6 +9,8 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
 import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { agruparPorFecha } from '../../../../core/utils/eventos';
+import { MenuComponent } from '../../../../shared/ui/menu.component';
 import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
@@ -24,7 +26,7 @@ import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.co
 @Component({
   selector: 'app-mingas-admin',
   standalone: true,
-  imports: [CurrencyPipe, FechaLocalPipe, FormsModule, EmptyStateComponent, SkeletonComponent, MingaFormComponent, MingaAsistenciaComponent],
+  imports: [CurrencyPipe, FechaLocalPipe, FormsModule, EmptyStateComponent, SkeletonComponent, MenuComponent, MingaFormComponent, MingaAsistenciaComponent],
   templateUrl: './mingas-admin.component.html'
 })
 export class MingasAdminComponent implements OnInit {
@@ -62,6 +64,11 @@ export class MingasAdminComponent implements OnInit {
         (!texto || `${m.titulo} ${m.lugar}`.toLocaleLowerCase('es').includes(texto)) &&
         (this.periodo === 'TODAS' || (this.periodo === 'PROXIMAS' ? m.fecha >= hoy : m.fecha < hoy))
     );
+  }
+
+  /** Próximas (la más cercana primero) y anteriores (la más reciente primero). */
+  get secciones() {
+    return agruparPorFecha(this.mingasFiltradas, hoyEnEcuador());
   }
 
   get hayFiltros() {

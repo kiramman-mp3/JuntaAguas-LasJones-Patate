@@ -392,3 +392,130 @@
     gap: 0.4rem;
   }
 }
+
+/* ==============================================================================
+   ESPACIADO DE LAS VISTAS DE ASISTENCIA
+   Menos elementos a la vista y más aire: un paso del flujo visible, el resto en "⋯",
+   documentos plegables y la lista separada en próximas y anteriores.
+   ============================================================================== */
+
+/* --- Grupos por fecha --- */
+.event-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+
+  & + & { margin-top: 1rem; }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  &__count {
+    display: grid;
+    place-items: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: var(--radius-full);
+    background: var(--bg-surface-hover);
+    font-size: 0.72rem;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Columnas más anchas y separación generosa entre tarjetas */
+.event-group .card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
+  gap: 1.25rem;
+}
+
+/* --- Tarjeta con más aire y jerarquía clara --- */
+.event-card {
+  gap: 1.1rem;
+  padding: 1.5rem;
+
+  &__tools {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: -0.35rem -0.5rem -0.35rem 0;
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  &__title { font-size: 1.12rem; }
+
+  &__meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+  }
+
+  &__actions {
+    gap: 0.5rem;
+    padding-top: 1.1rem;
+  }
+
+  /* El siguiente paso del flujo se separa de las acciones habituales */
+  &__next { margin-left: auto; }
+
+  &__docs-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1.15rem;
+
+    &__next { margin-left: 0; }
+  }
+}
+
+/* --- Sección plegable (documentos firmados) --- */
+.disclosure {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease, transform 0.1s ease-out;
+
+  > i:first-child { color: var(--color-primary); font-size: 1.05rem; }
+
+  &:hover { background: var(--bg-surface-hover); }
+  &:active { transform: scale(0.99); }
+
+  &__label { flex: 1; }
+
+  &__chevron {
+    color: var(--text-muted);
+    font-size: 1.15rem;
+    transition: transform var(--duration) var(--ease-out);
+  }
+
+  &[aria-expanded='true'] &__chevron { transform: rotate(180deg); }
+}
