@@ -50,29 +50,17 @@ El proyecto incluye un contenedor de Docker preconfigurado que cargará automát
 
 ---
 
-## 4. Ejecutar el Seed (Datos de Prueba iniciales)
+## 4. Ejecutar el Seed (Datos de Prueba)
 
-El archivo `seed.sql` contiene datos iniciales necesarios para probar el sistema: ROLES, CONCEPTOS DE PAGO, COMUNEROS y CUENTAS DE USUARIO.
+El seed simula unos dos años de operación de la Junta con las mismas reglas de negocio que usa la API: ~120 comuneros con cédulas ecuatorianas válidas, 4 sectores, lotes y turnos de riego sin solapes, historial de tarifas, facturación mensual de agua, asambleas y mingas con asistencia y multas, pagos (algunos anulados), egresos, inventario y plan anual. Desde la carpeta `backend`:
 
-Para inyectarlo en la base de datos, tienes dos opciones:
-
-**Opción A: Desde la consola del contenedor Docker**
-En la carpeta raíz del proyecto, ejecuta:
 ```bash
-docker exec -i junta_las_jones_mysql mysql -u root -prootpassword junta_las_jones < backend/database/seed.sql
+npm run db:seed              # siembra una base vacía (aplica las migraciones pendientes)
+npm run db:seed -- --reset   # elimina y recrea la base antes de sembrar
 ```
 
-**Opción B: Usando un Gestor de Base de Datos (DBeaver, MySQL Workbench, etc.)**
-1. Conéctate a la base de datos `localhost:3306` con el usuario `root` y contraseña `rootpassword`.
-2. Abre el archivo `backend/database/seed.sql`.
-3. Ejecuta todo el script SQL.
-
-**Opción C: Datos masivos de prueba (`npm run seed-db`)**
-Genera ~150 comuneros, 200 lotes, 8 eventos (5 pasados y 3 futuros), deudas y pagos. Es la opción recomendada para probar paginación, filtros e historial de eventos. Desde la carpeta `backend`:
-```bash
-npm run seed-db
-```
-*Usa credenciales distintas a las de `seed.sql` (ver sección 6).*
+- Se niega a ejecutarse en producción o sobre una base que ya tiene comuneros.
+- Las fechas se calculan a partir del día actual: los eventos pasados quedan realizados y hay próximos eventos convocados.
 
 ---
 
@@ -100,22 +88,10 @@ npm run seed-db
 
 ## 6. Credenciales de Acceso
 
-En el `seed.sql` se configuró una misma contraseña genérica (`admin123`) para todos los usuarios.
+Al terminar, `npm run db:seed` imprime las credenciales: la cédula del **administrador** (Carlos Eduardo Moreta Salazar, presidente), la de un **comunero de demostración** y la contraseña común de todas las cuentas sembradas.
 
-### 👤 Usuario Administrador (Acceso total)
-- **Cédula:** `1800000001` (Carlos Eduardo Moreta Salazar)
-- **Contraseña:** `admin123`
-- *Nota: Tiene acceso al panel de administración completo (Directiva).*
-
-### 👤 Usuario Normal (Comunero)
-- **Cédula:** `1800000002` (María Rosa Quispe Toapanta)
-- **Contraseña:** `admin123`
-- *Nota: Tiene acceso al portal de comuneros para ver sus deudas, historial y certificados.*
-
-### Si usaste `npm run seed-db` (Opción C)
-Todas las cuentas tienen la contraseña `123456`.
-- **Administrador:** cédula `1801234567`
-- **Comuneros:** cédulas `1800000002` a `1800000150`
+- La contraseña es aleatoria en cada ejecución. Para fijarla, define `SEED_PASSWORD` (mínimo 8 caracteres, con letras y números) antes de ejecutar el seed, por ejemplo `SEED_PASSWORD=Junta2026 npm run db:seed -- --reset`.
+- El administrador y el comunero de demostración entran directamente. El resto de comuneros con cuenta debe cambiar la contraseña en su primer inicio de sesión, igual que una cuenta creada desde el sistema.
 
 ---
 
@@ -126,5 +102,5 @@ Todas las cuentas tienen la contraseña `123456`.
   docker-compose down -v
   docker-compose up -d
   ```
-  Luego recuerda volver a ejecutar el `seed.sql`.
+  Luego recuerda volver a ejecutar `npm run db:seed` en `backend`.
 - Asegúrate de tener los puertos `3000` (Backend), `4200` (Frontend) y `3306` (MySQL) libres antes de levantar los servicios.
