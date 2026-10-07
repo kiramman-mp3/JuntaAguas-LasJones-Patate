@@ -1,38 +1,35 @@
 <div class="admin-layout">
-  <!-- SIDEBAR -->
+  <!-- Barra lateral (escritorio), riel de iconos (tablet) o barra de pestañas inferior (móvil) -->
   <aside class="sidebar" aria-label="Menú del panel administrativo">
-    <div class="sidebar__logo">
-      <i class="ri-drop-fill" aria-hidden="true"></i>
-      <h2>La Jones</h2>
+    <div class="sidebar__brand">
+      <span class="sidebar__logo" aria-hidden="true"><i class="ri-drop-fill"></i></span>
+      <div class="sidebar__brand-text">
+        <strong>La Jones</strong>
+        <span>Panel de la directiva</span>
+      </div>
     </div>
 
     <nav class="sidebar__nav" aria-label="Secciones del panel">
       @for (item of menu; track item.ruta) {
-        <a class="nav-item" [routerLink]="item.ruta" routerLinkActive="active" ariaCurrentWhenActive="page">
-          <i [class]="item.icono" aria-hidden="true"></i> {{ item.etiqueta }}
+        <a class="nav-item" [routerLink]="item.ruta" routerLinkActive="active" ariaCurrentWhenActive="page" [title]="item.etiqueta">
+          <i [class]="item.icono" aria-hidden="true"></i>
+          <span class="nav-item__label">{{ item.corta }}</span>
+          <span class="nav-item__label nav-item__label--full">{{ item.etiqueta }}</span>
         </a>
       }
     </nav>
+
+    <div class="sidebar__footer">
+      <button type="button" class="nav-item nav-item--whatsapp" (click)="whatsapp.abrir()" title="WhatsApp Web">
+        <i class="ri-whatsapp-line" aria-hidden="true"></i>
+        <span class="nav-item__label nav-item__label--full">WhatsApp Web</span>
+      </button>
+      <span class="status-dot status-dot--ok sidebar__status">Sistema en línea</span>
+    </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content">
-    <header class="main-header">
-      <div>
-        <h1 class="main-header__title">Sistema Integrado de Gestión</h1>
-        <p class="main-header__subtitle">Junta de Agua y Riego "La Jones" - Patate</p>
-      </div>
-      <div class="header-actions">
-        <button type="button" class="btn btn--outline btn-whatsapp" (click)="whatsapp.abrir()">
-          <i class="ri-whatsapp-line" aria-hidden="true"></i> WhatsApp Web
-        </button>
-        <span class="badge badge--success"><i class="ri-pulse-line" aria-hidden="true"></i> Sistema en Línea</span>
-      </div>
-    </header>
-
-    <div class="tab-view">
-      <router-outlet></router-outlet>
-    </div>
+  <main class="main-content" id="contenido-admin">
+    <router-outlet />
   </main>
 </div>
 
