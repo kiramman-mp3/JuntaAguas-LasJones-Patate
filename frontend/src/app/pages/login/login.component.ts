@@ -1,5 +1,5 @@
 import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -12,7 +12,8 @@ import { REQUISITOS_PASSWORD, problemaConPassword } from '../../core/auth/passwo
  * o el servidor apagado, no las credenciales: se dice así para que no reintente la contraseña.
  */
 export function mensajeDeError(err: HttpErrorResponse, porDefecto: string): string {
-  if (err.status === 0) return 'No hay conexión con el servidor. Revise su conexión a internet e intente de nuevo.';
+  if (err.status === 0)
+    return 'No hay conexión con el servidor. Revise su conexión a internet e intente de nuevo.';
   if (err.error?.message) return err.error.message;
   if (err.status === 429) return 'Demasiados intentos. Espere unos minutos e intente de nuevo.';
   if (err.status >= 500) return 'El servidor tuvo un problema. Intente de nuevo en unos minutos.';
@@ -22,9 +23,9 @@ export function mensajeDeError(err: HttpErrorResponse, porDefecto: string): stri
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent implements OnInit {
   usuario = '';
@@ -34,7 +35,7 @@ export class LoginComponent implements OnInit {
   errorMensaje = '';
   recordarSesion = true;
   mostrarAyudaPassword = false;
-  
+
   // Flujo de cambio de contraseña
   requiereCambioPassword = false;
   nuevaPassword1 = '';
@@ -44,7 +45,12 @@ export class LoginComponent implements OnInit {
   exitoMensaje = '';
   readonly requisitosPassword = REQUISITOS_PASSWORD;
 
-  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {
     if (!this.authService.isLoggedIn()) return;
@@ -70,10 +76,10 @@ export class LoginComponent implements OnInit {
         this.cargando = false;
         if (res.status === 'OK') {
           if (res.user.debeCambiarPassword) {
-             this.requiereCambioPassword = true;
-             this.passwordActual = this.password;
+            this.requiereCambioPassword = true;
+            this.passwordActual = this.password;
           } else {
-             this.redirigirPorRol(res.user.rol);
+            this.redirigirPorRol(res.user.rol);
           }
         }
         this.cdr.detectChanges();
@@ -82,7 +88,7 @@ export class LoginComponent implements OnInit {
         this.cargando = false;
         this.errorMensaje = mensajeDeError(err, 'No se pudo iniciar sesión. Intente de nuevo.');
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -102,14 +108,17 @@ export class LoginComponent implements OnInit {
   cambiarPassword() {
     const problema = !this.passwordActual
       ? 'Ingrese la contraseña temporal que le entregaron.'
-      : problemaConPassword(this.nuevaPassword1, { cedula: this.authService.getUser()?.cedula, actual: this.passwordActual });
+      : problemaConPassword(this.nuevaPassword1, {
+          cedula: this.authService.getUser()?.cedula,
+          actual: this.passwordActual,
+        });
     if (problema) {
-       this.errorMensaje = problema;
-       return;
+      this.errorMensaje = problema;
+      return;
     }
     if (this.nuevaPassword1 !== this.nuevaPassword2) {
-       this.errorMensaje = 'Las contraseñas no coinciden.';
-       return;
+      this.errorMensaje = 'Las contraseñas no coinciden.';
+      return;
     }
 
     this.cargando = true;
@@ -118,17 +127,20 @@ export class LoginComponent implements OnInit {
     // El servidor devuelve un token nuevo con acceso completo; AuthService lo guarda.
     this.authService.changePassword(this.passwordActual, this.nuevaPassword1).subscribe({
       next: (res) => {
-         this.cargando = false;
-         this.exitoMensaje = 'Contraseña actualizada. Redirigiendo...';
-         this.passwordActual = this.password = this.nuevaPassword1 = this.nuevaPassword2 = '';
-         this.cdr.detectChanges();
-         setTimeout(() => this.redirigirPorRol(res.user.rol), 1200);
+        this.cargando = false;
+        this.exitoMensaje = 'Contraseña actualizada. Redirigiendo...';
+        this.passwordActual = this.password = this.nuevaPassword1 = this.nuevaPassword2 = '';
+        this.cdr.detectChanges();
+        setTimeout(() => this.redirigirPorRol(res.user.rol), 1200);
       },
       error: (err) => {
-         this.cargando = false;
-         this.errorMensaje = mensajeDeError(err, 'No se pudo cambiar la contraseña. Intente de nuevo.');
-         this.cdr.detectChanges();
-      }
+        this.cargando = false;
+        this.errorMensaje = mensajeDeError(
+          err,
+          'No se pudo cambiar la contraseña. Intente de nuevo.',
+        );
+        this.cdr.detectChanges();
+      },
     });
   }
 

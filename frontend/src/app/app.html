@@ -7,48 +7,95 @@
     </a>
 
     <ul class="main-nav__links">
-      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a></li>
-      <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
-      <li *ngIf="authService.isLoggedIn()">
-        <a *ngIf="authService.esAdmin()" routerLink="/admin" routerLinkActive="active">Panel de Control</a>
-        <a *ngIf="authService.getUser()?.rol === 'USUARIO'" routerLink="/mi-cuenta" routerLinkActive="active">Mi cuenta</a>
+      <li>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+          >Inicio</a
+        >
       </li>
+      <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
+      @if (authService.isLoggedIn()) {
+        <li>
+          @if (authService.esAdmin()) {
+            <a routerLink="/admin" routerLinkActive="active">Panel de Control</a>
+          }
+          @if (authService.getUser()?.rol === 'USUARIO') {
+            <a routerLink="/mi-cuenta" routerLinkActive="active">Mi cuenta</a>
+          }
+        </li>
+      }
     </ul>
 
     <div class="main-nav__actions">
-      <button type="button" class="theme-toggle" (click)="alternarTema()"
+      <button
+        type="button"
+        class="theme-toggle"
+        (click)="alternarTema()"
         [attr.aria-label]="temaOscuro ? 'Activar modo claro' : 'Activar modo oscuro'"
-        [attr.aria-pressed]="temaOscuro" title="Cambiar tema">
+        [attr.aria-pressed]="temaOscuro"
+        title="Cambiar tema"
+      >
         <i [class]="temaOscuro ? 'ri-sun-line' : 'ri-moon-line'" aria-hidden="true"></i>
       </button>
 
-      <a *ngIf="!authService.isLoggedIn()" routerLink="/login" class="btn btn--primary btn--sm">
-        <i class="ri-login-circle-line" aria-hidden="true"></i> Iniciar Sesión
-      </a>
-      <button *ngIf="authService.isLoggedIn()" type="button" (click)="cerrarSesion()" class="btn btn--primary btn--sm">
-        <i class="ri-logout-circle-line" aria-hidden="true"></i> Cerrar Sesión
-      </button>
+      @if (!authService.isLoggedIn()) {
+        <a routerLink="/login" class="btn btn--primary btn--sm">
+          <i class="ri-login-circle-line" aria-hidden="true"></i> Iniciar Sesión
+        </a>
+      }
+      @if (authService.isLoggedIn()) {
+        <button type="button" (click)="cerrarSesion()" class="btn btn--primary btn--sm">
+          <i class="ri-logout-circle-line" aria-hidden="true"></i> Cerrar Sesión
+        </button>
+      }
 
-      <button type="button" class="main-nav__burger" (click)="alternarMenu()"
-        [attr.aria-expanded]="menuAbierto" aria-controls="menu-movil" aria-label="Abrir menú de navegación">
+      <button
+        type="button"
+        class="main-nav__burger"
+        (click)="alternarMenu()"
+        [attr.aria-expanded]="menuAbierto"
+        aria-controls="menu-movil"
+        aria-label="Abrir menú de navegación"
+      >
         <i [class]="menuAbierto ? 'ri-close-line' : 'ri-menu-line'" aria-hidden="true"></i>
       </button>
     </div>
   </div>
 
   <!-- MENÚ MÓVIL (reemplaza los enlaces ocultos en pantallas pequeñas) -->
-  <div id="menu-movil" class="main-nav__mobile" *ngIf="menuAbierto">
-    <ul>
-      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="cerrarMenu()">Inicio</a></li>
-      <li><a routerLink="/eventos" routerLinkActive="active" (click)="cerrarMenu()">Eventos y Actas</a></li>
-      <li *ngIf="authService.isLoggedIn() && authService.esAdmin()">
-        <a routerLink="/admin" routerLinkActive="active" (click)="cerrarMenu()">Panel de Control</a>
-      </li>
-      <li *ngIf="authService.isLoggedIn() && authService.getUser()?.rol === 'USUARIO'">
-        <a routerLink="/mi-cuenta" routerLinkActive="active" (click)="cerrarMenu()">Mi cuenta</a>
-      </li>
-    </ul>
-  </div>
+  @if (menuAbierto) {
+    <div id="menu-movil" class="main-nav__mobile">
+      <ul>
+        <li>
+          <a
+            routerLink="/"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            (click)="cerrarMenu()"
+            >Inicio</a
+          >
+        </li>
+        <li>
+          <a routerLink="/eventos" routerLinkActive="active" (click)="cerrarMenu()"
+            >Eventos y Actas</a
+          >
+        </li>
+        @if (authService.isLoggedIn() && authService.esAdmin()) {
+          <li>
+            <a routerLink="/admin" routerLinkActive="active" (click)="cerrarMenu()"
+              >Panel de Control</a
+            >
+          </li>
+        }
+        @if (authService.isLoggedIn() && authService.getUser()?.rol === 'USUARIO') {
+          <li>
+            <a routerLink="/mi-cuenta" routerLinkActive="active" (click)="cerrarMenu()"
+              >Mi cuenta</a
+            >
+          </li>
+        }
+      </ul>
+    </div>
+  }
 </nav>
 
 <!-- CONTENIDO DINÁMICO DE RUTAS -->
@@ -61,29 +108,40 @@
 <app-dialog-container></app-dialog-container>
 
 <!-- PIE DE PÁGINA GLOBAL -->
-<footer *ngIf="!esRutaAdmin" class="footer-global">
-  <div class="footer-container">
-    <div class="footer-brand">
-      <h4><i class="ri-drop-fill text-primary" aria-hidden="true"></i> Junta de Agua y Riego "La Jones"</h4>
-      <p class="caption">Garantizando la administración eficiente, transparente y equitativa del agua de riego para nuestros comuneros en Patate.</p>
-    </div>
+@if (!esRutaAdmin) {
+  <footer class="footer-global">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <h4>
+          <i class="ri-drop-fill text-primary" aria-hidden="true"></i> Junta de Agua y Riego "La
+          Jones"
+        </h4>
+        <p class="caption">
+          Garantizando la administración eficiente, transparente y equitativa del agua de riego para
+          nuestros comuneros en Patate.
+        </p>
+      </div>
 
-    <div class="footer-links">
-      <div>
-        <strong>Módulos</strong>
-        <ul>
-          <li><a routerLink="/">Inicio & Convocatorias</a></li>
-          <li><a routerLink="/mi-cuenta">Consulta de Multas / Deudas</a></li>
-          <li><a routerLink="/admin">Panel de Directiva</a></li>
-        </ul>
-      </div>
-      <div>
-        <strong>Ubicación</strong>
-        <p class="caption"><i class="ri-map-pin-line" aria-hidden="true"></i> Sector Las Jones, Cantón Patate, Provincia de Tungurahua, Ecuador.</p>
+      <div class="footer-links">
+        <div>
+          <strong>Módulos</strong>
+          <ul>
+            <li><a routerLink="/">Inicio & Convocatorias</a></li>
+            <li><a routerLink="/mi-cuenta">Consulta de Multas / Deudas</a></li>
+            <li><a routerLink="/admin">Panel de Directiva</a></li>
+          </ul>
+        </div>
+        <div>
+          <strong>Ubicación</strong>
+          <p class="caption">
+            <i class="ri-map-pin-line" aria-hidden="true"></i> Sector Las Jones, Cantón Patate,
+            Provincia de Tungurahua, Ecuador.
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="footer-bottom">
-    <small>© 2026 Junta de Agua y Riego La Jones — Todos los derechos reservados.</small>
-  </div>
-</footer>
+    <div class="footer-bottom">
+      <small>© 2026 Junta de Agua y Riego La Jones — Todos los derechos reservados.</small>
+    </div>
+  </footer>
+}

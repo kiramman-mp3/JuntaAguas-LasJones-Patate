@@ -350,9 +350,6 @@ export class AsambleasAdminComponent implements OnInit {
     }
   }
 
-  trackByIndex(index: number): number {
-    return index;
-  }
 
   guardarNueva(): void {
     if (!this.formulario.titulo.trim() || !this.formulario.fecha || !this.formulario.hora_inicio) {
