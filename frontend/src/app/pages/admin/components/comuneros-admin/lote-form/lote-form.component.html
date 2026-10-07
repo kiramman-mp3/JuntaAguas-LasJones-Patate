@@ -1,0 +1,95 @@
+<app-modal
+  titulo="Registrar lote"
+  subtitulo="Ubique el terreno en el mapa y asígnele un código del sector."
+  icono="ri-map-pin-add-line"
+  tamano="lg"
+  [bloqueado]="guardando"
+  (cerrar)="solicitarCierre()"
+>
+  <form (ngSubmit)="guardar()" #loteForm="ngForm">
+    <div class="modal__body form-stack">
+      <div class="lote-form">
+        <div class="lote-form__fields">
+          <div class="form-group">
+            <label for="lote-sector">Sector *</label>
+            <select id="lote-sector" class="input" name="sector" [(ngModel)]="form.sector_id" (ngModelChange)="cambiarSector()" [disabled]="guardando" required>
+              <option [ngValue]="null">Seleccione un sector…</option>
+              @for (s of sectores(); track s.id) {
+                <option [ngValue]="s.id">{{ s.nombre }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="lote-codigo">Código interno *</label>
+            <div class="input-group">
+              <input id="lote-codigo" type="text" class="input" name="codigo" [(ngModel)]="form.codigo" (ngModelChange)="normalizarCodigo($event)"
+                required pattern="[A-Z]{3}-[0-9]{3,8}" maxlength="12" [disabled]="sugiriendoCodigo || guardando" #codigoLote="ngModel"
+                aria-describedby="ayudaCodigoLote" placeholder="Ej: LJA-001" />
+              <button type="button" class="btn btn--ghost" (click)="sugerirCodigo()" [disabled]="!form.sector_id || sugiriendoCodigo || guardando"
+                title="Sugerir el siguiente código libre del sector">
+                @if (sugiriendoCodigo) {
+                  <span class="spinner spinner--sm" aria-hidden="true"></span>
+                } @else {
+                  <i class="ri-magic-line" aria-hidden="true"></i>
+                }
+                <span>Sugerir</span>
+              </button>
+            </div>
+            <small id="ayudaCodigoLote" class="field-hint">Tres letras, guion y de tres a ocho dígitos. Puede editar la sugerencia.</small>
+            @if (codigoLote.invalid && codigoLote.touched) {
+              <small class="field-error" role="alert">Ingrese un código como LJA-001 (máximo ocho dígitos).</small>
+            }
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="lote-superficie">Superficie (m²)</label>
+              <input id="lote-superficie" type="number" class="input" name="superficie" [(ngModel)]="form.superficie_m2" placeholder="Ej: 1500" />
+            </div>
+            <div class="form-group">
+              <label for="lote-radio">Margen de error (m)</label>
+              <input id="lote-radio" type="number" class="input" name="radio_error" [(ngModel)]="form.radio_error_m" placeholder="Ej: 5" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="lote-referencia">Referencia de ubicación</label>
+            <input id="lote-referencia" type="text" class="input" name="referencia" [(ngModel)]="form.referencia_ubicacion" placeholder="Ej: Junto a la escuela" />
+          </div>
+          <div class="form-group">
+            <label for="lote-observacion">Observaciones</label>
+            <input id="lote-observacion" type="text" class="input" name="observacion" [(ngModel)]="form.observacion" />
+          </div>
+        </div>
+
+        <div class="lote-form__map">
+          <app-lotes-map [editable]="true" [alto]="300" (ubicacion)="fijarUbicacion($event)" />
+          <div class="coord-readout" aria-live="polite">
+            <i class="ri-crosshair-2-line" aria-hidden="true"></i>
+            @if (form.latitud_aproximada) {
+              <span class="money">{{ form.latitud_aproximada }}, {{ form.longitud_aproximada }}</span>
+            } @else {
+              <span class="text-muted">Toque el mapa para marcar la acometida o el terreno.</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (error) {
+        <div class="alert alert--danger" role="alert">{{ error }}</div>
+      }
+    </div>
+
+    <div class="modal__footer">
+      <button type="button" class="btn btn--outline" (click)="solicitarCierre()" [disabled]="guardando">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loteForm.invalid || guardando || sugiriendoCodigo">
+        @if (guardando) {
+          <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+        } @else {
+          <i class="ri-save-line" aria-hidden="true"></i> Guardar lote
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>

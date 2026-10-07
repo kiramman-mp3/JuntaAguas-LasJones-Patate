@@ -1,0 +1,683 @@
+/* ==============================================================================
+   COMPONENTES BASE
+   Botones, tarjetas, insignias, formularios, tablas, modales, alertas y esqueletos.
+   Respuesta inmediata al presionar (escala) en lugar de "levantar" al pasar el mouse.
+   ============================================================================== */
+
+/* --- BOTONES --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration) var(--ease-out),
+    filter var(--duration-fast) ease,
+    transform 0.1s ease-out;
+
+  i {
+    font-size: 1.1em;
+    line-height: 1;
+  }
+
+  /* La respuesta ocurre al presionar, no al soltar. */
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:disabled,
+  &[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  &--primary {
+    background-color: var(--color-primary-solid);
+    color: var(--text-white);
+    box-shadow: 0 1px 2px rgba(2, 132, 199, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+    &:hover:not(:disabled) {
+      background-color: var(--color-primary-solid-hover);
+    }
+  }
+
+  &--secondary {
+    background-color: var(--color-secondary-hover);
+    color: var(--text-white);
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.94);
+    }
+  }
+
+  &--outline {
+    background-color: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--text-main);
+
+    &:hover:not(:disabled) {
+      background-color: var(--bg-surface-hover);
+      border-color: var(--border-strong);
+    }
+  }
+
+  &--ghost {
+    background-color: var(--bg-surface-hover);
+    color: var(--text-main);
+
+    &:hover:not(:disabled) {
+      background-color: var(--border-color);
+    }
+  }
+
+  &--danger {
+    background-color: var(--color-danger);
+    color: var(--text-white);
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.92);
+    }
+  }
+
+  &--success {
+    background-color: #059669;
+    color: var(--text-white);
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.94);
+    }
+  }
+
+  &--whatsapp {
+    background-color: var(--color-success-light);
+    color: var(--color-success-strong);
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.97);
+    }
+  }
+
+  &--danger-text {
+    color: var(--color-danger);
+  }
+
+  &--sm {
+    min-height: 2.1rem;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.82rem;
+    border-radius: 9px;
+  }
+
+  &--xs {
+    min-height: 1.8rem;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.76rem;
+    gap: 0.3rem;
+    border-radius: var(--radius-sm);
+  }
+
+  &--lg {
+    min-height: 3rem;
+    padding: 0.75rem 1.6rem;
+    font-size: 1rem;
+    border-radius: var(--radius-lg);
+  }
+
+  &--block {
+    width: 100%;
+  }
+}
+
+/* --- TARJETAS --- */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration) var(--ease-out);
+
+  &--glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* --- INSIGNIAS: sentence case, peso para el énfasis --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.3;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  background-color: var(--bg-surface-hover);
+  color: var(--text-muted);
+
+  &--primary,
+  &--info {
+    background-color: var(--color-primary-light);
+    color: var(--color-info-strong);
+  }
+
+  &--success {
+    background-color: var(--color-success-light);
+    color: var(--color-success-strong);
+  }
+
+  &--warning {
+    background-color: var(--color-warning-light);
+    color: var(--color-warning-strong);
+  }
+
+  &--danger {
+    background-color: var(--color-danger-light);
+    color: var(--color-danger-strong);
+  }
+
+  &--neutral {
+    background-color: var(--bg-surface-hover);
+    color: var(--text-muted);
+  }
+}
+
+/* --- FORMULARIOS --- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  min-width: 0;
+
+  label {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+}
+
+.input,
+.form-group .form-control {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--text-main);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease, background-color var(--duration-fast) ease;
+  appearance: auto;
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--border-strong);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+    opacity: 0.8;
+  }
+
+  &:disabled,
+  &[disabled],
+  &[readonly] {
+    background: var(--bg-surface-hover);
+    color: var(--text-muted);
+  }
+
+  &:disabled,
+  &[disabled] {
+    cursor: not-allowed;
+  }
+}
+
+textarea.input {
+  min-height: auto;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.input--sm {
+  min-height: 2.2rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  border-radius: 9px;
+}
+
+/* Validación en línea: el error se ve mientras se escribe, no solo al enviar. */
+.input.ng-invalid.ng-touched:not(form) {
+  border-color: var(--color-danger);
+
+  &:focus {
+    box-shadow: 0 0 0 4px var(--color-danger-light);
+  }
+}
+
+.grid-2,
+.grid-3 {
+  display: grid;
+  gap: 0 1.25rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media (max-width: 580px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- TABLAS --- */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-custom {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.85rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--duration-fast) ease;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover td {
+    background-color: var(--bg-surface-hover);
+  }
+}
+
+/* --- TARJETAS KPI (vistas públicas) --- */
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: 1.4rem;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+}
+
+/* --- MODALES: material con fondo atenuado; hoja inferior en móvil --- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background-color: var(--scrim);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  animation: ui-fade 0.2s ease both;
+
+  @media (max-width: 600px) {
+    align-items: flex-end;
+    padding: 0;
+  }
+}
+
+.modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: min(90vh, 900px);
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+  animation: ui-rise 0.32s var(--ease-out) both;
+
+  @media (max-width: 600px) {
+    max-width: none !important;
+    width: 100% !important;
+    max-height: 92vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+
+    /* Asa de la hoja */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      width: 36px;
+      height: 5px;
+      margin-left: -18px;
+      border-radius: 3px;
+      background: var(--border-strong);
+    }
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem 0.75rem;
+    flex-shrink: 0;
+
+    h3,
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+    }
+
+    @media (max-width: 600px) {
+      padding-top: 1.4rem;
+    }
+  }
+
+  &__body,
+  .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.75rem 1.5rem 1.5rem;
+
+    @media (max-width: 600px) {
+      padding-inline: 1.1rem;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    flex-shrink: 0;
+    padding: 0.9rem 1.5rem 1.1rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-surface);
+
+    @media (max-width: 600px) {
+      padding-inline: 1.1rem;
+
+      > .btn { flex: 1 1 auto; }
+    }
+  }
+
+  /* Un pie dentro de .modal-body (vistas antiguas) se separa del contenido. */
+  .modal-body .modal__footer {
+    margin: 1.25rem -1.5rem -1.5rem;
+  }
+}
+
+/* Botón de cierre (X) */
+.btn-close {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease, transform 0.1s ease-out;
+
+  &:hover:not(:disabled) {
+    background: var(--border-color);
+    color: var(--text-main);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+/* --- ALERTAS EN LÍNEA --- */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+
+  &--info {
+    background: var(--color-primary-light);
+    color: var(--color-info-strong);
+  }
+
+  &--success {
+    background: var(--color-success-light);
+    color: var(--color-success-strong);
+  }
+
+  &--warning {
+    background: var(--color-warning-light);
+    color: var(--color-warning-strong);
+  }
+
+  &--danger {
+    background: var(--color-danger-light);
+    color: var(--color-danger-strong);
+  }
+}
+
+/* --- MAPA DE REFERENCIA --- */
+.map-placeholder {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-secondary-light));
+
+  .map-bg-icon {
+    position: absolute;
+    font-size: 8rem;
+    color: var(--color-primary);
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .map-pin {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+
+    i {
+      font-size: 2.5rem;
+      color: var(--color-danger);
+      filter: drop-shadow(0 2px 4px rgba(239, 68, 68, 0.4));
+    }
+  }
+}
+
+/* --- CONTENIDO DE PESTAÑAS --- */
+.tab-view {
+  animation: ui-fade 0.25s ease both;
+}
+
+/* --- ESQUELETOS DE CARGA --- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+  border-radius: var(--radius-sm);
+  color: transparent !important;
+  user-select: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+    animation: skeletonShimmer 1.4s ease-in-out infinite;
+  }
+}
+
+.skeleton--text {
+  height: 0.85rem;
+  margin: 0.35rem 0;
+  border-radius: var(--radius-full);
+}
+
+.skeleton--title {
+  height: 1.4rem;
+  width: 60%;
+  margin-bottom: 1rem;
+}
+
+.skeleton--card {
+  height: 6rem;
+  border-radius: var(--radius-xl);
+}
+
+@keyframes skeletonShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

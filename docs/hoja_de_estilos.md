@@ -359,16 +359,41 @@ h4, .h4 { font-size: 1.125rem; font-weight: 500; line-height: 1.4;  } /* 18px */
 
 ---
 
-## 📁 6. Estructura Sugerida de Estilos en Angular
+## 📁 6. Estructura de Estilos en Angular
+
+`styles.scss` solo ordena las capas; cada una puede refinar a la anterior sin subir especificidad:
 
 ```text
 frontend/src/
-├── styles.scss                 # Estilos globales e importación de partials
-└── assets/styles/
-    ├── _variables.scss         # Variables de colores, fuentes, sombras
-    ├── _mixins.scss            # Mixins de SCSS (Responsive breakpoints, flex-center)
-    ├── _buttons.scss           # Botones y enlaces
-    ├── _cards.scss             # Tarjetas, modales y panales
-    ├── _tables.scss            # Estilos de tablas y paginadores
-    └── _forms.scss             # Campos de texto, selectores, checkboxes
+├── styles.scss            # Índice ordenado de parciales
+└── styles/
+    ├── _tokens.scss       # Colores, tipografía, radios, sombras, materiales, movimiento (claro/oscuro)
+    ├── _base.scss         # Reinicio, jerarquía tipográfica, foco, utilidades, impresión
+    ├── _components.scss   # Botones, tarjetas, insignias, formularios, tablas, modales, alertas, esqueletos
+    ├── _ui.scss           # Primitivas de shared/ui: encabezado, navegación por secciones, estados vacíos
+    ├── _admin.scss        # Barras de filtros, superficies, tablas apilables, formularios del panel
+    ├── _eventos.scss      # Tarjetas de asambleas y mingas, documentos firmados, pase de lista
+    ├── _turnos.scss       # Calendario semanal y selector de comuneros
+    └── _finanzas.scss     # Módulo financiero
 ```
+
+## 🍎 7. Acabado (criterios de `.claude/skills/apple-design`)
+
+- **Respuesta al presionar:** botones y elementos táctiles escalan a `0.97` en `:active`; no "flotan" al pasar el mouse.
+- **Profundidad:** sombras en capas (`--shadow-sm/md/lg`) y radios que crecen con la superficie (10 px controles, 18 px tarjetas, 22 px modales).
+- **Materiales:** navegación, barra lateral, barras de secciones y toasts usan `backdrop-filter` translúcido; con `prefers-reduced-transparency` pasan a sólidos.
+- **Tipografía:** Inter para la interfaz y Outfit para títulos, con tracking negativo en tamaños grandes y cifras `tabular-nums`.
+- **Movimiento:** curva `--ease-out` sin rebote; los modales entran y salen por el mismo camino y en móvil son hojas inferiores.
+- **Modo oscuro:** insignias, alertas y estados usan tokens (`--color-*-light` / `--color-*-strong`), nunca colores fijos.
+
+### Primitivas reutilizables (`src/app/shared/ui`)
+
+| Componente | Uso |
+| --- | --- |
+| `<app-page-header>` | Título, descripción, icono y acciones principales de un módulo |
+| `<app-section-nav>` | Control segmentado cuyas opciones son rutas hijas (`/admin/comuneros/padron`) |
+| `<app-modal>` | Contenedor de modales: fondo atenuado, cabecera, cierre accesible; el consumidor aporta `.modal__body` y `.modal__footer` |
+| `<app-empty-state>` | Estado vacío o de error con acción (reintentar, limpiar filtros, crear) |
+| `<app-skeleton>` | Esqueleto con la silueta del contenido (filas o tarjetas) para evitar saltos |
+
+Las tablas con `.table-custom--stack` y celdas con `data-label` se presentan como tarjetas en pantallas angostas, sin desplazamiento horizontal.

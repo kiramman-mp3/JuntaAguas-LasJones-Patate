@@ -1,10 +1,9 @@
 <div class="fin">
-  <header class="fin-header">
-    <div>
-      <h2 class="fin-header__title">Finanzas</h2>
-      <p class="fin-header__subtitle">Cobros a los comuneros y finanzas de la Junta: egresos e historial anual.</p>
-    </div>
-  </header>
+  <app-page-header
+    titulo="Finanzas"
+    subtitulo="Cobros a los comuneros y finanzas de la Junta: egresos e historial anual."
+    icono="ri-money-dollar-circle-line"
+  />
 
   @if (indicadores(); as k) {
     <div class="stat-grid" aria-label="Indicadores financieros">

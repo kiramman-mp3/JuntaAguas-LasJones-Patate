@@ -1,0 +1,102 @@
+<app-modal
+  titulo="Nueva asamblea general"
+  subtitulo="Defina la convocatoria, el orden del día y la sanción por inasistencia."
+  icono="ri-add-circle-line"
+  tamano="md"
+  [bloqueado]="guardando()"
+  (cerrar)="cerrar.emit()"
+>
+  <form (ngSubmit)="guardar()" #formAsamblea="ngForm">
+    <div class="modal__body form-stack">
+      <fieldset class="field-set">
+        <legend class="field-set__legend">Tipo de asamblea</legend>
+        <div class="choice-grid">
+          <label class="choice-card" [class.choice-card--selected]="formulario.subtipo_asamblea === 'ORDINARIA'">
+            <input type="radio" name="subtipo" value="ORDINARIA" [(ngModel)]="formulario.subtipo_asamblea" />
+            <span class="choice-card__content">
+              <strong>Ordinaria</strong>
+              <span>Sesión periódica establecida por estatuto</span>
+            </span>
+          </label>
+          <label class="choice-card" [class.choice-card--selected]="formulario.subtipo_asamblea === 'EXTRAORDINARIA'">
+            <input type="radio" name="subtipo" value="EXTRAORDINARIA" [(ngModel)]="formulario.subtipo_asamblea" />
+            <span class="choice-card__content">
+              <strong>Extraordinaria</strong>
+              <span>Sesión urgente con orden del día específico</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="form-group">
+        <label for="asamblea-titulo">Título o asunto *</label>
+        <input id="asamblea-titulo" type="text" class="input" name="titulo" [(ngModel)]="formulario.titulo" required
+          placeholder="Ej: ASAMBLEA GENERAL ORDINARIA DE USUARIOS" />
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="asamblea-fecha">Fecha de la sesión *</label>
+          <input id="asamblea-fecha" type="date" class="input" name="fecha" [(ngModel)]="formulario.fecha" [min]="fechaMinima" required />
+        </div>
+        <div class="form-group">
+          <label for="asamblea-hora">Hora de inicio *</label>
+          <input id="asamblea-hora" type="time" class="input" name="hora_inicio" [(ngModel)]="formulario.hora_inicio" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="asamblea-lugar">Lugar *</label>
+        <input id="asamblea-lugar" type="text" class="input" name="lugar" [(ngModel)]="formulario.lugar" required
+          placeholder="Ej: Casa Comunal Junta La Jones" />
+      </div>
+
+      <section class="inset-panel">
+        <div class="inset-panel__head">
+          <h4 class="inset-panel__title"><i class="ri-list-check-2" aria-hidden="true"></i> Orden del día</h4>
+          <button type="button" class="btn btn--ghost btn--sm" (click)="agregarPunto()">
+            <i class="ri-add-line" aria-hidden="true"></i> Añadir punto
+          </button>
+        </div>
+        <ol class="point-list" #listaPuntos>
+          @for (p of formulario.puntos_orden_dia; track $index; let i = $index) {
+            <li class="point-list__row">
+              <span class="point-list__num" aria-hidden="true">{{ i + 1 }}</span>
+              <input type="text" class="input input--sm" [(ngModel)]="formulario.puntos_orden_dia[i]" [name]="'punto_' + i"
+                [attr.aria-label]="'Punto ' + (i + 1)" placeholder="Descripción del punto a tratar…" />
+              @if (formulario.puntos_orden_dia.length > 1) {
+                <button type="button" class="icon-btn icon-btn--danger" (click)="eliminarPunto(i)" [attr.aria-label]="'Eliminar punto ' + (i + 1)">
+                  <i class="ri-delete-bin-line" aria-hidden="true"></i>
+                </button>
+              }
+            </li>
+          }
+        </ol>
+      </section>
+
+      <section class="inset-panel">
+        <label class="switch-row">
+          <input type="checkbox" name="genera_multa" [(ngModel)]="formulario.genera_multa_ausencia" />
+          <span>Generar multa automática por inasistencia no justificada</span>
+        </label>
+        @if (formulario.genera_multa_ausencia) {
+          <div class="inline-field">
+            <label for="asamblea-multa">Valor de la multa ($)</label>
+            <input id="asamblea-multa" type="number" class="input input--sm" name="valor_multa" [(ngModel)]="formulario.valor_multa" step="0.50" min="0" />
+          </div>
+        }
+      </section>
+    </div>
+
+    <div class="modal__footer">
+      <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="formAsamblea.invalid || guardando()">
+        @if (guardando()) {
+          <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+        } @else {
+          <i class="ri-save-line" aria-hidden="true"></i> Guardar convocatoria
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>

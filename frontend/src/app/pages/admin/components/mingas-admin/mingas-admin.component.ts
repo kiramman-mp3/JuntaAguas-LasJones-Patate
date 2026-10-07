@@ -1,141 +1,151 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  DestroyRef,
-  EventEmitter,
-  OnInit,
-  Output,
-  inject,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, firstValueFrom } from 'rxjs';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
-import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
 import { DialogService } from '../../../../core/services/dialog.service';
-
-interface Minga {
-  id: number;
-  tipo: 'MINGA';
-  titulo: string;
-  descripcion: string;
-  fecha: string;
-  hora_inicio: string;
-  lugar: string;
-  estado: string;
-  genera_multa_ausencia: boolean;
-  valor_multa: number;
-  asistentes: number;
-  totalComuneros: number;
-  lista_asistencia_firmada_url?: string;
-}
-
-type EstadoAsistencia = 'PENDIENTE' | 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
-interface Asistencia {
-  persona_id: number;
-  nombre: string;
-  cedula: string;
-  estado: EstadoAsistencia;
-  motivo_justificacion: string;
-}
+import { NotificationService } from '../../../../core/services/notification.service';
+import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
 import { hoyEnEcuador } from '../../../../core/utils/fechas';
 import { FechaLocalPipe } from '../../../../shared/pipes/fecha-local.pipe';
+import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
+import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
+import { Minga } from './minga.model';
+import { MingaFormComponent } from './minga-form/minga-form.component';
+import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.component';
 
+/**
+ * Listado de mingas y su flujo (borrador → programada → convocada → realizada).
+ * El registro y la asistencia son componentes propios; aquí se coordinan las convocatorias,
+ * los cambios de estado y la lista firmada.
+ */
 @Component({
   selector: 'app-mingas-admin',
   standalone: true,
-  imports: [CommonModule, FechaLocalPipe, FormsModule, ModalA11yDirective],
-  templateUrl: './mingas-admin.component.html',
-  styleUrls: ['./mingas-admin.component.scss'],
+  imports: [CurrencyPipe, FechaLocalPipe, FormsModule, EmptyStateComponent, SkeletonComponent, MingaFormComponent, MingaAsistenciaComponent],
+  templateUrl: './mingas-admin.component.html'
 })
 export class MingasAdminComponent implements OnInit {
-  @Output() conectarWhatsApp = new EventEmitter<void>();
   private readonly destroyRef = inject(DestroyRef);
+  private readonly admin = inject(AdminService);
+  private readonly consulta = inject(ConsultaService);
   private readonly dialog = inject(DialogService);
+  private readonly notify = inject(NotificationService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  readonly whatsapp = inject(WhatsAppSesionService);
+
   mingas: Minga[] = [];
   cargando = false;
+  /** Error al cargar la lista (las fallas de acciones se notifican con toasts). */
   error = '';
-  mensaje = '';
   busqueda = '';
   periodo: 'TODAS' | 'PROXIMAS' | 'ANTERIORES' = 'TODAS';
-  modalNueva = false;
-  guardando = false;
-  errorFormulario = '';
+  formularioAbierto = false;
+  seleccionada: Minga | null = null;
   enviandoId: number | null = null;
   actualizandoId: number | null = null;
   subiendoId: number | null = null;
   descargandoId: number | null = null;
-  seleccionada: Minga | null = null;
-  cargandoAsistencia = false;
-  guardandoAsistencia = false;
-  errorAsistencia = '';
-  private asistenciaDisponible = false;
-  private destruido = false;
   private enviosEnProceso = new Set<number>();
-  buscarComunero = '';
-  asistencias: Asistencia[] = [];
-  formulario = this.nuevoFormulario();
-
-  constructor(
-    private admin: AdminService,
-    private consulta: ConsultaService,
-    private cdr: ChangeDetectorRef,
-  ) {
-    this.destroyRef.onDestroy(() => {
-      this.destruido = true;
-    });
-  }
 
   ngOnInit() {
     this.cargar();
   }
 
-  private fechaLocal() {
-    return hoyEnEcuador();
-  }
-
-  private nuevoFormulario() {
-    return {
-      titulo: '',
-      descripcion: '',
-      fecha: this.fechaLocal(),
-      hora_inicio: '08:00',
-      lugar: '',
-      genera_multa_ausencia: true,
-      valor_multa: 10,
-    };
-  }
-
   get mingasFiltradas() {
     const texto = this.busqueda.trim().toLocaleLowerCase('es');
-    const hoy = this.fechaLocal();
+    const hoy = hoyEnEcuador();
     return this.mingas.filter(
       (m) =>
         (!texto || `${m.titulo} ${m.lugar}`.toLocaleLowerCase('es').includes(texto)) &&
-        (this.periodo === 'TODAS' ||
-          (this.periodo === 'PROXIMAS' ? m.fecha >= hoy : m.fecha < hoy)),
+        (this.periodo === 'TODAS' || (this.periodo === 'PROXIMAS' ? m.fecha >= hoy : m.fecha < hoy))
     );
   }
 
-  get asistenciasFiltradas() {
-    const texto = this.buscarComunero.trim().toLocaleLowerCase('es');
-    return this.asistencias.filter((a) =>
-      `${a.nombre} ${a.cedula}`.toLocaleLowerCase('es').includes(texto),
-    );
+  get hayFiltros() {
+    return !!this.busqueda.trim() || this.periodo !== 'TODAS';
   }
 
-  get totalPresentes() {
-    return this.asistencias.filter((a) => a.estado === 'PRESENTE').length;
+  get ocupado() {
+    return this.actualizandoId !== null || this.enviandoId !== null;
   }
 
-  get totalPendientes() {
-    return this.asistencias.filter(a => a.estado === 'PENDIENTE' || (a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())).length;
+  limpiarFiltros() {
+    this.busqueda = '';
+    this.periodo = 'TODAS';
   }
 
-  get asistenciaCerrada() {
-    return this.seleccionada?.estado === 'REALIZADO' || this.seleccionada?.estado === 'CANCELADO';
+  estadoTexto(estado: string) {
+    const etiquetas: Record<string, string> = {
+      BORRADOR: 'Borrador',
+      PROGRAMADO: 'Programada',
+      CONVOCADO: 'Convocada',
+      REALIZADO: 'Realizada',
+      CANCELADO: 'Cancelada'
+    };
+    return etiquetas[estado] || 'Sin estado';
+  }
+
+  estadoBadge(estado: string) {
+    const tonos: Record<string, string> = {
+      PROGRAMADO: 'badge--info',
+      CONVOCADO: 'badge--warning',
+      REALIZADO: 'badge--success',
+      CANCELADO: 'badge--danger'
+    };
+    return tonos[estado] || 'badge--neutral';
+  }
+
+  porcentaje(m: Minga) {
+    return m.totalComuneros ? Math.round((m.asistentes / m.totalComuneros) * 100) : 0;
+  }
+
+  cargar() {
+    this.cargando = true;
+    this.error = '';
+    this.admin
+      .getEventos('MINGA')
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.cargando = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (res) => {
+          this.mingas = (res.data || [])
+            .filter((m) => m.tipo === 'MINGA')
+            .map((evento) => evento as unknown as Minga)
+            .map((m) => ({
+              ...m,
+              fecha: String(m.fecha || '').split('T')[0],
+              asistentes: Number(m.asistentes) || 0,
+              totalComuneros: Number(m.totalComuneros) || 0,
+              valor_multa: Number(m.valor_multa) || 0,
+              genera_multa_ausencia: Boolean(m.genera_multa_ausencia)
+            }));
+        },
+        error: (err) => (this.error = err.error?.message || 'No se pudieron cargar las mingas. Intente nuevamente.')
+      });
+  }
+
+  onCreada() {
+    this.formularioAbierto = false;
+    this.notify.success('Minga registrada. Puede enviar la convocatoria por WhatsApp desde sus acciones.');
+    this.cargar();
+  }
+
+  onAsistenciaGuardada() {
+    this.seleccionada = null;
+    this.notify.success('Asistencia de la minga guardada.');
+    this.cargar();
+  }
+
+  abrirAsistencia(minga: Minga) {
+    if (minga.estado !== 'CANCELADO') this.seleccionada = minga;
   }
 
   async cambiarEstado(minga: Minga, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO', desdeEnvio = false) {
@@ -150,26 +160,36 @@ export class MingasAdminComponent implements OnInit {
       if (!confirmado) return;
     }
     this.actualizandoId = minga.id;
-    this.error = '';
-    this.admin.cambiarEstadoMinga(minga.id, estado).pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
-      this.actualizandoId = null;
-      this.cdr.markForCheck();
-    })).subscribe({
-      next: res => { minga.estado = res.estado; if (!desdeEnvio) this.mensaje = res.message; this.cargar(); },
-      error: err => this.error = (desdeEnvio ? 'La convocatoria se envió, pero no se pudo actualizar el estado. ' : '')
-        + (err.error?.message || 'No se pudo actualizar la minga.')
-    });
+    this.admin
+      .cambiarEstadoMinga(minga.id, estado)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.actualizandoId = null;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (res) => {
+          minga.estado = res.estado;
+          if (!desdeEnvio) this.notify.success(res.message);
+          this.cargar();
+        },
+        error: (err) =>
+          this.notify.error(
+            (desdeEnvio ? 'La convocatoria se envió, pero no se pudo actualizar el estado. ' : '') +
+              (err.error?.message || 'No se pudo actualizar la minga.')
+          )
+      });
   }
 
   async finalizarMinga(minga: Minga) {
-    if (this.actualizandoId !== null || this.enviandoId !== null || ['REALIZADO', 'CANCELADO'].includes(minga.estado)) return;
+    if (this.ocupado || ['REALIZADO', 'CANCELADO'].includes(minga.estado)) return;
     this.actualizandoId = minga.id;
-    this.error = '';
     try {
-      const resAsis = await firstValueFrom(this.admin.getAsistenciasMinga(minga.id));
-      const r = resAsis.resumen;
+      const r = (await firstValueFrom(this.admin.getAsistenciasMinga(minga.id))).resumen;
       if (!r.total || r.pendientes) {
-        this.error = `Complete y guarde la asistencia antes de finalizar. Pendientes: ${r.pendientes}.`;
+        this.notify.warning(`Complete y guarde la asistencia antes de finalizar. Pendientes: ${r.pendientes}.`);
         return;
       }
       const multa = minga.genera_multa_ausencia
@@ -184,117 +204,18 @@ export class MingasAdminComponent implements OnInit {
       if (!confirmado) return;
       const res = await firstValueFrom(this.admin.finalizarMinga(minga.id));
       minga.estado = res.estado;
-      this.mensaje = res.message;
+      this.notify.success(res.message);
       this.cargar();
     } catch (err: any) {
-      this.error = err?.error?.message || 'No se pudo finalizar la minga.';
+      this.notify.error(err?.error?.message || 'No se pudo finalizar la minga.');
     } finally {
       this.actualizandoId = null;
       this.cdr.markForCheck();
     }
   }
 
-  estadoTexto(estado: string) {
-    const etiquetas: Record<string, string> = {
-      BORRADOR: 'Borrador',
-      PROGRAMADO: 'Programada',
-      CONVOCADO: 'Convocada',
-      REALIZADO: 'Realizada',
-      CANCELADO: 'Cancelada',
-    };
-    return etiquetas[estado] || 'Sin estado';
-  }
-
-  cargar() {
-    this.cargando = true;
-    this.error = '';
-    this.admin
-      .getEventos('MINGA')
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.cargando = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (res) => {
-          this.mingas = (res.data || [])
-            .filter((m) => m.tipo === 'MINGA')
-            .map((evento) => evento as unknown as Minga)
-            .map((m) => ({
-              ...m,
-              fecha: String(m.fecha || '').split('T')[0],
-              asistentes: Number(m.asistentes) || 0,
-              totalComuneros: Number(m.totalComuneros) || 0,
-              valor_multa: Number(m.valor_multa) || 0,
-              genera_multa_ausencia: Boolean(m.genera_multa_ausencia),
-            }));
-        },
-        error: (err) =>
-          (this.error =
-            err.error?.message || 'No se pudieron cargar las mingas. Intente nuevamente.'),
-      });
-  }
-
-  abrirNueva() {
-    this.formulario = this.nuevoFormulario();
-    this.errorFormulario = '';
-    this.modalNueva = true;
-  }
-
-  guardarNueva() {
-    if (this.guardando) return;
-    const f = this.formulario;
-    if (
-      !f.titulo.trim() ||
-      !f.descripcion.trim() ||
-      !f.lugar.trim() ||
-      !f.fecha ||
-      !f.hora_inicio ||
-      (f.genera_multa_ausencia &&
-        (!Number.isFinite(Number(f.valor_multa)) || Number(f.valor_multa) <= 0))
-    ) {
-      this.errorFormulario =
-        'Complete la actividad, fecha, hora y lugar. Si aplica multa, ingrese un valor mayor a cero.';
-      return;
-    }
-    this.guardando = true;
-    this.errorFormulario = '';
-    // Una minga no tiene subtipo de asamblea ni puntos de orden del día.
-    const payload = {
-      ...f,
-      tipo: 'MINGA',
-      titulo: f.titulo.trim(),
-      descripcion: f.descripcion.trim(),
-      lugar: f.lugar.trim(),
-      requiere_asistencia: true,
-      valor_multa: f.genera_multa_ausencia ? Number(f.valor_multa) : 0,
-    };
-    this.admin
-      .createEvento(payload)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.guardando = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: () => {
-          this.modalNueva = false;
-          this.mensaje =
-            'Minga registrada. Puede enviar la convocatoria por WhatsApp desde sus acciones.';
-          this.cargar();
-        },
-        error: (err) =>
-          (this.errorFormulario = err.error?.message || 'No se pudo registrar la minga.'),
-      });
-  }
-
   async enviarConvocatoria(minga: Minga) {
-    if (this.enviandoId !== null || this.actualizandoId !== null || minga.estado === 'CANCELADO' || minga.estado === 'REALIZADO')
-      return;
+    if (this.ocupado || minga.estado === 'CANCELADO' || minga.estado === 'REALIZADO') return;
     if (this.enviosEnProceso.has(minga.id)) return;
     this.enviosEnProceso.add(minga.id);
     const confirmado = await this.dialog.confirmar({
@@ -304,11 +225,8 @@ export class MingasAdminComponent implements OnInit {
       textoConfirmar: 'Enviar por WhatsApp'
     });
     this.enviosEnProceso.delete(minga.id);
-    if (!confirmado)
-      return;
+    if (!confirmado) return;
     this.enviandoId = minga.id;
-    this.error = '';
-    this.mensaje = '';
     this.admin
       .notificarMingaWhatsApp(minga.id)
       .pipe(
@@ -316,106 +234,20 @@ export class MingasAdminComponent implements OnInit {
         finalize(() => {
           this.enviandoId = null;
           this.cdr.markForCheck();
-        }),
+        })
       )
       .subscribe({
         next: (res) => {
-          this.mensaje = res.message || 'Convocatoria enviada.';
+          this.notify.success(res.message || 'Convocatoria enviada.');
           if (Number(res.enviados) > 0 && minga.estado !== 'CONVOCADO') this.cambiarEstado(minga, 'CONVOCADO', true);
         },
-        error: (err) =>
-          (this.error =
-            err.error?.message ||
-            'No se pudo enviar. Revise la conexión de WhatsApp y vuelva a intentarlo.'),
-      });
-  }
-
-  abrirAsistencia(minga: Minga) {
-    if (minga.estado === 'CANCELADO') return;
-    this.seleccionada = minga;
-    this.asistencias = [];
-    this.buscarComunero = '';
-    this.errorAsistencia = '';
-    this.asistenciaDisponible = false;
-    this.cargandoAsistencia = true;
-    this.admin.getAsistenciasMinga(minga.id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.cargandoAsistencia = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (res) => {
-          if (this.seleccionada?.id !== minga.id) return;
-          this.seleccionada.estado = res.estado;
-          this.asistenciaDisponible = true;
-          this.asistencias = res.data || [];
-        },
-        error: () =>
-          (this.errorAsistencia =
-            'No se pudieron cargar los comuneros y sus asistencias. Cierre y vuelva a abrir el registro.'),
-      });
-  }
-
-  marcarPresentes() {
-    if (this.asistenciaCerrada) return;
-    // Respeta las justificaciones previamente registradas.
-    this.asistenciasFiltradas
-      .filter((a) => a.estado !== 'JUSTIFICADO')
-      .forEach((a) => (a.estado = 'PRESENTE'));
-  }
-
-  guardarAsistencia() {
-    if (
-      !this.seleccionada ||
-      this.asistenciaCerrada ||
-      this.guardandoAsistencia ||
-      this.cargandoAsistencia ||
-      !this.asistenciaDisponible ||
-      !this.asistencias.length
-    )
-      return;
-    this.errorAsistencia = '';
-    if (
-      this.asistencias.some((a) => a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())
-    ) {
-      this.errorAsistencia = 'Escriba el motivo de cada ausencia justificada.';
-      return;
-    }
-    const minga = this.seleccionada;
-    const payload = this.asistencias.map((a) => ({
-      persona_id: a.persona_id,
-      estado: a.estado,
-      motivo_justificacion: a.estado === 'JUSTIFICADO' ? a.motivo_justificacion.trim() : null,
-    }));
-    this.guardandoAsistencia = true;
-    this.admin
-      .registrarAsistenciasMinga(minga.id, payload)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.guardandoAsistencia = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: () => {
-          this.seleccionada = null;
-          this.mensaje = 'Asistencia de la minga guardada.';
-          this.cargar();
-        },
-        error: (err) =>
-          (this.errorAsistencia =
-            err.error?.message || 'No se pudo guardar la asistencia. Intente nuevamente.'),
+        error: (err) => this.notify.error(err.error?.message || 'No se pudo enviar. Revise la conexión de WhatsApp y vuelva a intentarlo.')
       });
   }
 
   descargarLista(minga: Minga) {
     if (this.descargandoId !== null) return;
     this.descargandoId = minga.id;
-    this.error = '';
     this.consulta
       .descargarListaAsistencia(minga.id)
       .pipe(
@@ -423,7 +255,7 @@ export class MingasAdminComponent implements OnInit {
         finalize(() => {
           this.descargandoId = null;
           this.cdr.markForCheck();
-        }),
+        })
       )
       .subscribe({
         next: (blob) => {
@@ -434,7 +266,7 @@ export class MingasAdminComponent implements OnInit {
           enlace.click();
           setTimeout(() => URL.revokeObjectURL(url), 1000);
         },
-        error: () => (this.error = 'No se pudo descargar la lista de asistencia.'),
+        error: () => this.notify.error('No se pudo descargar la lista de asistencia.')
       });
   }
 
@@ -442,16 +274,11 @@ export class MingasAdminComponent implements OnInit {
     const archivo = input.files?.[0];
     input.value = '';
     if (!archivo || this.subiendoId !== null) return;
-    if (
-      !['application/pdf', 'image/jpeg', 'image/png'].includes(archivo.type) ||
-      archivo.size > 10 * 1024 * 1024 ||
-      archivo.size === 0
-    ) {
-      this.error = 'Seleccione un PDF, JPG o PNG válido de hasta 10 MB.';
+    if (!['application/pdf', 'image/jpeg', 'image/png'].includes(archivo.type) || archivo.size > 10 * 1024 * 1024 || archivo.size === 0) {
+      this.notify.warning('Seleccione un PDF, JPG o PNG válido de hasta 10 MB.');
       return;
     }
     this.subiendoId = minga.id;
-    this.error = '';
     this.consulta
       .subirDocumentoEvento(minga.id, 'OTRO', archivo)
       .pipe(
@@ -459,15 +286,14 @@ export class MingasAdminComponent implements OnInit {
         finalize(() => {
           this.subiendoId = null;
           this.cdr.markForCheck();
-        }),
+        })
       )
       .subscribe({
         next: () => {
-          this.mensaje = 'Lista firmada guardada.';
+          this.notify.success('Lista firmada guardada.');
           this.cargar();
         },
-        error: (err) =>
-          (this.error = err.error?.message || 'No se pudo subir la lista firmada.'),
+        error: (err) => this.notify.error(err.error?.message || 'No se pudo subir la lista firmada.')
       });
   }
 

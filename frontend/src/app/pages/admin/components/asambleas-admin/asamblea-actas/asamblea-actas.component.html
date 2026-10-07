@@ -1,0 +1,134 @@
+<app-modal
+  titulo="Actas resolutivas"
+  [subtitulo]="asamblea().titulo + ' · ' + (asamblea().fecha | fechaLocal)"
+  icono="ri-book-read-line"
+  tamano="xl"
+  [bloqueado]="guardando()"
+  (cerrar)="cerrar.emit()"
+>
+  <div class="modal__body form-stack">
+    <div class="toolbar">
+      <span class="toolbar__grow text-muted">
+        <strong class="text-main">{{ puntos.length }}</strong> {{ puntos.length === 1 ? 'acta' : 'actas' }} en esta sesión
+      </span>
+      <button type="button" class="btn btn--ghost btn--sm" (click)="mostrarNuevoTema = !mostrarNuevoTema" [attr.aria-expanded]="mostrarNuevoTema">
+        <i [class]="mostrarNuevoTema ? 'ri-subtract-line' : 'ri-add-line'" aria-hidden="true"></i>
+        {{ mostrarNuevoTema ? 'Ocultar tema nuevo' : 'Añadir tema nuevo' }}
+      </button>
+      <button type="button" class="btn btn--secondary btn--sm" (click)="descargarActaGeneral()" [disabled]="cargando() || !puntos.length">
+        <i class="ri-file-download-line" aria-hidden="true"></i> Acta consolidada (PDF)
+      </button>
+    </div>
+
+    @if (mostrarNuevoTema) {
+      <section class="inset-panel inset-panel--accent" animate.enter="reveal-enter">
+        <h4 class="inset-panel__title"><i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Tema nuevo / punto extraordinario</h4>
+        <div class="form-group">
+          <label for="tema-asunto">Tema o asunto *</label>
+          <input id="tema-asunto" type="text" class="input" [(ngModel)]="nuevoTema.punto_tratar" placeholder="Ej: Adquisición de válvula para canal de riego" />
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="tema-tratado">Deliberación</label>
+            <textarea id="tema-tratado" class="input" rows="2" [(ngModel)]="nuevoTema.tratado" placeholder="Resumen del debate…"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="tema-resolucion">Resolución aprobada</label>
+            <textarea id="tema-resolucion" class="input" rows="2" [(ngModel)]="nuevoTema.resolucion" placeholder="Acuerdos o resolución votada…"></textarea>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="tema-responsables">Responsables de la ejecución</label>
+          <input id="tema-responsables" type="text" class="input input--sm" [(ngModel)]="nuevoTema.responsables" placeholder="Ej: Comisión de Riego sector La Merced" />
+        </div>
+        <div class="inset-panel__actions">
+          <button type="button" class="btn btn--outline btn--sm" (click)="mostrarNuevoTema = false">Cancelar</button>
+          <button type="button" class="btn btn--primary btn--sm" (click)="agregarTemaNuevo()">
+            <i class="ri-check-line" aria-hidden="true"></i> Agregar a las actas
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (cargando()) {
+      <app-skeleton variante="tarjetas" [filas]="2" mensaje="Cargando actas…" />
+    } @else if (errorCarga()) {
+      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudieron cargar las actas" mensaje="Revise su conexión e intente nuevamente.">
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      </app-empty-state>
+    } @else {
+      <div class="stack">
+        @for (punto of puntos; track $index) {
+          <article class="acta-card">
+            <header class="acta-card__head">
+              <div class="acta-card__title">
+                <span class="pill pill--primary">Punto {{ punto.orden }}</span>
+                <h5>{{ punto.punto_tratar }}</h5>
+              </div>
+              <div class="acta-card__status">
+                <span class="badge" [class.badge--success]="punto.estado_acta === 'FIRMADA'" [class.badge--info]="punto.estado_acta === 'APROBADA'"
+                  [class.badge--neutral]="!punto.estado_acta || punto.estado_acta === 'BORRADOR'">
+                  <i [class]="punto.estado_acta === 'FIRMADA' ? 'ri-shield-check-fill' : 'ri-checkbox-circle-line'" aria-hidden="true"></i>
+                  {{ punto.estado_acta || 'BORRADOR' }}
+                </span>
+                <button type="button" class="btn btn--ghost btn--xs" (click)="descargarActaPorPunto(punto)" title="Generar el PDF de esta acta">
+                  <i class="ri-file-pdf-line" aria-hidden="true"></i> PDF
+                </button>
+              </div>
+            </header>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="label-sm" [for]="'tratado-' + $index">Deliberación y debate</label>
+                <textarea [id]="'tratado-' + $index" class="input input--sm" rows="2" [(ngModel)]="punto.tratado" placeholder="Intervenciones y puntos analizados…"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="label-sm" [for]="'resolucion-' + $index">Resolución y acuerdos</label>
+                <textarea [id]="'resolucion-' + $index" class="input input--sm" rows="2" [(ngModel)]="punto.resolucion" placeholder="Resolución formal para este punto…"></textarea>
+              </div>
+            </div>
+
+            <footer class="acta-card__foot">
+              <div class="form-group acta-card__responsables">
+                <label class="label-sm" [for]="'responsables-' + $index">Responsables</label>
+                <input [id]="'responsables-' + $index" type="text" class="input input--sm" [(ngModel)]="punto.responsables" placeholder="Persona o comisión encargada…" />
+              </div>
+              <div class="acta-card__actions">
+                <label class="btn btn--outline btn--xs btn-upload" [class.is-busy]="subiendoPuntoId() === punto.id" [title]="punto.id ? 'Subir acta firmada (PDF o imagen)' : 'Guarde los cambios antes de subir el acta firmada'">
+                  @if (subiendoPuntoId() === punto.id) {
+                    <span class="spinner spinner--sm" aria-hidden="true"></span> Subiendo…
+                  } @else {
+                    <i class="ri-upload-2-line" aria-hidden="true"></i> {{ punto.acta_firmada_url ? 'Reemplazar firmada' : 'Subir firmada' }}
+                  }
+                  <input type="file" class="sr-only" accept="application/pdf,image/jpeg,image/png" #filePunto
+                    [disabled]="!punto.id || subiendoPuntoId() !== null" (change)="subirActaFirmada(punto, filePunto)" />
+                </label>
+                @if (punto.acta_firmada_url) {
+                  <button type="button" class="btn btn--secondary btn--xs" (click)="verDocumento(punto.acta_firmada_url)">
+                    <i class="ri-eye-line" aria-hidden="true"></i> Ver firmada
+                  </button>
+                }
+                @if (punto.estado_acta !== 'APROBADA' && punto.estado_acta !== 'FIRMADA') {
+                  <button type="button" class="btn btn--ghost btn--xs" (click)="cambiarEstadoActa(punto, 'APROBADA')">
+                    <i class="ri-check-line" aria-hidden="true"></i> Aprobar
+                  </button>
+                }
+              </div>
+            </footer>
+          </article>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="modal__footer">
+    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cerrar</button>
+    <button type="button" class="btn btn--primary" (click)="guardarTodos()" [disabled]="guardando() || cargando() || errorCarga()">
+      @if (guardando()) {
+        <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+      } @else {
+        <i class="ri-save-line" aria-hidden="true"></i> Guardar todas las actas
+      }
+    </button>
+  </div>
+</app-modal>

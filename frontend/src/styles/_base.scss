@@ -1,0 +1,180 @@
+/* ==============================================================================
+   BASE: reinicio, tipografía, foco y utilidades
+   ============================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Ningún componente puede provocar desplazamiento horizontal de la página.
+   'clip' (a diferencia de 'hidden') no rompe position: sticky. */
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  background-color: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  /* El cambio de tema se suaviza en lugar de un salto brusco de brillo. */
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* --- Jerarquía: tamaño, peso y tracking cambian juntos --- */
+h1,
+.h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+h2,
+.h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h3,
+.h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+h4,
+.h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.caption {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.small {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.005em;
+}
+
+::selection {
+  background: var(--color-primary-light);
+}
+
+/* --- Foco visible y consistente en todos los controles --- */
+:where(a, button, input, select, textarea, [tabindex], [role='button']):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Utilidades --- */
+.text-muted { color: var(--text-muted); }
+.text-primary { color: var(--color-primary); }
+.text-success { color: var(--color-success); }
+.text-danger { color: var(--color-danger); }
+.text-center { text-align: center; }
+.text-main { color: var(--text-main); }
+
+.money {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 350px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.spin,
+.ri-spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Impresión --- */
+@media print {
+  .main-nav,
+  .footer-global,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Al imprimir un comprobante (modal abierto), mostrar solo el modal. */
+  body:has(.modal-backdrop) * {
+    visibility: hidden !important;
+  }
+
+  body:has(.modal-backdrop) .modal-backdrop,
+  body:has(.modal-backdrop) .modal-backdrop * {
+    visibility: visible !important;
+  }
+
+  body:has(.modal-backdrop) .modal-backdrop {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #fff !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+  }
+
+  .modal-content {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

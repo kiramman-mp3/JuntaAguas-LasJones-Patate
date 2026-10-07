@@ -2,6 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { MingasAdminComponent } from './mingas-admin.component';
+import { MingaFormComponent } from './minga-form/minga-form.component';
+import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.component';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import { DialogService } from '../../../../core/services/dialog.service';
@@ -25,6 +28,14 @@ describe('Gestión de Mingas', () => {
   let component: MingasAdminComponent;
   let admin: any;
   let consulta: any;
+  let notify: any;
+
+  const abrirAsistencia = (m = minga) => {
+    const fixture = TestBed.createComponent(MingaAsistenciaComponent);
+    fixture.componentRef.setInput('minga', m);
+    fixture.componentInstance.ngOnInit();
+    return fixture.componentInstance;
+  };
 
   beforeEach(async () => {
     admin = {
@@ -59,12 +70,14 @@ describe('Gestión de Mingas', () => {
       descargarListaAsistencia: vi.fn(),
       urlDocumento: vi.fn(),
     };
+    notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
     await TestBed.configureTestingModule({
       imports: [MingasAdminComponent],
       providers: [
         { provide: AdminService, useValue: admin },
         { provide: ConsultaService, useValue: consulta },
         { provide: DialogService, useValue: { confirmar: vi.fn(async () => true) } },
+        { provide: NotificationService, useValue: notify },
       ],
     }).compileComponents();
     component = TestBed.createComponent(MingasAdminComponent).componentInstance;
@@ -81,7 +94,8 @@ describe('Gestión de Mingas', () => {
   });
 
   it('crea una Minga sin campos de Asamblea y sin enviar mensajes automáticamente', () => {
-    component.formulario = {
+    const form = TestBed.createComponent(MingaFormComponent).componentInstance;
+    form.formulario = {
       titulo: ' Limpieza ',
       descripcion: ' Canal ',
       fecha: '2026-10-03',
@@ -90,7 +104,7 @@ describe('Gestión de Mingas', () => {
       genera_multa_ausencia: false,
       valor_multa: 10,
     };
-    component.guardarNueva();
+    form.guardar();
     const payload = admin.createEvento.mock.calls[0][0];
     expect(payload).toMatchObject({
       tipo: 'MINGA',
@@ -104,8 +118,8 @@ describe('Gestión de Mingas', () => {
   });
 
   it('conserva justificaciones y deja sin marcar como pendiente', () => {
-    component.abrirAsistencia(minga);
-    component.guardarAsistencia();
+    const asistencia = abrirAsistencia();
+    asistencia.guardar();
     expect(admin.registrarAsistenciasMinga).toHaveBeenCalledWith(1, [
       { persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
       { persona_id: 2, estado: 'PENDIENTE', motivo_justificacion: null },
@@ -113,20 +127,20 @@ describe('Gestión de Mingas', () => {
   });
 
   it('permite corregir una justificación vacía y volver a guardar', () => {
-    component.abrirAsistencia(minga);
-    component.asistencias[0].motivo_justificacion = '';
-    component.guardarAsistencia();
+    const asistencia = abrirAsistencia();
+    asistencia.asistencias[0].motivo_justificacion = '';
+    asistencia.guardar();
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
-    component.asistencias[0].motivo_justificacion = 'Trabajo';
-    component.guardarAsistencia();
+    asistencia.asistencias[0].motivo_justificacion = 'Trabajo';
+    asistencia.guardar();
     expect(admin.registrarAsistenciasMinga).toHaveBeenCalledOnce();
   });
 
   it('no guarda una asistencia vacía cuando falla la carga de registros previos', () => {
     admin.getAsistenciasMinga.mockReturnValue(throwError(() => new Error('Sin conexión')));
-    component.abrirAsistencia(minga);
-    component.guardarAsistencia();
-    expect(component.errorAsistencia).toBeTruthy();
+    const asistencia = abrirAsistencia();
+    asistencia.guardar();
+    expect(asistencia.error).toBeTruthy();
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
@@ -147,7 +161,7 @@ describe('Gestión de Mingas', () => {
       files: [new File(['texto'], 'lista.txt', { type: 'text/plain' })],
       value: 'lista.txt',
     } as unknown as HTMLInputElement);
-    expect(component.error).toContain('PDF');
+    expect(notify.warning.mock.calls[0][0]).toContain('PDF');
     expect(consulta.subirDocumentoEvento).not.toHaveBeenCalled();
   });
 
@@ -159,16 +173,16 @@ describe('Gestión de Mingas', () => {
 
   it('impide modificar una asistencia finalizada desde la interfaz', () => {
     admin.getAsistenciasMinga.mockReturnValue(of({ estado: 'REALIZADO', data: [] }));
-    component.abrirAsistencia({ ...minga, estado: 'REALIZADO' });
-    component.guardarAsistencia();
-    expect(component.asistenciaCerrada).toBe(true);
+    const asistencia = abrirAsistencia({ ...minga, estado: 'REALIZADO' });
+    asistencia.guardar();
+    expect(asistencia.cerrada).toBe(true);
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
   it('no finaliza cuando hay asistentes pendientes en el backend', async () => {
     await component.finalizarMinga({ ...minga });
     expect(admin.finalizarMinga).not.toHaveBeenCalled();
-    expect(component.error).toContain('Pendientes: 1');
+    expect(notify.warning.mock.calls[0][0]).toContain('Pendientes: 1');
     expect(component.actualizandoId).toBeNull();
   });
 
@@ -186,6 +200,7 @@ describe('Gestión de Mingas', () => {
     const texto = fixture.nativeElement.textContent;
     expect(texto).toContain('Convocar por WhatsApp');
     expect(texto).toContain('Lista de asistencia');
+    expect(texto).not.toContain('Actas');
     expect(texto).not.toContain('ORDINARIA');
     expect(texto).not.toContain('Acta Resolutiva');
   });

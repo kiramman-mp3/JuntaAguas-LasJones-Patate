@@ -10,6 +10,7 @@ import { HistorialFinancieroComponent } from './historial-financiero/historial-f
 import { EgresosComponent } from './egresos/egresos.component';
 import { FacturacionMensualComponent } from './facturacion-mensual/facturacion-mensual.component';
 import { TarifasComponent } from './tarifas/tarifas.component';
+import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 
 export type SeccionFinanzas = 'cobrar' | 'pagos' | 'egresos' | 'historial' | 'facturacion' | 'tarifas';
 
@@ -39,7 +40,7 @@ interface Indicadores {
 @Component({
   selector: 'app-finanzas',
   standalone: true,
-  imports: [CobroCajaComponent, HistorialPagosComponent, EgresosComponent, HistorialFinancieroComponent, FacturacionMensualComponent, TarifasComponent],
+  imports: [PageHeaderComponent, CobroCajaComponent, HistorialPagosComponent, EgresosComponent, HistorialFinancieroComponent, FacturacionMensualComponent, TarifasComponent],
   templateUrl: './finanzas.component.html'
 })
 export class FinanzasComponent {
