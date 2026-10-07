@@ -108,7 +108,7 @@
           </div>
           <div class="field">
             <label for="egreso-ruc">RUC / cédula <span class="text-muted">(opcional)</span></label>
-            <input id="egreso-ruc" name="ruc" class="input money" type="text" inputmode="numeric" maxlength="13" [(ngModel)]="form.ruc_proveedor" />
+            <input id="egreso-ruc" name="ruc" class="input money" type="text" inputmode="numeric" maxlength="13" [(ngModel)]="form.ruc_proveedor" (input)="soloDigitosRuc($event)" />
             @if (errorDe('ruc_proveedor')) { <span class="field__error">{{ errorDe('ruc_proveedor') }}</span> }
           </div>
         </div>

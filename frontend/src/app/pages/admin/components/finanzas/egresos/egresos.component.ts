@@ -51,6 +51,14 @@ export class EgresosComponent implements OnInit {
 
   readonly numeroEgreso = numeroEgreso;
 
+  /** El RUC o cédula solo admite dígitos: se descartan letras y signos mientras se escribe. */
+  soloDigitosRuc(evento: Event): void {
+    const campo = evento.target as HTMLInputElement;
+    const digitos = campo.value.replace(/\D/g, '').slice(0, 13);
+    if (campo.value !== digitos) campo.value = digitos;
+    this.form.ruc_proveedor = digitos;
+  }
+
   readonly filtrados = computed(() => {
     const t = this.texto().trim().toLowerCase();
     if (!t) return this.egresos();

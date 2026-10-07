@@ -157,6 +157,16 @@ describe('Egresos', () => {
     expect(registrarEgreso).not.toHaveBeenCalled();
     expect(c.errorDe('ruc_proveedor')).toContain('10 o 13');
   });
+
+  it('el RUC descarta todo lo que no sea dígito mientras se escribe', () => {
+    configurar({ getEgresos: () => of({ status: 'OK', data: [] }) });
+    const c = TestBed.createComponent(EgresosComponent).componentInstance;
+    const campo = document.createElement('input');
+    campo.value = '18-912a3456 70019';
+    c.soloDigitosRuc({ target: campo } as unknown as Event);
+    expect(campo.value).toBe('1891234567001');
+    expect(c.form.ruc_proveedor).toBe('1891234567001');
+  });
 });
 
 describe('Historial financiero', () => {
