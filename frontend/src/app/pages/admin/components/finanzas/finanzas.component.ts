@@ -32,8 +32,8 @@ export class FinanzasComponent {
   private finanzas = inject(FinanzasService);
   private router = inject(Router);
 
-  /** Parámetro de ruta :seccion. */
-  readonly seccionRuta = input<string | undefined>(undefined, { alias: 'seccion' });
+  /** Parámetro de ruta :seccion (texto libre de la URL; se valida en `seccionActual`). */
+  readonly seccion = input<string | undefined>();
   /** Parámetro de consulta ?nuevo=egreso (atajo del dashboard). */
   readonly nuevo = input<string | undefined>();
 
@@ -46,11 +46,11 @@ export class FinanzasComponent {
   ];
 
   /** Una sección desconocida en la URL muestra el cobro. */
-  readonly seccion = computed<SeccionFinanzas>(() =>
-    this.secciones.find((s) => s.id === this.seccionRuta())?.id ?? 'cobrar');
-  readonly abrirEgreso = computed(() => this.seccion() === 'egresos' && this.nuevo() === 'egreso');
+  readonly seccionActual = computed<SeccionFinanzas>(() =>
+    this.secciones.find((s) => s.id === this.seccion())?.id ?? 'cobrar');
+  readonly abrirEgreso = computed(() => this.seccionActual() === 'egresos' && this.nuevo() === 'egreso');
 
-  readonly indiceSeccion = computed(() => this.secciones.findIndex((s) => s.id === this.seccion()));
+  readonly indiceSeccion = computed(() => this.secciones.findIndex((s) => s.id === this.seccionActual()));
 
   readonly indicadores = signal<Indicadores | null>(null);
   readonly errorIndicadores = signal(false);

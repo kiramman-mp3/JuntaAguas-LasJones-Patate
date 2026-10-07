@@ -18,7 +18,7 @@ import * as L from 'leaflet';
   styleUrls: []
 })
 export class ComunerosAdminComponent implements OnInit {
-  modalMapaLoteVisible: boolean = false;
+  modalMapaLoteVisible = false;
   loteSeleccionadoMapa: any = null;
 
   abrirGoogleMaps(lat: any, lng: any) {
@@ -54,15 +54,15 @@ export class ComunerosAdminComponent implements OnInit {
 
   // COMUNEROS
   usuarios: any[] = [];
-  usuariosPaginaActual: number = 1;
-  usuariosTotalPaginas: number = 1;
-  usuariosTotalRegistros: number = 0;
-  usuariosBusqueda: string = '';
-  usuariosEstadoFiltro: string = '';
+  usuariosPaginaActual = 1;
+  usuariosTotalPaginas = 1;
+  usuariosTotalRegistros = 0;
+  usuariosBusqueda = '';
+  usuariosEstadoFiltro = '';
 
   // Formulario de Comunero (Crear/Editar)
-  modalUsuarioVisible: boolean = false;
-  modoEdicionUsuario: boolean = false;
+  modalUsuarioVisible = false;
+  modoEdicionUsuario = false;
   /** Cuenta de acceso del comunero en edición (null si no tiene). */
   cuentaUsuario: { estado: string; rol: Rol } | null = null;
   gestionandoCuenta = false;
@@ -70,7 +70,7 @@ export class ComunerosAdminComponent implements OnInit {
   credencialTemporal: CredencialTemporal | null = null;
 
   // Modal Lotes del Comunero
-  modalLotesComuneroVisible: boolean = false;
+  modalLotesComuneroVisible = false;
   comuneroSeleccionadoParaLotes: any = null;
   lotesDelComunero: any[] = [];
 
@@ -92,11 +92,11 @@ export class ComunerosAdminComponent implements OnInit {
   // LOTES
   lotes: any[] = [];
   sectores: any[] = [];
-  lotesBusqueda: string = '';
+  lotesBusqueda = '';
   lotesSectorFiltro: number | null = null;
 
   // Formulario Lote
-  modalLoteVisible: boolean = false;
+  modalLoteVisible = false;
   sugiriendoCodigoLote = false;
   guardandoLote = false;
   errorLote = '';
@@ -119,7 +119,7 @@ export class ComunerosAdminComponent implements OnInit {
   private detalleMarker: L.Marker | null = null;
 
   // Asignar Lote
-  modalVincularVisible: boolean = false;
+  modalVincularVisible = false;
   comuneroSeleccionadoParaLote: any = null;
   formVincular = {
     lote_id: null as number | null,
@@ -128,7 +128,7 @@ export class ComunerosAdminComponent implements OnInit {
   };
 
   // Detalle de Lote
-  modalDetalleLoteVisible: boolean = false;
+  modalDetalleLoteVisible = false;
   loteSeleccionadoParaDetalle: any = null;
 
   
@@ -239,7 +239,7 @@ export class ComunerosAdminComponent implements OnInit {
 
     if (this.modoEdicionUsuario && this.formUsuario.id) {
       this.adminService.updatePersona(this.formUsuario.id, this.formUsuario).subscribe({
-        next: (res) => {
+        next: () => {
           this.notify.success('Comunero actualizado exitosamente.');
           this.cerrarModalUsuario();
           this.cargarUsuarios();
@@ -439,7 +439,7 @@ export class ComunerosAdminComponent implements OnInit {
     }
     this.guardandoLote = true;
     this.adminService.createLote(this.formLote).subscribe({
-      next: (res) => {
+      next: () => {
         this.guardandoLote = false;
         this.notify.success('Lote creado exitosamente.');
         this.cerrarModalLote();
@@ -487,7 +487,7 @@ export class ComunerosAdminComponent implements OnInit {
     };
 
     this.adminService.vincularPersonaLote(this.formVincular.lote_id, payload).subscribe({
-      next: (res) => {
+      next: () => {
         this.notify.success('Lote vinculado exitosamente.');
         this.cerrarModalVincular();
       },
@@ -548,7 +548,7 @@ export class ComunerosAdminComponent implements OnInit {
     }
   }
 
-  private initDetalleMap(lat: number, lng: number, errorRadius: number = 5) {
+  private initDetalleMap(lat: number, lng: number, errorRadius = 5) {
     const mapElement = document.getElementById('detalleMap');
     if (!mapElement) return;
 

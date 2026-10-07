@@ -21,9 +21,9 @@ import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
   styleUrls: ['./mi-cuenta.component.scss']
 })
 export class MiCuentaComponent implements OnInit {
-  cargando: boolean = true;
+  cargando = true;
   resultado: UsuarioResultado | null = null;
-  errorMensaje: string = '';
+  errorMensaje = '';
 
   constructor(
     private consultaService: ConsultaService,

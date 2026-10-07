@@ -1,10 +1,11 @@
 <div class="consulta-page">
   <div class="container">
-
     <!-- ENCABEZADO -->
     <div class="search-header card card--glass">
       <div>
-        <span class="badge badge--info"><i class="ri-user-settings-line" aria-hidden="true"></i> Portal del Comunero</span>
+        <span class="badge badge--info"
+          ><i class="ri-user-settings-line" aria-hidden="true"></i> Portal del Comunero</span
+        >
         <h2>Mi Cuenta y Estado de Obligaciones</h2>
       </div>
       <div>
@@ -15,144 +16,202 @@
     </div>
 
     <!-- CARGANDO (SKELETON) -->
-    <div *ngIf="cargando" class="skeleton-wrapper" aria-live="polite" aria-busy="true">
-      <span class="sr-only">Cargando tu información...</span>
-      <div class="card">
-        <div class="skeleton skeleton--title"></div>
-        <div class="skeleton skeleton--text"></div>
-        <div class="skeleton skeleton--text" style="width: 80%;"></div>
+    @if (cargando) {
+      <div class="skeleton-wrapper" aria-live="polite" aria-busy="true">
+        <span class="sr-only">Cargando tu información...</span>
+        <div class="card">
+          <div class="skeleton skeleton--title"></div>
+          <div class="skeleton skeleton--text"></div>
+          <div class="skeleton skeleton--text" style="width: 80%"></div>
+        </div>
+        <div class="skeleton skeleton--card"></div>
+        <div class="skeleton skeleton--card"></div>
       </div>
-      <div class="skeleton skeleton--card"></div>
-      <div class="skeleton skeleton--card"></div>
-    </div>
+    }
 
     <!-- ALERTA DE ERROR -->
-    <div class="card error-card" *ngIf="!cargando && errorMensaje" role="alert">
-      <i class="ri-error-warning-fill error-icon" aria-hidden="true"></i>
-      <h3>Información no disponible</h3>
-      <p>{{ errorMensaje }}</p>
-      <button type="button" class="btn btn--primary" (click)="reintentar()">
-        <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
-      </button>
-    </div>
+    @if (!cargando && errorMensaje) {
+      <div class="card error-card" role="alert">
+        <i class="ri-error-warning-fill error-icon" aria-hidden="true"></i>
+        <h3>Información no disponible</h3>
+        <p>{{ errorMensaje }}</p>
+        <button type="button" class="btn btn--primary" (click)="reintentar()">
+          <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
+        </button>
+      </div>
+    }
 
     <!-- RESULTADO -->
-    <div class="search-results" *ngIf="!cargando && resultado">
-
-      <!-- TARJETA DEL TITULAR -->
-      <div class="card user-info-card">
-        <div class="user-info-header">
-          <div class="user-avatar">
-            <i class="ri-user-3-line" aria-hidden="true"></i>
+    @if (!cargando && resultado) {
+      <div class="search-results">
+        <!-- TARJETA DEL TITULAR -->
+        <div class="card user-info-card">
+          <div class="user-info-header">
+            <div class="user-avatar">
+              <i class="ri-user-3-line" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h3>{{ resultado.nombres }}</h3>
+              <p class="caption">
+                Cédula: <strong>{{ resultado.cedula }}</strong> | Lote:
+                <span class="badge badge--info">{{ resultado.loteCodigo }}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h3>{{ resultado.nombres }}</h3>
-            <p class="caption">Cédula: <strong>{{ resultado.cedula }}</strong> | Lote: <span class="badge badge--info">{{ resultado.loteCodigo }}</span></p>
+
+          <div class="user-location-info">
+            <div>
+              <small>Sector de Riego:</small>
+              <strong>{{ resultado.sector }}</strong>
+            </div>
+            <div>
+              <small>Estado Financiero:</small>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge--success': totalPendiente === 0,
+                  'badge--danger': totalPendiente > 0,
+                }"
+              >
+                {{ totalPendiente === 0 ? 'AL DÍA EN PAGOS' : 'VALORES PENDIENTES' }}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div class="user-location-info">
-          <div>
-            <small>Sector de Riego:</small>
-            <strong>{{ resultado.sector }}</strong>
+        <!-- RESUMEN DE SALDO A PAGAR -->
+        <div
+          class="kpi-card"
+          [ngClass]="{
+            'kpi-card--danger': totalPendiente > 0,
+            'kpi-card--success': totalPendiente === 0,
+          }"
+        >
+          <div class="kpi-card__icon">
+            <i class="ri-money-dollar-circle-line" aria-hidden="true"></i>
           </div>
-          <div>
-            <small>Estado Financiero:</small>
-            <span class="badge" [ngClass]="{'badge--success': totalPendiente === 0, 'badge--danger': totalPendiente > 0}">
-              {{ totalPendiente === 0 ? 'AL DÍA EN PAGOS' : 'VALORES PENDIENTES' }}
-            </span>
+          <div class="kpi-card__content">
+            <span class="kpi-card__value">{{ totalPendiente | currency: 'USD' }}</span>
+            <span class="kpi-card__label">Total Saldo Pendiente a Cancelar</span>
           </div>
         </div>
+
+        <!-- OBLIGACIONES PENDIENTES -->
+        @if (deudasPendientes.length > 0) {
+          <div class="card table-card">
+            <div class="card__header">
+              <h4 class="card__title">
+                <i class="ri-file-list-3-line" aria-hidden="true"></i> Obligaciones Pendientes
+              </h4>
+            </div>
+
+            <div class="table-container">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Emisión</th>
+                    <th>Concepto de Cobro</th>
+                    <th>Período / Referencia</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of deudasPendientes; track item) {
+                    <tr>
+                      <td>{{ item.fechaEmision | fechaLocal }}</td>
+                      <td>
+                        <strong>{{ item.concepto }}</strong>
+                      </td>
+                      <td>{{ item.periodo }} ({{ item.anio }})</td>
+                      <td>
+                        <strong>{{ item.valor | currency: 'USD' }}</strong>
+                      </td>
+                      <td>
+                        <span class="badge badge--danger">{{ item.estado }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- HISTORIAL DE PAGOS -->
+        @if (deudasPagadas.length > 0) {
+          <div class="card table-card">
+            <div class="card__header">
+              <h4 class="card__title">
+                <i class="ri-history-line" aria-hidden="true"></i> Historial de Cuentas Pagadas
+              </h4>
+            </div>
+
+            <div class="table-container">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Emisión</th>
+                    <th>Concepto de Cobro</th>
+                    <th>Período / Referencia</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of deudasPagadas; track item) {
+                    <tr>
+                      <td>{{ item.fechaEmision | fechaLocal }}</td>
+                      <td>
+                        <strong>{{ item.concepto }}</strong>
+                      </td>
+                      <td>{{ item.periodo }} ({{ item.anio }})</td>
+                      <td>
+                        <strong>{{ item.valor | currency: 'USD' }}</strong>
+                      </td>
+                      <td>
+                        <span class="badge badge--success">{{ item.estado }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- SI NO TIENE DEUDAS -->
+        @if (totalPendiente === 0) {
+          <div class="card success-empty-card">
+            <i class="ri-checkbox-circle-fill success-icon" aria-hidden="true"></i>
+            <h3>¡Felicitaciones! No registras valores pendientes.</h3>
+            <p>
+              Te encuentras al día con tus cuotas de agua de riego y asistencias a mingas/asambleas.
+            </p>
+          </div>
+        }
+
+        <!-- INFORMACIÓN DE PAGO -->
+        @if (totalPendiente > 0) {
+          <div class="card payment-info-card">
+            <h4><i class="ri-bank-card-line" aria-hidden="true"></i> Puntos de Pago Autorizados</h4>
+            <p class="caption">
+              Para cancelar tus valores pendientes, acércate a la recaudación de la Junta o realiza
+              una transferencia bancaria:
+            </p>
+            <ul class="payment-list">
+              <li>
+                <strong>Recaudación Presencial:</strong> Casa Comunal Junta La Jones (Lunes a
+                Viernes de 08:00 a 16:00).
+              </li>
+              <li>
+                <strong>Transferencia Bancaria:</strong> Cuenta de Ahorros Banco del Pichincha N°
+                2200112233 — Junta de Agua La Jones (RUC: 1890123456001).
+              </li>
+            </ul>
+          </div>
+        }
       </div>
-
-      <!-- RESUMEN DE SALDO A PAGAR -->
-      <div class="kpi-card" [ngClass]="{'kpi-card--danger': totalPendiente > 0, 'kpi-card--success': totalPendiente === 0}">
-        <div class="kpi-card__icon">
-          <i class="ri-money-dollar-circle-line" aria-hidden="true"></i>
-        </div>
-        <div class="kpi-card__content">
-          <span class="kpi-card__value">{{ totalPendiente | currency:'USD' }}</span>
-          <span class="kpi-card__label">Total Saldo Pendiente a Cancelar</span>
-        </div>
-      </div>
-
-      <!-- OBLIGACIONES PENDIENTES -->
-      <div class="card table-card" *ngIf="deudasPendientes.length > 0">
-        <div class="card__header">
-          <h4 class="card__title"><i class="ri-file-list-3-line" aria-hidden="true"></i> Obligaciones Pendientes</h4>
-        </div>
-
-        <div class="table-container">
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th>Emisión</th>
-                <th>Concepto de Cobro</th>
-                <th>Período / Referencia</th>
-                <th>Monto</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of deudasPendientes">
-                <td>{{ item.fechaEmision | fechaLocal }}</td>
-                <td><strong>{{ item.concepto }}</strong></td>
-                <td>{{ item.periodo }} ({{ item.anio }})</td>
-                <td><strong>{{ item.valor | currency:'USD' }}</strong></td>
-                <td><span class="badge badge--danger">{{ item.estado }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- HISTORIAL DE PAGOS -->
-      <div class="card table-card" *ngIf="deudasPagadas.length > 0">
-        <div class="card__header">
-          <h4 class="card__title"><i class="ri-history-line" aria-hidden="true"></i> Historial de Cuentas Pagadas</h4>
-        </div>
-
-        <div class="table-container">
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th>Emisión</th>
-                <th>Concepto de Cobro</th>
-                <th>Período / Referencia</th>
-                <th>Monto</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of deudasPagadas">
-                <td>{{ item.fechaEmision | fechaLocal }}</td>
-                <td><strong>{{ item.concepto }}</strong></td>
-                <td>{{ item.periodo }} ({{ item.anio }})</td>
-                <td><strong>{{ item.valor | currency:'USD' }}</strong></td>
-                <td><span class="badge badge--success">{{ item.estado }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- SI NO TIENE DEUDAS -->
-      <div class="card success-empty-card" *ngIf="totalPendiente === 0">
-        <i class="ri-checkbox-circle-fill success-icon" aria-hidden="true"></i>
-        <h3>¡Felicitaciones! No registras valores pendientes.</h3>
-        <p>Te encuentras al día con tus cuotas de agua de riego y asistencias a mingas/asambleas.</p>
-      </div>
-
-      <!-- INFORMACIÓN DE PAGO -->
-      <div class="card payment-info-card" *ngIf="totalPendiente > 0">
-        <h4><i class="ri-bank-card-line" aria-hidden="true"></i> Puntos de Pago Autorizados</h4>
-        <p class="caption">Para cancelar tus valores pendientes, acércate a la recaudación de la Junta o realiza una transferencia bancaria:</p>
-        <ul class="payment-list">
-          <li><strong>Recaudación Presencial:</strong> Casa Comunal Junta La Jones (Lunes a Viernes de 08:00 a 16:00).</li>
-          <li><strong>Transferencia Bancaria:</strong> Cuenta de Ahorros Banco del Pichincha N° 2200112233 — Junta de Agua La Jones (RUC: 1890123456001).</li>
-        </ul>
-      </div>
-
-    </div>
+    }
   </div>
 </div>

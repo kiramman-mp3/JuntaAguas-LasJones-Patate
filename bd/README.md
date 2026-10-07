@@ -4,12 +4,19 @@ Este directorio contiene la configuración de Docker Compose para desplegar el s
 
 ## 🚀 Cómo iniciar la Base de Datos
 
-Para levantar el contenedor e inicializar las tablas automáticamente a partir de `backend/database/schema.sql`:
-
 ```bash
 cd bd
 docker compose up -d
 ```
+
+El contenedor crea una base vacía. Las tablas las crean las migraciones del backend:
+
+```bash
+cd backend
+npm run db:migrate
+```
+
+> Si tu contenedor se creó con una versión anterior de este archivo (que montaba `backend/database/schema.sql`) y ya no arranca, recréalo con `docker compose up -d --force-recreate`. Los datos están en el volumen `mysql_data` y se conservan.
 
 ## 🛑 Cómo detener el servicio
 

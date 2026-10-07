@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
@@ -9,9 +9,15 @@ import { DialogContainerComponent } from './shared/dialog-container/dialog-conta
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, DialogContainerComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    ToastContainerComponent,
+    DialogContainerComponent,
+  ],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App {
   title = 'Junta de Agua La Jones';
@@ -20,7 +26,7 @@ export class App {
   constructor(
     public authService: AuthService,
     public router: Router,
-    public themeService: ThemeService
+    public themeService: ThemeService,
   ) {}
 
   get esRutaAdmin(): boolean {

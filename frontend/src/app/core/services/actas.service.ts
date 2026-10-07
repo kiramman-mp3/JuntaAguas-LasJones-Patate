@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
 import { aFecha } from '../utils/fechas';
 
-type PdfMake = { createPdf(documento: unknown): { download(nombre: string): void } };
+interface PdfMake { createPdf(documento: unknown): { download(nombre: string): void } }
 
 let cargaPdfMake: Promise<PdfMake> | null = null;
 

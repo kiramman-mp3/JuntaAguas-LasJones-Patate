@@ -16,7 +16,7 @@ export class EventosComponent implements OnInit {
   asambleasFuturas: EventoPublico[] = [];
   mingasFuturas: EventoPublico[] = [];
   tabActivo: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
-  cargandoActa: boolean = false;
+  cargandoActa = false;
 
   constructor(private consultaService: ConsultaService, private actasService: ActasService, private cdr: ChangeDetectorRef) {}
 

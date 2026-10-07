@@ -18,9 +18,9 @@ import { DialogService } from '../../../../core/services/dialog.service';
 export class TurnosAdminComponent implements OnInit {
   turnos: any[] = [];
   vistaTurnosModo: 'TABLA' | 'CALENDARIO' = 'TABLA';
-  turnosBusqueda: string = '';
-  turnosDiaFiltro: string = '';
-  turnosTipoFiltro: string = '';
+  turnosBusqueda = '';
+  turnosDiaFiltro = '';
+  turnosTipoFiltro = '';
 
   get turnosFiltrados() {
     let filtrados = this.turnos;
@@ -52,9 +52,9 @@ export class TurnosAdminComponent implements OnInit {
   }
 
   
-  modalTurnoVisible: boolean = false;
-  modalEditarTurnoVisible: boolean = false;
-  modalDetalleTurnoVisible: boolean = false;
+  modalTurnoVisible = false;
+  modalEditarTurnoVisible = false;
+  modalDetalleTurnoVisible = false;
   
   turnoSeleccionadoParaDetalle: any = null;
   turnoEnEdicion: any = null;
@@ -73,7 +73,7 @@ export class TurnosAdminComponent implements OnInit {
   /** Total de comuneros activos que coinciden con la búsqueda (el servidor devuelve como máximo 20). */
   usuariosTurnoModalTotal = 0;
   buscandoComunerosTurno = false;
-  busquedaComuneroTurnoModal: string = '';
+  busquedaComuneroTurnoModal = '';
   private busquedaTurno$ = new Subject<string>();
   private destroyRef = inject(DestroyRef);
   comuneroSeleccionadoTurno: any = null;
