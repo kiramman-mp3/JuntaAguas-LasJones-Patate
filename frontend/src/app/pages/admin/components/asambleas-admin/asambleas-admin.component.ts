@@ -586,39 +586,23 @@ export class AsambleasAdminComponent implements OnInit {
     this.estadoFiltroAsistencia = 'TODOS';
     this.personasAsistencia = [];
 
-    // Cargar comuneros y cruzar con asistencias guardadas
-    this.consultaService.getEventoDetalle(asamblea.id).subscribe({
-      next: (resDetalle: any) => {
-        const asistenciasPrevias = new Map<number, any>();
-        if (resDetalle && resDetalle.evento && resDetalle.evento.asistencias) {
-          resDetalle.evento.asistencias.forEach((a: any) => asistenciasPrevias.set(Number(a.persona_id), a));
-        }
-
-        this.adminService.getPersonas(1, 1000).subscribe({
-          next: (resPersonas: any) => {
-            const lista = (resPersonas && resPersonas.data) ? resPersonas.data : [];
-            this.personasAsistencia = lista.map((p: any) => {
-              const previa = asistenciasPrevias.get(Number(p.id));
-              return {
-                persona_id: p.id,
-                cedula: p.cedula,
-                nombre: `${p.apellidos || ''} ${p.nombres || ''}`.trim(),
-                sector: p.sector || 'Patate',
-                estado: previa ? previa.estado : 'PENDIENTE',
-                motivo_justificacion: previa ? (previa.motivo_justificacion || '') : ''
-              };
-            });
-            this.calcularResumenAsistencia();
-            this.modalAsistencia = true;
-            this.cdr.detectChanges();
-          },
-          error: () => {
-            this.mostrarMensaje('Error de Consulta', 'Error al cargar la nómina de comuneros.', 'DANGER');
-          }
-        });
+    // El servidor devuelve el padrón completo con el estado ya guardado de cada comunero.
+    this.adminService.getAsistencias(asamblea.id).subscribe({
+      next: (res: any) => {
+        const padron: any[] = Array.isArray(res?.data) ? res.data : [];
+        this.personasAsistencia = padron.map((p) => ({
+          persona_id: Number(p.persona_id),
+          cedula: p.cedula,
+          nombre: p.nombre,
+          estado: p.estado || 'PENDIENTE',
+          motivo_justificacion: p.motivo_justificacion || ''
+        }));
+        this.calcularResumenAsistencia();
+        this.modalAsistencia = true;
+        this.cdr.detectChanges();
       },
-      error: () => {
-        this.mostrarMensaje('Error de Consulta', 'Error al consultar el detalle de la asamblea.', 'DANGER');
+      error: (err: any) => {
+        this.mostrarMensaje('Error de Consulta', err?.error?.message || 'No se pudo cargar el padrón de asistencia.', 'DANGER');
       }
     });
   }
