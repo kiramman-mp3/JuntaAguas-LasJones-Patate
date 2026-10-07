@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js",
     "lint": "eslint .",
     "db:migrate": "node src/db/cli.js migrate",
+    "db:setup": "node src/db/cli.js setup",
     "db:drop": "node src/db/cli.js drop",
     "db:seed": "node src/db/cli.js seed",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
