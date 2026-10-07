@@ -86,6 +86,38 @@ async function generarFacturacionMensual(conexion, { anio, mes, simular = false 
 }
 
 /**
+ * Estado de la facturación de agua de un año, mes a mes: cuotas emitidas, cobradas y pendientes.
+ * Los meses sin emisión también se devuelven (con ceros) para que la interfaz muestre el calendario completo.
+ */
+async function resumenFacturacionAnual(conexion, anio) {
+  const concepto = await conceptoPorCodigo(conexion, 'AGUA_MENSUAL');
+  const [filas] = await conexion.query(
+    `SELECT periodo_mes AS mes,
+            COUNT(*) AS emitidas,
+            SUM(estado = 'PAGADA') AS pagadas,
+            SUM(estado = 'PENDIENTE') AS pendientes,
+            COALESCE(SUM(CASE WHEN estado <> 'ANULADA' THEN valor END), 0) AS total,
+            COALESCE(SUM(CASE WHEN estado = 'PAGADA' THEN valor END), 0) AS recaudado
+     FROM obligaciones
+     WHERE concepto_id = ? AND periodo_anio = ? AND periodo_mes IS NOT NULL AND estado <> 'ANULADA'
+     GROUP BY periodo_mes`,
+    [concepto.id, anio]
+  );
+  const porMes = new Map(filas.map((f) => [Number(f.mes), f]));
+  return Array.from({ length: 12 }, (_, i) => {
+    const f = porMes.get(i + 1);
+    return {
+      mes: i + 1,
+      emitidas: Number(f?.emitidas ?? 0),
+      pagadas: Number(f?.pagadas ?? 0),
+      pendientes: Number(f?.pendientes ?? 0),
+      total: redondear(f?.total ?? 0),
+      recaudado: redondear(f?.recaudado ?? 0)
+    };
+  });
+}
+
+/**
  * Registra el pago completo de una o varias obligaciones pendientes del mismo comunero.
  * @returns {{ pagoId: number, valorTotal: number }}
  */
@@ -141,4 +173,4 @@ async function anularPago(conexion, { pagoId, motivo, cuentaId }) {
   return { pago: pagos[0], obligaciones: detalles.length };
 }
 
-module.exports = { redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, generarFacturacionMensual, registrarPago, anularPago };
+module.exports = { redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, generarFacturacionMensual, resumenFacturacionAnual, registrarPago, anularPago };

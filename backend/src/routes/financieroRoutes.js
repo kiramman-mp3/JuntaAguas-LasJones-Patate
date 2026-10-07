@@ -21,6 +21,10 @@ const router = express.Router();
  *     summary: Registrar tarifa (cierra la vigencia de la anterior)
  *     security: [{ bearerAuth: [] }]
  * /financiero/facturacion/mensual:
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Estado de la facturación de agua de un año, mes a mes (emitidas, cobradas, pendientes)
+ *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Gestión Financiera]
  *     summary: Emitir (o simular) las cuotas de agua de un mes para los comuneros activos con lote
@@ -29,6 +33,7 @@ const router = express.Router();
 router.get('/conceptos', verificarToken, financieroController.getConceptos);
 router.get('/tarifas', ...soloAdmin, financieroController.getTarifas);
 router.post('/tarifas', ...soloAdmin, financieroController.createTarifa);
+router.get('/facturacion/mensual', ...soloAdmin, financieroController.getResumenFacturacion);
 router.post('/facturacion/mensual', ...soloAdmin, financieroController.generarFacturacionMensual);
 
 /**

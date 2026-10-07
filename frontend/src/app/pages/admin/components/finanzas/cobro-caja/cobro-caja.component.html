@@ -1,0 +1,191 @@
+@if (!comunero()) {
+  <section class="fin-panel" aria-labelledby="cobro-buscar-titulo">
+    <div class="fin-panel__head">
+      <div>
+        <h3 class="fin-panel__title" id="cobro-buscar-titulo"><i class="ri-hand-coin-line" aria-hidden="true"></i> Cobrar a un comunero</h3>
+        <p class="fin-panel__desc">Busque por apellido, nombre o cédula. Se muestran todas sus obligaciones pendientes: cuotas de agua, multas y otros rubros.</p>
+      </div>
+    </div>
+
+    <div class="search-field">
+      <i class="ri-search-line" aria-hidden="true"></i>
+      <input #campoBusqueda class="input" type="search" autocomplete="off"
+        placeholder="Ej.: Chicaiza o 1804567890"
+        aria-label="Buscar comunero" aria-describedby="cobro-busqueda-ayuda"
+        [ngModel]="termino()" (ngModelChange)="onBuscar($event)" />
+    </div>
+    <p class="field__hint" id="cobro-busqueda-ayuda" aria-live="polite">
+      @if (buscando()) { Buscando… }
+      @else if (errorBusqueda()) { <span class="field__error">{{ errorBusqueda() }}</span> }
+      @else if (termino().trim().length >= 2 && !resultados().length) { No hay comuneros que coincidan con «{{ termino().trim() }}». }
+      @else if (termino().trim().length < 2) { Escriba al menos 2 caracteres. }
+    </p>
+
+    @if (resultados().length) {
+      <ul class="result-list" aria-label="Comuneros encontrados">
+        @for (r of resultados(); track r.id) {
+          <li class="result-list__item">
+            <button type="button" class="result-list__btn" (click)="seleccionarComunero(r)">
+              <span>
+                <strong>{{ r.apellidos }} {{ r.nombres }}</strong>
+                @if (r.estado === 'INACTIVO') { <span class="badge badge--warning">Inactivo</span> }
+              </span>
+              <span class="result-list__meta">{{ r.cedula }} <i class="ri-arrow-right-s-line" aria-hidden="true"></i></span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+} @else {
+  <div class="fin-split">
+    <!-- Obligaciones -->
+    <section class="fin-panel" aria-labelledby="cobro-obligaciones-titulo">
+      <div class="fin-panel__head">
+        <div>
+          <h3 class="fin-panel__title" id="cobro-obligaciones-titulo">{{ comunero()!.apellidos }} {{ comunero()!.nombres }}</h3>
+          <p class="fin-panel__desc">Cédula {{ comunero()!.cedula }} · Pendiente total <strong class="money">${{ totalPendiente().toFixed(2) }}</strong></p>
+        </div>
+        <button type="button" class="btn btn--outline btn--sm pressable" (click)="cambiarComunero()">
+          <i class="ri-user-search-line" aria-hidden="true"></i> Cambiar comunero
+        </button>
+      </div>
+
+      @if (cargandoObligaciones()) {
+        <div aria-live="polite">
+          <div class="skeleton skeleton--text"></div>
+          <div class="skeleton skeleton--text"></div>
+          <div class="skeleton skeleton--text"></div>
+        </div>
+      } @else if (errorObligaciones()) {
+        <div class="alert alert--danger" role="alert">
+          {{ errorObligaciones() }}
+          <button type="button" class="btn btn--outline btn--sm" (click)="cargarObligaciones()">Reintentar</button>
+        </div>
+      } @else if (!obligaciones().length) {
+        <div class="empty-state">
+          <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+          <strong>Al día</strong>
+          <p>Este comunero no tiene obligaciones pendientes.</p>
+        </div>
+      } @else {
+        <div class="fin-panel__head">
+          <div class="chips" role="group" aria-label="Filtrar obligaciones">
+            <button type="button" class="chip" [class.chip--active]="filtro() === 'TODAS'" [attr.aria-pressed]="filtro() === 'TODAS'" (click)="filtro.set('TODAS')">Todas</button>
+            <button type="button" class="chip" [class.chip--active]="filtro() === 'AGUA'" [attr.aria-pressed]="filtro() === 'AGUA'" (click)="filtro.set('AGUA')">Cuotas de agua</button>
+            <button type="button" class="chip" [class.chip--active]="filtro() === 'OTRAS'" [attr.aria-pressed]="filtro() === 'OTRAS'" (click)="filtro.set('OTRAS')">Multas y otros</button>
+          </div>
+          @if (visibles().length) {
+            <button type="button" class="btn btn--outline btn--sm" (click)="alternarVisibles()">
+              {{ todasVisiblesMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
+            </button>
+          }
+        </div>
+
+        @for (g of grupos(); track g.etiqueta) {
+          <div class="group-label"><span>{{ g.etiqueta }}</span><span class="money">${{ g.subtotal.toFixed(2) }}</span></div>
+          <ul class="check-list">
+            @for (o of g.obligaciones; track o.id) {
+              <li>
+                <label class="check-row" [class.check-row--checked]="seleccion().has(o.id)">
+                  <input type="checkbox" [checked]="seleccion().has(o.id)" (change)="alternar(o.id)" />
+                  <span>
+                    <span class="check-row__title">{{ o.concepto_nombre }}</span><br />
+                    <span class="check-row__meta">
+                      {{ etiquetaPeriodo(o.periodo_anio, o.periodo_mes) }}
+                      @if (o.fecha_vencimiento) { · vence {{ o.fecha_vencimiento | fechaLocal }} }
+                      @if (o.observacion) { · {{ o.observacion }} }
+                    </span>
+                  </span>
+                  <span class="check-row__value money">${{ o.valor.toFixed(2) }}</span>
+                </label>
+              </li>
+            }
+          </ul>
+        } @empty {
+          <p class="text-muted">No hay obligaciones de este tipo.</p>
+        }
+      }
+    </section>
+
+    <!-- Caja -->
+    <aside class="fin-panel" aria-labelledby="cobro-caja-titulo">
+      @if (comprobante(); as c) {
+        <div class="empty-state" role="status">
+          <i class="ri-checkbox-circle-fill" style="color: var(--color-success)" aria-hidden="true"></i>
+          <strong>Pago {{ c.numero }} registrado</strong>
+          <p>
+            <span class="money">${{ c.total.toFixed(2) }}</span>
+            @if (c.valorRecibido !== undefined && c.valorRecibido > c.total) { · cambio <span class="money">${{ (c.valorRecibido - c.total).toFixed(2) }}</span> }
+          </p>
+        </div>
+        <div class="summary">
+          <button type="button" class="btn btn--primary btn--block pressable" [disabled]="imprimiendo()" (click)="imprimirComprobante()">
+            <i class="ri-printer-line" aria-hidden="true"></i> {{ imprimiendo() ? 'Preparando…' : 'Imprimir comprobante' }}
+          </button>
+          <button type="button" class="btn btn--outline btn--block pressable" [disabled]="imprimiendo()" (click)="imprimirComprobante(true)">
+            <i class="ri-download-2-line" aria-hidden="true"></i> Descargar PDF
+          </button>
+          <button type="button" class="btn btn--outline btn--block pressable" (click)="comprobante.set(null)">
+            Seguir cobrando a este comunero
+          </button>
+          <button type="button" class="btn btn--outline btn--block pressable" (click)="cambiarComunero()">
+            Cobrar a otro comunero
+          </button>
+        </div>
+      } @else {
+        <h3 class="fin-panel__title" id="cobro-caja-titulo"><i class="ri-safe-2-line" aria-hidden="true"></i> Caja</h3>
+        <div class="summary" style="margin-top: 1rem">
+          <div class="summary__row">
+            <span class="text-muted">{{ seleccionadas().length }} {{ seleccionadas().length === 1 ? 'obligación' : 'obligaciones' }}</span>
+          </div>
+          <div class="summary__total money" aria-live="polite">${{ total().toFixed(2) }}</div>
+          <hr class="summary__divider" />
+
+          <div class="field">
+            <span class="field__label" id="cobro-metodo">Forma de pago</span>
+            <div class="chips" role="radiogroup" aria-labelledby="cobro-metodo">
+              @for (m of metodos; track m.valor) {
+                <button type="button" class="chip" role="radio" [class.chip--active]="metodo() === m.valor" [attr.aria-checked]="metodo() === m.valor" (click)="metodo.set(m.valor)">{{ m.etiqueta }}</button>
+              }
+            </div>
+          </div>
+
+          @if (metodo() === 'EFECTIVO') {
+            <div class="field">
+              <label for="cobro-recibido">Valor recibido</label>
+              <div style="display: flex; gap: 0.5rem">
+                <input id="cobro-recibido" class="input money" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
+                  [ngModel]="recibido()" (ngModelChange)="onRecibido($event)" />
+                <button type="button" class="btn btn--outline btn--sm pressable" (click)="valorExacto()" [disabled]="!total()">Exacto</button>
+              </div>
+            </div>
+            <div class="summary__row">
+              <span class="text-muted">Cambio</span>
+              <strong class="money">${{ cambio().toFixed(2) }}</strong>
+            </div>
+          } @else {
+            <div class="field">
+              <label for="cobro-referencia">Número de referencia</label>
+              <input id="cobro-referencia" class="input" type="text" maxlength="100" placeholder="Comprobante bancario"
+                [ngModel]="referencia()" (ngModelChange)="referencia.set($event)" />
+            </div>
+          }
+
+          <div class="field">
+            <label for="cobro-observacion">Observación <span class="text-muted">(opcional)</span></label>
+            <input id="cobro-observacion" class="input" type="text" maxlength="255"
+              [ngModel]="observacion()" (ngModelChange)="observacion.set($event)" />
+          </div>
+
+          <button type="button" class="btn btn--primary btn--lg btn--block pressable" [disabled]="!!bloqueo() || procesando()" (click)="cobrar()">
+            <i class="ri-check-line" aria-hidden="true"></i> {{ procesando() ? 'Registrando…' : 'Registrar pago' }}
+          </button>
+          @if (bloqueo() && obligaciones().length) {
+            <p class="field__hint" aria-live="polite">{{ bloqueo() }}</p>
+          }
+        </div>
+      }
+    </aside>
+  </div>
+}

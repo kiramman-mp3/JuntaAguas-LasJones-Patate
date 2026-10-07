@@ -5,31 +5,29 @@ import { AdminService } from '../../core/services/admin.service';
 import { DashboardResumen } from '../../core/models/api-payloads';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 import { ComunerosAdminComponent } from './components/comuneros-admin/comuneros-admin.component';
-import { FinanzasAdminComponent } from './components/finanzas-admin/finanzas-admin.component';
-import { Gestioncontratacion } from './components/gestioncontratacion/gestioncontratacion';
-import { Cobros } from './components/cobros/cobros';
+import { FinanzasComponent, SeccionFinanzas } from './components/finanzas/finanzas.component';
 
 import { TurnosAdminComponent } from './components/turnos-admin/turnos-admin.component';
 import { AsistenciasAdminComponent } from './components/asistencias-admin/asistencias-admin.component';
 
+type TabAdmin = 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS';
+
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, FechaLocalPipe, ComunerosAdminComponent, FinanzasAdminComponent, TurnosAdminComponent, AsistenciasAdminComponent,Cobros, Gestioncontratacion ],
+  imports: [CommonModule, FormsModule, FechaLocalPipe, ComunerosAdminComponent, FinanzasComponent, TurnosAdminComponent, AsistenciasAdminComponent],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
 export class AdminComponent implements OnInit {
-  tabActiva: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'COBROS' | 'ACTAS' |'GESTIONCONTRATACION'= 'DASHBOARD';
-  
+  tabActiva: TabAdmin = 'DASHBOARD';
 
-  @ViewChild(FinanzasAdminComponent) finanzasAdminComponent!: FinanzasAdminComponent;
+  /** Sección con la que se abre Finanzas y si debe abrir el formulario de egreso (atajos del dashboard). */
+  finanzasSeccion: SeccionFinanzas = 'COBRAR';
+  finanzasNuevoEgreso = false;
+
   @ViewChild(ComunerosAdminComponent) comunerosAdmin!: ComunerosAdminComponent;
   @ViewChild(AsistenciasAdminComponent) asistenciasAdmin!: AsistenciasAdminComponent;
-  @ViewChild(Cobros) cobros!: Cobros;
-  @ViewChild(Gestioncontratacion) gestioncontratacion!: Gestioncontratacion;
-
-
 
   resumen: DashboardResumen | null = null;
   cargandoResumen = false;
@@ -66,13 +64,19 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  cambiarTab(tab: 'DASHBOARD' | 'USUARIOS' | 'ASISTENCIAS' | 'TURNOS' | 'FINANZAS' | 'COBROS' | 'ACTAS'|'GESTIONCONTRATACION') {
+  cambiarTab(tab: TabAdmin) {
+    if (tab === 'FINANZAS' && this.tabActiva !== 'FINANZAS') this.abrirFinanzas('COBRAR');
     this.tabActiva = tab;
   }
 
+  private abrirFinanzas(seccion: SeccionFinanzas, nuevoEgreso = false) {
+    this.finanzasSeccion = seccion;
+    this.finanzasNuevoEgreso = nuevoEgreso;
+    this.tabActiva = 'FINANZAS';
+  }
+
   prepararNuevoCobroDashboard() {
-    this.cambiarTab('COBROS');
-    setTimeout(() => { if (this.finanzasAdminComponent) this.finanzasAdminComponent.prepararNuevoCobro(); }, 50);
+    this.abrirFinanzas('COBRAR');
   }
 
   abrirModalNuevoUsuarioDashboard() {
@@ -81,8 +85,7 @@ export class AdminComponent implements OnInit {
   }
 
   abrirModalEgresoDashboard() {
-    this.cambiarTab('FINANZAS');
-    setTimeout(() => { if (this.finanzasAdminComponent) this.finanzasAdminComponent.abrirModalEgreso(); }, 50);
+    this.abrirFinanzas('EGRESOS', true);
   }
 
   abrirModalWhatsApp() {

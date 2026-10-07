@@ -83,6 +83,7 @@ const egresoSchema = z.object({
 });
 
 const facturacionSchema = z.object({ anio, mes, simular: z.boolean().default(false) });
+const resumenFacturacionQuery = z.object({ anio: anio.optional() });
 
 /** Catálogo de conceptos con la tarifa vigente hoy. */
 async function getConceptos(req, res) {
@@ -446,6 +447,14 @@ async function generarFacturacionMensual(req, res) {
   return res.status(datos.simular ? 200 : 201).json({ status: 'OK', message, data: resultado });
 }
 
+/** Estado de la facturación de agua de un año (por defecto, el actual). */
+async function getResumenFacturacion(req, res) {
+  const { anio: anioConsulta } = resumenFacturacionQuery.parse(req.query);
+  const anioResumen = anioConsulta ?? Number(hoy().slice(0, 4));
+  const meses = await finanzas.resumenFacturacionAnual(db, anioResumen);
+  return res.json({ status: 'OK', data: { anio: anioResumen, meses } });
+}
+
 module.exports = {
   getConceptos,
   getTarifas,
@@ -463,5 +472,6 @@ module.exports = {
   getPeriodosObligaciones,
   getObligacionesMultas,
   getObligacionesMensualidad,
-  generarFacturacionMensual
+  generarFacturacionMensual,
+  getResumenFacturacion
 };
