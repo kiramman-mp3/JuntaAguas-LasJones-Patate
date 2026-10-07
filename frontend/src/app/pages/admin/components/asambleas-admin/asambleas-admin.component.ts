@@ -5,7 +5,7 @@ import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import { ActasService } from '../../../../core/services/actas.service';
 import { ModalA11yDirective } from '../../../../core/directives/modal-a11y.directive';
-import { environment } from '../../../../../environments/environment';
+import { DocumentosService } from '../../../../core/services/documentos.service';
 
 export interface PuntoAsamblea {
   id?: number;
@@ -188,6 +188,7 @@ export class AsambleasAdminComponent implements OnInit {
     private adminService: AdminService,
     private consultaService: ConsultaService,
     private actasService: ActasService,
+    private documentos: DocumentosService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -509,46 +510,41 @@ export class AsambleasAdminComponent implements OnInit {
   }
 
   subirDocumentoFirmado(asamblea: AsambleaItem, tipo: 'CONVOCATORIA' | 'OTRO', input: HTMLInputElement): void {
-    if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
-    const reader = new FileReader();
+    const file = input.files?.[0];
+    input.value = '';
+    const problema = this.documentos.validarArchivo(file);
+    if (!file || problema) {
+      if (file) this.mostrarMensaje('Archivo no válido', problema!, 'WARNING');
+      return;
+    }
     this.subiendoId = asamblea.id;
 
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      this.adminService.subirDocumentoFirmado(asamblea.id, tipo, file.name, base64).subscribe({
-        next: (res: any) => {
-          this.subiendoId = null;
-          input.value = '';
-          const serverUrl = res.url ? (res.url.startsWith('http') ? res.url : `${environment.serverUrl}${res.url}`) : null;
-          if (tipo === 'CONVOCATORIA') {
-            asamblea.convocatoria_firmada_url = serverUrl || res.url;
-            asamblea.convocatoria_firmada_nombre = file.name;
-          } else {
-            asamblea.lista_asistencia_firmada_url = serverUrl || res.url;
-          }
-          this.mensaje = 'Documento firmado subido y registrado exitosamente.';
-          this.cdr.detectChanges();
-          setTimeout(() => this.mensaje = '', 4000);
-        },
-        error: (err: any) => {
-          this.subiendoId = null;
-          this.mostrarMensaje('Error de Carga', err?.error?.message || 'Error al subir el documento firmado.', 'DANGER');
+    this.documentos.subir(asamblea.id, tipo, file).subscribe({
+      next: (res) => {
+        this.subiendoId = null;
+        if (tipo === 'CONVOCATORIA') {
+          asamblea.convocatoria_firmada_url = res.url;
+          asamblea.convocatoria_firmada_nombre = res.nombre_archivo;
+        } else {
+          asamblea.lista_asistencia_firmada_url = res.url;
         }
-      });
-    };
-    reader.readAsDataURL(file);
+        this.mensaje = 'Documento firmado subido y registrado exitosamente.';
+        this.cdr.detectChanges();
+        setTimeout(() => this.mensaje = '', 4000);
+      },
+      error: (err: any) => {
+        this.subiendoId = null;
+        this.mostrarMensaje('Error de Carga', err?.error?.message || 'Error al subir el documento firmado.', 'DANGER');
+      }
+    });
   }
 
   descargarPadronAsistencia(asamblea: AsambleaItem): void {
-    const url = `${environment.apiUrl}/eventos/${asamblea.id}/pdf-asistencia`;
-    window.open(url, '_blank');
+    this.documentos.abrirListaAsistencia(asamblea.id);
   }
 
   verDocumento(url?: string): void {
-    if (!url) return;
-    const full = url.startsWith('http') ? url : `${environment.serverUrl}${url}`;
-    window.open(full, '_blank');
+    this.documentos.abrir(url);
   }
 
   abrirValidacionDoc(tipo: 'CONVOCATORIA' | 'ASISTENCIA' | 'ACTA', asamblea: AsambleaItem): void {
@@ -569,7 +565,7 @@ export class AsambleasAdminComponent implements OnInit {
     this.docParaValidar = {
       tipo,
       titulo: tipo === 'CONVOCATORIA' ? 'Convocatoria Oficial Firmada' : (tipo === 'ASISTENCIA' ? 'Lista de Asistencia Firmada' : 'Acta Resolutiva Firmada'),
-      url: url.startsWith('http') ? url : `${environment.serverUrl}${url}`,
+      url,
       nombre,
       validado: true
     };
@@ -741,7 +737,7 @@ export class AsambleasAdminComponent implements OnInit {
             resolucion: p.resolucion || '',
             titulo_acta: p.titulo_acta || p.punto_tratar || '',
             estado_acta: p.estado_acta || (p.resolucion ? 'APROBADA' : 'BORRADOR'),
-            acta_firmada_url: p.acta_firmada_url ? (p.acta_firmada_url.startsWith('http') ? p.acta_firmada_url : `${environment.serverUrl}${p.acta_firmada_url}`) : undefined,
+            acta_firmada_url: p.acta_firmada_url || undefined,
             acta_firmada_nombre: p.acta_firmada_nombre || undefined,
             responsables: p.responsables || '',
             fecha_acta: p.fecha_acta || undefined
@@ -794,7 +790,7 @@ export class AsambleasAdminComponent implements OnInit {
         if (res && res.data) {
           this.puntosAsamblea = res.data.map((p: any) => ({
             ...p,
-            acta_firmada_url: p.acta_firmada_url ? (p.acta_firmada_url.startsWith('http') ? p.acta_firmada_url : `${environment.serverUrl}${p.acta_firmada_url}`) : undefined
+            acta_firmada_url: p.acta_firmada_url || undefined
           }));
         }
         this.cdr.detectChanges();
@@ -818,29 +814,28 @@ export class AsambleasAdminComponent implements OnInit {
   }
 
   subirActaPuntoFirmada(punto: PuntoAsamblea, input: HTMLInputElement): void {
-    if (!input.files || input.files.length === 0 || !this.asambleaSeleccionada) return;
-    const file = input.files[0];
-    const reader = new FileReader();
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.asambleaSeleccionada || !punto.id) return;
+    const problema = this.documentos.validarArchivo(file);
+    if (problema) {
+      this.mostrarMensaje('Archivo no válido', problema, 'WARNING');
+      return;
+    }
 
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      this.adminService.subirDocumentoFirmado(this.asambleaSeleccionada!.id, 'ACTA', file.name, base64, punto.id).subscribe({
-        next: (res: any) => {
-          input.value = '';
-          const serverUrl = res.url ? (res.url.startsWith('http') ? res.url : `${environment.serverUrl}${res.url}`) : null;
-          punto.acta_firmada_url = serverUrl || res.url;
-          punto.acta_firmada_nombre = file.name;
-          punto.estado_acta = 'FIRMADA';
-          this.mensaje = `Acta firmada del Punto ${punto.orden} subida y validada.`;
-          this.cdr.detectChanges();
-          setTimeout(() => this.mensaje = '', 4000);
-        },
-        error: (err: any) => {
-          this.mostrarMensaje('Error al Subir Acta', err?.error?.message || 'Error al subir el acta firmada.', 'DANGER');
-        }
-      });
-    };
-    reader.readAsDataURL(file);
+    this.documentos.subir(this.asambleaSeleccionada.id, 'ACTA', file, punto.id).subscribe({
+      next: (res) => {
+        punto.acta_firmada_url = res.url;
+        punto.acta_firmada_nombre = res.nombre_archivo;
+        punto.estado_acta = 'FIRMADA';
+        this.mensaje = `Acta firmada del Punto ${punto.orden} subida y validada.`;
+        this.cdr.detectChanges();
+        setTimeout(() => this.mensaje = '', 4000);
+      },
+      error: (err: any) => {
+        this.mostrarMensaje('Error al Subir Acta', err?.error?.message || 'Error al subir el acta firmada.', 'DANGER');
+      }
+    });
   }
 
   cambiarEstadoActaPunto(punto: PuntoAsamblea, nuevoEstado: 'BORRADOR' | 'APROBADA' | 'FIRMADA'): void {

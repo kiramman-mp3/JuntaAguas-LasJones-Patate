@@ -217,7 +217,7 @@
 
               <label class="btn btn--primary btn--xs btn-upload" title="Subir documento firmado (PDF o imagen)">
                 <i class="ri-upload-2-line"></i> {{ a.convocatoria_firmada_url ? 'Reemplazar' : 'Subir Firmado' }}
-                <input type="file" accept="application/pdf,image/*" style="display: none;" #inputConv (change)="subirDocumentoFirmado(a, 'CONVOCATORIA', inputConv)">
+                <input type="file" accept="application/pdf,image/jpeg,image/png" style="display: none;" #inputConv (change)="subirDocumentoFirmado(a, 'CONVOCATORIA', inputConv)">
               </label>
 
               <button
@@ -253,7 +253,7 @@
 
               <label class="btn btn--primary btn--xs btn-upload" title="Subir hoja de asistencia escaneada con firmas">
                 <i class="ri-upload-2-line"></i> {{ a.lista_asistencia_firmada_url ? 'Reemplazar' : 'Subir Firmado' }}
-                <input type="file" accept="application/pdf,image/*" style="display: none;" #inputAsist (change)="subirDocumentoFirmado(a, 'OTRO', inputAsist)">
+                <input type="file" accept="application/pdf,image/jpeg,image/png" style="display: none;" #inputAsist (change)="subirDocumentoFirmado(a, 'OTRO', inputAsist)">
               </label>
 
               <button
@@ -526,7 +526,7 @@
             <div class="acta-file-actions">
               <label class="btn btn--outline btn--xs btn-upload" title="Subir acta firmada de este punto en PDF o imagen">
                 <i class="ri-upload-2-line"></i> {{ punto.acta_firmada_url ? 'Reemplazar Firmada' : 'Subir Acta Firmada' }}
-                <input type="file" accept="application/pdf,image/*" style="display: none;" #filePunto (change)="subirActaPuntoFirmada(punto, filePunto)">
+                <input type="file" accept="application/pdf,image/jpeg,image/png" style="display: none;" #filePunto (change)="subirActaPuntoFirmada(punto, filePunto)">
               </label>
 
               <button

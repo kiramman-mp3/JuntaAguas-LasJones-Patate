@@ -2,7 +2,6 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConsultaService } from '../../core/services/consulta.service';
 import { ActasService } from '../../core/services/actas.service';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-eventos',
@@ -54,27 +53,11 @@ export class EventosComponent implements OnInit {
     this.tabActivo = tab;
   }
 
-  abrirPdf(url: string) {
-    if (!url) return;
-    const fullUrl = url.startsWith('http') ? url : `${environment.serverUrl}${url}`;
-    window.open(fullUrl, '_blank');
-  }
-
   descargarConvocatoria(ev: any) {
     if (ev.convocatoria_firmada_url) {
-      this.abrirPdf(ev.convocatoria_firmada_url);
+      this.consultaService.abrirDocumento(ev.convocatoria_firmada_url);
     } else {
       this.actasService.generarConvocatoriaPDF(ev);
-    }
-  }
-
-  descargarListaAsistencia(ev: any) {
-    if (ev.lista_asistencia_firmada_url) {
-      this.abrirPdf(ev.lista_asistencia_firmada_url);
-    } else if (ev.lista_asistencia_url) {
-      this.abrirPdf(ev.lista_asistencia_url);
-    } else {
-      window.open(`${environment.apiUrl}/eventos/${ev.id}/pdf-asistencia`, '_blank');
     }
   }
 }

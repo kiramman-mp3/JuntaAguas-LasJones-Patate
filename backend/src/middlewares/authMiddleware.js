@@ -75,6 +75,12 @@ function crearVerificador({ permitirCambioPassword }) {
 /** Exige un token de sesión completo. */
 const verificarToken = crearVerificador({ permitirCambioPassword: false });
 
+/** Si llega un token lo valida; si no hay token deja pasar la petición sin usuario. */
+function autenticacionOpcional(req, res, next) {
+  if (!leerToken(req)) return next();
+  return verificarToken(req, res, next);
+}
+
 /** Acepta también el token temporal emitido para cambiar la contraseña. */
 const verificarTokenOCambioPassword = crearVerificador({ permitirCambioPassword: true });
 
@@ -116,6 +122,7 @@ module.exports = {
   ALCANCE_COMPLETO,
   ALCANCE_CAMBIO_PASSWORD,
   verificarToken,
+  autenticacionOpcional,
   verificarTokenOCambioPassword,
   verificarRol,
   requiere,
