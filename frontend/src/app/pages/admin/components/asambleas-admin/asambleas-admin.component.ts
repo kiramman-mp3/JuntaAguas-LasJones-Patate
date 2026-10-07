@@ -59,13 +59,13 @@ export class AsambleasAdminComponent implements OnInit {
   @Output() conectarWhatsApp = new EventEmitter<void>();
 
   asambleas: AsambleaItem[] = [];
-  busqueda: string = '';
+  busqueda = '';
   subtipoFiltro: 'TODAS' | 'ORDINARIA' | 'EXTRAORDINARIA' = 'TODAS';
   periodo: 'TODAS' | 'PROXIMAS' | 'ANTERIORES' = 'TODAS';
 
-  cargando: boolean = false;
-  mensaje: string = '';
-  error: string = '';
+  cargando = false;
+  mensaje = '';
+  error = '';
 
   enviandoId: number | null = null;
   actualizandoId: number | null = null;
@@ -73,10 +73,10 @@ export class AsambleasAdminComponent implements OnInit {
   subiendoId: number | null = null;
 
   // Modales
-  modalNueva: boolean = false;
-  modalAsistencia: boolean = false;
-  modalActas: boolean = false;
-  modalValidacionDoc: boolean = false;
+  modalNueva = false;
+  modalAsistencia = false;
+  modalActas = false;
+  modalValidacionDoc = false;
 
   asambleaSeleccionada: AsambleaItem | null = null;
 
@@ -101,17 +101,17 @@ export class AsambleasAdminComponent implements OnInit {
 
   // Asistencia Masiva
   personasAsistencia: any[] = [];
-  filtroAsistencia: string = '';
+  filtroAsistencia = '';
   estadoFiltroAsistencia: 'TODOS' | 'PENDIENTE' | 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO' = 'TODOS';
   resumenAsistencia = { total: 0, presentes: 0, ausentes: 0, justificados: 0, pendientes: 0 };
-  guardandoAsistencia: boolean = false;
+  guardandoAsistencia = false;
 
   // Múltiples Actas (F07)
   puntosAsamblea: PuntoAsamblea[] = [];
-  cargandoPuntos: boolean = false;
-  guardandoPuntos: boolean = false;
+  cargandoPuntos = false;
+  guardandoPuntos = false;
   puntoActaSeleccionado: PuntoAsamblea | null = null;
-  mostrarNuevoTema: boolean = false;
+  mostrarNuevoTema = false;
   nuevoTema = {
     punto_tratar: '',
     tratado: '',

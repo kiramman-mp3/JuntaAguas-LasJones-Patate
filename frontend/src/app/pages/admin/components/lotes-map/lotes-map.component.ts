@@ -12,9 +12,9 @@ export class LotesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
   
   // Coordenadas por defecto (Centro de Patate)
-  @Input() latitud: number = -1.3121; 
-  @Input() longitud: number = -78.5085;
-  @Input() readonly: boolean = false; 
+  @Input() latitud = -1.3121; 
+  @Input() longitud = -78.5085;
+  @Input() readonly = false; 
   
   @Output() locationSelected = new EventEmitter<{lat: number, lng: number}>();
 

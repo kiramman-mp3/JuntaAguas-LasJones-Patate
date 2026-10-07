@@ -2,10 +2,10 @@
  * Carga diferida de jsPDF y jspdf-autotable (unos 400 kB). Se descargan la primera vez
  * que se genera un PDF y la promesa se reutiliza; si la carga falla, el siguiente intento la repite.
  */
-type ModulosJsPdf = {
+interface ModulosJsPdf {
   jsPDF: typeof import('jspdf').jsPDF;
   autoTable: typeof import('jspdf-autotable').default;
-};
+}
 
 let carga: Promise<ModulosJsPdf> | null = null;
 

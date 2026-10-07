@@ -27,21 +27,21 @@ export function mensajeDeError(err: HttpErrorResponse, porDefecto: string): stri
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
-  usuario: string = '';
-  password: string = '';
-  mostrarPassword: boolean = false;
-  cargando: boolean = false;
-  errorMensaje: string = '';
-  recordarSesion: boolean = true;
-  mostrarAyudaPassword: boolean = false;
+  usuario = '';
+  password = '';
+  mostrarPassword = false;
+  cargando = false;
+  errorMensaje = '';
+  recordarSesion = true;
+  mostrarAyudaPassword = false;
   
   // Flujo de cambio de contraseña
-  requiereCambioPassword: boolean = false;
-  nuevaPassword1: string = '';
-  nuevaPassword2: string = '';
+  requiereCambioPassword = false;
+  nuevaPassword1 = '';
+  nuevaPassword2 = '';
   /** Contraseña temporal; se pide si la sesión se retomó sin pasar por el formulario de ingreso. */
-  passwordActual: string = '';
-  exitoMensaje: string = '';
+  passwordActual = '';
+  exitoMensaje = '';
   readonly requisitosPassword = REQUISITOS_PASSWORD;
 
   constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}

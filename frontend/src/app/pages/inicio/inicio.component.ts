@@ -13,7 +13,7 @@ import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
   styleUrls: ['./inicio.component.scss']
 })
 export class InicioComponent implements OnInit {
-  totalComuneros: number = 0;
+  totalComuneros = 0;
   proximosEventos: any[] = [];
 
   sectores: any[] = [];
