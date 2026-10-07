@@ -7,12 +7,13 @@ import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.compon
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { LoteFormComponent } from '../lote-form/lote-form.component';
 import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
+import { SectorFormComponent } from '../sector-form/sector-form.component';
 
 /** Catastro de lotes: búsqueda por código, filtro por sector, alta de lotes y ficha de cada uno. */
 @Component({
   selector: 'app-catastro-lotes',
   standalone: true,
-  imports: [FormsModule, EmptyStateComponent, SkeletonComponent, LoteFormComponent, LoteDetalleComponent],
+  imports: [FormsModule, EmptyStateComponent, SkeletonComponent, LoteFormComponent, LoteDetalleComponent, SectorFormComponent],
   templateUrl: './catastro-lotes.component.html'
 })
 export class CatastroLotesComponent implements OnInit {
@@ -25,6 +26,7 @@ export class CatastroLotesComponent implements OnInit {
   readonly error = signal(false);
   readonly formularioAbierto = signal(false);
   readonly detalle = signal<any | null>(null);
+  readonly sectorAbierto = signal(false);
 
   busqueda = '';
   sectorFiltro: number | null = null;
@@ -32,8 +34,23 @@ export class CatastroLotesComponent implements OnInit {
 
   ngOnInit(): void {
     this.busqueda$.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe(() => this.cargar());
-    this.admin.getSectores().subscribe({ next: (res) => this.sectores.set(res?.data ?? []) });
+    this.cargarSectores();
     this.cargar();
+  }
+
+  cargarSectores(): void {
+    this.admin.getSectores().subscribe({ next: (res) => this.sectores.set(res?.data ?? []) });
+  }
+
+  onSectorCreado(): void {
+    this.sectorAbierto.set(false);
+    this.cargarSectores();
+  }
+
+  /** Sin sectores no se pueden registrar lotes: se pide crear uno primero. */
+  nuevoLote(): void {
+    if (this.sectores().length) this.formularioAbierto.set(true);
+    else this.sectorAbierto.set(true);
   }
 
   cargar(): void {

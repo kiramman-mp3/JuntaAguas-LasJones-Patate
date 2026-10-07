@@ -8,6 +8,7 @@ import { LoteFormComponent } from './lote-form/lote-form.component';
 import { ComuneroFormComponent } from './comunero-form/comunero-form.component';
 import { LotesComuneroComponent } from './lotes-comunero/lotes-comunero.component';
 import { VincularLoteComponent } from './vincular-lote/vincular-lote.component';
+import { SectorFormComponent } from './sector-form/sector-form.component';
 
 let admin: any;
 const notifyStub = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
@@ -156,6 +157,28 @@ describe('Titularidad única (VincularLoteComponent)', () => {
     expect(c.titularActual()).toBeNull();
     c.loteId.set(12);
     expect(c.titularActual()).toBeNull();
+  });
+});
+
+describe('Sectores (SectorFormComponent)', () => {
+  it('crea un sector con su nombre limpio y avisa al terminar', () => {
+    configurar({ createSector: vi.fn(() => of({ status: 'OK', message: '', sectorId: 1 })) });
+    const c = TestBed.createComponent(SectorFormComponent).componentInstance;
+    const creado = vi.fn();
+    c.creado.subscribe(creado);
+    c.nombre = '  La Jones Alto ';
+    c.guardar();
+    expect(admin.createSector).toHaveBeenCalledWith({ nombre: 'La Jones Alto', descripcion: undefined });
+    expect(creado).toHaveBeenCalled();
+  });
+
+  it('muestra el conflicto si el sector ya existe', () => {
+    configurar({ createSector: vi.fn(() => throwError(() => ({ error: { message: 'Ya existe el sector Centro.' } }))) });
+    const c = TestBed.createComponent(SectorFormComponent).componentInstance;
+    c.nombre = 'Centro';
+    c.guardar();
+    expect(c.error()).toBe('Ya existe el sector Centro.');
+    expect(c.guardando()).toBe(false);
   });
 });
 

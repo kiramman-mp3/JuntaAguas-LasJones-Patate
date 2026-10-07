@@ -69,6 +69,10 @@ export class AdminService {
     return this.http.post<RespuestaMensaje>(`${this.baseUrl}/lotes/${loteId}/vincular-persona`, data);
   }
 
+  createSector(data: { nombre: string; descripcion?: string }): Observable<RespuestaMensaje & { sectorId: number }> {
+    return this.http.post<RespuestaMensaje & { sectorId: number }>(`${this.baseUrl}/lotes/sectores`, data);
+  }
+
   getSectores(): Observable<RespuestaApi<SectorItem[]>> {
     return this.http.get<RespuestaApi<SectorItem[]>>(`${this.baseUrl}/lotes/sectores`);
   }
