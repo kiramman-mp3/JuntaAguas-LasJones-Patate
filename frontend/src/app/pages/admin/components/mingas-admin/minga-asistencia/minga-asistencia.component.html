@@ -1,0 +1,95 @@
+<app-modal
+  titulo="Asistencia a minga"
+  [subtitulo]="minga().titulo + ' · ' + (minga().fecha | fechaLocal)"
+  icono="ri-checkbox-circle-line"
+  tono="success"
+  tamano="lg"
+  [bloqueado]="guardando"
+  (cerrar)="cerrar.emit()"
+>
+  <div class="modal__body form-stack">
+    @if (cargando) {
+      <app-skeleton [filas]="6" mensaje="Cargando comuneros y asistencias registradas…" />
+    } @else if (!asistencias.length && error) {
+      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudo cargar la asistencia" [mensaje]="error">
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      </app-empty-state>
+    } @else if (!asistencias.length) {
+      <app-empty-state icono="ri-team-line" titulo="Sin comuneros activos" mensaje="No hay comuneros activos para registrar asistencia." />
+    } @else {
+      <div class="summary-chips" aria-live="polite">
+        <div class="summary-chip"><span>Padrón</span><strong>{{ asistencias.length }}</strong></div>
+        <div class="summary-chip summary-chip--present"><span>Presentes</span><strong>{{ totalPresentes }}</strong></div>
+        <div class="summary-chip summary-chip--justified"><span>Pendientes</span><strong>{{ totalPendientes }}</strong></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-field toolbar__grow">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input class="input input--sm" type="search" [(ngModel)]="buscar" placeholder="Nombre o cédula" aria-label="Buscar comunero" />
+        </div>
+        @if (!cerrada) {
+          <div class="toolbar__group">
+            <button type="button" class="btn btn--ghost btn--sm" (click)="marcarPresentes()" [disabled]="guardando">
+              <i class="ri-check-double-line" aria-hidden="true"></i> Marcar visibles presentes
+            </button>
+          </div>
+        }
+      </div>
+      <p class="text-muted small">Pulse un estado activo para devolver al comunero a pendiente.</p>
+
+      @if (error) {
+        <div class="alert alert--danger" role="alert">{{ error }}</div>
+      }
+
+      @if (filtradas.length === 0) {
+        <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda." />
+      } @else {
+        <ul class="roster">
+          @for (a of filtradas; track a.persona_id; let i = $index) {
+            <li class="roster__row">
+              <div class="roster__who">
+                <span class="roster__index">{{ i + 1 }}</span>
+                <div>
+                  <strong>{{ a.nombre }}</strong>
+                  <span class="roster__meta">{{ a.cedula }}</span>
+                </div>
+              </div>
+              <div class="attendance-toggle" role="group" [attr.aria-label]="'Asistencia de ' + a.nombre">
+                <button type="button" class="attendance-toggle__btn attendance-toggle__btn--present" [class.is-active]="a.estado === 'PRESENTE'"
+                  [attr.aria-pressed]="a.estado === 'PRESENTE'" (click)="setEstado(a, 'PRESENTE')" [disabled]="cerrada || guardando">
+                  <i class="ri-check-line" aria-hidden="true"></i><span>Presente</span>
+                </button>
+                <button type="button" class="attendance-toggle__btn attendance-toggle__btn--absent" [class.is-active]="a.estado === 'AUSENTE'"
+                  [attr.aria-pressed]="a.estado === 'AUSENTE'" (click)="setEstado(a, 'AUSENTE')" [disabled]="cerrada || guardando">
+                  <i class="ri-close-line" aria-hidden="true"></i><span>Ausente</span>
+                </button>
+                <button type="button" class="attendance-toggle__btn attendance-toggle__btn--justified" [class.is-active]="a.estado === 'JUSTIFICADO'"
+                  [attr.aria-pressed]="a.estado === 'JUSTIFICADO'" (click)="setEstado(a, 'JUSTIFICADO')" [disabled]="cerrada || guardando">
+                  <i class="ri-information-line" aria-hidden="true"></i><span>Justificado</span>
+                </button>
+              </div>
+              @if (a.estado === 'JUSTIFICADO') {
+                <input class="input input--sm roster__reason" [(ngModel)]="a.motivo_justificacion" [disabled]="cerrada || guardando" maxlength="255"
+                  placeholder="Motivo de justificación" [attr.aria-label]="'Motivo de ' + a.nombre" />
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+
+  <div class="modal__footer">
+    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando">Cerrar</button>
+    @if (!cerrada) {
+      <button type="button" class="btn btn--primary" (click)="guardar()" [disabled]="guardando || cargando || !asistencias.length">
+        @if (guardando) {
+          <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+        } @else {
+          <i class="ri-save-line" aria-hidden="true"></i> Guardar asistencia
+        }
+      </button>
+    }
+  </div>
+</app-modal>
