@@ -29,7 +29,7 @@ export class AuthService {
 
   private readonly http = inject(HttpClient);
 
-  constructor() {}
+
 
   /** Con `recordar` la sesión sobrevive al cierre del navegador; sin él dura lo que la pestaña. */
   login(cedula: string, password: string, recordar = true): Observable<LoginResponse> {

@@ -23,7 +23,7 @@ export class AdminService {
 
   private readonly http = inject(HttpClient);
 
-  constructor() {}
+
 
   /** Listado paginado de comuneros. El servidor acepta como máximo 100 por página. */
   getPersonas(page = 1, limit = 25, busqueda = '', estado = ''): Observable<RespuestaPaginada<PersonaListado>> {

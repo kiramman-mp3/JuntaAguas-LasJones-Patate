@@ -22,7 +22,7 @@ export class EventosComponent implements OnInit {
   private readonly actasService = inject(ActasService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  constructor() {}
+
 
   ngOnInit() {
     this.consultaService.getEventosPublicos().subscribe({

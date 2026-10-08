@@ -75,7 +75,7 @@ export class ConsultaService {
   private readonly http = inject(HttpClient);
   private readonly documentos = inject(DocumentosService);
 
-  constructor() {}
+
 
   consultarPorCedula(cedula: string): Observable<ConsultaResultadoResponse> {
     return this.http.get<ConsultaResultadoResponse>(`${this.apiUrl}/personas/consulta/${cedula}`);
