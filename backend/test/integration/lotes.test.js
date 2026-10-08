@@ -49,6 +49,33 @@ test('crea el lote con el código normalizado', async () => {
   assert.equal(lote.codigo, 'LJA-020');
 });
 
+test('pagina el catastro solo cuando se pide una página, con el total de los filtros', async () => {
+  const completo = await request(app).get('/api/lotes').set(auth(admin));
+  assert.equal(completo.status, 200);
+  assert.equal(completo.body.pagination, undefined);
+  const activos = completo.body.data.length;
+  assert.ok(activos >= 2);
+
+  const primera = await request(app).get('/api/lotes?page=1&limit=1').set(auth(admin));
+  assert.equal(primera.status, 200);
+  assert.equal(primera.body.data.length, 1);
+  assert.deepEqual(primera.body.pagination, { total: activos, page: 1, limit: 1 });
+
+  const segunda = await request(app).get('/api/lotes?page=2&limit=1').set(auth(admin));
+  assert.notEqual(segunda.body.data[0].id, primera.body.data[0].id);
+
+  const filtrada = await request(app).get(`/api/lotes?page=1&limit=10&sector_id=${sectorTambo}`).set(auth(admin));
+  assert.equal(filtrada.body.pagination.total, 1);
+  assert.equal(filtrada.body.data[0].codigo, 'LJA-010');
+
+  const vacia = await request(app).get('/api/lotes?page=99&limit=10').set(auth(admin));
+  assert.deepEqual(vacia.body.data, []);
+  assert.equal(vacia.body.pagination.total, activos);
+
+  assert.equal((await request(app).get('/api/lotes?page=0').set(auth(admin))).status, 400);
+  assert.equal((await request(app).get('/api/lotes?page=1&limit=500').set(auth(admin))).status, 400);
+});
+
 test('transferir un lote queda auditado con el titular anterior y mueve sus turnos activos', async () => {
   const anterior = await crearUsuario();
   const nuevo = await crearUsuario();
