@@ -147,14 +147,15 @@ class SesionWhatsApp {
   /** Grupos a los que pertenece la cuenta vinculada, por nombre. */
   async listarGrupos() {
     const cliente = this.#clienteConectado();
-    const chats = await cliente.getChats();
-    return chats
-      .filter((chat) => chat.isGroup)
-      .map((chat) => ({
-        id: chat.id._serialized,
-        nombre: chat.name || chat.id._serialized,
-        participantes: Array.isArray(chat.participants) ? chat.participants.length : null
-      }))
+    let grupos;
+    try {
+      grupos = await cliente.listarGrupos();
+    } catch (error) {
+      this.#log.error('[WhatsApp] No se pudieron leer los grupos:', error.message);
+      throw new ErrorServicio(502, 'WhatsApp Web todavía no cargó los grupos. Intente de nuevo en unos segundos.');
+    }
+    return grupos
+      .map((g) => ({ id: g.id, nombre: g.nombre || g.id, participantes: g.participantes ?? null }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
@@ -164,16 +165,19 @@ class SesionWhatsApp {
     if (typeof texto !== 'string' || !texto.trim()) throw new ErrorServicio(400, 'El mensaje está vacío.');
     if (texto.length > MAX_TEXTO) throw new ErrorServicio(400, `El mensaje supera los ${MAX_TEXTO} caracteres.`);
 
-    const cliente = this.#clienteConectado();
-    const chat = await cliente.getChatById(grupoId).catch(() => null);
-    if (!chat || !chat.isGroup) throw new ErrorServicio(404, 'El grupo no existe o la cuenta de la Junta ya no pertenece a él.');
+    const grupos = await this.listarGrupos();
+    if (!grupos.some((g) => g.id === grupoId)) {
+      throw new ErrorServicio(404, 'El grupo no existe o la cuenta de la Junta ya no pertenece a él.');
+    }
 
+    let mensaje;
     try {
-      const mensaje = await chat.sendMessage(texto);
-      return { mensajeId: mensaje?.id?._serialized ?? null };
+      mensaje = await this.#clienteConectado().enviarTexto(grupoId, texto);
     } catch (error) {
       throw new ErrorServicio(502, `WhatsApp no aceptó el mensaje: ${error.message}`);
     }
+    if (!mensaje) throw new ErrorServicio(502, 'WhatsApp no confirmó el envío del mensaje.');
+    return { mensajeId: mensaje.id?._serialized ?? null };
   }
 
   #clienteConectado() {

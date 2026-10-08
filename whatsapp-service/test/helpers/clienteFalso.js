@@ -2,10 +2,12 @@ const { EventEmitter } = require('events');
 
 /** Cliente de WhatsApp Web simulado: sin navegador, controlado desde la prueba. */
 class ClienteFalso extends EventEmitter {
-  constructor({ chats = [], falloInicio = null } = {}) {
+  constructor({ chats = [], falloInicio = null, falloListar = null, sinConfirmacion = false } = {}) {
     super();
     this.chats = chats;
     this.falloInicio = falloInicio;
+    this.falloListar = falloListar;
+    this.sinConfirmacion = sinConfirmacion;
     this.enviados = [];
     this.destruido = false;
     this.cerroSesion = false;
@@ -23,28 +25,19 @@ class ClienteFalso extends EventEmitter {
     this.cerroSesion = true;
   }
 
-  async getChats() {
-    return this.chats.map((c) => this.#chat(c));
+  async listarGrupos() {
+    if (this.falloListar) throw this.falloListar;
+    return this.chats
+      .filter(({ esGrupo = true }) => esGrupo)
+      .map(({ id, nombre, participantes = 3 }) => ({ id, nombre, participantes }));
   }
 
-  async getChatById(id) {
+  async enviarTexto(id, texto) {
     const chat = this.chats.find((c) => c.id === id);
-    if (!chat) throw new Error('chat no encontrado');
-    return this.#chat(chat);
-  }
-
-  #chat({ id, nombre, esGrupo = true, participantes = 3, falloEnvio = null }) {
-    return {
-      id: { _serialized: id },
-      name: nombre,
-      isGroup: esGrupo,
-      participants: esGrupo ? Array.from({ length: participantes }) : undefined,
-      sendMessage: async (texto) => {
-        if (falloEnvio) throw falloEnvio;
-        this.enviados.push({ id, texto });
-        return { id: { _serialized: `msg-${this.enviados.length}` } };
-      }
-    };
+    if (chat?.falloEnvio) throw chat.falloEnvio;
+    if (this.sinConfirmacion) return undefined;
+    this.enviados.push({ id, texto });
+    return { id: { _serialized: `msg-${this.enviados.length}` } };
   }
 }
 

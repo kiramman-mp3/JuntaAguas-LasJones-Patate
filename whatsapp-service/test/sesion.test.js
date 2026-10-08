@@ -166,6 +166,23 @@ test('un rechazo de WhatsApp al enviar se informa como 502', async () => {
   await assert.rejects(sesion.enviarAGrupo(GRUPO, 'Hola'), { status: 502, message: /not admin/ });
 });
 
+test('si WhatsApp Web no puede leer los grupos responde 502 con un mensaje claro', async () => {
+  const cliente = new ClienteFalso({ falloListar: new Error('r') });
+  const { sesion } = crearSesion({ clientes: [cliente] });
+  sesion.iniciar();
+  cliente.emit('ready');
+  await assert.rejects(sesion.listarGrupos(), { status: 502, message: /todavía no cargó los grupos/ });
+  await assert.rejects(sesion.enviarAGrupo(GRUPO, 'Hola'), { status: 502 });
+});
+
+test('si WhatsApp no confirma el envío responde 502', async () => {
+  const cliente = new ClienteFalso({ chats: [{ id: GRUPO, nombre: 'Comuneros' }], sinConfirmacion: true });
+  const { sesion } = crearSesion({ clientes: [cliente] });
+  sesion.iniciar();
+  cliente.emit('ready');
+  await assert.rejects(sesion.enviarAGrupo(GRUPO, 'Hola'), { status: 502, message: /no confirmó/ });
+});
+
 test('cerrar sesión desvincula el teléfono y libera el navegador', async () => {
   const { sesion, cliente } = await sesionConectada([]);
   const estado = await sesion.cerrarSesion();
