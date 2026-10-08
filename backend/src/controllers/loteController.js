@@ -29,7 +29,10 @@ const sectorSchema = z.object({
 const lotesQuery = z.object({
   sector_id: s.id.optional(),
   persona_id: s.id.optional(),
-  busqueda: z.string().trim().max(100).optional()
+  busqueda: z.string().trim().max(100).optional(),
+  // Opcional: sin page se devuelve la lista completa (la usan los selectores de lote de los formularios).
+  page: z.coerce.number().int().min(1).optional(),
+  limit: s.paginacion.shape.limit
 });
 
 const loteSchema = z.object({
@@ -125,6 +128,8 @@ async function getLotes(req, res) {
     params.push(`%${filtros.busqueda}%`, `%${filtros.busqueda}%`);
   }
 
+  const where = condiciones.join(' AND ');
+  const paginado = filtros.page !== undefined;
   const [lotes] = await db.query(
     `SELECT l.id, l.sector_id, l.codigo, l.superficie_m2, l.ancho_m, l.largo_m,
             l.latitud_aproximada, l.longitud_aproximada, l.radio_error_m,
@@ -139,11 +144,14 @@ async function getLotes(req, res) {
      JOIN sectores s ON s.id = l.sector_id
      LEFT JOIN persona_lotes pl ON pl.lote_id = l.id
      LEFT JOIN personas p ON p.id = pl.persona_id
-     WHERE ${condiciones.join(' AND ')}
-     ORDER BY s.nombre ASC, l.codigo ASC`,
-    params
+     WHERE ${where}
+     ORDER BY s.nombre ASC, l.codigo ASC${paginado ? ' LIMIT ? OFFSET ?' : ''}`,
+    paginado ? [...params, filtros.limit, (filtros.page - 1) * filtros.limit] : params
   );
-  return res.json({ status: 'OK', data: lotes });
+  if (!paginado) return res.json({ status: 'OK', data: lotes });
+
+  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM lotes l WHERE ${where}`, params);
+  return res.json({ status: 'OK', data: lotes, pagination: { total, page: filtros.page, limit: filtros.limit } });
 }
 
 /** Crear un lote y, si se indica, asignarle su titular en la misma transacción. */

@@ -66,6 +66,36 @@ describe('Turnos de agua', () => {
     expect(admin.getTurnos).toHaveBeenCalledTimes(1);
   });
 
+  it('pagina la tabla en el navegador y vuelve a la primera página al filtrar', () => {
+    const muchos = Array.from({ length: 30 }, (_, i) => ({ ...turnosApi[i % 2], id: i + 1 }));
+    admin.getTurnos.mockReturnValue(of({ data: muchos }));
+    const component = TestBed.createComponent(TurnosAdminComponent).componentInstance;
+    component.cargar();
+    expect(component.turnosDeLaPagina().map((t) => t.id)).toEqual(Array.from({ length: 25 }, (_, i) => i + 1));
+
+    component.pagina.set(2);
+    expect(component.turnosDeLaPagina().map((t) => t.id)).toEqual([26, 27, 28, 29, 30]);
+
+    component.porPagina.set(10);
+    expect(component.paginaActual()).toBe(1);
+    component.pagina.set(3);
+    component.tipoFiltro.set('ADICIONAL');
+    expect(component.paginaActual()).toBe(1);
+    expect(component.turnosDeLaPagina()).toHaveLength(10);
+    expect(component.turnosDeLaPagina().every((t) => t.tipo === 'ADICIONAL')).toBe(true);
+  });
+
+  it('si la última página se queda sin turnos muestra la anterior', () => {
+    const muchos = Array.from({ length: 26 }, (_, i) => ({ ...turnosApi[0], id: i + 1 }));
+    admin.getTurnos.mockReturnValue(of({ data: muchos }));
+    const component = TestBed.createComponent(TurnosAdminComponent).componentInstance;
+    component.cargar();
+    component.pagina.set(2);
+    component.turnos.update((lista) => lista.filter((t) => t.id !== 26));
+    expect(component.paginaActual()).toBe(1);
+    expect(component.turnosDeLaPagina()).toHaveLength(25);
+  });
+
   it('al seleccionar un comunero propone su primer lote y valida el horario', () => {
     const component = TestBed.createComponent(TurnoAsignarComponent).componentInstance;
     component.seleccionar({ id: 7, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' });
