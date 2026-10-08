@@ -129,3 +129,38 @@ test('la paginación de comuneros tiene un máximo de 100', async () => {
   const res = await request(app).get('/api/personas?limit=5000').set(auth(admin));
   assert.equal(res.status, 400);
 });
+
+test('al actualizar una persona sin enviar estado, conserva su estado actual', async () => {
+  const objetivo = await crearUsuario({ rol: 'USUARIO' });
+  await db.query('UPDATE personas SET estado = "INACTIVO" WHERE id = ?', [objetivo.personaId]);
+
+  const res = await request(app).put(`/api/personas/${objetivo.personaId}`).set(auth(admin)).send({
+    nombres: 'Modificado', apellidos: 'Apellido'
+  });
+  assert.equal(res.status, 200);
+
+  const final = await db.query('SELECT estado FROM personas WHERE id = ?', [objetivo.personaId]);
+  assert.equal(final[0][0].estado, 'INACTIVO');
+});
+
+test('un administrador no puede desactivar su propio registro de persona', async () => {
+  const res = await request(app).put(`/api/personas/${admin.personaId}`).set(auth(admin)).send({
+    nombres: 'Modificado', apellidos: 'Apellido', estado: 'INACTIVO'
+  });
+  assert.equal(res.status, 403);
+  assert.match(res.body.message, /No puede desactivar su propio registro/);
+});
+
+test('un administrador no puede desactivar a una persona si es el último administrador activo', async () => {
+  const admin2 = await crearUsuario({ rol: 'ADMIN' });
+  // Simular que el que hace la petición (admin) no cuenta como admin activo en BD por alguna razón,
+  // para forzar el path de validación "último administrador".
+  await db.query('UPDATE cuentas SET estado = "INACTIVA" WHERE id = ?', [admin.cuentaId]);
+
+  const res = await request(app).put(`/api/personas/${admin2.personaId}`).set(auth(admin)).send({
+    nombres: 'Modificado', apellidos: 'Apellido', estado: 'INACTIVO'
+  });
+  
+  assert.equal(res.status, 409);
+  assert.match(res.body.message, /último administrador/);
+});
