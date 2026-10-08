@@ -59,7 +59,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | :--- | :--- | :--- | :--- |
 | `GET` | `/lotes/sectores` | Público / Autenticado | Catálogo de sectores de riego en Patate. |
 | `POST` | `/lotes/sectores` | ADMIN | Crear nuevo sector. |
-| `GET` | `/lotes` | Público / Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios. |
+| `GET` | `/lotes` | Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios (`?sector_id=...&busqueda=...`). Con `?page=1&limit=25` (máximo 100) devuelve una página y el total en `pagination`; sin `page`, la lista completa. Un comunero solo recibe sus lotes. |
 | `POST` | `/lotes` | ADMIN / SECRETARIO | Crear terreno y asociarlo a un comunero (`persona_lotes`). |
 | `POST` | `/lotes/:loteId/vincular-persona` | ADMIN / SECRETARIO | Vincular coppropietario o representante a un lote existente. |
 
