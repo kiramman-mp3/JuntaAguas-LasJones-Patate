@@ -33,7 +33,7 @@ const crearSchema = z.object({
 
 const actualizarSchema = z.object({
   ...datosPersona,
-  estado: z.enum(['ACTIVO', 'INACTIVO']).default('ACTIVO')
+  estado: z.enum(['ACTIVO', 'INACTIVO']).optional()
 });
 
 const cuentaCrearSchema = z.object({ rol: rolCodigo.default(ROLES.USUARIO) });
@@ -251,17 +251,38 @@ async function updatePersona(req, res) {
   const { id } = s.idParam.parse(req.params);
   const datos = actualizarSchema.parse(req.body);
 
-  const [result] = await db.query(
-    `UPDATE personas
-     SET nombres = ?, apellidos = ?, direccion = ?, telefono = ?, celular = ?, email = ?, fecha_nacimiento = ?, estado = ?
-     WHERE id = ?`,
-    [datos.nombres, datos.apellidos, datos.direccion, datos.telefono, datos.celular, datos.email, datos.fecha_nacimiento, datos.estado, id]
-  );
-  if (!result.affectedRows) throw notFound('Comunero no encontrado.');
+  const cambios = await withTransaction(async (conexion) => {
+    const [personaRows] = await conexion.query('SELECT estado FROM personas WHERE id = ? FOR UPDATE', [id]);
+    if (!personaRows.length) throw notFound('Comunero no encontrado.');
+    const estadoActual = personaRows[0].estado;
+    const nuevoEstado = datos.estado ?? estadoActual;
+
+    if (nuevoEstado === 'INACTIVO' && estadoActual === 'ACTIVO') {
+      if (id === req.user.personaId) {
+        throw forbidden('No puede desactivar su propio registro de persona.');
+      }
+      const cuenta = await cuentaDePersona(conexion, id);
+      if (cuenta && cuenta.rol === 'ADMIN' && cuenta.estado === 'ACTIVA') {
+        const [[{ admins }]] = await conexion.query(
+          `SELECT COUNT(*) AS admins FROM cuentas c JOIN roles r ON r.id = c.rol_id
+           WHERE r.codigo = 'ADMIN' AND c.estado = 'ACTIVA'`
+        );
+        if (admins <= 1) throw conflict('No se puede desactivar a la persona porque es el último administrador activo.');
+      }
+    }
+
+    await conexion.query(
+      `UPDATE personas
+       SET nombres = ?, apellidos = ?, direccion = ?, telefono = ?, celular = ?, email = ?, fecha_nacimiento = ?, estado = ?
+       WHERE id = ?`,
+      [datos.nombres, datos.apellidos, datos.direccion, datos.telefono, datos.celular, datos.email, datos.fecha_nacimiento, nuevoEstado, id]
+    );
+    return { nuevoEstado };
+  });
 
   await registrarAuditoria({
     cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'personas', entidadId: id, ip: req.ip,
-    detalle: { nombres: datos.nombres, apellidos: datos.apellidos, estado: datos.estado }
+    detalle: { nombres: datos.nombres, apellidos: datos.apellidos, estado: cambios.nuevoEstado }
   });
 
   return res.json({ status: 'OK', message: 'Datos del comunero actualizados correctamente.' });
