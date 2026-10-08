@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
@@ -20,10 +20,8 @@ export class DashboardComponent implements OnInit {
   cargandoResumen = false;
   errorCarga = '';
 
-  constructor(
-    private adminService: AdminService,
-    private cdr: ChangeDetectorRef
-  ) {}
+  private adminService = inject(AdminService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() {
     this.cargarDatosBackend();
