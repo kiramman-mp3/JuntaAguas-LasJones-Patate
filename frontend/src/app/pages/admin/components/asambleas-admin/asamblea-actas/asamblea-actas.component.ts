@@ -81,12 +81,12 @@ export class AsambleaActasComponent implements OnInit {
   guardarTodos(): void {
     this.guardando.set(true);
     this.admin.guardarPuntosAsamblea(this.asamblea().id, this.puntos).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.guardando.set(false);
         if (res?.data) this.puntos = res.data.map((p: any) => ({ ...p, acta_firmada_url: p.acta_firmada_url || undefined }));
         this.notify.success('Las actas y puntos de la asamblea se guardaron correctamente.');
       },
-      error: (err: any) => {
+      error: (err) => {
         this.guardando.set(false);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo guardar', mensaje: err?.error?.message || 'Error al guardar puntos de asamblea.' });
       }
@@ -123,7 +123,7 @@ export class AsambleaActasComponent implements OnInit {
         punto.estado_acta = 'FIRMADA';
         this.notify.success(`Acta firmada del punto ${punto.orden} subida.`);
       },
-      error: (err: any) => {
+      error: (err) => {
         this.subiendoPuntoId.set(null);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo subir el acta', mensaje: err?.error?.message || 'Error al subir el acta firmada.' });
       }

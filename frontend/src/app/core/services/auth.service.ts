@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -27,7 +27,9 @@ export interface LoginResponse {
 export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
 
-  constructor(private http: HttpClient) {}
+  private readonly http = inject(HttpClient);
+
+  constructor() {}
 
   /** Con `recordar` la sesión sobrevive al cierre del navegador; sin él dura lo que la pestaña. */
   login(cedula: string, password: string, recordar = true): Observable<LoginResponse> {

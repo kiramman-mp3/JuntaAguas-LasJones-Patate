@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -72,7 +72,10 @@ import { EventoItem, RespuestaApi } from '../models/api-payloads';
 export class ConsultaService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient, private documentos: DocumentosService) {}
+  private readonly http = inject(HttpClient);
+  private readonly documentos = inject(DocumentosService);
+
+  constructor() {}
 
   consultarPorCedula(cedula: string): Observable<ConsultaResultadoResponse> {
     return this.http.get<ConsultaResultadoResponse>(`${this.apiUrl}/personas/consulta/${cedula}`);

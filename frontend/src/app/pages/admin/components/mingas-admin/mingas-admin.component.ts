@@ -207,7 +207,7 @@ export class MingasAdminComponent implements OnInit {
       minga.estado = res.estado;
       this.notify.success(res.message);
       this.cargar();
-    } catch (err: any) {
+    } catch (err) {
       this.notify.error(err?.error?.message || 'No se pudo finalizar la minga.');
     } finally {
       this.actualizandoId = null;

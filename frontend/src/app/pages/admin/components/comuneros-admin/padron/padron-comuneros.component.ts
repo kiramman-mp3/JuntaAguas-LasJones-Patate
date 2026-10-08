@@ -38,9 +38,9 @@ export class PadronComunerosComponent implements OnInit {
   private busqueda$ = new Subject<void>();
 
   // Modales
-  readonly formulario = signal<{ comunero: any | null } | null>(null);
-  readonly vincularA = signal<any | null>(null);
-  readonly lotesDe = signal<any | null>(null);
+  readonly formulario = signal<{ comunero: PersonaListado | null } | null>(null);
+  readonly vincularA = signal<PersonaListado | null>(null);
+  readonly lotesDe = signal<PersonaListado | null>(null);
   readonly loteDetalle = signal<any | null>(null);
 
   constructor() {
@@ -122,12 +122,12 @@ export class PadronComunerosComponent implements OnInit {
     this.loteDetalle.set(lote);
   }
 
-  asignarOtroTerreno(comunero: any): void {
+  asignarOtroTerreno(comunero: PersonaListado): void {
     this.lotesDe.set(null);
     this.vincularA.set(comunero);
   }
 
-  iniciales(u: any): string {
+  iniciales(u: PersonaListado): string {
     return `${(u.nombres || '').charAt(0)}${(u.apellidos || '').charAt(0)}`.toUpperCase();
   }
 }

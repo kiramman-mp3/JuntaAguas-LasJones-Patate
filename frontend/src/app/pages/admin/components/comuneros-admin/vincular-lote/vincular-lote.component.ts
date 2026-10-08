@@ -114,7 +114,7 @@ export class VincularLoteComponent implements OnInit {
     this.admin
       .vincularPersonaLote(loteId, { persona_id: this.comunero().id, tipo_relacion: this.tipoRelacion, porcentaje: PORCENTAJE_TITULARIDAD })
       .subscribe({
-        next: (res: any) => {
+        next: (res) => {
           this.guardando.set(false);
           this.notify.success(res?.message || 'Lote asignado.');
           this.vinculado.emit();

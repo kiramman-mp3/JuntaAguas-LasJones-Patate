@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -21,7 +21,9 @@ type EstadoEvento = 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO';
 export class AdminService {
   private baseUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  private readonly http = inject(HttpClient);
+
+  constructor() {}
 
   /** Listado paginado de comuneros. El servidor acepta como máximo 100 por página. */
   getPersonas(page = 1, limit = 25, busqueda = '', estado = ''): Observable<RespuestaPaginada<PersonaListado>> {

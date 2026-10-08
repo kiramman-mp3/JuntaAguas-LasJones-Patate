@@ -104,7 +104,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
         this.guardando.set(false);
         this.guardada.emit();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.guardando.set(false);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo guardar', mensaje: err?.error?.message || 'Error al guardar asistencias.' });
       }

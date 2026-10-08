@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConsultaService, EventoPublico } from '../../core/services/consulta.service';
 import { ActasService } from '../../core/services/actas.service';
@@ -18,7 +18,11 @@ export class EventosComponent implements OnInit {
   tabActivo: 'ASAMBLEA' | 'MINGA' = 'ASAMBLEA';
   cargandoActa = false;
 
-  constructor(private consultaService: ConsultaService, private actasService: ActasService, private cdr: ChangeDetectorRef) {}
+  private readonly consultaService = inject(ConsultaService);
+  private readonly actasService = inject(ActasService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  constructor() {}
 
   ngOnInit() {
     this.consultaService.getEventosPublicos().subscribe({
