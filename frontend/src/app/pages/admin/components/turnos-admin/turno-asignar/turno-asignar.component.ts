@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
+import { PersonaListado, TurnoItem } from '../../../../../core/models/api-payloads';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA } from '../turno.model';
 
@@ -36,10 +37,10 @@ export class TurnoAsignarComponent implements OnInit {
   readonly guardando = signal(false);
 
   busqueda = '';
-  seleccionado: any = null;
-  turno: any = {
-    persona_id: null,
-    lote_id: null,
+  seleccionado: PersonaListado | null = null;
+  turno: Partial<TurnoItem> & { costo?: number | null } = {
+    persona_id: undefined,
+    lote_id: undefined,
     dia_semana: 1,
     hora_inicio: '08:00',
     hora_fin: '10:00',
@@ -59,7 +60,7 @@ export class TurnoAsignarComponent implements OnInit {
         switchMap((termino) => this.admin.getPersonas(1, 20, termino, 'ACTIVO').pipe(catchError(() => of(null)))),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((res: any) => {
+      .subscribe((res) => {
         this.buscando.set(false);
         this.comuneros.set(res?.data ?? []);
         this.totalComuneros.set(res?.pagination?.total ?? res?.data?.length ?? 0);
@@ -72,14 +73,14 @@ export class TurnoAsignarComponent implements OnInit {
     this.busqueda$.next(termino.trim());
   }
 
-  seleccionar(u: any): void {
+  seleccionar(u: PersonaListado): void {
     this.seleccionado = u;
     this.turno.persona_id = u.id;
-    this.turno.lote_id = null;
+    this.turno.lote_id = undefined;
     this.lotes.set([]);
     this.cargandoLotes.set(true);
     this.admin.getLotes(undefined, undefined, u.id).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         const lotes = res?.data ?? [];
         this.lotes.set(lotes);
         if (lotes.length) this.turno.lote_id = lotes[0].id;
@@ -105,12 +106,12 @@ export class TurnoAsignarComponent implements OnInit {
 
     this.guardando.set(true);
     this.admin.asignarTurno(t).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.guardando.set(false);
         this.notify.success(res.message || 'Turno de agua asignado.');
         this.asignado.emit();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.guardando.set(false);
         this.notify.error(err.error?.message || 'Error al asignar el turno.');
       }

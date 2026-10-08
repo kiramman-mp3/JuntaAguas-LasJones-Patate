@@ -151,7 +151,7 @@ export class AsambleasAdminComponent implements OnInit {
         this.actualizar(asamblea.id, { estado: nuevoEstado });
         this.notify.success(`Estado actualizado a: ${estadoTexto(nuevoEstado)}.`);
       },
-      error: (err: any) => {
+      error: (err) => {
         this.ocupadaId.set(null);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo cambiar el estado', mensaje: err?.error?.message || 'Error al actualizar el estado de la asamblea.' });
       }
@@ -192,12 +192,12 @@ export class AsambleasAdminComponent implements OnInit {
 
     this.ocupadaId.set(asamblea.id);
     this.admin.finalizarAsamblea(asamblea.id).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.ocupadaId.set(null);
         this.actualizar(asamblea.id, { estado: 'REALIZADO' });
         this.notify.success(`Asamblea finalizada. Se generaron ${res?.multasGeneradas || 0} multas automáticas.`);
       },
-      error: (err: any) => {
+      error: (err) => {
         this.ocupadaId.set(null);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo finalizar', mensaje: err?.error?.message || 'Error al finalizar la asamblea.' });
       }
@@ -242,7 +242,7 @@ export class AsambleasAdminComponent implements OnInit {
         );
         this.notify.success('Documento firmado subido y registrado.');
       },
-      error: (err: any) => {
+      error: (err) => {
         this.ocupadaId.set(null);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo subir el documento', mensaje: err?.error?.message || 'Error al subir el documento firmado.' });
       }

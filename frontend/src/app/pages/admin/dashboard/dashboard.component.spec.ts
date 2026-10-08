@@ -2,6 +2,9 @@ import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardResumen } from '../../../core/models/api-payloads';
+import { TestBed } from '@angular/core/testing';
+import { AdminService } from '../../../core/services/admin.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 const resumen = {
   fecha: '2026-10-06',
@@ -20,7 +23,13 @@ const cdr = { detectChanges: vi.fn() } as any;
 describe('Dashboard de administración', () => {
   it('muestra el resumen real del backend', () => {
     const admin = { getDashboardResumen: vi.fn(() => of({ status: 'OK', data: resumen })) };
-    const component = new DashboardComponent(admin as any, cdr);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AdminService, useValue: admin },
+        { provide: ChangeDetectorRef, useValue: cdr }
+      ]
+    });
+    const component = TestBed.runInInjectionContext(() => new DashboardComponent());
     component.ngOnInit();
     expect(admin.getDashboardResumen).toHaveBeenCalled();
     expect(component.resumen?.finanzas.carteraPendiente).toBe(1200);
@@ -31,7 +40,13 @@ describe('Dashboard de administración', () => {
 
   it('informa el error sin inventar valores', () => {
     const admin = { getDashboardResumen: vi.fn(() => throwError(() => new Error('sin red'))) };
-    const component = new DashboardComponent(admin as any, cdr);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AdminService, useValue: admin },
+        { provide: ChangeDetectorRef, useValue: cdr }
+      ]
+    });
+    const component = TestBed.runInInjectionContext(() => new DashboardComponent());
     component.ngOnInit();
     expect(component.resumen).toBeNull();
     expect(component.errorCarga).not.toBe('');

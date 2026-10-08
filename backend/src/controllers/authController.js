@@ -7,7 +7,7 @@ const { badRequest, unauthorized, notFound } = require('../shared/errors');
 
 const MAX_INTENTOS = 5;
 const MINUTOS_BLOQUEO = 15;
-const MENSAJE_CREDENCIALES = 'Cédula o contraseña incorrectas, o la cuenta no está habilitada.';
+const MENSAJE_CREDENCIALES = 'Credenciales incorrectas o la cuenta no está habilitada o se encuentra bloqueada temporalmente.';
 
 const loginSchema = z.object({
   cedula: z.string().trim().min(1, 'Ingrese su cédula.').max(20),
@@ -65,19 +65,19 @@ async function login(req, res) {
   }
 
   if (Number(cuenta.bloqueada)) {
-    throw unauthorized(`Demasiados intentos fallidos. Intente de nuevo en ${MINUTOS_BLOQUEO} minutos.`);
+    throw unauthorized(MENSAJE_CREDENCIALES);
   }
 
   if (!coincide) {
-    const intentos = Number(cuenta.intentos_fallidos) + 1;
+    await db.query('UPDATE cuentas SET intentos_fallidos = intentos_fallidos + 1 WHERE id = ?', [cuenta.cuenta_id]);
+    const [[{ intentos_fallidos: intentos }]] = await db.query('SELECT intentos_fallidos FROM cuentas WHERE id = ?', [cuenta.cuenta_id]);
+
     if (intentos >= MAX_INTENTOS) {
       await db.query(
         'UPDATE cuentas SET intentos_fallidos = 0, bloqueada_hasta = UTC_TIMESTAMP() + INTERVAL ? MINUTE WHERE id = ?',
         [MINUTOS_BLOQUEO, cuenta.cuenta_id]
       );
       await registrarAuditoria({ cuentaId: cuenta.cuenta_id, accion: 'BLOQUEO', entidad: 'cuentas', entidadId: cuenta.cuenta_id, ip: req.ip });
-    } else {
-      await db.query('UPDATE cuentas SET intentos_fallidos = ? WHERE id = ?', [intentos, cuenta.cuenta_id]);
     }
     throw unauthorized(MENSAJE_CREDENCIALES);
   }

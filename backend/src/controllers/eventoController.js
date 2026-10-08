@@ -25,7 +25,7 @@ async function getEventos(req, res) {
 async function getEventosPublicos(req, res) {
   const limite = Math.min(Math.max(Number.parseInt(req.query.limite, 10) || 20, 1), 50);
   const filas = await eventos.listarEventosPublicos(db, limite);
-  return res.json({ status: 'OK', data: filas, eventos: filas });
+  return res.json({ status: 'OK', data: filas });
 }
 
 /** Detalle de un evento con sus puntos (actas) y el resumen de asistencia. */

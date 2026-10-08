@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ConsultaService, DeudaItem } from '../../core/services/consulta.service';
@@ -25,12 +25,10 @@ export class MiCuentaComponent implements OnInit {
   resultado: UsuarioResultado | null = null;
   errorMensaje = '';
 
-  constructor(
-    private consultaService: ConsultaService,
-    private authService: AuthService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+  private consultaService = inject(ConsultaService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit() {
     const user = this.authService.getUser();

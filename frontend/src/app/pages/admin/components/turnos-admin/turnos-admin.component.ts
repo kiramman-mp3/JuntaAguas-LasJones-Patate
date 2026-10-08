@@ -135,11 +135,11 @@ export class TurnosAdminComponent implements OnInit {
     });
     if (!confirmado) return;
     this.admin.eliminarTurno(turno.id).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.turnos.update((lista) => lista.filter((t) => t.id !== turno.id));
         this.notify.success(res.message || 'Turno eliminado.');
       },
-      error: (err: any) => this.notify.error(err.error?.message || 'Error al eliminar el turno.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al eliminar el turno.')
     });
   }
 

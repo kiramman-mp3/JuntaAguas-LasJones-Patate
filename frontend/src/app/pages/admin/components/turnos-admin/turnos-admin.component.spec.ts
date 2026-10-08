@@ -98,7 +98,7 @@ describe('Turnos de agua', () => {
 
   it('al seleccionar un comunero propone su primer lote y valida el horario', () => {
     const component = TestBed.createComponent(TurnoAsignarComponent).componentInstance;
-    component.seleccionar({ id: 7, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' });
+    component.seleccionar({ id: 7, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' } as any);
     expect(admin.getLotes).toHaveBeenCalledWith(undefined, undefined, 7);
     expect(component.turno.lote_id).toBe(3);
 

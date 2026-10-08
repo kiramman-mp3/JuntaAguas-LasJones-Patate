@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
@@ -23,11 +23,9 @@ export class App {
   title = 'Junta de Agua La Jones';
   menuAbierto = false;
 
-  constructor(
-    public authService: AuthService,
-    public router: Router,
-    public themeService: ThemeService,
-  ) {}
+  public authService = inject(AuthService);
+  public router = inject(Router);
+  public themeService = inject(ThemeService);
 
   get esRutaAdmin(): boolean {
     return this.router.url.startsWith('/admin');
