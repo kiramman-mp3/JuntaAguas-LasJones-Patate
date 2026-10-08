@@ -23,7 +23,7 @@ export class AsambleasService {
   private consulta = inject(ConsultaService);
 
   listar(): Observable<AsambleaItem[]> {
-    return this.admin.getEventos('ASAMBLEA').pipe(map((res: any) => (res?.data ?? []).map((e: any) => this.aAsamblea(e))));
+    return this.admin.getEventos('ASAMBLEA').pipe(map((res) => (res?.data ?? []).map((e) => this.aAsamblea(e))));
   }
 
   padron(asambleaId: number): Observable<AsistentePadron[]> {

@@ -86,7 +86,7 @@ export class AsambleaFormComponent {
         this.guardando.set(false);
         this.creada.emit();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.guardando.set(false);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo guardar', mensaje: err?.error?.message || 'Error al registrar la asamblea.' });
       }

@@ -90,12 +90,12 @@ export class TurnoEditarComponent implements OnInit {
     const t = this.turno();
     this.guardando.set(true);
     this.admin.actualizarTurno(t.id, { persona_id: t.persona_id, lote_id: t.lote_id, ...f }).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.guardando.set(false);
         this.notify.success(res.message || 'Turno actualizado.');
         this.guardado.emit();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.guardando.set(false);
         this.notify.error(err.error?.message || 'Error al actualizar el turno.');
       }
