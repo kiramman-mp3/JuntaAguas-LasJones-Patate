@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostListener, OnDestroy, OnInit, AfterViewInit } from '@angular/core';
+import { Directive, ElementRef, HostListener, OnDestroy, OnInit, AfterViewInit, inject } from '@angular/core';
 
 /**
  * Directiva de accesibilidad para modales.
@@ -42,7 +42,7 @@ function desbloquearScroll(): void {
 export class ModalA11yDirective implements OnInit, AfterViewInit, OnDestroy {
   private elementoPrevio: HTMLElement | null = null;
 
-  constructor(private host: ElementRef<HTMLElement>) {}
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   ngOnInit(): void {
     const el = this.host.nativeElement;
