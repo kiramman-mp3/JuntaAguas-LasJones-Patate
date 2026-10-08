@@ -24,6 +24,15 @@ function normalizarHora(valor) {
   return [h, min, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
+// Un día de calendario no tiene hora: se formatea en UTC para que ninguna zona horaria lo mueva al día anterior.
+const formatoFechaLarga = new Intl.DateTimeFormat('es-EC', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+/** 'YYYY-MM-DD' en texto largo: '2026-10-10' → 'sábado, 10 de octubre de 2026'. */
+function fechaLarga(fecha) {
+  const [a, m, d] = String(fecha).split('-').map(Number);
+  return formatoFechaLarga.format(new Date(Date.UTC(a, m - 1, d)));
+}
+
 /** Valida una fecha YYYY-MM-DD real (rechaza 2026-02-30). */
 function esFechaValida(valor) {
   if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
@@ -58,4 +67,4 @@ function finDelDiaUtc(fecha) {
   return new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
 }
 
-module.exports = { ZONA, ZONA_MYSQL, hoy, horaActual, normalizarHora, esFechaValida, yaOcurrio, inicioDelDiaUtc, finDelDiaUtc };
+module.exports = { ZONA, ZONA_MYSQL, hoy, horaActual, normalizarHora, esFechaValida, fechaLarga, yaOcurrio, inicioDelDiaUtc, finDelDiaUtc };

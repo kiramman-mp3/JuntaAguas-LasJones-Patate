@@ -46,11 +46,9 @@ export class MingasAdminComponent implements OnInit {
   periodo: 'TODAS' | 'PROXIMAS' | 'ANTERIORES' = 'TODAS';
   formularioAbierto = false;
   seleccionada: Minga | null = null;
-  enviandoId: number | null = null;
   actualizandoId: number | null = null;
   subiendoId: number | null = null;
   descargandoId: number | null = null;
-  private enviosEnProceso = new Set<number>();
 
   ngOnInit() {
     this.cargar();
@@ -76,7 +74,7 @@ export class MingasAdminComponent implements OnInit {
   }
 
   get ocupado() {
-    return this.actualizandoId !== null || this.enviandoId !== null;
+    return this.actualizandoId !== null || this.whatsapp.enviandoEventoId() !== null;
   }
 
   limpiarFiltros() {
@@ -155,8 +153,8 @@ export class MingasAdminComponent implements OnInit {
     if (minga.estado !== 'CANCELADO') this.seleccionada = minga;
   }
 
-  async cambiarEstado(minga: Minga, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO', desdeEnvio = false) {
-    if (this.actualizandoId !== null || (!desdeEnvio && this.enviandoId !== null)) return;
+  async cambiarEstado(minga: Minga, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO') {
+    if (this.ocupado) return;
     if (estado === 'CANCELADO') {
       const confirmado = await this.dialog.confirmar({
         tipo: 'DANGER',
@@ -179,14 +177,10 @@ export class MingasAdminComponent implements OnInit {
       .subscribe({
         next: (res) => {
           minga.estado = res.estado;
-          if (!desdeEnvio) this.notify.success(res.message);
+          this.notify.success(res.message);
           this.cargar();
         },
-        error: (err) =>
-          this.notify.error(
-            (desdeEnvio ? 'La convocatoria se envió, pero no se pudo actualizar el estado. ' : '') +
-              (err.error?.message || 'No se pudo actualizar la minga.')
-          )
+        error: (err) => this.notify.error(err.error?.message || 'No se pudo actualizar la minga.')
       });
   }
 
@@ -221,35 +215,12 @@ export class MingasAdminComponent implements OnInit {
     }
   }
 
+  /** Publica la convocatoria en el grupo de WhatsApp; el backend la deja CONVOCADA. */
   async enviarConvocatoria(minga: Minga) {
     if (this.ocupado || minga.estado === 'CANCELADO' || minga.estado === 'REALIZADO') return;
-    if (this.enviosEnProceso.has(minga.id)) return;
-    this.enviosEnProceso.add(minga.id);
-    const confirmado = await this.dialog.confirmar({
-      tipo: 'CONFIRM',
-      titulo: 'Enviar convocatoria',
-      mensaje: `¿Enviar la convocatoria de "${minga.titulo}" a todos los comuneros activos con teléfono? Un nuevo envío repetirá la convocatoria.`,
-      textoConfirmar: 'Enviar por WhatsApp'
-    });
-    this.enviosEnProceso.delete(minga.id);
-    if (!confirmado) return;
-    this.enviandoId = minga.id;
-    this.admin
-      .notificarMingaWhatsApp(minga.id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.enviandoId = null;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (res) => {
-          this.notify.success(res.message || 'Convocatoria enviada.');
-          if (Number(res.enviados) > 0 && minga.estado !== 'CONVOCADO') this.cambiarEstado(minga, 'CONVOCADO', true);
-        },
-        error: (err) => this.notify.error(err.error?.message || 'No se pudo enviar. Revise la conexión de WhatsApp y vuelva a intentarlo.')
-      });
+    const resultado = await this.whatsapp.convocar(minga);
+    if (resultado) minga.estado = resultado.estado;
+    this.cdr.markForCheck();
   }
 
   descargarLista(minga: Minga) {

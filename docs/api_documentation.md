@@ -59,7 +59,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | :--- | :--- | :--- | :--- |
 | `GET` | `/lotes/sectores` | Público / Autenticado | Catálogo de sectores de riego en Patate. |
 | `POST` | `/lotes/sectores` | ADMIN | Crear nuevo sector. |
-| `GET` | `/lotes` | Público / Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios. |
+| `GET` | `/lotes` | Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios (`?sector_id=...&busqueda=...`). Con `?page=1&limit=25` (máximo 100) devuelve una página y el total en `pagination`; sin `page`, la lista completa. Un comunero solo recibe sus lotes. |
 | `POST` | `/lotes` | ADMIN / SECRETARIO | Crear terreno y asociarlo a un comunero (`persona_lotes`). |
 | `POST` | `/lotes/:loteId/vincular-persona` | ADMIN / SECRETARIO | Vincular coppropietario o representante a un lote existente. |
 
@@ -113,6 +113,27 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `GET` | `/planes` | Autenticado | Planes operativos anuales de trabajo y sus actividades asociadas. |
 | `POST` | `/planes` | ADMIN | Crear plan anual o añadir actividades con fechas de inicio/fin. |
 | `GET` | `/auditoria` | **ADMIN** | Bitácora imborrable de auditoría para trazabilidad de cambios en el sistema. |
+
+---
+
+### 3.8. 💬 WhatsApp y convocatorias (`/api/whatsapp`)
+
+El backend no ejecuta WhatsApp: estas rutas llaman al servicio `whatsapp-service/` (`WHATSAPP_SERVICE_URL`, autenticado con `WHATSAPP_SERVICE_TOKEN`). Si el servicio no responde, devuelven **503** y el resto de la API sigue funcionando.
+
+| Método | Endpoint | Permisos | Descripción |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/whatsapp/estado` | **ADMIN** | Estado (`DESCONECTADO`, `INICIANDO`, `ESPERANDO_QR`, `CONECTADO`, `NO_DISPONIBLE`, `NO_CONFIGURADO`), QR y grupo elegido. **No inicia WhatsApp.** |
+| `POST` | `/whatsapp/sesion/iniciar` | **ADMIN** | Inicia WhatsApp Web; si el teléfono no está vinculado aparece el QR. |
+| `POST` | `/whatsapp/sesion/cerrar` | **ADMIN** | Desvincula el teléfono de la Junta (queda en la auditoría). |
+| `GET` | `/whatsapp/grupos` | **ADMIN** | Grupos de la cuenta vinculada (`409` si no está conectada). |
+| `PUT` | `/whatsapp/grupo` | **ADMIN** | `{ "grupoId": "120363…@g.us" }`: grupo donde se publican las convocatorias. |
+| `POST` | `/whatsapp/convocatorias` | **ADMIN** | `{ "eventoId": 12, "reenviar": false }`: publica la convocatoria de una asamblea o minga en el grupo y la deja `CONVOCADO`. |
+
+Respuestas `409` de `POST /whatsapp/convocatorias` con `codigo`:
+- `GRUPO_NO_CONFIGURADO`: aún no se eligió el grupo.
+- `CONVOCATORIA_YA_ENVIADA`: ya se publicó (incluye `enviadaEn`); repita con `"reenviar": true` para publicarla otra vez.
+
+Sin `codigo`, un `409` indica un evento cancelado, realizado o con fecha pasada. Un `502` indica que WhatsApp rechazó el mensaje (por ejemplo, en un grupo donde solo escriben los administradores).
 
 ---
 

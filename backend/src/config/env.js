@@ -28,7 +28,14 @@ const esquema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   UPLOADS_DIR: z.string().default(path.join(__dirname, '../../uploads')),
   // Carpeta del frontend compilado que el backend sirve en producción (mismo origen que la API).
-  FRONTEND_DIST: z.string().default(path.join(__dirname, '../../../frontend/dist/frontend/browser'))
+  FRONTEND_DIST: z.string().default(path.join(__dirname, '../../../frontend/dist/frontend/browser')),
+  // Servicio de WhatsApp (whatsapp-service/). Sin token, las convocatorias por WhatsApp quedan deshabilitadas.
+  WHATSAPP_SERVICE_URL: z.url({ error: 'WHATSAPP_SERVICE_URL debe ser una URL (ej. http://127.0.0.1:3100)' }).default('http://127.0.0.1:3100'),
+  WHATSAPP_SERVICE_TOKEN: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().min(32, 'WHATSAPP_SERVICE_TOKEN debe tener al menos 32 caracteres').optional()
+  ),
+  WHATSAPP_TIMEOUT_MS: z.coerce.number().int().positive().default(15000)
 });
 
 const resultado = esquema.safeParse(process.env);

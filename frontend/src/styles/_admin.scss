@@ -507,7 +507,37 @@ label.icon-btn:focus-within,
 
 .pager {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+
+  &__num { min-width: 2.25rem; justify-content: center; }
+  &__salto { padding: 0 0.15rem; color: var(--text-muted); }
+}
+
+/* Pie de los listados paginados (app-paginador) */
+.paginador {
+  &__controles {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__tamano {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+
+    select { width: auto; }
+  }
+
+  // En pantallas angostas solo quedan la página actual y las flechas.
+  @media (max-width: 480px) {
+    .pager__num:not(.pager__num--actual),
+    .pager__salto { display: none; }
+  }
 }
 
 /* --- Fichas de detalle --- */

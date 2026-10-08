@@ -63,7 +63,7 @@ describe('Gestión de Mingas', () => {
       registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
       cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
       finalizarMinga: vi.fn(() => of({ estado: 'REALIZADO', message: 'Finalizada' })),
-      notificarMingaWhatsApp: vi.fn(() => of({ message: 'Enviado' })),
+      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: { id: 'g@g.us', nombre: 'Comuneros' }, estado: 'CONVOCADO', reenvio: false }, message: 'Publicada' })),
     };
     consulta = {
       subirDocumentoEvento: vi.fn(),
@@ -113,7 +113,7 @@ describe('Gestión de Mingas', () => {
     expect(payload).not.toHaveProperty('valor_multa');
     expect(payload).not.toHaveProperty('subtipo_asamblea');
     expect(payload).not.toHaveProperty('puntos_orden_dia');
-    expect(admin.notificarMingaWhatsApp).not.toHaveBeenCalled();
+    expect(admin.enviarConvocatoriaWhatsApp).not.toHaveBeenCalled();
   });
 
   it('conserva justificaciones y deja sin marcar como pendiente', () => {
@@ -145,14 +145,14 @@ describe('Gestión de Mingas', () => {
 
   it('evita el doble envío mientras la convocatoria está en curso', async () => {
     const respuesta = new Subject();
-    admin.notificarMingaWhatsApp.mockReturnValue(respuesta);
-    const promesa = component.enviarConvocatoria(minga);
-    component.enviarConvocatoria(minga);
-    await promesa;
-    expect(admin.notificarMingaWhatsApp).toHaveBeenCalledOnce();
-    respuesta.next({ message: 'Enviado' });
+    admin.enviarConvocatoriaWhatsApp.mockReturnValue(respuesta);
+    const promesa = component.enviarConvocatoria({ ...minga });
+    await component.enviarConvocatoria({ ...minga });
+    respuesta.next({ data: { estado: 'CONVOCADO' }, message: 'Publicada' });
     respuesta.complete();
-    expect(component.enviandoId).toBeNull();
+    await promesa;
+    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledOnce();
+    expect(component.ocupado).toBe(false);
   });
 
   it('rechaza un archivo incompatible sin subirlo', () => {
@@ -164,10 +164,12 @@ describe('Gestión de Mingas', () => {
     expect(consulta.subirDocumentoEvento).not.toHaveBeenCalled();
   });
 
-  it('marca convocada después de un envío exitoso', async () => {
-    admin.notificarMingaWhatsApp.mockReturnValue(of({ enviados: 2, message: 'Enviado' }));
-    await component.enviarConvocatoria({ ...minga });
-    expect(admin.cambiarEstadoMinga).toHaveBeenCalledWith(1, 'CONVOCADO');
+  it('refleja el estado convocado que devuelve el servidor sin otra petición', async () => {
+    const m = { ...minga };
+    await component.enviarConvocatoria(m);
+    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(1, false);
+    expect(m.estado).toBe('CONVOCADO');
+    expect(admin.cambiarEstadoMinga).not.toHaveBeenCalled();
   });
 
   it('impide modificar una asistencia finalizada desde la interfaz', () => {

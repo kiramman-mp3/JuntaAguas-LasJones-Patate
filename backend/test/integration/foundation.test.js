@@ -23,6 +23,23 @@ test('todas las migraciones quedan registradas y una segunda ejecución no hace 
   }
 });
 
+test('la migración del grupo de WhatsApp se puede repetir y admite envíos sin persona', async () => {
+  const { helpers } = require('../../src/db/migrator');
+  const migracion = require('../../database/migrations/012_whatsapp_grupo_convocatorias');
+  const conexion = await db.getConnection();
+  try {
+    await migracion.up(conexion, helpers);
+  } finally {
+    conexion.release();
+  }
+  const [[columna]] = await db.query(
+    "SELECT IS_NULLABLE AS nulo FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'envios_convocatoria' AND COLUMN_NAME = 'persona_id'"
+  );
+  assert.equal(columna.nulo, 'YES');
+  const [tablas] = await db.query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'configuracion'");
+  assert.equal(tablas.length, 1);
+});
+
 test('el esquema incluye las columnas que usa el código', async () => {
   const [columnas] = await db.query(`SELECT TABLE_NAME AS t, COLUMN_NAME AS c FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()`);

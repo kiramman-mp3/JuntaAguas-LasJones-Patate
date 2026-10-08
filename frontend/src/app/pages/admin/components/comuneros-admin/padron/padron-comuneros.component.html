@@ -102,17 +102,8 @@
         </table>
       </div>
 
-      <div class="surface__foot">
-        <span>Página <strong>{{ pagina() }}</strong> de <strong>{{ totalPaginas() }}</strong> · {{ total() }} comuneros</span>
-        <div class="pager">
-          <button type="button" class="btn btn--outline btn--sm" [disabled]="pagina() === 1 || cargando()" (click)="cambiarPagina(pagina() - 1)">
-            <i class="ri-arrow-left-s-line" aria-hidden="true"></i> Anterior
-          </button>
-          <button type="button" class="btn btn--outline btn--sm" [disabled]="pagina() === totalPaginas() || cargando()" (click)="cambiarPagina(pagina() + 1)">
-            Siguiente <i class="ri-arrow-right-s-line" aria-hidden="true"></i>
-          </button>
-        </div>
-      </div>
+      <app-paginador etiqueta="comuneros" [pagina]="pagina()" [porPagina]="porPagina()" [total]="total()" [cargando]="cargando()"
+        (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarPorPagina($event)" />
     }
   </div>
 </section>

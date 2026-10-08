@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
 import { DialogService } from '../../../../core/services/dialog.service';
@@ -6,6 +6,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
+import { PaginadorComponent } from '../../../../shared/ui/paginador.component';
 import { DIAS_SEMANA, Turno, filtrarTurnos } from './turno.model';
 import { TurnosService } from './turnos.service';
 import { TurnosTablaComponent } from './turnos-tabla/turnos-tabla.component';
@@ -20,6 +21,8 @@ const CLAVE_VISTA = 'turnos.vista';
 /**
  * Turnos semanales de riego. La tabla y el calendario son dos vistas de los mismos datos,
  * así que comparten la carga y los filtros; asignar, editar y ver detalle son componentes propios.
+ * La tabla se pagina en el navegador: los filtros ya se aplican aquí y el calendario necesita todos
+ * los turnos de la semana.
  */
 @Component({
   selector: 'app-turnos-admin',
@@ -29,6 +32,7 @@ const CLAVE_VISTA = 'turnos.vista';
     PageHeaderComponent,
     EmptyStateComponent,
     SkeletonComponent,
+    PaginadorComponent,
     TurnosTablaComponent,
     TurnosCalendarioComponent,
     TurnoAsignarComponent,
@@ -59,6 +63,19 @@ export class TurnosAdminComponent implements OnInit {
 
   readonly filtrados = computed(() => filtrarTurnos(this.turnos(), { busqueda: this.busqueda(), dia: this.diaFiltro(), tipo: this.tipoFiltro() }));
   readonly hayFiltros = computed(() => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.tipoFiltro());
+
+  readonly porPagina = signal(25);
+  /** Vuelve a la primera página cada vez que cambia un filtro o la cantidad por página. */
+  readonly pagina = linkedSignal({
+    source: () => [this.busqueda(), this.diaFiltro(), this.tipoFiltro(), this.porPagina()],
+    computation: () => 1
+  });
+  /** Página válida aunque la lista se acorte (por ejemplo, al eliminar el último turno de una página). */
+  readonly paginaActual = computed(() => Math.min(this.pagina(), Math.max(1, Math.ceil(this.filtrados().length / this.porPagina()))));
+  readonly turnosDeLaPagina = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.porPagina();
+    return this.filtrados().slice(inicio, inicio + this.porPagina());
+  });
 
   ngOnInit(): void {
     this.cargar();

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  AsistenciaRegistro, DashboardResumen, EstadoWhatsApp, EventoItem, FinalizacionRespuesta, LoteItem, PadronRespuesta,
+  AsistenciaRegistro, ConvocatoriaWhatsApp, DashboardResumen, EstadoWhatsApp, EventoItem, FinalizacionRespuesta, GrupoWhatsApp, LoteItem, PadronRespuesta,
   PersonaListado, RespuestaApi, RespuestaMensaje, RespuestaPaginada, SectorItem, TurnoItem
 } from '../models/api-payloads';
 
@@ -55,6 +55,14 @@ export class AdminService {
     if (busqueda) params = params.set('busqueda', busqueda);
     if (persona_id) params = params.set('persona_id', persona_id);
     return this.http.get<RespuestaApi<LoteItem[]>>(`${this.baseUrl}/lotes`, { params });
+  }
+
+  /** Catastro paginado en el servidor (getLotes devuelve la lista completa para los selectores). */
+  getLotesPaginados(page: number, limit: number, sector_id?: number, busqueda?: string): Observable<RespuestaPaginada<LoteItem>> {
+    let params = new HttpParams().set('page', page).set('limit', Math.min(limit, 100));
+    if (sector_id) params = params.set('sector_id', sector_id);
+    if (busqueda) params = params.set('busqueda', busqueda);
+    return this.http.get<RespuestaPaginada<LoteItem>>(`${this.baseUrl}/lotes`, { params });
   }
 
   createLote(data: object): Observable<RespuestaMensaje & { loteId: number }> {
@@ -146,20 +154,29 @@ export class AdminService {
     return this.http.get<RespuestaApi<DashboardResumen>>(`${this.baseUrl}/dashboard/resumen`);
   }
 
-  // --- WhatsApp Web ---
-  getWhatsAppStatus(): Observable<RespuestaApi<EstadoWhatsApp>> {
-    return this.http.get<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/status`);
+  // --- WhatsApp (servicio aparte; las convocatorias se publican en un grupo) ---
+  getWhatsAppEstado(): Observable<RespuestaApi<EstadoWhatsApp>> {
+    return this.http.get<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/estado`);
   }
 
-  initWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
-    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/init`, {});
+  iniciarWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
+    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/sesion/iniciar`, {});
   }
 
-  logoutWhatsApp(): Observable<RespuestaMensaje> {
-    return this.http.post<RespuestaMensaje>(`${this.baseUrl}/whatsapp/logout`, {});
+  cerrarSesionWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
+    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/sesion/cerrar`, {});
   }
 
-  notificarMingaWhatsApp(eventoId: number): Observable<RespuestaMensaje & { enviados: number; fallidos: number; totalComuneros?: number }> {
-    return this.http.post<RespuestaMensaje & { enviados: number; fallidos: number; totalComuneros?: number }>(`${this.baseUrl}/whatsapp/notificar-minga`, { eventoId });
+  getGruposWhatsApp(): Observable<RespuestaApi<GrupoWhatsApp[]>> {
+    return this.http.get<RespuestaApi<GrupoWhatsApp[]>>(`${this.baseUrl}/whatsapp/grupos`);
+  }
+
+  guardarGrupoWhatsApp(grupoId: string): Observable<RespuestaApi<GrupoWhatsApp>> {
+    return this.http.put<RespuestaApi<GrupoWhatsApp>>(`${this.baseUrl}/whatsapp/grupo`, { grupoId });
+  }
+
+  /** Publica la convocatoria en el grupo. Con `reenviar` repite una convocatoria ya publicada. */
+  enviarConvocatoriaWhatsApp(eventoId: number, reenviar = false): Observable<RespuestaApi<ConvocatoriaWhatsApp>> {
+    return this.http.post<RespuestaApi<ConvocatoriaWhatsApp>>(`${this.baseUrl}/whatsapp/convocatorias`, { eventoId, reenviar });
   }
 }

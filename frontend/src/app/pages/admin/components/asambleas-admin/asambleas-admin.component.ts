@@ -204,17 +204,11 @@ export class AsambleasAdminComponent implements OnInit {
     });
   }
 
-  enviarConvocatoriaWhatsApp(asamblea: AsambleaItem): void {
-    const msg = encodeURIComponent(
-      `📢 *CONVOCATORIA OFICIAL - JUNTA DE RIEGO LA JONES*\n\n` +
-        `Se convoca a todos los comuneros a la *ASAMBLEA GENERAL ${asamblea.subtipo_asamblea || 'ORDINARIA'}*:\n` +
-        `🗓 *Fecha:* ${asamblea.fecha}\n` +
-        `🕐 *Hora:* ${asamblea.hora_inicio} hs\n` +
-        `📍 *Lugar:* ${asamblea.lugar || 'Casa Comunal Junta La Jones'}\n` +
-        (asamblea.genera_multa_ausencia ? `⚠️ *Multa por inasistencia:* $${asamblea.valor_multa.toFixed(2)}\n\n` : '\n') +
-        `Agradecemos su puntual y comprometida asistencia.`
-    );
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  /** Publica la convocatoria en el grupo de WhatsApp; el backend la deja CONVOCADA. */
+  async enviarConvocatoriaWhatsApp(asamblea: AsambleaItem): Promise<void> {
+    if (this.ocupadaId() !== null) return;
+    const resultado = await this.whatsapp.convocar(asamblea);
+    if (resultado) this.actualizar(asamblea.id, { estado: resultado.estado });
   }
 
   // ============== DOCUMENTOS: CONVOCATORIA Y PADRÓN ==============

@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { hoy, horaActual, normalizarHora, esFechaValida, yaOcurrio } = require('../../src/shared/dates');
+const { hoy, horaActual, normalizarHora, esFechaValida, fechaLarga, yaOcurrio } = require('../../src/shared/dates');
 
 test('la fecha local de la Junta usa la hora de Ecuador, no UTC', () => {
   // 03:00 UTC del 7 de octubre son las 22:00 del 6 de octubre en Ecuador.
@@ -23,4 +23,9 @@ test('normaliza horas y valida fechas reales', () => {
   assert.equal(normalizarHora('9h00'), null);
   assert.equal(esFechaValida('2026-02-28'), true);
   assert.equal(esFechaValida('2026-02-30'), false);
+});
+
+test('escribe la fecha larga del mismo día de calendario, sin desfase de zona horaria', () => {
+  assert.equal(fechaLarga('2026-10-10'), 'sábado, 10 de octubre de 2026');
+  assert.equal(fechaLarga('2026-01-01'), 'jueves, 1 de enero de 2026');
 });

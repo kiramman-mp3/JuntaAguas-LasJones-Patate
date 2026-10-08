@@ -6,18 +6,17 @@ import { Subject, debounceTime } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
+import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
 import { ComuneroFormComponent } from '../comunero-form/comunero-form.component';
 import { VincularLoteComponent } from '../vincular-lote/vincular-lote.component';
 import { LotesComuneroComponent } from '../lotes-comunero/lotes-comunero.component';
 import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
 
-const POR_PAGINA = 25;
-
 /** Padrón de comuneros: búsqueda en el servidor, paginación y acciones por comunero. */
 @Component({
   selector: 'app-padron-comuneros',
   standalone: true,
-  imports: [NgClass, FormsModule, EmptyStateComponent, SkeletonComponent, ComuneroFormComponent, VincularLoteComponent, LotesComuneroComponent, LoteDetalleComponent],
+  imports: [NgClass, FormsModule, EmptyStateComponent, SkeletonComponent, PaginadorComponent, ComuneroFormComponent, VincularLoteComponent, LotesComuneroComponent, LoteDetalleComponent],
   templateUrl: './padron-comuneros.component.html'
 })
 export class PadronComunerosComponent implements OnInit {
@@ -31,7 +30,7 @@ export class PadronComunerosComponent implements OnInit {
   readonly cargando = signal(true);
   readonly error = signal(false);
   readonly pagina = signal(1);
-  readonly totalPaginas = signal(1);
+  readonly porPagina = signal(25);
   readonly total = signal(0);
 
   busqueda = '';
@@ -61,13 +60,18 @@ export class PadronComunerosComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
     this.error.set(false);
-    this.admin.getPersonas(this.pagina(), POR_PAGINA, this.busqueda, this.estadoFiltro).subscribe({
+    this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro).subscribe({
       next: (res) => {
-        this.comuneros.set(res?.data ?? []);
-        if (res?.pagination) {
-          this.total.set(res.pagination.total);
-          this.totalPaginas.set(Math.max(1, Math.ceil(res.pagination.total / res.pagination.limit)));
+        const total = res?.pagination?.total ?? 0;
+        // Si la página quedó vacía (por ejemplo, al filtrar), se vuelve a la última que tiene datos.
+        const ultima = Math.max(1, Math.ceil(total / this.porPagina()));
+        if (this.pagina() > ultima) {
+          this.pagina.set(ultima);
+          this.cargar();
+          return;
         }
+        this.comuneros.set(res?.data ?? []);
+        this.total.set(total);
         this.cargando.set(false);
       },
       error: () => {
@@ -93,8 +97,13 @@ export class PadronComunerosComponent implements OnInit {
   }
 
   cambiarPagina(nueva: number): void {
-    if (nueva < 1 || nueva > this.totalPaginas()) return;
     this.pagina.set(nueva);
+    this.cargar();
+  }
+
+  cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.pagina.set(1);
     this.cargar();
   }
 
