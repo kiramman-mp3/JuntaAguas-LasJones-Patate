@@ -57,6 +57,14 @@ export class AdminService {
     return this.http.get<RespuestaApi<LoteItem[]>>(`${this.baseUrl}/lotes`, { params });
   }
 
+  /** Catastro paginado en el servidor (getLotes devuelve la lista completa para los selectores). */
+  getLotesPaginados(page: number, limit: number, sector_id?: number, busqueda?: string): Observable<RespuestaPaginada<LoteItem>> {
+    let params = new HttpParams().set('page', page).set('limit', Math.min(limit, 100));
+    if (sector_id) params = params.set('sector_id', sector_id);
+    if (busqueda) params = params.set('busqueda', busqueda);
+    return this.http.get<RespuestaPaginada<LoteItem>>(`${this.baseUrl}/lotes`, { params });
+  }
+
   createLote(data: object): Observable<RespuestaMensaje & { loteId: number }> {
     return this.http.post<RespuestaMensaje & { loteId: number }>(`${this.baseUrl}/lotes`, data);
   }

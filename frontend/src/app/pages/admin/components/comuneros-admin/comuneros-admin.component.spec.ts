@@ -10,6 +10,7 @@ import { LotesComuneroComponent } from './lotes-comunero/lotes-comunero.componen
 import { VincularLoteComponent } from './vincular-lote/vincular-lote.component';
 import { SectorFormComponent } from './sector-form/sector-form.component';
 import { PadronComunerosComponent } from './padron/padron-comuneros.component';
+import { CatastroLotesComponent } from './catastro/catastro-lotes.component';
 
 let admin: any;
 const notifyStub = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
@@ -227,5 +228,30 @@ describe('Paginación del padrón (PadronComunerosComponent)', () => {
     const fixture = TestBed.createComponent(PadronComunerosComponent);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Mostrando 1–25 de 60 comuneros');
+  });
+});
+
+describe('Paginación del catastro (CatastroLotesComponent)', () => {
+  const pagina = (total: number) => of({ data: [{ id: 1, codigo: 'LJA-001', sector_nombre: 'Alto' }], pagination: { total, page: 1, limit: 25 } });
+
+  it('pide al servidor la página, la cantidad y los filtros', () => {
+    configurar({ getSectores: vi.fn(() => of({ data: [{ id: 4, nombre: 'Alto' }] })), getLotesPaginados: vi.fn(() => pagina(80)) });
+    const fixture = TestBed.createComponent(CatastroLotesComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    expect(admin.getLotesPaginados).toHaveBeenLastCalledWith(1, 25, undefined, '');
+
+    c.cambiarPagina(3);
+    expect(admin.getLotesPaginados).toHaveBeenLastCalledWith(3, 25, undefined, '');
+
+    // Cambiar un filtro vuelve a la primera página.
+    c.sectorFiltro = 4;
+    c.filtrar(true);
+    expect(admin.getLotesPaginados).toHaveBeenLastCalledWith(1, 25, 4, '');
+
+    c.cambiarPorPagina(10);
+    expect(admin.getLotesPaginados).toHaveBeenLastCalledWith(1, 10, 4, '');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Mostrando 1–10 de 80 lotes');
   });
 });

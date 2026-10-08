@@ -2,7 +2,7 @@
   <div class="section-head">
     <div>
       <h3 id="catastro-titulo" class="section-head__title">Catastro de lotes</h3>
-      <p class="section-head__subtitle">Terrenos por sector, sus propietarios y su ubicación aproximada.</p>
+      <p class="section-head__subtitle">{{ total() }} lotes · terrenos por sector, sus propietarios y su ubicación aproximada.</p>
     </div>
     <div class="section-head__actions">
       <button type="button" class="btn btn--outline" (click)="sectorAbierto.set(true)">
@@ -93,9 +93,8 @@
           </tbody>
         </table>
       </div>
-      <div class="surface__foot">
-        <span>{{ lotes().length }} {{ lotes().length === 1 ? 'lote' : 'lotes' }}</span>
-      </div>
+      <app-paginador etiqueta="lotes" [pagina]="pagina()" [porPagina]="porPagina()" [total]="total()" [cargando]="cargando()"
+        (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarPorPagina($event)" />
     }
   </div>
 </section>
