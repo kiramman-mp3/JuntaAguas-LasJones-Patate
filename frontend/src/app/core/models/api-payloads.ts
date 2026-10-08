@@ -213,9 +213,27 @@ export interface FinalizacionRespuesta extends RespuestaMensaje {
   yaFinalizada: boolean;
 }
 
+/** NO_DISPONIBLE: el servicio de WhatsApp no responde. NO_CONFIGURADO: falta su token en el backend. */
+export type EstadoConexionWhatsApp = 'DESCONECTADO' | 'INICIANDO' | 'ESPERANDO_QR' | 'CONECTADO' | 'NO_DISPONIBLE' | 'NO_CONFIGURADO';
+
+export interface GrupoWhatsApp {
+  id: string;
+  nombre: string;
+  participantes?: number | null;
+}
+
 export interface EstadoWhatsApp {
-  status: string;
-  statusMessage: string;
-  isReady: boolean;
-  qrCodeDataUrl: string;
+  estado: EstadoConexionWhatsApp;
+  conectado: boolean;
+  mensaje: string;
+  /** Imagen del código QR (data URL) mientras se espera vincular el teléfono. */
+  qr: string | null;
+  /** Grupo donde se publican las convocatorias, o null si aún no se eligió. */
+  grupo: GrupoWhatsApp | null;
+}
+
+export interface ConvocatoriaWhatsApp {
+  grupo: GrupoWhatsApp;
+  estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO';
+  reenvio: boolean;
 }

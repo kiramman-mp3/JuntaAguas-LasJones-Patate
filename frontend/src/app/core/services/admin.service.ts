@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  AsistenciaRegistro, DashboardResumen, EstadoWhatsApp, EventoItem, FinalizacionRespuesta, LoteItem, PadronRespuesta,
+  AsistenciaRegistro, ConvocatoriaWhatsApp, DashboardResumen, EstadoWhatsApp, EventoItem, FinalizacionRespuesta, GrupoWhatsApp, LoteItem, PadronRespuesta,
   PersonaListado, RespuestaApi, RespuestaMensaje, RespuestaPaginada, SectorItem, TurnoItem
 } from '../models/api-payloads';
 
@@ -146,20 +146,29 @@ export class AdminService {
     return this.http.get<RespuestaApi<DashboardResumen>>(`${this.baseUrl}/dashboard/resumen`);
   }
 
-  // --- WhatsApp Web ---
-  getWhatsAppStatus(): Observable<RespuestaApi<EstadoWhatsApp>> {
-    return this.http.get<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/status`);
+  // --- WhatsApp (servicio aparte; las convocatorias se publican en un grupo) ---
+  getWhatsAppEstado(): Observable<RespuestaApi<EstadoWhatsApp>> {
+    return this.http.get<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/estado`);
   }
 
-  initWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
-    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/init`, {});
+  iniciarWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
+    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/sesion/iniciar`, {});
   }
 
-  logoutWhatsApp(): Observable<RespuestaMensaje> {
-    return this.http.post<RespuestaMensaje>(`${this.baseUrl}/whatsapp/logout`, {});
+  cerrarSesionWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
+    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/sesion/cerrar`, {});
   }
 
-  notificarMingaWhatsApp(eventoId: number): Observable<RespuestaMensaje & { enviados: number; fallidos: number; totalComuneros?: number }> {
-    return this.http.post<RespuestaMensaje & { enviados: number; fallidos: number; totalComuneros?: number }>(`${this.baseUrl}/whatsapp/notificar-minga`, { eventoId });
+  getGruposWhatsApp(): Observable<RespuestaApi<GrupoWhatsApp[]>> {
+    return this.http.get<RespuestaApi<GrupoWhatsApp[]>>(`${this.baseUrl}/whatsapp/grupos`);
+  }
+
+  guardarGrupoWhatsApp(grupoId: string): Observable<RespuestaApi<GrupoWhatsApp>> {
+    return this.http.put<RespuestaApi<GrupoWhatsApp>>(`${this.baseUrl}/whatsapp/grupo`, { grupoId });
+  }
+
+  /** Publica la convocatoria en el grupo. Con `reenviar` repite una convocatoria ya publicada. */
+  enviarConvocatoriaWhatsApp(eventoId: number, reenviar = false): Observable<RespuestaApi<ConvocatoriaWhatsApp>> {
+    return this.http.post<RespuestaApi<ConvocatoriaWhatsApp>>(`${this.baseUrl}/whatsapp/convocatorias`, { eventoId, reenviar });
   }
 }

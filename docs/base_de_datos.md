@@ -28,11 +28,12 @@ El modelo relacional está compuesto por **22 tablas** normalizadas y distribuid
 | :--- | :--- | :--- |
 | **Identidad y Acceso** | `personas`, `roles`, `cuentas` | Gestión de comuneros, credenciales de acceso y perfiles (`ADMIN`, `USUARIO`). |
 | **Lotes y Riego** | `sectores`, `lotes`, `persona_lotes`, `turnos_riego` | Terrenos por sector, ubicación aproximada (lat/lng/radio de error), titularidad y horarios de agua. |
-| **Asambleas, Mingas, Asistencia y Comunicación** | `eventos`, `puntos_asamblea`, `asistencias`, `documentos_evento`, `envios_convocatoria` | Eventos, orden del día/resoluciones, control de asistencia, documentos PDF y notificaciones WhatsApp. |
+| **Asambleas, Mingas, Asistencia y Comunicación** | `eventos`, `puntos_asamblea`, `asistencias`, `documentos_evento`, `envios_convocatoria` | Eventos, orden del día/resoluciones, control de asistencia, documentos PDF y convocatorias publicadas en el grupo de WhatsApp. |
 | **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos y gastos operativos. |
 | **Inventario** | `bienes_inventario` | Registro y control físico de bienes y herramientas de la Junta. |
 | **Planificación Anual** | `planes_anuales`, `actividades_plan` | Plan operativo anual de trabajo y seguimiento de cumplimiento de actividades. |
 | **Auditoría** | `auditoria` | Bitácora imborrable de operaciones realizadas por los administradores. |
+| **Configuración** | `configuracion` | Ajustes clave/valor (por ejemplo, el grupo de WhatsApp de las convocatorias). |
 
 ---
 
@@ -190,7 +191,8 @@ erDiagram
 - **`puntos_asamblea`**: Puntos a tratar, lo tratado y resoluciones tomadas.
 - **`asistencias`**: Asistencia por comunero (`PENDIENTE`, `PRESENTE`, `AUSENTE`, `JUSTIFICADO`).
 - **`documentos_evento`**: Gestión de PDFs generados (`GENERADO`) y versiones firmadas manualmente (`FIRMADO`).
-- **`envios_convocatoria`**: Notificaciones enviadas por WhatsApp o Email.
+- **`envios_convocatoria`**: Envíos de convocatorias. Las publicadas en el grupo de WhatsApp tienen `persona_id` NULL, el id del grupo en `destino`, su nombre en `destino_nombre`, `estado` (`ENVIADO`, o `ERROR` con `detalle_error`) y `enviado_por_cuenta_id`.
+- **`configuracion`**: Ajustes clave/valor (`whatsapp.grupo_id`, `whatsapp.grupo_nombre`) con la cuenta que los cambió por última vez.
 
 ### 4.4. Dominio Financiero
 - **`conceptos_cobro`**: Catálogo (`AGUA_MENSUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`).

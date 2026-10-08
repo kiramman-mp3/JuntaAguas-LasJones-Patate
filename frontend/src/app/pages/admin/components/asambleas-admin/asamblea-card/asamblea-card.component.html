@@ -20,8 +20,8 @@
               <i class="ri-megaphone-line" aria-hidden="true"></i> Marcar convocada
             </button>
           }
-          <button type="button" class="menu__item" role="menuitem" (click)="convocarWhatsApp.emit()">
-            <i class="ri-whatsapp-line" aria-hidden="true"></i> Compartir por WhatsApp
+          <button type="button" class="menu__item" role="menuitem" (click)="convocarWhatsApp.emit()" [disabled]="ocupada()">
+            <i class="ri-whatsapp-line" aria-hidden="true"></i> Convocar por WhatsApp
           </button>
           <button type="button" class="menu__item" role="menuitem" (click)="descargarConvocatoria.emit()">
             <i class="ri-file-pdf-line" aria-hidden="true"></i> Convocatoria en PDF

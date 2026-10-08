@@ -92,6 +92,25 @@ npm run db:seed -- --reset   # elimina y recrea la base antes de sembrar
 - `The Angular CLI requires a minimum Node.js version...` → actualiza Node (ver sección 1).
 - `must have required property 'outputPath'` → tienes instalado Angular 18 de una versión anterior del proyecto. Borra la carpeta `node_modules` y vuelve a ejecutar `npm ci`.
 
+### 5.1. Servicio de WhatsApp (opcional)
+
+Las convocatorias se publican en un grupo de WhatsApp desde un servicio aparte (`whatsapp-service/`). Sin él, todo lo demás funciona.
+
+1. Genera un token y ponlo **igual** en `backend/.env` y en `whatsapp-service/.env` (`WHATSAPP_SERVICE_TOKEN`):
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+   ```
+2. Instala y levanta el servicio en otra terminal (reinicia también el backend para que lea el token):
+   ```bash
+   cd whatsapp-service
+   npm ci
+   cp .env.example .env   # y pega el token
+   npm run dev            # escucha en http://127.0.0.1:3100
+   ```
+3. En el panel, menú **WhatsApp**: *Conectar WhatsApp*, escanea el QR con el teléfono de la Junta (*Dispositivos vinculados*) y elige el grupo de las convocatorias. Para pruebas, usa un grupo propio, no el de los comuneros.
+
+En Windows el servicio usa Microsoft Edge. Si prefieres otro navegador, indica su ruta en `CHROME_BIN`.
+
 ---
 
 ## 6. Credenciales de Acceso
@@ -108,8 +127,9 @@ Al terminar, `npm run db:seed` imprime las credenciales: la cédula del **admini
 Lo mismo que ejecuta el CI (`.github/workflows/ci.yml`) en cada pull request a `develop` o `main`:
 
 ```bash
-cd backend  && npm run lint && npm test          # necesita el contenedor de MySQL levantado
-cd frontend && npm run lint && npm test -- --watch=false && npm run build
+cd backend          && npm run lint && npm test          # necesita el contenedor de MySQL levantado
+cd whatsapp-service && npm run lint && npm test          # no necesita WhatsApp ni navegador
+cd frontend         && npm run lint && npm test -- --watch=false && npm run build
 ```
 
 Las pruebas del backend usan su propia base (`junta_las_jones_test`), que crean y borran; no tocan `junta_las_jones`.
@@ -125,7 +145,7 @@ cd backend
 npm run db:migrate
 ```
 
-No hace falta borrar el contenedor ni perder datos. Para crear una migración nueva, agrega el siguiente archivo numerado en esa carpeta (`011_descripcion.js` o `.sql`); nunca modifiques una migración ya publicada.
+No hace falta borrar el contenedor ni perder datos. Para crear una migración nueva, agrega el siguiente archivo numerado en esa carpeta (`013_descripcion.js` o `.sql`); nunca modifiques una migración ya publicada.
 
 ---
 
@@ -137,4 +157,4 @@ No hace falta borrar el contenedor ni perder datos. Para crear una migración nu
   docker compose up -d
   ```
   Luego vuelve a ejecutar `npm run db:migrate` (y, si quieres datos de prueba, `npm run db:seed`) en `backend`.
-- Asegúrate de tener los puertos `3000` (Backend), `4200` (Frontend) y `3306` (MySQL) libres antes de levantar los servicios.
+- Asegúrate de tener los puertos `3000` (Backend), `4200` (Frontend), `3100` (servicio de WhatsApp) y `3306` (MySQL) libres antes de levantar los servicios.

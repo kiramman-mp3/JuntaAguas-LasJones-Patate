@@ -85,7 +85,8 @@ const swaggerDefinition = {
     { name: 'Gestión Financiera', description: 'Recaudación, obligaciones, pagos, egresos y balance al día' },
     { name: 'Inventario', description: 'Control físico de bienes de la Junta' },
     { name: 'Planificación Anual', description: 'Planes operativos anuales y seguimiento de tareas' },
-    { name: 'Auditoría', description: 'Bitácora inalterable de auditoría' }
+    { name: 'Auditoría', description: 'Bitácora inalterable de auditoría' },
+    { name: 'WhatsApp', description: 'Conexión con el servicio de WhatsApp y convocatorias al grupo de la Junta' }
   ]
 };
 

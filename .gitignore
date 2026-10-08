@@ -31,10 +31,39 @@ uploads/*
 !uploads/.gitkeep
 
 # WhatsApp Web JS auth & cache sessions
+# La sesión vinculada equivale a tener el WhatsApp de la Junta abierto: nunca debe versionarse.
+# Si se cambia WHATSAPP_AUTH_DIR, use una ruta fuera del repositorio o agréguela aquí.
 .wwebjs_auth/
 .wwebjs_cache/
 **/.wwebjs_auth/
 **/.wwebjs_cache/
+# Sesiones temporales y respaldos de RemoteAuth (whatsapp-web.js)
+**/wwebjs_temp_session*/
+**/RemoteAuth*.zip
+
+# Navegadores descargados por Puppeteer y volcados de Chrome
+.cache/
+**/.cache/
+.local-chromium/
+**/.local-chromium/
+*.dmp
+
+# Test & tooling caches
+coverage/
+**/coverage/
+.nyc_output/
+.eslintcache
+*.tsbuildinfo
+.npm/
+
+# Certificates & database backups (pueden contener secretos o datos personales)
+*.pem
+*.key
+*.p12
+*.pfx
+*.sql.gz
+*.bak
+backups/
 
 # Logs
 *.log
@@ -54,6 +83,8 @@ yarn-error.log*
 # Temporary files & OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+~$*
 tmp/
 scratch/
 scratch_test.js

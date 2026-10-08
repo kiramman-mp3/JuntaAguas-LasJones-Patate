@@ -35,8 +35,6 @@ jobs:
       DB_PORT: 3306
       DB_USER: root
       DB_PASSWORD: rootpassword
-      # whatsapp-web.js no se ejecuta en las pruebas: no hace falta descargar Chrome.
-      PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,6 +45,26 @@ jobs:
       - run: npm ci
       - run: npm run lint
       # Las pruebas de integración crean y borran su propia base (junta_las_jones_test).
+      - run: npm test
+
+  whatsapp-service:
+    name: Servicio de WhatsApp (lint + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: whatsapp-service
+    env:
+      # Las pruebas usan un cliente simulado: no hace falta descargar Chrome.
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: whatsapp-service/package-lock.json
+      - run: npm ci
+      - run: npm run lint
       - run: npm test
 
   frontend:

@@ -59,7 +59,7 @@
       @for (a of s.eventos; track a.id) {
         <app-asamblea-card
           [asamblea]="a"
-          [ocupada]="ocupadaId() === a.id"
+          [ocupada]="ocupadaId() === a.id || whatsapp.enviandoEventoId() === a.id"
           (asistencia)="asistenciaDe.set(a)"
           (actas)="actasDe.set(a)"
           (convocarWhatsApp)="enviarConvocatoriaWhatsApp(a)"

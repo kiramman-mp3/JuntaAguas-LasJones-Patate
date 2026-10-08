@@ -52,7 +52,7 @@
         <div class="card-grid" [class.is-refreshing]="cargando">
           @for (m of s.eventos; track m.id) {
             @let abierta = m.estado !== 'CANCELADO' && m.estado !== 'REALIZADO';
-            @let ocupada = actualizandoId === m.id || enviandoId === m.id;
+            @let ocupada = actualizandoId === m.id || whatsapp.enviandoEventoId() === m.id;
             <article class="event-card" [class]="'event-card--' + m.estado.toLowerCase()" [attr.aria-busy]="ocupada">
               <header class="event-card__head">
                 <div class="event-card__badges">
@@ -160,8 +160,8 @@
                 </button>
                 @if (abierta) {
                   <button type="button" class="btn btn--whatsapp btn--sm" (click)="enviarConvocatoria(m)" [disabled]="ocupado"
-                    title="Enviar la convocatoria por WhatsApp a comuneros activos">
-                    @if (enviandoId === m.id) {
+                    title="Publicar la convocatoria en el grupo de WhatsApp de la Junta">
+                    @if (whatsapp.enviandoEventoId() === m.id) {
                       <span class="spinner spinner--sm" aria-hidden="true"></span> Enviando…
                     } @else {
                       <i class="ri-whatsapp-line" aria-hidden="true"></i> Convocar por WhatsApp
