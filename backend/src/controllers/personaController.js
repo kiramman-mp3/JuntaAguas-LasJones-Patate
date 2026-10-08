@@ -367,7 +367,7 @@ async function getStatsPublicos(req, res) {
             (SELECT COUNT(*) FROM lotes WHERE activo = TRUE) AS totalLotes,
             (SELECT COUNT(*) FROM sectores WHERE activo = TRUE) AS totalSectores`
   );
-  return res.json({ status: 'OK', stats });
+  return res.json({ status: 'OK', data: stats });
 }
 
 module.exports = {
