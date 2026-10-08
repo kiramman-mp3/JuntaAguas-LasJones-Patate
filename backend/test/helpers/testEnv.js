@@ -9,6 +9,8 @@ const fs = require('fs');
 process.env.NODE_ENV = 'test';
 process.env.DB_NAME = process.env.TEST_DB_NAME || 'junta_las_jones_test';
 process.env.JWT_SECRET = 'secreto-exclusivo-de-pruebas-0123456789abcdef';
+// El servicio de WhatsApp se simula en las pruebas que lo necesitan (ver whatsapp.test.js).
+process.env.WHATSAPP_SERVICE_TOKEN = 'token-del-servicio-whatsapp-de-pruebas-0123';
 process.env.UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'junta-uploads-'));
 
 if (!/_test$/.test(process.env.DB_NAME)) {

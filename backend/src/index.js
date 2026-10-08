@@ -16,9 +16,6 @@ async function apagar(senal) {
   const forzar = setTimeout(() => process.exit(1), 10000);
   forzar.unref();
   server.close(async () => {
-    try {
-      await require('./services/whatsappService').cerrar?.();
-    } catch { /* el servicio puede no estar inicializado */ }
     await db.end().catch(() => {});
     process.exit(0);
   });
