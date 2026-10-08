@@ -5,6 +5,10 @@ const { ClienteFalso, logSilencioso } = require('./helpers/clienteFalso');
 
 const GRUPO = '120363000000000001@g.us';
 const esperar = () => new Promise((resolver) => setImmediate(resolver));
+async function esperarHasta(condicion, intentos = 50) {
+  for (let i = 0; i < intentos && !condicion(); i++) await esperar();
+  assert.ok(condicion(), 'la condición no se cumplió a tiempo');
+}
 
 function crearSesion({ clientes = [], tiempoInicioMs } = {}) {
   const creados = [];
@@ -71,6 +75,42 @@ test('si el inicio falla libera el navegador y permite reintentar', async () => 
 
   sesion.iniciar();
   assert.equal(creados.length, 2);
+});
+
+test('reintenta el arranque si WhatsApp Web recarga la página mientras inicia', async () => {
+  const transitorio = () => new ClienteFalso({ falloInicio: new Error('Execution context was destroyed, most likely because of a navigation.') });
+  const { sesion, creados } = crearSesion({ clientes: [transitorio(), transitorio()] });
+  sesion.iniciar();
+  await esperarHasta(() => creados.length === 3);
+  assert.equal(creados[0].destruido, true);
+  assert.equal(creados[1].destruido, true);
+  creados[2].emit('qr', 'abc');
+  await esperar();
+  assert.equal(sesion.estado().estado, ESTADOS.ESPERANDO_QR);
+});
+
+test('no reintenta más de tres veces ni ante errores que no son transitorios', async () => {
+  const transitorio = () => new ClienteFalso({ falloInicio: new Error('Protocol error: Target closed') });
+  const agotado = crearSesion({ clientes: [transitorio(), transitorio(), transitorio(), transitorio()] });
+  agotado.sesion.iniciar();
+  await esperarHasta(() => agotado.sesion.estado().estado === ESTADOS.DESCONECTADO);
+  assert.equal(agotado.creados.length, 3);
+
+  const definitivo = crearSesion({ clientes: [new ClienteFalso({ falloInicio: new Error('Failed to launch the browser process') })] });
+  definitivo.sesion.iniciar();
+  await esperarHasta(() => definitivo.sesion.estado().estado === ESTADOS.DESCONECTADO);
+  assert.equal(definitivo.creados.length, 1);
+});
+
+test('detener durante un reintento no arranca otro navegador', async () => {
+  const transitorio = new ClienteFalso({ falloInicio: new Error('Execution context was destroyed.') });
+  const { sesion, creados } = crearSesion({ clientes: [transitorio] });
+  sesion.iniciar();
+  await sesion.detener();
+  await esperar();
+  await esperar();
+  assert.equal(creados.length, 1);
+  assert.equal(sesion.estado().estado, ESTADOS.DESCONECTADO);
 });
 
 test('si no termina de conectarse a tiempo se descarta', async () => {

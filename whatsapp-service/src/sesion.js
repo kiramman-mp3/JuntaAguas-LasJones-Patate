@@ -14,6 +14,12 @@ const ESTADOS = Object.freeze({
 const TIEMPO_INICIO_MS = 3 * 60 * 1000;
 const GRUPO_ID = /^[\d-]+@g\.us$/;
 const MAX_TEXTO = 4000;
+/**
+ * WhatsApp Web a veces recarga la página mientras whatsapp-web.js la prepara y el arranque falla
+ * con estos errores; un intento nuevo suele funcionar. Otros errores no se reintentan.
+ */
+const ERROR_TRANSITORIO = /Execution context was destroyed|because of a navigation|Target closed/i;
+const MAX_INTENTOS = 3;
 
 /** Error con código HTTP que el servicio devuelve tal cual al backend. */
 class ErrorServicio extends Error {
@@ -27,6 +33,7 @@ class SesionWhatsApp {
   #crearCliente;
   #generarQr;
   #tiempoInicioMs;
+  #maxIntentos;
   #log;
   #cliente = null;
   #estado = ESTADOS.DESCONECTADO;
@@ -39,10 +46,11 @@ class SesionWhatsApp {
    * @param {() => import('whatsapp-web.js').Client} opciones.crearCliente fábrica del cliente de WhatsApp Web
    * @param {(qr: string) => Promise<string>} opciones.generarQr convierte el texto del QR en una imagen (data URL)
    */
-  constructor({ crearCliente, generarQr, tiempoInicioMs = TIEMPO_INICIO_MS, log = console }) {
+  constructor({ crearCliente, generarQr, tiempoInicioMs = TIEMPO_INICIO_MS, maxIntentos = MAX_INTENTOS, log = console }) {
     this.#crearCliente = crearCliente;
     this.#generarQr = generarQr;
     this.#tiempoInicioMs = tiempoInicioMs;
+    this.#maxIntentos = maxIntentos;
     this.#log = log;
   }
 
@@ -58,10 +66,14 @@ class SesionWhatsApp {
   /** Inicia el cliente si no hay uno en curso. Llamarlo de nuevo no crea otro navegador. */
   iniciar() {
     if (this.#cliente) return this.estado();
+    this.#cambiar(ESTADOS.INICIANDO, 'Iniciando WhatsApp Web…');
+    this.#arrancar(1);
+    return this.estado();
+  }
 
+  #arrancar(intento) {
     const cliente = this.#crearCliente();
     this.#cliente = cliente;
-    this.#cambiar(ESTADOS.INICIANDO, 'Iniciando WhatsApp Web…');
 
     cliente.on('qr', async (texto) => {
       try {
@@ -96,9 +108,22 @@ class SesionWhatsApp {
 
     Promise.resolve()
       .then(() => cliente.initialize())
-      .catch((error) => this.#descartar(cliente, `No se pudo iniciar WhatsApp Web: ${error.message}`));
+      .catch((error) => {
+        if (cliente === this.#cliente && intento < this.#maxIntentos && ERROR_TRANSITORIO.test(error.message)) {
+          this.#reintentar(cliente, intento, error);
+        } else {
+          this.#descartar(cliente, `No se pudo iniciar WhatsApp Web: ${error.message}`);
+        }
+      });
+  }
 
-    return this.estado();
+  /** Libera el navegador fallido y arranca otro, salvo que entretanto se haya detenido o reiniciado. */
+  async #reintentar(cliente, intento, error) {
+    this.#log.error(`[WhatsApp] Arranque interrumpido (${error.message}). Reintento ${intento + 1} de ${this.#maxIntentos}.`);
+    this.#soltarCliente();
+    this.#mensaje = 'Reintentando iniciar WhatsApp Web…';
+    await this.#destruir(cliente);
+    if (!this.#cliente && this.#estado === ESTADOS.INICIANDO) this.#arrancar(intento + 1);
   }
 
   /** Cierra la sesión vinculada: el teléfono deberá escanear un QR nuevo para volver a conectarse. */
