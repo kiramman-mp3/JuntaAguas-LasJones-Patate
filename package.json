@@ -10,7 +10,8 @@
     "prod": "node scripts/prod.js",
     "prod:preparar": "node scripts/prod.js --preparar",
     "start": "npm --prefix backend start",
-    "test": "npm --prefix backend test && npm --prefix frontend test -- --watch=false",
-    "lint": "npm --prefix backend run lint && npm --prefix frontend run lint"
+    "start:whatsapp": "npm --prefix whatsapp-service start",
+    "test": "npm --prefix backend test && npm --prefix whatsapp-service test && npm --prefix frontend test -- --watch=false",
+    "lint": "npm --prefix backend run lint && npm --prefix whatsapp-service run lint && npm --prefix frontend run lint"
   }
 }
