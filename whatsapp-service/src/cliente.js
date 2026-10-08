@@ -64,7 +64,9 @@ function crearFabricaCliente({ authDir, chromeBin }) {
     cliente.listarGrupos = () => cliente.pupPage.evaluate(gruposEnLaPagina);
     // sendMessage busca el chat sin serializarlo (a diferencia de getChatById). sendSeen marcaría el
     // grupo como leído en el teléfono de la Junta, algo que no hace falta para publicar.
-    cliente.enviarTexto = (chatId, texto) => cliente.sendMessage(chatId, texto, { sendSeen: false });
+    // waitUntilMsgSent espera la respuesta de WhatsApp: si el envío falla, la promesa se rechaza.
+    // Aun así puede resolver sin el mensaje (en grupos no siempre lo encuentra por su clave).
+    cliente.enviarTexto = (chatId, texto) => cliente.sendMessage(chatId, texto, { sendSeen: false, waitUntilMsgSent: true });
     return cliente;
   };
 }

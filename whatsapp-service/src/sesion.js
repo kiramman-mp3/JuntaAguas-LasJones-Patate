@@ -176,8 +176,9 @@ class SesionWhatsApp {
     } catch (error) {
       throw new ErrorServicio(502, `WhatsApp no aceptó el mensaje: ${error.message}`);
     }
-    if (!mensaje) throw new ErrorServicio(502, 'WhatsApp no confirmó el envío del mensaje.');
-    return { mensajeId: mensaje.id?._serialized ?? null };
+    // enviarTexto ya esperó la confirmación de WhatsApp; que no devuelva el mensaje no significa que
+    // no se haya enviado, y tratarlo como error haría que un reintento lo duplique en el grupo.
+    return { mensajeId: mensaje?.id?._serialized ?? null };
   }
 
   #clienteConectado() {

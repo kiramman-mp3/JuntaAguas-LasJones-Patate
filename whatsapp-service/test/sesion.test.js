@@ -175,12 +175,12 @@ test('si WhatsApp Web no puede leer los grupos responde 502 con un mensaje claro
   await assert.rejects(sesion.enviarAGrupo(GRUPO, 'Hola'), { status: 502 });
 });
 
-test('si WhatsApp no confirma el envío responde 502', async () => {
+test('un envío confirmado sin el objeto del mensaje cuenta como enviado (no se duplica al reintentar)', async () => {
   const cliente = new ClienteFalso({ chats: [{ id: GRUPO, nombre: 'Comuneros' }], sinConfirmacion: true });
   const { sesion } = crearSesion({ clientes: [cliente] });
   sesion.iniciar();
   cliente.emit('ready');
-  await assert.rejects(sesion.enviarAGrupo(GRUPO, 'Hola'), { status: 502, message: /no confirmó/ });
+  assert.deepEqual(await sesion.enviarAGrupo(GRUPO, 'Hola'), { mensajeId: null });
 });
 
 test('cerrar sesión desvincula el teléfono y libera el navegador', async () => {
