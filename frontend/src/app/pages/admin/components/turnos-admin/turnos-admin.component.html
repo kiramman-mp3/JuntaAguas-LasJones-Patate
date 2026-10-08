@@ -59,11 +59,15 @@
     } @else {
       <div class="view-swap" [class.is-refreshing]="cargando()">
         @if (vista() === 'TABLA') {
-          <app-turnos-tabla [turnos]="filtrados()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
+          <app-turnos-tabla [turnos]="turnosDeLaPagina()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
         } @else {
           <app-turnos-calendario [turnos]="filtrados()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
         }
       </div>
+      @if (vista() === 'TABLA') {
+        <app-paginador etiqueta="turnos" [pagina]="paginaActual()" [porPagina]="porPagina()" [total]="filtrados().length"
+          (paginaChange)="pagina.set($event)" (porPaginaChange)="porPagina.set($event)" />
+      }
     }
   </div>
 </section>
