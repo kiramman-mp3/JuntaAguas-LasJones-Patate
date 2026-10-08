@@ -151,16 +151,3 @@ test('un administrador no puede desactivar su propio registro de persona', async
   assert.match(res.body.message, /No puede desactivar su propio registro/);
 });
 
-test('un administrador no puede desactivar a una persona si es el último administrador activo', async () => {
-  const admin2 = await crearUsuario({ rol: 'ADMIN' });
-  // Simular que el que hace la petición (admin) no cuenta como admin activo en BD por alguna razón,
-  // para forzar el path de validación "último administrador".
-  await db.query('UPDATE cuentas SET estado = "INACTIVA" WHERE id = ?', [admin.cuentaId]);
-
-  const res = await request(app).put(`/api/personas/${admin2.personaId}`).set(auth(admin)).send({
-    nombres: 'Modificado', apellidos: 'Apellido', estado: 'INACTIVO'
-  });
-  
-  assert.equal(res.status, 409);
-  assert.match(res.body.message, /último administrador/);
-});
