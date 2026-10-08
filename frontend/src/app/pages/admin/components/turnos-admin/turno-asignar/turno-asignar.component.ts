@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
+import { PersonaListado, TurnoItem } from '../../../../../core/models/api-payloads';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA } from '../turno.model';
 
@@ -37,7 +38,7 @@ export class TurnoAsignarComponent implements OnInit {
 
   busqueda = '';
   seleccionado: PersonaListado | null = null;
-  turno: Partial<TurnoItem> = {
+  turno: Partial<TurnoItem> & { costo?: number | null } = {
     persona_id: undefined,
     lote_id: undefined,
     dia_semana: 1,
@@ -75,7 +76,7 @@ export class TurnoAsignarComponent implements OnInit {
   seleccionar(u: PersonaListado): void {
     this.seleccionado = u;
     this.turno.persona_id = u.id;
-    this.turno.lote_id = null;
+    this.turno.lote_id = undefined;
     this.lotes.set([]);
     this.cargandoLotes.set(true);
     this.admin.getLotes(undefined, undefined, u.id).subscribe({

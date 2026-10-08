@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
+import { PersonaListado } from '../../../../../core/models/api-payloads';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
