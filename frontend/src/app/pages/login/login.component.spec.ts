@@ -2,6 +2,10 @@ import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { LoginComponent } from './login.component';
 import { problemaConPassword } from '../../core/auth/password-policy';
+import { TestBed } from '@angular/core/testing';
+import { AuthService } from '../../core/services/auth.service';
+import { Router, ActivatedRoute } from '@angular/router';
+import { ChangeDetectorRef } from '@angular/core';
 
 const usuario = (debeCambiarPassword: boolean, rol: 'ADMIN' | 'USUARIO' = 'USUARIO') => ({
   cuentaId: 1, personaId: 1, cedula: '1803456789', nombres: 'Rosa', apellidos: 'Caiza', email: '', rol, rolNombre: '', debeCambiarPassword
@@ -10,10 +14,16 @@ const usuario = (debeCambiarPassword: boolean, rol: 'ADMIN' | 'USUARIO' = 'USUAR
 function crear(auth: Record<string, any>) {
   const router = { navigate: vi.fn(), navigateByUrl: vi.fn() };
   const route = { snapshot: { queryParamMap: { get: () => null } } };
-  const component = new LoginComponent(
-    { isLoggedIn: () => false, debeCambiarPassword: () => false, getUser: () => null, ...auth } as any,
-    router as any, route as any, { detectChanges: vi.fn() } as any
-  );
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [
+      { provide: AuthService, useValue: { isLoggedIn: () => false, debeCambiarPassword: () => false, getUser: () => null, ...auth } },
+      { provide: Router, useValue: router },
+      { provide: ActivatedRoute, useValue: route },
+      { provide: ChangeDetectorRef, useValue: { detectChanges: vi.fn() } }
+    ]
+  });
+  const component = TestBed.runInInjectionContext(() => new LoginComponent());
   return { component, router };
 }
 
