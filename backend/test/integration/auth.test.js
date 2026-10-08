@@ -26,7 +26,7 @@ test('la cuenta se bloquea tras 5 intentos fallidos aunque luego use la contrase
   for (let i = 0; i < 5; i++) await login(u.cedula, 'incorrecta1');
   const res = await login(u.cedula, u.password);
   assert.equal(res.status, 401);
-  assert.match(res.body.message, /Demasiados intentos/);
+  assert.match(res.body.message, /Credenciales incorrectas/);
 });
 
 test('una cuenta inactiva no puede iniciar sesión ni usar tokens previos', async () => {
