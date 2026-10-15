@@ -471,9 +471,17 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
 
     log('[seed] Próximos eventos, egresos, inventario y plan anual...');
     const proximos = [
-      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 12), hora: '08:00:00', horaFin: '12:00:00', titulo: 'Asamblea General Ordinaria', estado: 'CONVOCADO' },
-      { tipo: 'MINGA', fecha: sumarDias(hoy, 5), hora: '07:00:00', horaFin: '13:00:00', titulo: 'Limpieza del canal matriz antes del verano', estado: 'PROGRAMADO' },
-      { tipo: 'MINGA', fecha: sumarDias(hoy, 33), hora: '07:00:00', horaFin: '12:00:00', titulo: 'Reparación de la compuerta de El Tambo', estado: 'BORRADOR' }
+      // 4 próximas asambleas
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 8), hora: '08:00:00', horaFin: '12:00:00', titulo: 'Asamblea General Ordinaria: Rendición de Cuentas', estado: 'CONVOCADO' },
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 28), hora: '08:30:00', horaFin: '12:00:00', titulo: 'Asamblea Extraordinaria: Mantenimiento del Reservorio', estado: 'CONVOCADO' },
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 56), hora: '09:00:00', horaFin: '13:00:00', titulo: 'Asamblea General Ordinaria: Turnos de Riego de Verano', estado: 'PROGRAMADO' },
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 84), hora: '08:00:00', horaFin: '12:00:00', titulo: 'Asamblea General Informativa y Evaluación de Cuotas', estado: 'PROGRAMADO' },
+
+      // 4 próximas mingas
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 4), hora: '07:00:00', horaFin: '13:00:00', titulo: 'Limpieza del canal matriz antes del verano', estado: 'CONVOCADO' },
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 18), hora: '07:30:00', horaFin: '12:30:00', titulo: 'Desbroce y mantenimiento de la acequia de La Jones Baja', estado: 'CONVOCADO' },
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 42), hora: '07:00:00', horaFin: '12:00:00', titulo: 'Reparación de la compuerta de El Tambo', estado: 'PROGRAMADO' },
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 70), hora: '07:00:00', horaFin: '13:00:00', titulo: 'Limpieza y mantenimiento del desarenador de la bocatoma', estado: 'PROGRAMADO' }
     ];
     for (const e of proximos) await crearEvento(conexion, e, { cuentaId: admin.cuentaId, estado: e.estado });
 
