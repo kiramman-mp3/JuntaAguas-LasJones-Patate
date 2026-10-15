@@ -2,7 +2,7 @@
 
 Sistema web para administrar la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador): comuneros y lotes, turnos de riego, asambleas y mingas con asistencia y multas, cobros, facturación mensual del agua, egresos y un portal donde cada comunero consulta su cuenta.
 
-La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INSTRUCCIONES.md).
+La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INSTRUCCIONES.md). Para la defensa y demostración del sistema, consulte la [**Guía Maestra de Presentación**](docs/GUIA_DE_PRESENTACION.md).
 
 ---
 
@@ -93,6 +93,14 @@ JuntaAguas-LasJones-Patate/
 
 Requisitos: **Node.js 26** (Angular 22 exige al menos 22.22), **Docker** y **npm**.
 
+### Opción A: Lanzador interactivo (Recomendado para desarrollo y presentaciones)
+Desde la raíz del proyecto, con la base de datos y dependencias listas:
+```bash
+npm run dev           # En Linux/Mac/Windows (arranca backend y frontend coordinados)
+# O en Windows: doble clic en presentar.bat
+```
+
+### Opción B: Inicio paso a paso por servicios
 ```bash
 # 1. Base de datos
 cd bd && docker compose up -d
