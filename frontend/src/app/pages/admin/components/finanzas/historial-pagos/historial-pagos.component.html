@@ -81,6 +81,10 @@
                 }
               </td>
               <td class="acciones">
+                @if (p.metodo === 'TRANSFERENCIA' || p.metodo === 'DEPOSITO') {
+                  <app-comprobante-bancario [pagoId]="p.id" [existente]="!!p.comprobante_url"
+                    [editable]="p.estado === 'VIGENTE'" (subido)="cargar()" />
+                }
                 <button type="button" class="icon-btn" [disabled]="procesandoId() === p.id" (click)="reimprimir(p)"
                   [attr.aria-label]="'Reimprimir comprobante ' + numeroRecibo(p.id)" title="Reimprimir comprobante">
                   <i [class]="procesandoId() === p.id ? 'ri-loader-4-line ri-spin' : 'ri-printer-line'" aria-hidden="true"></i>

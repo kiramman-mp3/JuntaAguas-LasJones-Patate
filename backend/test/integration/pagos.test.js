@@ -20,7 +20,7 @@ after(closeDatabase);
 async function pagar(cuerpo) {
   const ob = await crearObligacion({ personaId: comunero.personaId, mes: 1, anio: 2000 + ++periodo });
   const res = await request(app).post('/api/financiero/pagos').set(auth(admin))
-    .send({ persona_id: comunero.personaId, obligacionesIds: [ob], ...cuerpo });
+    .send({ persona_id: comunero.personaId, obligacionesIds: [ob], metodo: 'TRANSFERENCIA', referencia: 'TRF-123', ...cuerpo });
   assert.equal(res.status, 201, JSON.stringify(res.body));
   const [[pago]] = await db.query('SELECT observacion FROM pagos WHERE id = ?', [res.body.pagoId]);
   return pago.observacion;

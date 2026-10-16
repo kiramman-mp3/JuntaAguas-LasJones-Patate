@@ -121,7 +121,7 @@ async function resumenFacturacionAnual(conexion, anio) {
  * Registra el pago completo de una o varias obligaciones pendientes del mismo comunero.
  * @returns {{ pagoId: number, valorTotal: number }}
  */
-async function registrarPago(conexion, { personaId, obligacionesIds, metodo = 'EFECTIVO', referencia = null, observacion = null, cuentaId, fechaPago = null }) {
+async function registrarPago(conexion, { personaId, obligacionesIds, metodo = 'TRANSFERENCIA', referencia = null, observacion = null, cuentaId, fechaPago = null }) {
   const ids = [...new Set(obligacionesIds.map(Number))];
   const [obligaciones] = await conexion.query(
     'SELECT id, persona_id, valor, estado FROM obligaciones WHERE id IN (?) FOR UPDATE',

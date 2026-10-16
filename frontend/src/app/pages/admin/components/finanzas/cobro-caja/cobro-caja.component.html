@@ -173,9 +173,12 @@
           <strong>Pago {{ c.numero }} registrado</strong>
           <p>
             <span class="money">${{ c.total.toFixed(2) }}</span>
-            @if (c.valorRecibido !== undefined && c.valorRecibido > c.total) { · cambio <span class="money">${{ (c.valorRecibido - c.total).toFixed(2) }}</span> }
           </p>
         </div>
+        @if (pagoRegistradoId(); as id) {
+          <app-comprobante-bancario [pagoId]="id" />
+          <p class="field__hint">Puede adjuntar el comprobante bancario ahora o desde el historial de pagos.</p>
+        }
         <div class="summary">
           <button type="button" class="btn btn--primary btn--block pressable" [disabled]="imprimiendo()" (click)="imprimirComprobante()">
             <i class="ri-printer-line" aria-hidden="true"></i> {{ imprimiendo() ? 'Preparando…' : 'Imprimir comprobante' }}
@@ -208,26 +211,11 @@
             </div>
           </div>
 
-          @if (metodo() === 'EFECTIVO') {
-            <div class="field">
-              <label for="cobro-recibido">Valor recibido</label>
-              <div style="display: flex; gap: 0.5rem">
-                <input id="cobro-recibido" class="input money" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
-                  [ngModel]="recibido()" (ngModelChange)="onRecibido($event)" />
-                <button type="button" class="btn btn--outline btn--sm pressable" (click)="valorExacto()" [disabled]="!total()">Exacto</button>
-              </div>
-            </div>
-            <div class="summary__row">
-              <span class="text-muted">Cambio</span>
-              <strong class="money">${{ cambio().toFixed(2) }}</strong>
-            </div>
-          } @else {
-            <div class="field">
-              <label for="cobro-referencia">Número de referencia</label>
-              <input id="cobro-referencia" class="input" type="text" maxlength="100" placeholder="Comprobante bancario"
-                [ngModel]="referencia()" (ngModelChange)="referencia.set($event)" />
-            </div>
-          }
+          <div class="field">
+            <label for="cobro-referencia">Número de referencia</label>
+            <input id="cobro-referencia" class="input" type="text" maxlength="100" placeholder="Referencia bancaria"
+              [ngModel]="referencia()" (ngModelChange)="referencia.set($event)" />
+          </div>
 
           <div class="field">
             <label for="cobro-observacion">Observación <span class="text-muted">(opcional)</span></label>
