@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { WhatsAppSesionService } from '../../core/services/whatsapp-sesion.service';
 import { ModalComponent } from '../ui/modal.component';
 
@@ -195,10 +195,14 @@ import { ModalComponent } from '../ui/modal.component';
     `
   ]
 })
-export class WhatsAppPanelComponent {
+export class WhatsAppPanelComponent implements OnDestroy {
   readonly sesion = inject(WhatsAppSesionService);
   /** Grupo elegido en el selector y aún no guardado. */
   readonly seleccion = signal('');
+
+  ngOnDestroy(): void {
+    this.sesion.cerrar();
+  }
 
   guardar(actual?: string): void {
     const grupoId = this.seleccion();

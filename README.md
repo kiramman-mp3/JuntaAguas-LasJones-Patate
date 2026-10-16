@@ -85,6 +85,7 @@ JuntaAguas-LasJones-Patate/
 - Toda entrada se valida con zod; un error de validación responde 400 con el mensaje del campo.
 - Autorización por ruta: `soloAdmin` para la gestión; un comunero solo ve sus propios datos.
 - Fechas: la Junta opera en hora de Ecuador (UTC-5). Las fechas de calendario viajan como `AAAA-MM-DD`; los instantes (por ejemplo, la fecha de un pago) se guardan en UTC y se filtran por día de Ecuador.
+- Gestión Documental y Asistencias: Las asambleas y mingas permiten generar la lista de asistencia en PDF con el padrón activo para firmas físicas en territorio (`GET /api/eventos/:id/pdf-asistencia`). Posteriormente, se respalda el acta escaneada o convocatoria firmada en almacenamiento seguro validado por firma binaria (`POST /api/eventos/:id/documentos`).
 - El frontend usa un único interceptor para el token y clientes de API tipados (`AdminService`, `FinanzasService`, `ConsultaService`).
 
 ---

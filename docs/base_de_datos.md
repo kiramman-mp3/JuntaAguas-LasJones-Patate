@@ -184,7 +184,7 @@ erDiagram
 - **`sectores`**: Sectores geográficos de riego en Patate.
 - **`lotes`**: Terrenos con coordenadas de latitud/longitud aproximadas y radio de error en metros.
 - **`persona_lotes`**: Soporta propiedad, copropiedad o representación de lotes.
-- **`turnos_riego`**: Asigna horarios de riego a un comunero (`persona_id`), distinguiendo turnos `REGULAR` o `ADICIONAL`.
+- **`turnos_riego`**: Asigna horarios de riego a un comunero (`persona_id`), distinguiendo turnos `REGULAR` o `ADICIONAL`. Emplea desactivación lógica (`estado_turno_riego: INACTIVO`) para preservar la trazabilidad histórica de asignaciones y evitar la pérdida de antecedentes en fiscalizaciones.
 
 ### 4.3. Dominio de Asambleas, Mingas, Asistencia y Comunicación
 - **`eventos`**: Asambleas y Mingas (`tipo`). Define si genera multa por ausencia (`genera_multa_ausencia`).

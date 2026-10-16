@@ -71,6 +71,8 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | :--- | :--- | :--- | :--- |
 | `GET` | `/turnos` | Público / Autenticado | Horarios de distribución de agua asignados por día de la semana (`1` a `7`) y sector. |
 | `POST` | `/turnos` | ADMIN / SECRETARIO | Asignar turno (`REGULAR`/`ADICIONAL`). Valida `hora_inicio < hora_fin` y **no solapamientos**. |
+| `PUT` | `/turnos/:id` | ADMIN / SECRETARIO | Modificar turno existente (persona, lote, tipo, horario). |
+| `DELETE` | `/turnos/:id` | ADMIN / SECRETARIO | Desactivar turno de riego (conserva historial y cancela horario activo). |
 
 ---
 
@@ -84,6 +86,9 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `POST` | `/eventos/:id/puntos` | ADMIN / SECRETARIO | Guardar puntos a tratar y resoluciones aprobadas en asamblea. |
 | `POST` | `/eventos/:id/asistencias` | ADMIN / SECRETARIO | Toma de asistencia digital (`PRESENTE`, `AUSENTE`, `JUSTIFICADO`). |
 | `POST` | `/eventos/:id/finalizar` | ADMIN / SECRETARIO | **Generación Automática de Multas:** Cierra el evento y crea obligaciones de multa para todas las personas ausentes. |
+| `POST` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Subir documento firmado del evento o de un punto del acta (`multipart/form-data`). |
+| `GET` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Listar metadatos de documentos firmados del evento (sin contenido binario). |
+| `GET` | `/eventos/:id/pdf-asistencia` | ADMIN / SECRETARIO | Descargar hoja de asistencia en PDF con padrón de comuneros para firmas físicas. |
 
 ---
 
