@@ -65,6 +65,18 @@ describe('WhatsAppSesionService', () => {
     expect(admin.getWhatsAppEstado).toHaveBeenCalledTimes(2);
   });
 
+  it('detiene el sondeo activo al destruirse el servicio con ngOnDestroy', () => {
+    admin.getWhatsAppEstado.mockReturnValue(of({ data: iniciando }));
+    servicio.abrir();
+    servicio.conectar();
+    vi.advanceTimersByTime(2000);
+    const llamadasAntes = admin.getWhatsAppEstado.mock.calls.length;
+
+    servicio.ngOnDestroy();
+    vi.advanceTimersByTime(6000);
+    expect(admin.getWhatsAppEstado).toHaveBeenCalledTimes(llamadasAntes);
+  });
+
   it('desvincula el teléfono solo tras confirmar', async () => {
     dialog.confirmar.mockResolvedValueOnce(false);
     await servicio.cerrarSesion();
