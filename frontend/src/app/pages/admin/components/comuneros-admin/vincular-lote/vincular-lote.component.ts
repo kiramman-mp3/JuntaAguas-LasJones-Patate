@@ -22,13 +22,40 @@ export const PORCENTAJE_TITULARIDAD = 100;
       <form (ngSubmit)="guardar()" #vincularForm="ngForm">
         <div class="modal__body form-stack">
           <div class="form-group">
-            <label for="vin-lote">Lote *</label>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+              <label for="vin-lote" style="margin-bottom: 0;">Lote *</label>
+              @if (!cargando() && lotes().length > 0) {
+                <small class="text-muted" style="font-size: 0.75rem;">
+                  {{ lotesFiltrados().length }} de {{ lotes().length }} disponibles
+                </small>
+              }
+            </div>
+            <div class="search-field" style="margin-bottom: 0.5rem;">
+              <i class="ri-search-line" aria-hidden="true"></i>
+              <input
+                id="vin-lote-busqueda"
+                type="search"
+                class="input"
+                placeholder="Buscar por código, sector o comunero…"
+                [ngModel]="busqueda()"
+                (ngModelChange)="busqueda.set($event)"
+                [disabled]="cargando()"
+                aria-label="Buscar lote"
+              />
+            </div>
             <select id="vin-lote" class="input" name="lote_id" [ngModel]="loteId()" (ngModelChange)="loteId.set($event)" required [disabled]="cargando()">
-              <option [ngValue]="null">{{ cargando() ? 'Cargando lotes…' : 'Elija un lote…' }}</option>
-              @for (lote of lotes(); track lote.id) {
+              <option [ngValue]="null">
+                {{ cargando() ? 'Cargando lotes…' : lotesFiltrados().length ? 'Elija un lote (' + lotesFiltrados().length + ' disponibles)…' : 'No hay lotes con ese criterio' }}
+              </option>
+              @for (lote of lotesFiltrados(); track lote.id) {
                 <option [ngValue]="lote.id">{{ lote.sector_nombre }} — Lote {{ lote.codigo }}{{ lote.propietarios ? ' (de ' + lote.propietarios + ')' : ' (sin dueño)' }}</option>
               }
             </select>
+            @if (busqueda() && lotesFiltrados().length === 0 && !cargando()) {
+              <small class="field-error" style="margin-top: 0.25rem;">
+                <i class="ri-information-line" aria-hidden="true"></i> No se encontraron lotes que coincidan con "{{ busqueda() }}".
+              </small>
+            }
           </div>
 
           <div class="form-group">
@@ -82,7 +109,32 @@ export class VincularLoteComponent implements OnInit {
   readonly cargando = signal(true);
   readonly guardando = signal(false);
   readonly loteId = signal<number | null>(null);
+  readonly busqueda = signal('');
   tipoRelacion: 'PROPIETARIO' | 'REPRESENTANTE' = 'PROPIETARIO';
+
+  /** Lotes filtrados por código, sector, ID o propietario, conservando el seleccionado si existe. */
+  readonly lotesFiltrados = computed(() => {
+    const q = this.busqueda().trim().toLowerCase();
+    const todos = this.lotes();
+    if (!q) return todos;
+
+    const coinciden = todos.filter((l) => {
+      const codigo = String(l.codigo || '').toLowerCase();
+      const sector = String(l.sector_nombre || '').toLowerCase();
+      const prop = String(l.propietarios || l.propietario_nombre || '').toLowerCase();
+      const id = String(l.id || '');
+      return codigo.includes(q) || sector.includes(q) || prop.includes(q) || id === q;
+    });
+
+    const actualId = this.loteId();
+    if (actualId && !coinciden.some((l) => l.id === actualId)) {
+      const loteSeleccionado = todos.find((l) => l.id === actualId);
+      if (loteSeleccionado) {
+        return [loteSeleccionado, ...coinciden];
+      }
+    }
+    return coinciden;
+  });
 
   /** Dueño actual del lote elegido, si es otro comunero (el traspaso es total). */
   readonly titularActual = computed<string | null>(() => {
