@@ -20,6 +20,20 @@ const router = express.Router();
  *     tags: [Eventos y Asistencias]
  *     summary: Crear asamblea o minga
  *     security: [{ bearerAuth: [] }]
+ * /eventos/{id}/documentos:
+ *   get:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Listar metadatos de documentos registrados del evento (sin contenido binario)
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Subir archivo firmado de convocatoria o acta (multipart/form-data)
+ *     security: [{ bearerAuth: [] }]
+ * /eventos/{id}/pdf-asistencia:
+ *   get:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Generar y descargar hoja de asistencia en PDF para firmas en territorio
+ *     security: [{ bearerAuth: [] }]
  */
 router.get('/publicos', eventoController.getEventosPublicos);
 router.get('/', ...soloAdmin, eventoController.getEventos);
