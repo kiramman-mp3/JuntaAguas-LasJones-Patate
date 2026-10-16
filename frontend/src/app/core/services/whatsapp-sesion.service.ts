@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AdminService } from './admin.service';
 import { DialogService } from './dialog.service';
@@ -19,7 +19,7 @@ const mensajeDe = (err: unknown, respaldo: string): string => cuerpoError(err)?.
  * el mismo panel de conexión.
  */
 @Injectable({ providedIn: 'root' })
-export class WhatsAppSesionService {
+export class WhatsAppSesionService implements OnDestroy {
   private admin = inject(AdminService);
   private dialog = inject(DialogService);
   private notify = inject(NotificationService);
@@ -189,5 +189,9 @@ export class WhatsAppSesionService {
       clearInterval(this.sondeo);
       this.sondeo = null;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.detenerSondeo();
   }
 }

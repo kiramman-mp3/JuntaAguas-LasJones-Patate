@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { WhatsAppSesionService } from '../../core/services/whatsapp-sesion.service';
 import { ModalComponent } from '../ui/modal.component';
 
@@ -35,12 +35,35 @@ import { ModalComponent } from '../ui/modal.component';
                 </div>
 
                 <div class="form-group wa-panel__grupo">
-                  <label for="wa-grupo">Grupo de convocatorias</label>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+                    <label for="wa-grupo" style="margin-bottom: 0;">Grupo de convocatorias</label>
+                     @if (!sesion.cargandoGrupos() && sesion.grupos().length > 0) {
+                      <small class="text-muted" style="font-size: 0.75rem;">
+                        {{ gruposFiltrados().length }} de {{ sesion.grupos().length }} grupos
+                      </small>
+                    }
+                  </div>
                   @if (e.grupo) {
                     <p class="wa-panel__actual">Actual: <strong>{{ e.grupo.nombre }}</strong></p>
                   } @else {
                     <p class="wa-panel__aviso">Elija el grupo donde se publicarán las convocatorias.</p>
                   }
+
+                  @if (!sesion.cargandoGrupos() && sesion.grupos().length > 0) {
+                    <div class="search-field" style="margin-bottom: 0.5rem;">
+                      <i class="ri-search-line" aria-hidden="true"></i>
+                      <input
+                        id="wa-grupo-busqueda"
+                        type="search"
+                        class="input"
+                        placeholder="Buscar grupo por nombre…"
+                        [value]="busquedaGrupo()"
+                        (input)="busquedaGrupo.set($any($event.target).value)"
+                        aria-label="Buscar grupo de WhatsApp"
+                      />
+                    </div>
+                  }
+
                   <div class="wa-panel__fila">
                     <select
                       id="wa-grupo"
@@ -50,9 +73,9 @@ import { ModalComponent } from '../ui/modal.component';
                       [disabled]="sesion.cargandoGrupos() || !sesion.grupos().length"
                     >
                       <option value="" disabled>
-                        {{ sesion.cargandoGrupos() ? 'Cargando grupos…' : sesion.grupos().length ? 'Seleccione un grupo' : 'La cuenta no pertenece a ningún grupo' }}
+                        {{ sesion.cargandoGrupos() ? 'Cargando grupos…' : gruposFiltrados().length ? 'Seleccione un grupo (' + gruposFiltrados().length + ' disponibles)' : busquedaGrupo() ? 'No hay grupos con ese nombre' : 'La cuenta no pertenece a ningún grupo' }}
                       </option>
-                      @for (g of sesion.grupos(); track g.id) {
+                      @for (g of gruposFiltrados(); track g.id) {
                         <option [value]="g.id">{{ g.nombre }}{{ g.participantes ? ' (' + g.participantes + ')' : '' }}</option>
                       }
                     </select>
@@ -61,6 +84,11 @@ import { ModalComponent } from '../ui/modal.component';
                       <i class="ri-refresh-line" aria-hidden="true"></i>
                     </button>
                   </div>
+                  @if (busquedaGrupo() && gruposFiltrados().length === 0 && !sesion.cargandoGrupos()) {
+                    <small class="field-error" style="margin-top: 0.25rem;">
+                      <i class="ri-information-line" aria-hidden="true"></i> Ningún grupo coincide con "{{ busquedaGrupo() }}".
+                    </small>
+                  }
                   <button type="button" class="btn btn--whatsapp" (click)="guardar(e.grupo?.id)"
                     [disabled]="sesion.guardandoGrupo() || !seleccion() || seleccion() === e.grupo?.id">
                     <i class="ri-save-line" aria-hidden="true"></i> Usar este grupo
@@ -195,10 +223,31 @@ import { ModalComponent } from '../ui/modal.component';
     `
   ]
 })
-export class WhatsAppPanelComponent {
+export class WhatsAppPanelComponent implements OnDestroy {
   readonly sesion = inject(WhatsAppSesionService);
+  /** Filtro de búsqueda por nombre de grupo. */
+  readonly busquedaGrupo = signal('');
   /** Grupo elegido en el selector y aún no guardado. */
   readonly seleccion = signal('');
+
+  /** Grupos filtrados reactivamente por nombre, manteniendo visible el seleccionado actual. */
+  readonly gruposFiltrados = computed(() => {
+    const q = this.busquedaGrupo().trim().toLowerCase();
+    const todos = this.sesion.grupos();
+    if (!q) return todos;
+
+    const coinciden = todos.filter((g) => g.nombre?.toLowerCase().includes(q) || g.id?.toLowerCase().includes(q));
+    const actualId = this.seleccion();
+    if (actualId && !coinciden.some((g) => g.id === actualId)) {
+      const seleccionado = todos.find((g) => g.id === actualId);
+      if (seleccionado) return [seleccionado, ...coinciden];
+    }
+    return coinciden;
+  });
+
+  ngOnDestroy(): void {
+    this.sesion.cerrar();
+  }
 
   guardar(actual?: string): void {
     const grupoId = this.seleccion();
