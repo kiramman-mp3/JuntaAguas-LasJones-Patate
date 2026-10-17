@@ -336,3 +336,868 @@
     }
   }
 }
+
+/* ==========================================================================
+   MODAL CRONOGRAMA DE AGUA — DISEÑO ESPECIAL, CLARO Y LEGIBLE PARA LA COMUNIDAD
+   ========================================================================== */
+.cronograma-backdrop {
+  z-index: 1200;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+
+  @media (max-width: 640px) {
+    padding: 0.5rem;
+    align-items: flex-end;
+  }
+}
+
+.cronograma-modal {
+  width: 96vw;
+  max-width: 1060px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface, #1e293b);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 20px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 40px rgba(14, 165, 233, 0.15);
+  overflow: hidden;
+  animation: modalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+@keyframes modalPop {
+  0% { opacity: 0; transform: scale(0.96) translateY(12px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* CABECERA */
+.cronograma-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 1.75rem;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.2) 0%, rgba(15, 23, 42, 0.4) 100%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+
+  .header-branding {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .water-icon-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.4);
+    flex-shrink: 0;
+  }
+
+  .official-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #38bdf8;
+    background: rgba(14, 165, 233, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    margin-bottom: 0.3rem;
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+      animation: pulse 1.8s infinite;
+    }
+  }
+
+  .modal-main-title {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .modal-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted, #94a3b8);
+    margin: 0.15rem 0 0;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .btn-print {
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    border-color: rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+
+    &:hover {
+      background: rgba(14, 165, 233, 0.15);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    @media (max-width: 640px) {
+      display: none;
+    }
+  }
+
+  .btn-close-modal {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #f87171;
+    }
+  }
+}
+
+/* SELECTOR RÁPIDO DE SECTOR */
+.sector-switcher-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1.75rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  @media (max-width: 640px) {
+    padding: 0.6rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .switcher-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-muted, #94a3b8);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+  }
+
+  .sector-pills-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .sector-pill-btn {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #cbd5e1);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+    }
+  }
+}
+
+/* CUERPO */
+.cronograma-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  @media (max-width: 640px) {
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+}
+
+/* ESTADOS DE CARGA Y VACÍO */
+.cronograma-loading {
+  text-align: center;
+  padding: 4rem 1rem;
+
+  i {
+    font-size: 3rem;
+    color: #38bdf8;
+  }
+
+  h3 {
+    margin: 1rem 0 0.25rem;
+    font-size: 1.25rem;
+    color: #ffffff;
+  }
+}
+
+.cronograma-empty {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+
+  .empty-icon-wrap {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: rgba(2, 132, 199, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: #38bdf8;
+  }
+
+  h3 {
+    font-size: 1.35rem;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-hint {
+    font-size: 0.85rem;
+    color: #38bdf8;
+    margin-top: 0.5rem;
+  }
+}
+
+/* MÉTRICAS GRANDES Y RESUMEN */
+.cronograma-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.45);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    .metric-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .metric-val {
+      display: block;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .metric-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted, #94a3b8);
+      font-weight: 500;
+    }
+
+    &--turnos {
+      border-color: rgba(2, 132, 199, 0.3);
+      .metric-icon {
+        background: rgba(2, 132, 199, 0.2);
+        color: #38bdf8;
+      }
+    }
+
+    &--horas {
+      border-color: rgba(16, 185, 129, 0.3);
+      .metric-icon {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+      }
+    }
+
+    &--lotes {
+      border-color: rgba(245, 158, 11, 0.3);
+      .metric-icon {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+      }
+    }
+  }
+}
+
+/* BUSCADOR DE COMUNERO O LOTE */
+.search-comunero-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .search-icon {
+      position: absolute;
+      left: 1.1rem;
+      font-size: 1.35rem;
+      color: #38bdf8;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 54px;
+      padding: 0 3.25rem 0 3.25rem;
+      background: rgba(15, 23, 42, 0.7);
+      border: 2px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      font-size: 1.05rem;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.25s ease;
+
+      &::placeholder {
+        color: rgba(148, 163, 184, 0.75);
+      }
+
+      &:focus {
+        border-color: #38bdf8;
+        background: rgba(15, 23, 42, 0.9);
+        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+      }
+    }
+
+    .btn-clear-search {
+      position: absolute;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--text-muted, #94a3b8);
+      font-size: 1.3rem;
+      cursor: pointer;
+
+      &:hover {
+        color: #f87171;
+      }
+    }
+  }
+
+  .search-helper-text {
+    font-size: 0.8rem;
+    color: var(--text-muted, #94a3b8);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-left: 0.25rem;
+
+    i {
+      color: #38bdf8;
+    }
+  }
+}
+
+/* PESTAÑAS POR DÍA */
+.day-tabs-scroll-wrapper {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.3);
+    border-radius: 999px;
+  }
+}
+
+.day-tabs-list {
+  display: flex;
+  gap: 0.5rem;
+  min-width: max-content;
+
+  .day-tab-btn {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--text-muted, #cbd5e1);
+    font-size: 0.92rem;
+    font-weight: 700;
+    padding: 0.65rem 1.15rem;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+
+      .tab-badge {
+        background: #ffffff;
+        color: #0369a1;
+      }
+    }
+
+    .tab-badge {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+
+      &--empty {
+        opacity: 0.4;
+      }
+    }
+  }
+}
+
+/* SIN RESULTADOS DE BÚSQUEDA */
+.no-matches-box {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+
+  i {
+    font-size: 2.75rem;
+    color: var(--text-muted, #94a3b8);
+  }
+
+  h4 {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 1.15rem;
+    color: #ffffff;
+  }
+}
+
+/* GRUPOS DE DÍAS */
+.days-schedule-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.day-card-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+
+  .day-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(90deg, rgba(2, 132, 199, 0.15) 0%, rgba(15, 23, 42, 0.2) 100%);
+    border-left: 4px solid #38bdf8;
+    border-radius: 10px;
+
+    .day-title-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .day-icon-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .day-title-text {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.04em;
+      margin: 0;
+      line-height: 1.1;
+    }
+
+    .day-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted, #94a3b8);
+    }
+
+    .day-turnos-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+    }
+  }
+}
+
+/* GRILLA Y TARJETAS DE TURNO */
+.turnos-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0.85rem;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.turno-card-box {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.22s ease;
+
+  &:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(15, 23, 42, 0.75);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 0 15px rgba(14, 165, 233, 0.1);
+  }
+
+  .turno-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(2, 132, 199, 0.1);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+
+    .time-main-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: #38bdf8;
+      font-size: 1.18rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .time-duration-chip {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+  }
+
+  .turno-card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .comunero-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .user-avatar-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.3) 0%, rgba(14, 165, 233, 0.15) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .comunero-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #94a3b8);
+      display: block;
+    }
+
+    .comunero-fullname {
+      font-size: 1.08rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0.1rem 0 0;
+      line-height: 1.2;
+    }
+
+    .lote-details-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.2rem;
+    }
+
+    .lote-badge, .superficie-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+
+      strong {
+        color: #38bdf8;
+      }
+    }
+
+    .turno-type-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid rgba(2, 132, 199, 0.3);
+      color: #38bdf8;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+
+      &.type-adicional {
+        background: rgba(245, 158, 11, 0.15);
+        border-color: rgba(245, 158, 11, 0.35);
+        color: #fbbf24;
+      }
+    }
+  }
+
+  .turno-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+    .shift-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+
+      &.franja-manana { color: #f59e0b; }
+      &.franja-tarde { color: #38bdf8; }
+      &.franja-noche { color: #a78bfa; }
+    }
+
+    .notice-prompt {
+      font-size: 0.72rem;
+      color: var(--text-muted, #94a3b8);
+      font-style: italic;
+
+      @media (max-width: 480px) {
+        display: none;
+      }
+    }
+  }
+}
+
+/* PIE DEL MODAL */
+.cronograma-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.75rem;
+  background: rgba(15, 23, 42, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    padding: 1rem;
+    align-items: stretch;
+  }
+
+  .footer-note {
+    font-size: 0.82rem;
+    color: var(--text-muted, #94a3b8);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    i {
+      font-size: 1.1rem;
+      color: #38bdf8;
+      flex-shrink: 0;
+    }
+  }
+
+  .footer-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    @media (max-width: 640px) {
+      width: 100%;
+      button { flex: 1; }
+    }
+  }
+}
+
+/* ESTILOS DE IMPRESIÓN PARA CARTELERA COMUNAL */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .cronograma-modal, .cronograma-modal * {
+    visibility: visible;
+  }
+
+  .cronograma-backdrop {
+    position: absolute;
+    inset: 0;
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+
+  .cronograma-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    max-width: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .header-actions, .sector-switcher-bar, .search-comunero-container, .day-tabs-scroll-wrapper, .cronograma-modal__footer {
+    display: none !important;
+  }
+
+  .cronograma-modal__header {
+    background: none !important;
+    border-bottom: 2px solid #000000 !important;
+    color: #000000 !important;
+
+    .modal-main-title, .modal-sub {
+      color: #000000 !important;
+    }
+  }
+
+  .turno-card-box {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    break-inside: avoid;
+
+    .comunero-fullname {
+      color: #000000 !important;
+    }
+
+    .time-main-badge {
+      color: #000000 !important;
+    }
+  }
+}

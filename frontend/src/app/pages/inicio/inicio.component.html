@@ -142,90 +142,269 @@
   </div>
 </section>
 
-<!-- MODAL CRONOGRAMA DE AGUA POR SECTOR -->
+<!-- MODAL CRONOGRAMA DE AGUA POR SECTOR (AMIGABLE Y VISUALMENTE CLARO PARA LA COMUNIDAD) -->
 @if (modalCronogramaAbierto) {
-  <div class="modal-backdrop" (click)="cerrarModalCronograma()" role="dialog" aria-modal="true" [attr.aria-label]="'Cronograma de riego ' + nombreSectorModal">
-    <div class="modal-dialog modal-dialog--lg" (click)="$event.stopPropagation()" style="max-width: 800px; max-height: 85vh; display: flex; flex-direction: column;">
-      <header class="modal-header">
-        <div>
-          <span class="badge badge--success mb-1">
-            <i class="ri-drop-fill" aria-hidden="true"></i> Cronograma Oficial de Riego
-          </span>
-          <h3 class="modal-title">Sector {{ nombreSectorModal }}</h3>
+  <div class="modal-backdrop cronograma-backdrop" (click)="cerrarModalCronograma()" role="dialog" aria-modal="true" [attr.aria-label]="'Cronograma de riego sector ' + nombreSectorModal">
+    <div class="modal cronograma-modal" (click)="$event.stopPropagation()">
+      
+      <!-- CABECERA PRINCIPAL CON LOGO Y ACCIONES -->
+      <header class="cronograma-modal__header">
+        <div class="header-branding">
+          <div class="water-icon-circle">
+            <i class="ri-drop-fill" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="official-tag">
+              <span class="pulse-dot"></span> DISTRIBUCIÓN OFICIAL DEL AGUA DE RIEGO
+            </div>
+            <h2 class="modal-main-title">Sector {{ nombreSectorModal }}</h2>
+            <p class="modal-sub">Junta de Agua y Riego "La Jones" — Parroquia Patate</p>
+          </div>
         </div>
-        <button type="button" class="icon-btn" (click)="cerrarModalCronograma()" aria-label="Cerrar ventana">
-          <i class="ri-close-line" aria-hidden="true"></i>
-        </button>
+        <div class="header-actions">
+          <button type="button" class="btn btn--outline btn-print" (click)="imprimirCronograma()" title="Imprimir cronograma para cartelera">
+            <i class="ri-printer-line" aria-hidden="true"></i> Imprimir Hoja
+          </button>
+          <button type="button" class="btn-close-modal" (click)="cerrarModalCronograma()" aria-label="Cerrar cronograma">
+            <i class="ri-close-large-line" aria-hidden="true"></i>
+          </button>
+        </div>
       </header>
 
-      <div class="modal-body" style="overflow-y: auto; padding: 1.25rem;">
+      <!-- CAMBIO RÁPIDO DE SECTOR -->
+      <div class="sector-switcher-bar">
+        <span class="switcher-label"><i class="ri-map-pin-range-line" aria-hidden="true"></i> Cambiar Sector:</span>
+        <div class="sector-pills-row">
+          @for (s of sectores; track s.id) {
+            <button
+              type="button"
+              class="sector-pill-btn"
+              [class.active]="s.nombre.toLowerCase() === nombreSectorModal.toLowerCase()"
+              (click)="cambiarSectorModal(s.id, s.nombre)"
+            >
+              <i class="ri-check-line" *ngIf="s.nombre.toLowerCase() === nombreSectorModal.toLowerCase()" aria-hidden="true"></i>
+              Sector {{ s.nombre }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- CUERPO PRINCIPAL -->
+      <div class="cronograma-modal__body">
         @if (cargandoCronograma) {
-          <div style="text-align: center; padding: 2.5rem 1rem;">
-            <i class="ri-loader-4-line ri-spin" style="font-size: 2rem; color: var(--color-primary);" aria-hidden="true"></i>
-            <p class="text-muted mt-2">Cargando cronograma del sector {{ nombreSectorModal }}…</p>
+          <div class="cronograma-loading">
+            <i class="ri-loader-4-line ri-spin" aria-hidden="true"></i>
+            <h3>Cargando el horario de agua...</h3>
+            <p class="text-muted">Obteniendo turnos del Sector {{ nombreSectorModal }}</p>
           </div>
         } @else if (!sectorCronograma || !sectorCronograma.total_turnos) {
-          <div style="text-align: center; padding: 3rem 1rem;">
-            <i class="ri-calendar-line" style="font-size: 2.5rem; opacity: 0.4; color: var(--text-muted);" aria-hidden="true"></i>
-            <p class="mt-2 text-muted">Aún no hay turnos de agua registrados en el sector {{ nombreSectorModal }}.</p>
+          <div class="cronograma-empty">
+            <div class="empty-icon-wrap">
+              <i class="ri-water-flash-line" aria-hidden="true"></i>
+            </div>
+            <h3>Sin turnos registrados todavía</h3>
+            <p class="text-muted">Aún no se han programado turnos de entrega de agua para el sector {{ nombreSectorModal }}.</p>
+            <p class="empty-hint">Consulte en la directiva de la Junta para más información.</p>
           </div>
         } @else {
-          <!-- Resumen del sector -->
-          <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
-            <div class="stat-box" style="padding: 0.6rem 1rem; border-radius: 8px; background: rgba(2, 132, 199, 0.08); display: flex; align-items: center; gap: 0.5rem;">
-              <i class="ri-calendar-check-line" style="color: var(--color-primary); font-size: 1.25rem;" aria-hidden="true"></i>
-              <div>
-                <strong style="display: block; font-size: 1.1rem; line-height: 1;">{{ sectorCronograma.total_turnos }}</strong>
-                <small style="color: var(--text-muted); font-size: 0.72rem;">Turnos semanales</small>
+          <!-- TARJETAS DE RESUMEN CLARAS Y GRANDES -->
+          <div class="cronograma-metrics-grid">
+            <div class="metric-card metric-card--turnos">
+              <div class="metric-icon"><i class="ri-user-star-line" aria-hidden="true"></i></div>
+              <div class="metric-content">
+                <span class="metric-val">{{ sectorCronograma.total_turnos }}</span>
+                <span class="metric-desc">Turnos / Familias beneficiadas</span>
               </div>
             </div>
 
-            <div class="stat-box" style="padding: 0.6rem 1rem; border-radius: 8px; background: rgba(16, 185, 129, 0.08); display: flex; align-items: center; gap: 0.5rem;">
-              <i class="ri-time-line" style="color: #10b981; font-size: 1.25rem;" aria-hidden="true"></i>
-              <div>
-                <strong style="display: block; font-size: 1.1rem; line-height: 1;">{{ sectorCronograma.total_horas }}h</strong>
-                <small style="color: var(--text-muted); font-size: 0.72rem;">Horas de agua / semana</small>
+            <div class="metric-card metric-card--horas">
+              <div class="metric-icon"><i class="ri-time-line" aria-hidden="true"></i></div>
+              <div class="metric-content">
+                <span class="metric-val">{{ sectorCronograma.total_horas }}h</span>
+                <span class="metric-desc">Horas de agua semanales</span>
+              </div>
+            </div>
+
+            <div class="metric-card metric-card--lotes">
+              <div class="metric-icon"><i class="ri-landscape-line" aria-hidden="true"></i></div>
+              <div class="metric-content">
+                <span class="metric-val">{{ sectorCronograma.total_lotes }}</span>
+                <span class="metric-desc">Lotes y parcelas en riego</span>
               </div>
             </div>
           </div>
 
-          <!-- Distribución por días -->
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            @for (d of sectorCronograma.dias; track d.dia_semana) {
-              @if (d.turnos.length > 0) {
-                <div style="border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 0.85rem 1rem; background: var(--bg-surface);">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.4rem;">
-                    <strong style="font-size: 0.95rem; color: var(--color-primary);">
-                      <i class="ri-calendar-line" aria-hidden="true"></i> {{ d.dia_nombre }}
-                    </strong>
-                    <span class="badge badge--info">{{ d.turnos.length }} {{ d.turnos.length === 1 ? 'turno' : 'turnos' }}</span>
+          <!-- BARRA DE BÚSQUEDA GRANDE Y FÁCIL PARA EL PUEBLO -->
+          <div class="search-comunero-container">
+            <div class="search-input-wrapper">
+              <i class="ri-search-line search-icon" aria-hidden="true"></i>
+              <input
+                type="text"
+                class="search-input"
+                [(ngModel)]="busquedaModal"
+                placeholder="Escriba su apellido o código de lote (ej: Pazmiño, Quispe, PTV-001)..."
+                aria-label="Buscar comunero o lote en el cronograma"
+              />
+              @if (busquedaModal) {
+                <button type="button" class="btn-clear-search" (click)="busquedaModal = ''" aria-label="Borrar búsqueda">
+                  <i class="ri-close-circle-fill" aria-hidden="true"></i>
+                </button>
+              }
+            </div>
+            <div class="search-helper-text">
+              <i class="ri-information-line" aria-hidden="true"></i>
+              <span>Consejo: Escriba su apellido para encontrar rápidamente qué día y a qué hora le toca su turno de agua.</span>
+            </div>
+          </div>
+
+          <!-- PESTAÑAS HORIZONTALES GRANDES POR DÍAS -->
+          <div class="day-tabs-scroll-wrapper">
+            <div class="day-tabs-list" role="tablist">
+              <button
+                type="button"
+                class="day-tab-btn"
+                [class.active]="diaSeleccionadoModal === 'TODOS'"
+                (click)="seleccionarDia('TODOS')"
+                role="tab"
+              >
+                <i class="ri-calendar-2-line" aria-hidden="true"></i>
+                <span>Toda la semana</span>
+                <span class="tab-badge">{{ sectorCronograma.total_turnos }}</span>
+              </button>
+
+              @for (d of sectorCronograma.dias; track d.dia_semana) {
+                <button
+                  type="button"
+                  class="day-tab-btn"
+                  [class.active]="diaSeleccionadoModal.toLowerCase() === d.dia_nombre.toLowerCase()"
+                  (click)="seleccionarDia(d.dia_nombre)"
+                  role="tab"
+                >
+                  <i class="ri-sun-line" *ngIf="d.turnos.length > 0" aria-hidden="true"></i>
+                  <span>{{ d.dia_nombre }}</span>
+                  <span class="tab-badge" [class.tab-badge--empty]="d.turnos.length === 0">
+                    {{ d.turnos.length }}
+                  </span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- CONTENIDO DE TURNOS AGRUPADOS POR DÍA -->
+          @if (diasVisibles().length === 0) {
+            <div class="no-matches-box">
+              <i class="ri-user-search-line" aria-hidden="true"></i>
+              <h4>No se encontraron turnos con "{{ busquedaModal }}"</h4>
+              <p class="text-muted">Pruebe escribir solo el apellido o seleccione "Toda la semana" para ver todos los turnos.</p>
+              <button type="button" class="btn btn--outline btn--sm mt-2" (click)="busquedaModal = ''; diaSeleccionadoModal = 'TODOS'">
+                Mostrar todos los turnos
+              </button>
+            </div>
+          } @else {
+            <div class="days-schedule-container">
+              @for (d of diasVisibles(); track d.dia_semana) {
+                <section class="day-card-group">
+                  <!-- Título del día destacado -->
+                  <div class="day-group-header">
+                    <div class="day-title-left">
+                      <div class="day-icon-circle">
+                        <i class="ri-calendar-event-fill" aria-hidden="true"></i>
+                      </div>
+                      <div>
+                        <h3 class="day-title-text">{{ d.dia_nombre | uppercase }}</h3>
+                        <span class="day-subtitle">Horario y turnos programados</span>
+                      </div>
+                    </div>
+                    <div class="day-turnos-badge">
+                      <i class="ri-water-percent-line" aria-hidden="true"></i>
+                      {{ d.turnosFiltrados.length }} {{ d.turnosFiltrados.length === 1 ? 'Turno' : 'Turnos' }}
+                    </div>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem;">
-                    @for (t of d.turnos; track t.id) {
-                      <div style="border-left: 3px solid var(--color-primary); background: var(--bg-surface-hover); padding: 0.5rem 0.7rem; border-radius: 6px;">
-                        <div style="font-weight: 700; font-size: 0.8rem; color: var(--color-primary);">
-                          <i class="ri-time-line" aria-hidden="true"></i> {{ t.hora_inicio }} – {{ t.hora_fin }}
+                  <!-- Grilla de turnos con tarjetas grandes y claras -->
+                  <div class="turnos-visual-grid">
+                    @for (t of d.turnosFiltrados; track t.id) {
+                      <article class="turno-card-box">
+                        
+                        <!-- Franja horaria destacada -->
+                        <div class="turno-card-header">
+                          <div class="time-main-badge">
+                            <i class="ri-time-fill" aria-hidden="true"></i>
+                            <span class="time-range">{{ t.hora_inicio }} – {{ t.hora_fin }}</span>
+                          </div>
+                          <div class="time-duration-chip">
+                            <i class="ri-timer-line" aria-hidden="true"></i>
+                            {{ calcularDuracion(t.hora_inicio, t.hora_fin) }}
+                          </div>
                         </div>
-                        <div style="font-size: 0.85rem; font-weight: 600; margin: 0.2rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="t.comunero_nombre">
-                          {{ t.comunero_nombre }}
+
+                        <!-- Beneficiario en grande y claro -->
+                        <div class="turno-card-body">
+                          <div class="comunero-row">
+                            <div class="user-avatar-badge">
+                              <i class="ri-user-3-fill" aria-hidden="true"></i>
+                            </div>
+                            <div class="comunero-text">
+                              <span class="comunero-label">Beneficiario / Comunero</span>
+                              <h4 class="comunero-fullname">{{ t.comunero_nombre }}</h4>
+                            </div>
+                          </div>
+
+                          <div class="lote-details-row">
+                            <div class="lote-badge">
+                              <i class="ri-map-pin-2-line" aria-hidden="true"></i>
+                              <span>Lote: <strong>{{ t.lote_codigo }}</strong></span>
+                            </div>
+
+                            @if (t.superficie_m2) {
+                              <div class="superficie-badge">
+                                <i class="ri-compass-3-line" aria-hidden="true"></i>
+                                <span>{{ t.superficie_m2 | number }} m²</span>
+                              </div>
+                            }
+
+                            <div class="turno-type-badge" [class.type-adicional]="t.tipo === 'ADICIONAL'">
+                              <i class="ri-drop-line" *ngIf="t.tipo !== 'ADICIONAL'" aria-hidden="true"></i>
+                              <i class="ri-flashlight-line" *ngIf="t.tipo === 'ADICIONAL'" aria-hidden="true"></i>
+                              <span>{{ t.tipo === 'ADICIONAL' ? 'Turno Adicional' : 'Turno Ordinario' }}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem;">
-                          <i class="ri-landscape-line" aria-hidden="true"></i> {{ t.lote_codigo }}
+
+                        <!-- Barra de pie con recomendación para el comunero -->
+                        <div class="turno-card-footer">
+                          <span class="shift-tag" [ngClass]="obtenerFranjaHoraria(t.hora_inicio).clase">
+                            <i [class]="obtenerFranjaHoraria(t.hora_inicio).icono" aria-hidden="true"></i>
+                            {{ obtenerFranjaHoraria(t.hora_inicio).texto }}
+                          </span>
+                          <span class="notice-prompt">Estar presente 15 min antes en la compuerta</span>
                         </div>
-                      </div>
+                      </article>
                     }
                   </div>
-                </div>
+                </section>
               }
-            }
-          </div>
+            </div>
+          }
         }
       </div>
 
-      <footer class="modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid rgba(0,0,0,0.08); display: flex; justify-content: flex-end;">
-        <button type="button" class="btn btn--outline" (click)="cerrarModalCronograma()">Cerrar</button>
+      <!-- PIE DEL MODAL -->
+      <footer class="cronograma-modal__footer">
+        <div class="footer-note">
+          <i class="ri-shield-check-line" aria-hidden="true"></i>
+          <span>El agua de riego se entrega por orden de lista sin excepción. Cuide el canal y no desperdicie agua.</span>
+        </div>
+        <div class="footer-buttons">
+          <button type="button" class="btn btn--outline" (click)="imprimirCronograma()">
+            <i class="ri-printer-line" aria-hidden="true"></i> Imprimir
+          </button>
+          <button type="button" class="btn btn--primary" (click)="cerrarModalCronograma()">
+            Entendido, Cerrar
+          </button>
+        </div>
       </footer>
+
     </div>
   </div>
 }
