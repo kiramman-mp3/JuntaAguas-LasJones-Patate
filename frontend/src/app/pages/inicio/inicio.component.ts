@@ -148,19 +148,36 @@ export class InicioComponent implements OnInit {
     const horas = Math.floor(diffMin / 60);
     const minutos = diffMin % 60;
     if (minutos === 0) return `${horas} ${horas === 1 ? 'hora' : 'horas'}`;
-    return `${horas}h ${minutos}m`;
+    if (horas === 0) return `${minutos} minutos`;
+    return `${horas} hora${horas > 1 ? 's' : ''} y ${minutos} min`;
   }
 
-  obtenerFranjaHoraria(horaInicio: string): { icono: string; texto: string; clase: string } {
-    if (!horaInicio) return { icono: 'ri-time-line', texto: 'Horario', clase: 'franja-dia' };
-    const hora = parseInt(horaInicio.split(':')[0], 10);
-    if (hora < 12) {
-      return { icono: 'ri-sun-cloudy-line', texto: 'Mañana', clase: 'franja-manana' };
-    } else if (hora < 18) {
-      return { icono: 'ri-sun-fill', texto: 'Tarde', clase: 'franja-tarde' };
-    } else {
-      return { icono: 'ri-moon-clear-fill', texto: 'Noche', clase: 'franja-noche' };
+  obtenerFranjaHoraria(horaInicio: string): { icono: string; texto: string; textoLargo: string; clase: string } {
+    if (!horaInicio) {
+      return { icono: 'ri-time-line', texto: 'Horario', textoLargo: 'Turno programado', clase: 'franja-dia' };
     }
+    const hora = parseInt(horaInicio.split(':')[0], 10);
+    if (hora >= 5 && hora < 12) {
+      return { icono: 'ri-sun-cloudy-fill', texto: 'Mañana', textoLargo: 'Turno en la Mañana', clase: 'franja-manana' };
+    } else if (hora >= 12 && hora < 18) {
+      return { icono: 'ri-sun-fill', texto: 'Tarde', textoLargo: 'Turno en la Tarde', clase: 'franja-tarde' };
+    } else {
+      return { icono: 'ri-moon-clear-fill', texto: 'Noche', textoLargo: 'Turno en la Noche', clase: 'franja-noche' };
+    }
+  }
+
+  formatearMomento(horaStr: string): string {
+    if (!horaStr) return '';
+    const parts = horaStr.split(':');
+    const h = parseInt(parts[0], 10);
+    const m = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+    const minStr = m > 0 ? `:${m < 10 ? '0' + m : m}` : ':00';
+    if (h === 0) return `12${minStr} de la noche`;
+    if (h > 0 && h < 6) return `${h}${minStr} de la madrugada`;
+    if (h >= 6 && h < 12) return `${h}${minStr} de la mañana`;
+    if (h === 12) return `12${minStr} del mediodía`;
+    if (h > 12 && h < 19) return `${h - 12}${minStr} de la tarde`;
+    return `${h - 12}${minStr} de la noche`;
   }
 
   imprimirCronograma() {
