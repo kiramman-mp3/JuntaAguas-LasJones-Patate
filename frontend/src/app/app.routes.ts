@@ -10,6 +10,10 @@ export const routes: Routes = [
   { path: '', component: InicioComponent },
   { path: 'eventos', component: EventosComponent },
   {
+    path: 'informacion',
+    loadComponent: () => import('./pages/informacion/informacion.component').then(m => m.InformacionComponent)
+  },
+  {
     path: 'mi-cuenta',
     loadComponent: () => import('./pages/mi-cuenta/mi-cuenta.component').then(m => m.MiCuentaComponent),
     canActivate: [authGuard]
