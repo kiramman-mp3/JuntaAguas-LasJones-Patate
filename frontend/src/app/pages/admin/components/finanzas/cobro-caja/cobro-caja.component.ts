@@ -5,8 +5,9 @@ import { Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap,
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { ComprobantePdfService, Comprobante } from '../../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
-import { ComuneroBusqueda, MESES, MetodoPago, ObligacionItem, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
+import { ComuneroBusqueda, MESES, MetodoPagoNuevo, ObligacionItem, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
 import { formatearFecha } from '../../../../../core/utils/fechas';
+import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 
 type FiltroObligaciones = 'TODAS' | 'AGUA' | 'OTRAS';
@@ -42,7 +43,7 @@ const redondear = (n: number) => Math.round(n * 100) / 100;
 @Component({
   selector: 'app-cobro-caja',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe],
+  imports: [FormsModule, FechaLocalPipe, ComprobanteBancarioComponent],
   templateUrl: './cobro-caja.component.html'
 })
 export class CobroCajaComponent {
@@ -69,16 +70,15 @@ export class CobroCajaComponent {
   readonly seleccion = signal<ReadonlySet<number>>(new Set());
   readonly filtro = signal<FiltroObligaciones>('TODAS');
 
-  readonly metodo = signal<MetodoPago>('EFECTIVO');
+  readonly metodo = signal<MetodoPagoNuevo>('TRANSFERENCIA');
   readonly referencia = signal('');
-  readonly recibido = signal<number | null>(null);
   readonly observacion = signal('');
   readonly procesando = signal(false);
   readonly comprobante = signal<Comprobante | null>(null);
+  readonly pagoRegistradoId = signal<number | null>(null);
   readonly imprimiendo = signal(false);
 
-  readonly metodos: { valor: MetodoPago; etiqueta: string }[] = [
-    { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
+  readonly metodos: { valor: MetodoPagoNuevo; etiqueta: string }[] = [
     { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
     { valor: 'DEPOSITO', etiqueta: 'Depósito' }
   ];
@@ -132,19 +132,10 @@ export class CobroCajaComponent {
   readonly seleccionadas = computed(() => this.obligaciones().filter((o) => this.seleccion().has(o.id)));
   readonly total = computed(() => redondear(this.seleccionadas().reduce((s, o) => s + Number(o.valor), 0)));
   readonly todasVisiblesMarcadas = computed(() => this.visibles().length > 0 && this.visibles().every((o) => this.seleccion().has(o.id)));
-  readonly cambio = computed(() => {
-    const recibido = this.recibido();
-    return recibido === null ? 0 : redondear(Math.max(0, recibido - this.total()));
-  });
-
   /** Mensaje que impide cobrar, o '' si el cobro es válido. Se muestra junto al botón, no al enviar. */
   readonly bloqueo = computed(() => {
     if (!this.seleccionadas().length) return 'Seleccione al menos una obligación.';
-    if (this.metodo() === 'EFECTIVO') {
-      const recibido = this.recibido();
-      if (recibido === null || !Number.isFinite(recibido)) return 'Ingrese el valor recibido.';
-      if (recibido < this.total()) return `Faltan $${(this.total() - recibido).toFixed(2)} para cubrir el total.`;
-    } else if (!this.referencia().trim()) {
+    if (!this.referencia().trim()) {
       return 'Ingrese el número de referencia.';
     }
     return '';
@@ -265,16 +256,6 @@ export class CobroCajaComponent {
     this.seleccion.set(nueva);
   }
 
-  /** Atajo de caja: el valor recibido es exactamente el total. */
-  valorExacto(): void {
-    this.recibido.set(this.total());
-  }
-
-  onRecibido(valor: number | string | null): void {
-    const n = valor === null || valor === '' ? null : Number(valor);
-    this.recibido.set(n !== null && Number.isFinite(n) ? n : null);
-  }
-
   cobrar(): void {
     const c = this.comunero();
     if (!c || this.bloqueo() || this.procesando()) return;
@@ -285,7 +266,6 @@ export class CobroCajaComponent {
     }));
     const metodo = this.metodo();
     const total = this.total();
-    const recibido = metodo === 'EFECTIVO' ? this.recibido() ?? total : undefined;
     const observacion = this.observacion().trim();
 
     this.procesando.set(true);
@@ -293,11 +273,12 @@ export class CobroCajaComponent {
       persona_id: c.id,
       obligacionesIds: this.seleccionadas().map((o) => o.id),
       metodo,
-      referencia: metodo === 'EFECTIVO' ? undefined : this.referencia().trim(),
+      referencia: this.referencia().trim(),
       observacion: observacion || undefined
     }).subscribe({
       next: (res) => {
         this.procesando.set(false);
+        this.pagoRegistradoId.set(res.pagoId);
         this.comprobante.set({
           numero: numeroRecibo(res.pagoId),
           fechaHora: formatearFecha(new Date(), 'conHora'),
@@ -305,9 +286,8 @@ export class CobroCajaComponent {
           comuneroCedula: c.cedula,
           lineas,
           total: res.valorTotal ?? total,
-          valorRecibido: recibido,
           metodo,
-          referencia: metodo === 'EFECTIVO' ? null : this.referencia().trim(),
+          referencia: this.referencia().trim(),
           observacion: observacion || null
         });
         this.notify.success(`Pago ${numeroRecibo(res.pagoId)} registrado por $${(res.valorTotal ?? total).toFixed(2)}.`);
@@ -336,9 +316,8 @@ export class CobroCajaComponent {
   }
 
   private reiniciarPago(): void {
-    this.metodo.set('EFECTIVO');
+    this.metodo.set('TRANSFERENCIA');
     this.referencia.set('');
-    this.recibido.set(null);
     this.observacion.set('');
     this.filtro.set('TODAS');
   }

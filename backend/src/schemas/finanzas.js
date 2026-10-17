@@ -4,7 +4,7 @@ const { hoy } = require('../shared/dates');
 const { z } = s;
 
 const ESTADOS_OBLIGACION = ['PENDIENTE', 'PAGADA', 'ANULADA'];
-const METODOS = ['EFECTIVO', 'TRANSFERENCIA', 'DEPOSITO', 'OTRO'];
+const METODOS = ['TRANSFERENCIA', 'DEPOSITO'];
 const anio = z.coerce.number().int().min(2000).max(2100);
 const mes = z.coerce.number().int().min(1).max(12);
 
@@ -51,11 +51,11 @@ const textoObservacion = z.preprocess(
 const pagoSchema = z.object({
   persona_id: s.id,
   obligacionesIds: z.array(s.id, { error: 'Seleccione al menos una obligación a pagar.' }).min(1, 'Seleccione al menos una obligación a pagar.').max(200),
-  metodo: z.enum(METODOS).default('EFECTIVO'),
+  metodo: z.enum(METODOS),
   referencia: s.textoOpcional(100),
   observacion: textoObservacion.optional(),
   observaciones: textoObservacion.optional()
-}).refine((d) => d.metodo === 'EFECTIVO' || d.referencia, {
+}).refine((d) => d.referencia, {
   path: ['referencia'], message: 'Ingrese el número de referencia de la transferencia o depósito.'
 });
 

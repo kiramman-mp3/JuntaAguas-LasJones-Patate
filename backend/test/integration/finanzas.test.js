@@ -26,7 +26,7 @@ after(closeDatabase);
 
 const tarifa = (body) => request(app).post('/api/financiero/tarifas').set(auth(admin)).send({ concepto_id: aguaId, ...body });
 const facturar = (body) => request(app).post('/api/financiero/facturacion/mensual').set(auth(admin)).send(body);
-const pagar = (body) => request(app).post('/api/financiero/pagos').set(auth(admin)).send(body);
+const pagar = (body) => request(app).post('/api/financiero/pagos').set(auth(admin)).send({ metodo: 'TRANSFERENCIA', referencia: 'TRF-123', ...body });
 
 test('una tarifa nueva cierra la vigencia de la anterior y no se permiten solapes', async () => {
   assert.equal((await tarifa({ valor: 4, vigencia_desde: '2025-01-01' })).status, 201);
@@ -89,7 +89,7 @@ test('el pago valida pertenencia, estado y referencia; ignora ids repetidos', as
   const ajena = await crearObligacion({ personaId: vecino.personaId, anio: 2024, mes: 5, valor: 4 });
 
   assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [ajena] })).status, 400);
-  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia], metodo: 'TRANSFERENCIA' })).status, 400);
+  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia], metodo: 'TRANSFERENCIA', referencia: '' })).status, 400);
 
   const ok = await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia, propia] });
   assert.equal(ok.status, 201, JSON.stringify(ok.body));
