@@ -1467,62 +1467,254 @@
 }
 
 /* ==========================================================================
-   ESTILOS DE IMPRESIÓN (BLANCO Y NEGRO PURO PARA CARTELERA)
+   DOCUMENTO OFICIAL PARA IMPRESIÓN (CARTELERA Y PUERTA DE LA SEDE)
    ========================================================================== */
+.cronograma-documento-impresion {
+  display: none;
+}
+
 @media print {
+  @page {
+    size: portrait;
+    margin: 10mm 12mm 12mm 12mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   body * {
     visibility: hidden;
   }
 
-  .cronograma-modal, .cronograma-modal * {
-    visibility: visible;
+  /* Mostrar exclusivamente la planilla oficial de impresión */
+  .cronograma-documento-impresion,
+  .cronograma-documento-impresion * {
+    visibility: visible !important;
   }
 
   .cronograma-backdrop {
-    position: absolute;
-    inset: 0;
-    background: #ffffff !important;
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
     padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+    backdrop-filter: none !important;
   }
 
   .cronograma-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: block !important;
+    position: static !important;
     width: 100% !important;
     max-width: none !important;
-    background: #ffffff !important;
-    color: #000000 !important;
-    box-shadow: none !important;
+    max-height: none !important;
+    height: auto !important;
     border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+    animation: none !important;
   }
 
-  .header-actions, .sector-switcher-bar, .search-comunero-container, .day-tabs-scroll-wrapper, .cronograma-modal__footer {
+  /* Ocultar elementos interactivos de pantalla */
+  .cronograma-modal__header,
+  .carta-presentacion-bar,
+  .cronograma-modal__body,
+  .cronograma-modal__footer {
     display: none !important;
   }
 
-  .cronograma-modal__header {
-    background: none !important;
-    border-bottom: 2px solid #000000 !important;
+  /* ESTILOS DE LA PLANILLA OFICIAL IMPRESA */
+  .cronograma-documento-impresion {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
     color: #000000 !important;
-
-    .modal-main-title, .modal-sub {
-      color: #000000 !important;
-    }
-  }
-
-  .turno-card-box {
     background: #ffffff !important;
-    color: #000000 !important;
-    border: 1px solid #000000 !important;
-    break-inside: avoid;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
 
-    .comunero-fullname {
-      color: #000000 !important;
+    .impresion-encabezado {
+      text-align: center;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #000000;
+
+      .impresion-entidad {
+        font-size: 13.5pt;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        margin: 0 0 2px 0;
+        color: #000000;
+        text-transform: uppercase;
+      }
+
+      .impresion-subentidad {
+        font-size: 8.5pt;
+        margin: 0 0 4px 0;
+        color: #333333;
+      }
+
+      .impresion-separador {
+        width: 100%;
+        height: 1px;
+        background: #000000;
+        margin: 4px 0;
+      }
+
+      .impresion-titulo-doc {
+        font-size: 11pt;
+        font-weight: 800;
+        margin: 4px 0 2px 0;
+        color: #000000;
+        text-transform: uppercase;
+      }
+
+      .impresion-meta-grid {
+        display: flex;
+        justify-content: space-between;
+        font-size: 8.5pt;
+        margin-top: 4px;
+        padding-top: 4px;
+        border-top: 1px dashed #666666;
+
+        .meta-item {
+          strong {
+            font-weight: 800;
+          }
+        }
+      }
     }
 
-    .time-main-badge {
-      color: #000000 !important;
+    .impresion-disposicion {
+      font-size: 8pt;
+      line-height: 1.35;
+      padding: 5px 8px;
+      margin-bottom: 10px;
+      background: #f1f5f9 !important;
+      border: 1px solid #000000;
+      color: #000000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+
+      strong {
+        font-weight: 800;
+      }
+    }
+
+    .impresion-listado-dias {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .impresion-dia-bloque {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-bottom: 8px;
+
+      .impresion-dia-cabecera {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 8px;
+        background: #e2e8f0 !important;
+        border: 1px solid #000000;
+        border-bottom: none;
+        font-size: 9pt;
+        font-weight: 900;
+        color: #000000;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+
+        .impresion-dia-nombre {
+          letter-spacing: 0.04em;
+        }
+
+        .impresion-dia-total {
+          font-size: 8pt;
+          font-weight: bold;
+        }
+      }
+
+      .impresion-tabla-turnos {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.5pt;
+
+        th, td {
+          border: 1px solid #000000;
+          padding: 3.5px 5px;
+          vertical-align: middle;
+          color: #000000;
+        }
+
+        th {
+          background: #f8fafc !important;
+          font-weight: 800;
+          text-transform: uppercase;
+          font-size: 7.5pt;
+          letter-spacing: 0.02em;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        tr {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        tbody tr:nth-child(even) {
+          background-color: #f8fafc !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .comunero-col {
+          font-weight: 800;
+          letter-spacing: 0.01em;
+        }
+      }
+    }
+
+    .impresion-firmas {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      display: flex;
+      justify-content: space-around;
+      margin-top: 25px;
+      padding-top: 10px;
+
+      .firma-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 170px;
+
+        .firma-linea {
+          width: 140px;
+          border-top: 1px solid #000000;
+          margin-bottom: 5px;
+        }
+
+        strong {
+          font-size: 7.5pt;
+          font-weight: 800;
+          text-transform: uppercase;
+          color: #000000;
+        }
+
+        span {
+          font-size: 7pt;
+          color: #444444;
+        }
+      }
     }
   }
 }

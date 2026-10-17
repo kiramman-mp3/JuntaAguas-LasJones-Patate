@@ -227,23 +227,23 @@
               <div class="metric-icon"><i class="ri-user-star-line" aria-hidden="true"></i></div>
               <div class="metric-content">
                 <span class="metric-val">{{ sectorCronograma.total_turnos }}</span>
-                <span class="metric-desc">Comuneros beneficiarios con turno</span>
+                <span class="metric-desc">Comuneros con turno</span>
               </div>
             </div>
 
             <div class="metric-card metric-card--horas">
               <div class="metric-icon"><i class="ri-time-line" aria-hidden="true"></i></div>
               <div class="metric-content">
-                <span class="metric-val">{{ sectorCronograma.total_horas }} horas</span>
-                <span class="metric-desc">Horas de agua distribuidas por semana</span>
+                <span class="metric-val">{{ sectorCronograma.total_horas }}h</span>
+                <span class="metric-desc">Horas de agua semanales</span>
               </div>
             </div>
 
             <div class="metric-card metric-card--lotes">
               <div class="metric-icon"><i class="ri-landscape-line" aria-hidden="true"></i></div>
               <div class="metric-content">
-                <span class="metric-val">{{ sectorCronograma.total_lotes }} lotes</span>
-                <span class="metric-desc">Parcelas registradas en riego</span>
+                <span class="metric-val">{{ sectorCronograma.total_lotes }}</span>
+                <span class="metric-desc">Lotes y parcelas en riego</span>
               </div>
             </div>
           </div>
@@ -348,7 +348,7 @@
                           </div>
                           <div class="duracion-tag">
                             <i class="ri-timer-line" aria-hidden="true"></i>
-                            <span>Entrega: <strong>{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</strong></span>
+                            <span>DURACIÓN: <strong>{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</strong></span>
                           </div>
                         </div>
 
@@ -422,6 +422,86 @@
           }
         }
       </div>
+
+      <!-- PLANILLA OFICIAL DE IMPRESIÓN (DISEÑADA PARA CARTELERA Y PUERTA DE LA SEDE) -->
+      @if (sectorCronograma) {
+        <section class="cronograma-documento-impresion" aria-label="Nómina oficial de turnos de riego para cartelera">
+          <header class="impresion-encabezado">
+            <h1 class="impresion-entidad">JUNTA ADMINISTRADORA DE AGUA POTABLE Y RIEGO "LAS JONES"</h1>
+            <p class="impresion-subentidad">Parroquia Patate — Cantón Patate — Provincia de Tungurahua — Ecuador</p>
+            <div class="impresion-separador"></div>
+            <h2 class="impresion-titulo-doc">CRONOGRAMA OFICIAL Y NÓMINA DE TURNOS DE RIEGO</h2>
+            <div class="impresion-meta-grid">
+              <div class="meta-item"><strong>SECTOR:</strong> {{ nombreSectorModal | uppercase }}</div>
+              <div class="meta-item"><strong>TOTAL BENEFICIARIOS:</strong> {{ sectorCronograma.total_turnos }} comuneros</div>
+              <div class="meta-item"><strong>HORAS TOTALES:</strong> {{ sectorCronograma.total_horas }}h semanales</div>
+              <div class="meta-item"><strong>LOTES EN RIEGO:</strong> {{ sectorCronograma.total_lotes }} lotes</div>
+            </div>
+          </header>
+
+          <div class="impresion-disposicion">
+            <strong>DISPOSICIÓN COMUNITARIA:</strong> Los comuneros deben presentarse con 15 minutos de anticipación en la compuerta o toma correspondiente. El agua se entrega en estricto orden de turno. Se prohíbe desviar caudales o manipular compuertas sin autorización del operador.
+          </div>
+
+          <div class="impresion-listado-dias">
+            @for (d of sectorCronograma.dias; track d.dia_semana) {
+              @if (d.turnos.length > 0) {
+                <div class="impresion-dia-bloque">
+                  <div class="impresion-dia-cabecera">
+                    <span class="impresion-dia-nombre">DÍA {{ d.dia_nombre | uppercase }}</span>
+                    <span class="impresion-dia-total">{{ d.turnos.length }} {{ d.turnos.length === 1 ? 'turno' : 'turnos' }} programados</span>
+                  </div>
+
+                  <table class="impresion-tabla-turnos">
+                    <thead>
+                      <tr>
+                        <th style="width: 5%; text-align: center;">Nº</th>
+                        <th style="width: 17%; text-align: center;">HORARIO</th>
+                        <th style="width: 13%; text-align: center;">DURACIÓN</th>
+                        <th style="width: 12%; text-align: center;">JORNADA</th>
+                        <th style="width: 35%;">COMUNERO / BENEFICIARIO</th>
+                        <th style="width: 9%; text-align: center;">LOTE</th>
+                        <th style="width: 9%; text-align: center;">TIPO</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (t of d.turnos; track t.id; let idx = $index) {
+                        <tr>
+                          <td style="text-align: center; font-weight: bold;">{{ idx + 1 }}</td>
+                          <td style="text-align: center; font-weight: bold;">{{ t.hora_inicio }} – {{ t.hora_fin }}</td>
+                          <td style="text-align: center;">{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</td>
+                          <td style="text-align: center;">{{ obtenerFranjaHoraria(t.hora_inicio).texto }}</td>
+                          <td style="font-weight: bold; text-transform: uppercase;">{{ t.comunero_nombre }}</td>
+                          <td style="text-align: center; font-weight: bold;">{{ t.lote_codigo }}</td>
+                          <td style="text-align: center; font-size: 8pt;">{{ t.tipo === 'ADICIONAL' ? 'Adicional' : 'Ordinario' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            }
+          </div>
+
+          <footer class="impresion-firmas">
+            <div class="firma-col">
+              <div class="firma-linea"></div>
+              <strong>PRESIDENTE DE LA JUNTA</strong>
+              <span>Junta de Agua Las Jones</span>
+            </div>
+            <div class="firma-col">
+              <div class="firma-linea"></div>
+              <strong>OPERADOR / TOMERO</strong>
+              <span>Control de Compuertas</span>
+            </div>
+            <div class="firma-col">
+              <div class="firma-linea"></div>
+              <strong>SECRETARÍA / ACTAS</strong>
+              <span>Certificación</span>
+            </div>
+          </footer>
+        </section>
+      }
 
       <!-- PIE DEL MODAL -->
       <footer class="cronograma-modal__footer">
