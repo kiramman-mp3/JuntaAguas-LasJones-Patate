@@ -197,6 +197,12 @@ export class InicioComponent implements OnInit {
     window.print();
   }
 
+  onBackdropClick(event: MouseEvent) {
+    if (event.target === event.currentTarget) {
+      this.cerrarModalCronograma();
+    }
+  }
+
   cerrarModalCronograma() {
     this.modalCronogramaAbierto = false;
     this.sectorCronograma = null;

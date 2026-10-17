@@ -46,7 +46,7 @@ module.exports.up = async (db) => {
 
   for (const s of antiguos) {
     const nombre = (s.nombre || '').toUpperCase();
-    let nuevoId = idPatateViejo;
+    let nuevoId;
 
     if (nombre.includes('BAJA') || nombre.includes('BAJO') || nombre.includes('MERCED')) {
       nuevoId = idLaMerced;

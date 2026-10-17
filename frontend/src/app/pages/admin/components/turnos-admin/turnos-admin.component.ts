@@ -115,7 +115,9 @@ export class TurnosAdminComponent implements OnInit {
         next: (res) => {
           if (res?.data) this.sectores.set(res.data);
         },
-        error: () => {}
+        error: (err) => {
+          console.error('Error cargando sectores para turnos:', err);
+        }
       });
     }
   }

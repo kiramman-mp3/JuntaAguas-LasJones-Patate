@@ -144,8 +144,16 @@
 
 <!-- MODAL CRONOGRAMA DE AGUA POR SECTOR (DISEÑADO PARA ADULTOS MAYORES Y COMUNEROS DE PATATE) -->
 @if (modalCronogramaAbierto) {
-  <div class="modal-backdrop cronograma-backdrop" (click)="cerrarModalCronograma()" role="dialog" aria-modal="true" [attr.aria-label]="'Cronograma oficial de riego sector ' + nombreSectorModal">
-    <div class="modal cronograma-modal" (click)="$event.stopPropagation()">
+  <div
+    class="modal-backdrop cronograma-backdrop"
+    (click)="onBackdropClick($event)"
+    (keyup.escape)="cerrarModalCronograma()"
+    tabindex="0"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Cronograma oficial de riego sector ' + nombreSectorModal"
+  >
+    <div class="modal cronograma-modal">
       
       <!-- CABECERA INSTITUCIONAL — CARTA DE PRESENTACIÓN -->
       <header class="cronograma-modal__header">
@@ -195,7 +203,9 @@
                 [class.active]="s.nombre.toLowerCase() === nombreSectorModal.toLowerCase()"
                 (click)="cambiarSectorModal(s.id, s.nombre)"
               >
-                <i class="ri-check-line" *ngIf="s.nombre.toLowerCase() === nombreSectorModal.toLowerCase()" aria-hidden="true"></i>
+                @if (s.nombre.toLowerCase() === nombreSectorModal.toLowerCase()) {
+                  <i class="ri-check-line" aria-hidden="true"></i>
+                }
                 Sector {{ s.nombre }}
               </button>
             }
@@ -294,7 +304,9 @@
                   (click)="seleccionarDia(d.dia_nombre)"
                   role="tab"
                 >
-                  <i class="ri-sun-line" *ngIf="d.turnos.length > 0" aria-hidden="true"></i>
+                  @if (d.turnos.length > 0) {
+                    <i class="ri-sun-line" aria-hidden="true"></i>
+                  }
                   <span>{{ d.dia_nombre }}</span>
                   <span class="tab-badge" [class.tab-badge--empty]="d.turnos.length === 0">
                     {{ d.turnos.length }}
@@ -472,8 +484,11 @@
                             <div class="lote-dato-item">
                               <span class="lote-etiqueta">Tipo de Turno:</span>
                               <span class="lote-valor" [class.turno-adicional-text]="t.tipo === 'ADICIONAL'">
-                                <i class="ri-drop-fill" *ngIf="t.tipo !== 'ADICIONAL'" aria-hidden="true"></i>
-                                <i class="ri-flashlight-fill" *ngIf="t.tipo === 'ADICIONAL'" aria-hidden="true"></i>
+                                @if (t.tipo !== 'ADICIONAL') {
+                                  <i class="ri-drop-fill" aria-hidden="true"></i>
+                                } @else {
+                                  <i class="ri-flashlight-fill" aria-hidden="true"></i>
+                                }
                                 {{ t.tipo === 'ADICIONAL' ? 'Turno Extra / Adicional' : 'Turno Normal Semanal' }}
                               </span>
                             </div>
