@@ -27,6 +27,11 @@ export class InicioComponent implements OnInit {
   proximosEventos: EventoItem[] = [];
   sectores: SectorItem[] = [];
 
+  modalCronogramaAbierto = false;
+  sectorCronograma: any = null;
+  cargandoCronograma = false;
+  nombreSectorModal = '';
+
   ngOnInit() {
     this.http.get<ApiResponse<StatsPublicos>>(`${environment.apiUrl}/personas/stats`).subscribe({
       next: (res) => {
@@ -66,5 +71,32 @@ export class InicioComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  verCronograma(sectorId: number, nombre: string) {
+    this.nombreSectorModal = nombre;
+    this.modalCronogramaAbierto = true;
+    this.cargandoCronograma = true;
+    this.sectorCronograma = null;
+
+    this.http.get<ApiResponse<any[]>>(`${environment.apiUrl}/turnos/cronograma-publico?sector_id=${sectorId}`).subscribe({
+      next: (res) => {
+        this.cargandoCronograma = false;
+        if (res?.data && res.data.length > 0) {
+          this.sectorCronograma = res.data[0];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.cargandoCronograma = false;
+        console.error('Error cargando cronograma del sector:', err);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  cerrarModalCronograma() {
+    this.modalCronogramaAbierto = false;
+    this.sectorCronograma = null;
   }
 }

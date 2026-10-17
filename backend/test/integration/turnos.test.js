@@ -92,3 +92,26 @@ test('eliminar desactiva el turno una sola vez', async () => {
   assert.equal((await request(app).delete(`/api/turnos/${r.body.turnoId}`).set(auth(admin))).status, 404);
   assert.equal((await request(app).get('/api/turnos?dia_semana=x').set(auth(admin))).status, 400);
 });
+
+test('el cronograma de agua devuelve los turnos agrupados por sectores y días', async () => {
+  const res = await request(app).get('/api/turnos/cronograma').set(auth(admin));
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'OK');
+  assert.ok(Array.isArray(res.body.data));
+  if (res.body.data.length > 0) {
+    const sec = res.body.data[0];
+    assert.ok(sec.sector_id);
+    assert.ok(sec.sector_nombre);
+    assert.ok(Array.isArray(sec.dias));
+    assert.equal(sec.dias.length, 7);
+  }
+});
+
+test('el cronograma público no expone cédulas de los comuneros', async () => {
+  const res = await request(app).get('/api/turnos/cronograma-publico');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'OK');
+  assert.ok(Array.isArray(res.body.data));
+  const json = JSON.stringify(res.body.data);
+  assert.ok(!json.includes('cedula'));
+});

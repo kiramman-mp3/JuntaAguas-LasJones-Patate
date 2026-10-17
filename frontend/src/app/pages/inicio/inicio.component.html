@@ -133,8 +133,99 @@
               <strong>{{ s.superficieHa | number: '1.1-1' }} ha</strong>
             </div>
           </div>
+          <button type="button" class="btn btn--outline btn--sm" style="width: 100%; margin-top: 1.25rem;" (click)="verCronograma(s.id, s.nombre)">
+            <i class="ri-calendar-schedule-line" aria-hidden="true"></i> Ver cronograma de riego
+          </button>
         </div>
       }
     </div>
   </div>
 </section>
+
+<!-- MODAL CRONOGRAMA DE AGUA POR SECTOR -->
+@if (modalCronogramaAbierto) {
+  <div class="modal-backdrop" (click)="cerrarModalCronograma()" role="dialog" aria-modal="true" [attr.aria-label]="'Cronograma de riego ' + nombreSectorModal">
+    <div class="modal-dialog modal-dialog--lg" (click)="$event.stopPropagation()" style="max-width: 800px; max-height: 85vh; display: flex; flex-direction: column;">
+      <header class="modal-header">
+        <div>
+          <span class="badge badge--success mb-1">
+            <i class="ri-drop-fill" aria-hidden="true"></i> Cronograma Oficial de Riego
+          </span>
+          <h3 class="modal-title">Sector {{ nombreSectorModal }}</h3>
+        </div>
+        <button type="button" class="icon-btn" (click)="cerrarModalCronograma()" aria-label="Cerrar ventana">
+          <i class="ri-close-line" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div class="modal-body" style="overflow-y: auto; padding: 1.25rem;">
+        @if (cargandoCronograma) {
+          <div style="text-align: center; padding: 2.5rem 1rem;">
+            <i class="ri-loader-4-line ri-spin" style="font-size: 2rem; color: var(--color-primary);" aria-hidden="true"></i>
+            <p class="text-muted mt-2">Cargando cronograma del sector {{ nombreSectorModal }}…</p>
+          </div>
+        } @else if (!sectorCronograma || !sectorCronograma.total_turnos) {
+          <div style="text-align: center; padding: 3rem 1rem;">
+            <i class="ri-calendar-line" style="font-size: 2.5rem; opacity: 0.4; color: var(--text-muted);" aria-hidden="true"></i>
+            <p class="mt-2 text-muted">Aún no hay turnos de agua registrados en el sector {{ nombreSectorModal }}.</p>
+          </div>
+        } @else {
+          <!-- Resumen del sector -->
+          <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div class="stat-box" style="padding: 0.6rem 1rem; border-radius: 8px; background: rgba(2, 132, 199, 0.08); display: flex; align-items: center; gap: 0.5rem;">
+              <i class="ri-calendar-check-line" style="color: var(--color-primary); font-size: 1.25rem;" aria-hidden="true"></i>
+              <div>
+                <strong style="display: block; font-size: 1.1rem; line-height: 1;">{{ sectorCronograma.total_turnos }}</strong>
+                <small style="color: var(--text-muted); font-size: 0.72rem;">Turnos semanales</small>
+              </div>
+            </div>
+
+            <div class="stat-box" style="padding: 0.6rem 1rem; border-radius: 8px; background: rgba(16, 185, 129, 0.08); display: flex; align-items: center; gap: 0.5rem;">
+              <i class="ri-time-line" style="color: #10b981; font-size: 1.25rem;" aria-hidden="true"></i>
+              <div>
+                <strong style="display: block; font-size: 1.1rem; line-height: 1;">{{ sectorCronograma.total_horas }}h</strong>
+                <small style="color: var(--text-muted); font-size: 0.72rem;">Horas de agua / semana</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribución por días -->
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            @for (d of sectorCronograma.dias; track d.dia_semana) {
+              @if (d.turnos.length > 0) {
+                <div style="border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 0.85rem 1rem; background: var(--bg-surface);">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.4rem;">
+                    <strong style="font-size: 0.95rem; color: var(--color-primary);">
+                      <i class="ri-calendar-line" aria-hidden="true"></i> {{ d.dia_nombre }}
+                    </strong>
+                    <span class="badge badge--info">{{ d.turnos.length }} {{ d.turnos.length === 1 ? 'turno' : 'turnos' }}</span>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem;">
+                    @for (t of d.turnos; track t.id) {
+                      <div style="border-left: 3px solid var(--color-primary); background: var(--bg-surface-hover); padding: 0.5rem 0.7rem; border-radius: 6px;">
+                        <div style="font-weight: 700; font-size: 0.8rem; color: var(--color-primary);">
+                          <i class="ri-time-line" aria-hidden="true"></i> {{ t.hora_inicio }} – {{ t.hora_fin }}
+                        </div>
+                        <div style="font-size: 0.85rem; font-weight: 600; margin: 0.2rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="t.comunero_nombre">
+                          {{ t.comunero_nombre }}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem;">
+                          <i class="ri-landscape-line" aria-hidden="true"></i> {{ t.lote_codigo }}
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <footer class="modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid rgba(0,0,0,0.08); display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn--outline" (click)="cerrarModalCronograma()">Cerrar</button>
+      </footer>
+    </div>
+  </div>
+}

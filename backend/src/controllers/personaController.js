@@ -21,7 +21,8 @@ const rolCodigo = z.enum([ROLES.ADMIN, ROLES.USUARIO]);
 
 const listarSchema = s.paginacion.extend({
   busqueda: z.string().trim().max(100).optional(),
-  estado: z.enum(['ACTIVO', 'INACTIVO']).optional()
+  estado: z.enum(['ACTIVO', 'INACTIVO']).optional(),
+  sector_id: s.id.optional()
 });
 
 const crearSchema = z.object({
@@ -57,9 +58,9 @@ async function cuentaDePersona(conexion, personaId, { bloquear = false } = {}) {
   return rows[0] || null;
 }
 
-/** Listar y buscar comuneros (directiva). */
+/** Listar y buscar comuneros (directiva) con filtro por sector geográfico. */
 async function getPersonas(req, res) {
-  const { busqueda, estado, page, limit } = listarSchema.parse(req.query);
+  const { busqueda, estado, sector_id, page, limit } = listarSchema.parse(req.query);
   const offset = (page - 1) * limit;
 
   let where = ' WHERE 1=1';
@@ -67,6 +68,10 @@ async function getPersonas(req, res) {
   if (estado) {
     where += ' AND p.estado = ?';
     params.push(estado);
+  }
+  if (sector_id) {
+    where += ' AND p.id IN (SELECT pl.persona_id FROM persona_lotes pl JOIN lotes l ON l.id = pl.lote_id WHERE l.sector_id = ?)';
+    params.push(sector_id);
   }
   if (busqueda) {
     where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ?)';
@@ -78,6 +83,11 @@ async function getPersonas(req, res) {
     `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.direccion, p.telefono, p.celular, p.email, p.fecha_nacimiento,
             p.estado, p.created_at,
             (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count,
+            (SELECT GROUP_CONCAT(DISTINCT s.nombre ORDER BY s.nombre SEPARATOR ', ')
+             FROM persona_lotes pl
+             JOIN lotes l ON l.id = pl.lote_id
+             JOIN sectores s ON s.id = l.sector_id
+             WHERE pl.persona_id = p.id) AS sector_nombre,
             c.estado AS cuenta_estado, r.codigo AS rol
      FROM personas p
      LEFT JOIN cuentas c ON c.persona_id = p.id

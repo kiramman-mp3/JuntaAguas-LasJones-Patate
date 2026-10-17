@@ -21,11 +21,14 @@ export interface Turno {
   id: number;
   persona_id: number;
   lote_id: number;
+  sector_id?: number;
   dia_semana: number;
   dia: string;
   usuario: string;
+  cedula?: string;
   lote: string;
   sector: string;
+  superficie_m2?: number;
   horaInicio: string;
   horaFin: string;
   tipo: TipoTurno;
@@ -36,6 +39,21 @@ export interface FiltrosTurno {
   busqueda: string;
   dia: string;
   tipo: string;
+  sector?: string;
+}
+
+export interface SectorCronograma {
+  sector_id?: number;
+  sector_nombre: string;
+  sector_descripcion?: string;
+  total_turnos: number;
+  total_horas: number;
+  total_lotes?: number;
+  dias: {
+    dia_semana: number;
+    dia_nombre: string;
+    turnos: Turno[];
+  }[];
 }
 
 export function nombreDia(valor: number): string {
@@ -48,6 +66,7 @@ export function filtrarTurnos(turnos: Turno[], f: FiltrosTurno): Turno[] {
     (t) =>
       (!q || t.usuario.toLowerCase().includes(q) || t.lote.toLowerCase().includes(q) || t.sector.toLowerCase().includes(q)) &&
       (!f.dia || t.dia === f.dia) &&
-      (!f.tipo || t.tipo === f.tipo)
+      (!f.tipo || t.tipo === f.tipo) &&
+      (!f.sector || t.sector === f.sector)
   );
 }

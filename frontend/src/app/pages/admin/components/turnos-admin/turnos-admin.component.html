@@ -6,7 +6,8 @@
   </app-page-header>
 
   <div class="section-nav">
-    <div class="segmented segmented--compact" role="tablist" aria-label="Vista de turnos" style="--n: 2" [style.--i]="vista() === 'TABLA' ? 0 : 1">
+    <div class="segmented segmented--compact" role="tablist" aria-label="Vista de turnos" style="--n: 3"
+      [style.--i]="vista() === 'TABLA' ? 0 : vista() === 'CALENDARIO' ? 1 : 2">
       <span class="segmented__thumb" aria-hidden="true"></span>
       <button type="button" role="tab" class="segmented__item" [class.segmented__item--active]="vista() === 'TABLA'"
         [attr.aria-selected]="vista() === 'TABLA'" (click)="cambiarVista('TABLA')">
@@ -15,6 +16,10 @@
       <button type="button" role="tab" class="segmented__item" [class.segmented__item--active]="vista() === 'CALENDARIO'"
         [attr.aria-selected]="vista() === 'CALENDARIO'" (click)="cambiarVista('CALENDARIO')">
         <i class="ri-calendar-event-line" aria-hidden="true"></i> <span class="segmented__label">Calendario semanal</span>
+      </button>
+      <button type="button" role="tab" class="segmented__item" [class.segmented__item--active]="vista() === 'CRONOGRAMA'"
+        [attr.aria-selected]="vista() === 'CRONOGRAMA'" (click)="cambiarVista('CRONOGRAMA')">
+        <i class="ri-route-line" aria-hidden="true"></i> <span class="segmented__label">Cronograma por sectores</span>
       </button>
     </div>
   </div>
@@ -27,6 +32,12 @@
           <input type="search" class="input" placeholder="Comunero, lote o sector…" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
             aria-label="Buscar turno" />
         </div>
+        <select class="input toolbar__select" [ngModel]="sectorFiltro()" (ngModelChange)="sectorFiltro.set($event)" aria-label="Sector">
+          <option value="">Todos los sectores</option>
+          @for (s of sectores(); track s.id) {
+            <option [value]="s.nombre">{{ s.nombre }}</option>
+          }
+        </select>
         <select class="input toolbar__select" [ngModel]="diaFiltro()" (ngModelChange)="diaFiltro.set($event)" aria-label="Día">
           <option value="">Todos los días</option>
           @for (d of dias; track d.valor) {
@@ -60,8 +71,10 @@
       <div class="view-swap" [class.is-refreshing]="cargando()">
         @if (vista() === 'TABLA') {
           <app-turnos-tabla [turnos]="turnosDeLaPagina()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
-        } @else {
+        } @else if (vista() === 'CALENDARIO') {
           <app-turnos-calendario [turnos]="filtrados()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
+        } @else {
+          <app-turnos-cronograma [turnos]="filtrados()" (ver)="enDetalle.set($event)" (editar)="enEdicion.set($event)" (eliminar)="eliminar($event)" />
         }
       </div>
       @if (vista() === 'TABLA') {

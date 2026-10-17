@@ -37,6 +37,9 @@ const router = express.Router();
  *       404:
  *         description: Turno no encontrado o ya desactivado
  */
+router.get('/cronograma', verificarToken, turnoController.getCronogramaPorSectores);
+router.get('/cronograma-publico', turnoController.getCronogramaPublico);
+router.get('/publicos/cronograma', turnoController.getCronogramaPublico);
 router.get('/', verificarToken, turnoController.getTurnos);
 router.post('/', ...soloAdmin, turnoController.createTurno);
 router.put('/:id', ...soloAdmin, turnoController.updateTurno);

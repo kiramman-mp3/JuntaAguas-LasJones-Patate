@@ -18,10 +18,9 @@ const NOMBRES_M = ['María', 'Rosa', 'Carmen', 'Blanca', 'Luz', 'Martha', 'Glori
 const APELLIDOS = ['Toapanta', 'Quispe', 'Chicaiza', 'Pilamunga', 'Masaquiza', 'Caiza', 'Tisalema', 'Sailema', 'Freire', 'Naranjo', 'Aldaz', 'Moreta', 'Lascano', 'Villacís', 'Sánchez', 'Jácome', 'Altamirano', 'Barona', 'Mayorga', 'Pérez', 'Tigse', 'Chango', 'Guamán', 'Llerena', 'Robalino', 'Salazar', 'Mejía', 'Paredes', 'Ortiz', 'Tamayo', 'Carvajal', 'Silva', 'Garcés', 'Núñez', 'Viteri', 'Acosta', 'Cobo', 'Medina', 'Pazmiño', 'Sisa'];
 
 const SECTORES = [
-  { nombre: 'La Jones Alta', descripcion: 'Parte alta, junto a la bocatoma y el canal matriz', lat: -1.3080, lng: -78.5000, barrio: 'Barrio La Jones Alta' },
-  { nombre: 'La Jones Baja', descripcion: 'Parte baja de la comunidad, hacia la quebrada', lat: -1.3260, lng: -78.5140, barrio: 'Barrio La Jones Baja' },
-  { nombre: 'El Tambo', descripcion: 'Sector El Tambo, colindante con el río Patate', lat: -1.3200, lng: -78.5230, barrio: 'Caserío El Tambo' },
-  { nombre: 'Los Cuyes', descripcion: 'Zona media, huertos de frutales y hortalizas', lat: -1.3130, lng: -78.5100, barrio: 'Sector Los Cuyes' }
+  { nombre: 'Patate Viejo', descripcion: 'Sector histórico, canal principal y tomas de cabecera', lat: -1.3080, lng: -78.5000, barrio: 'Sector Patate Viejo' },
+  { nombre: 'La Merced', descripcion: 'Zona centro-norte, distribución intermedia y reservorio La Merced', lat: -1.3260, lng: -78.5140, barrio: 'Barrio La Merced' },
+  { nombre: 'San Javier', descripcion: 'Sector bajo y fértil hacia la vega del río Patate', lat: -1.3200, lng: -78.5230, barrio: 'Sector San Javier' }
 ];
 const REFERENCIAS = ['Junto a la acequia principal', 'Frente a la casa comunal', 'Bajo el reservorio', 'Junto al camino vecinal', 'Cerca de la escuela', 'Al filo de la quebrada', 'Tras la capilla', 'Junto al tanque rompepresión'];
 
@@ -168,8 +167,24 @@ async function crearPersonasYCuentas(conexion, azar, { totalComuneros, password 
 }
 
 async function crearSectoresYLotes(conexion, azar, personas, fechaInicio) {
-  const [r] = await conexion.query('INSERT INTO sectores (nombre, descripcion) VALUES ?', [SECTORES.map((s) => [s.nombre, s.descripcion])]);
-  const sectores = SECTORES.map((s, i) => ({ ...s, id: r.insertId + i, prefijo: prefijoSector(s.nombre), siguiente: 1 }));
+  for (const s of SECTORES) {
+    await conexion.query(
+      `INSERT INTO sectores (nombre, descripcion, activo) VALUES (?, ?, TRUE)
+       ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion), activo = TRUE`,
+      [s.nombre, s.descripcion]
+    );
+  }
+  const [dbSectores] = await conexion.query(
+    'SELECT id, nombre, descripcion FROM sectores WHERE nombre IN (?) ORDER BY id ASC',
+    [SECTORES.map((s) => s.nombre)]
+  );
+  const mapaDb = new Map(dbSectores.map((row) => [row.nombre, row.id]));
+  const sectores = SECTORES.map((s) => ({
+    ...s,
+    id: mapaDb.get(s.nombre),
+    prefijo: prefijoSector(s.nombre),
+    siguiente: 1
+  }));
 
   const lotes = [];
   for (const persona of personas) {
