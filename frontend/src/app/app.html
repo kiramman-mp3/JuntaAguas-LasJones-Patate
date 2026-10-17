@@ -13,6 +13,7 @@
         >
       </li>
       <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
+      <li><a routerLink="/informacion" routerLinkActive="active">Información de la Junta</a></li>
       @if (authService.isLoggedIn()) {
         <li>
           @if (authService.esAdmin()) {
@@ -79,6 +80,11 @@
             >Eventos y Actas</a
           >
         </li>
+        <li>
+          <a routerLink="/informacion" routerLinkActive="active" (click)="cerrarMenu()"
+            >Información de la Junta</a
+          >
+        </li>
         @if (authService.isLoggedIn() && authService.esAdmin()) {
           <li>
             <a routerLink="/admin" routerLinkActive="active" (click)="cerrarMenu()"
@@ -127,6 +133,7 @@
           <strong>Módulos</strong>
           <ul>
             <li><a routerLink="/">Inicio & Convocatorias</a></li>
+            <li><a routerLink="/informacion">Información de la Junta</a></li>
             <li><a routerLink="/mi-cuenta">Consulta de Multas / Deudas</a></li>
             <li><a routerLink="/admin">Panel de Directiva</a></li>
           </ul>
