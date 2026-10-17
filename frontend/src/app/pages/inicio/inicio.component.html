@@ -304,6 +304,33 @@
             </div>
           </div>
 
+          <!-- SELECTOR DE FORMATO DE VISTA (PLANILLA DIRECTA TIPO PDF O TARJETAS) -->
+          <div class="vista-selector-row">
+            <span class="vista-selector-label">
+              <i class="ri-layout-grid-line" aria-hidden="true"></i> Formato de visualización:
+            </span>
+            <div class="vista-selector-btns">
+              <button
+                type="button"
+                class="btn-vista-pill"
+                [class.active]="vistaCronograma === 'tabla'"
+                (click)="vistaCronograma = 'tabla'"
+                title="Ver en formato Planilla directa tipo lista oficial (igual que el PDF)"
+              >
+                <i class="ri-table-line" aria-hidden="true"></i> Planilla Oficial (Formato PDF)
+              </button>
+              <button
+                type="button"
+                class="btn-vista-pill"
+                [class.active]="vistaCronograma === 'tarjetas'"
+                (click)="vistaCronograma = 'tarjetas'"
+                title="Ver en formato tarjetas individuales"
+              >
+                <i class="ri-grid-fill" aria-hidden="true"></i> Tarjetas
+              </button>
+            </div>
+          </div>
+
           <!-- CONTENIDO DE TURNOS AGRUPADOS POR DÍA -->
           @if (diasVisibles().length === 0) {
             <div class="no-matches-box">
@@ -335,87 +362,140 @@
                     </div>
                   </div>
 
-                  <!-- Grilla de turnos tipo Boleta Oficial Comunitaria -->
-                  <div class="turnos-visual-grid">
-                    @for (t of d.turnosFiltrados; track t.id) {
-                      <article class="turno-card-box">
-                        
-                        <!-- 1. Banda superior: Jornada del día clara en texto grande -->
-                        <div class="turno-card-top-bar" [ngClass]="obtenerFranjaHoraria(t.hora_inicio).clase">
-                          <div class="jornada-text-tag">
-                            <i [class]="obtenerFranjaHoraria(t.hora_inicio).icono" aria-hidden="true"></i>
-                            <span>{{ obtenerFranjaHoraria(t.hora_inicio).textoLargo | uppercase }}</span>
-                          </div>
-                          <div class="duracion-tag">
-                            <i class="ri-timer-line" aria-hidden="true"></i>
-                            <span>DURACIÓN: <strong>{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</strong></span>
-                          </div>
-                        </div>
-
-                        <!-- 2. Horario con texto explícito y desglose -->
-                        <div class="horario-destacado-box">
-                          <div class="hora-bloque">
-                            <span class="hora-etiqueta">Empieza a las:</span>
-                            <span class="hora-valor">{{ t.hora_inicio }}</span>
-                            <span class="hora-sub">{{ formatearMomento(t.hora_inicio) }}</span>
-                          </div>
-
-                          <div class="hora-separador-flecha" aria-hidden="true">
-                            <i class="ri-arrow-right-line"></i>
-                            <span>hasta las</span>
-                          </div>
-
-                          <div class="hora-bloque">
-                            <span class="hora-etiqueta">Termina a las:</span>
-                            <span class="hora-valor">{{ t.hora_fin }}</span>
-                            <span class="hora-sub">{{ formatearMomento(t.hora_fin) }}</span>
-                          </div>
-                        </div>
-
-                        <!-- 3. Comunero Beneficiario en grande y con alto contraste -->
-                        <div class="comunero-destacado-box">
-                          <span class="comunero-rotulo">
-                            <i class="ri-user-star-fill" aria-hidden="true"></i> BENEFICIARIO / COMUNERO:
-                          </span>
-                          <h4 class="comunero-nombre-grande">{{ t.comunero_nombre }}</h4>
-                        </div>
-
-                        <!-- 4. Ficha de Datos del Terreno -->
-                        <div class="lote-datos-tabla">
-                          <div class="lote-dato-item">
-                            <span class="lote-etiqueta">Terreno / Lote:</span>
-                            <span class="lote-valor">
-                              <i class="ri-map-pin-2-line" aria-hidden="true"></i>
-                              <strong>Lote Nº {{ t.lote_codigo }}</strong>
-                            </span>
-                          </div>
-
-                          <div class="lote-dato-item">
-                            <span class="lote-etiqueta">Tipo de Turno:</span>
-                            <span class="lote-valor" [class.turno-adicional-text]="t.tipo === 'ADICIONAL'">
-                              <i class="ri-drop-fill" *ngIf="t.tipo !== 'ADICIONAL'" aria-hidden="true"></i>
-                              <i class="ri-flashlight-fill" *ngIf="t.tipo === 'ADICIONAL'" aria-hidden="true"></i>
-                              {{ t.tipo === 'ADICIONAL' ? 'Turno Extra / Adicional' : 'Turno Normal Semanal' }}
-                            </span>
-                          </div>
-
-                          @if (t.superficie_m2) {
-                            <div class="lote-dato-item">
-                              <span class="lote-etiqueta">Superficie:</span>
-                              <span class="lote-valor">{{ t.superficie_m2 | number }} m²</span>
+                  <!-- 1. VISTA PLANILLA OFICIAL (TABLA DIRECTA Y SENCILLA, IDÉNTICA AL PDF) -->
+                  @if (vistaCronograma === 'tabla') {
+                    <div class="tabla-cronograma-card">
+                      <div class="tabla-responsive-scroll">
+                        <table class="tabla-comunitaria">
+                          <thead>
+                            <tr>
+                              <th style="width: 5%; text-align: center;">Nº</th>
+                              <th style="width: 22%;">HORARIO (24h y 12h)</th>
+                              <th style="width: 14%; text-align: center;">DURACIÓN</th>
+                              <th style="width: 12%; text-align: center;">JORNADA</th>
+                              <th style="width: 33%;">COMUNERO / BENEFICIARIO</th>
+                              <th style="width: 7%; text-align: center;">LOTE</th>
+                              <th style="width: 7%; text-align: center;">TIPO</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (t of d.turnosFiltrados; track t.id; let idx = $index) {
+                              <tr class="fila-turno">
+                                <td class="celda-num">{{ idx + 1 }}</td>
+                                <td class="celda-horario">
+                                  <div class="horario-box-celda">
+                                    <strong class="hora-24-txt">{{ t.hora_inicio }} – {{ t.hora_fin }}</strong>
+                                    <span class="hora-12-txt">({{ convertirA12h(t.hora_inicio) }} a {{ convertirA12h(t.hora_fin) }})</span>
+                                  </div>
+                                </td>
+                                <td class="celda-duracion">
+                                  <span class="duracion-pill-tabla">{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</span>
+                                </td>
+                                <td class="celda-jornada">
+                                  <span class="jornada-pill-tabla" [ngClass]="obtenerFranjaHoraria(t.hora_inicio).clase">
+                                    {{ obtenerFranjaHoraria(t.hora_inicio).texto }}
+                                  </span>
+                                </td>
+                                <td class="celda-comunero">
+                                  <strong class="comunero-nombre-tabla">{{ t.comunero_nombre }}</strong>
+                                </td>
+                                <td class="celda-lote">
+                                  <span class="lote-tag-tabla">{{ t.lote_codigo }}</span>
+                                </td>
+                                <td class="celda-tipo">
+                                  <span class="tipo-tag-tabla" [class.tipo-adicional]="t.tipo === 'ADICIONAL'">
+                                    {{ t.tipo === 'ADICIONAL' ? 'Adicional' : 'Ordinario' }}
+                                  </span>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  } @else {
+                    <!-- 2. VISTA TARJETAS (FORMATO ALTERNATIVO CON HORARIO COINCIDENTE 24h Y 12h) -->
+                    <div class="turnos-visual-grid">
+                      @for (t of d.turnosFiltrados; track t.id) {
+                        <article class="turno-card-box">
+                          
+                          <!-- Banda superior: Jornada del día clara en texto grande -->
+                          <div class="turno-card-top-bar" [ngClass]="obtenerFranjaHoraria(t.hora_inicio).clase">
+                            <div class="jornada-text-tag">
+                              <i [class]="obtenerFranjaHoraria(t.hora_inicio).icono" aria-hidden="true"></i>
+                              <span>{{ obtenerFranjaHoraria(t.hora_inicio).textoLargo | uppercase }}</span>
                             </div>
-                          }
-                        </div>
+                            <div class="duracion-tag">
+                              <i class="ri-timer-line" aria-hidden="true"></i>
+                              <span>DURACIÓN: <strong>{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</strong></span>
+                            </div>
+                          </div>
 
-                        <!-- 5. Recomendación y aviso para el comunero -->
-                        <div class="turno-card-aviso">
-                          <i class="ri-alarm-warning-line" aria-hidden="true"></i>
-                          <span><strong>Aviso:</strong> Por favor acudir 15 minutos antes a la compuerta para recibir el agua a tiempo.</span>
-                        </div>
+                          <!-- Horario con formato 24 horas y 12 horas coincidente -->
+                          <div class="horario-destacado-box">
+                            <div class="hora-bloque">
+                              <span class="hora-etiqueta">Empieza a las:</span>
+                              <span class="hora-valor">{{ t.hora_inicio }}</span>
+                              <span class="hora-sub">({{ convertirA12h(t.hora_inicio) }})</span>
+                            </div>
 
-                      </article>
-                    }
-                  </div>
+                            <div class="hora-separador-flecha" aria-hidden="true">
+                              <i class="ri-arrow-right-line"></i>
+                              <span>hasta las</span>
+                            </div>
+
+                            <div class="hora-bloque">
+                              <span class="hora-etiqueta">Termina a las:</span>
+                              <span class="hora-valor">{{ t.hora_fin }}</span>
+                              <span class="hora-sub">({{ convertirA12h(t.hora_fin) }})</span>
+                            </div>
+                          </div>
+
+                          <!-- Comunero Beneficiario en grande y con alto contraste -->
+                          <div class="comunero-destacado-box">
+                            <span class="comunero-rotulo">
+                              <i class="ri-user-star-fill" aria-hidden="true"></i> BENEFICIARIO / COMUNERO:
+                            </span>
+                            <h4 class="comunero-nombre-grande">{{ t.comunero_nombre }}</h4>
+                          </div>
+
+                          <!-- Ficha de Datos del Terreno -->
+                          <div class="lote-datos-tabla">
+                            <div class="lote-dato-item">
+                              <span class="lote-etiqueta">Terreno / Lote:</span>
+                              <span class="lote-valor">
+                                <i class="ri-map-pin-2-line" aria-hidden="true"></i>
+                                <strong>Lote Nº {{ t.lote_codigo }}</strong>
+                              </span>
+                            </div>
+
+                            <div class="lote-dato-item">
+                              <span class="lote-etiqueta">Tipo de Turno:</span>
+                              <span class="lote-valor" [class.turno-adicional-text]="t.tipo === 'ADICIONAL'">
+                                <i class="ri-drop-fill" *ngIf="t.tipo !== 'ADICIONAL'" aria-hidden="true"></i>
+                                <i class="ri-flashlight-fill" *ngIf="t.tipo === 'ADICIONAL'" aria-hidden="true"></i>
+                                {{ t.tipo === 'ADICIONAL' ? 'Turno Extra / Adicional' : 'Turno Normal Semanal' }}
+                              </span>
+                            </div>
+
+                            @if (t.superficie_m2) {
+                              <div class="lote-dato-item">
+                                <span class="lote-etiqueta">Superficie:</span>
+                                <span class="lote-valor">{{ t.superficie_m2 | number }} m²</span>
+                              </div>
+                            }
+                          </div>
+
+                          <!-- Recomendación y aviso para el comunero -->
+                          <div class="turno-card-aviso">
+                            <i class="ri-alarm-warning-line" aria-hidden="true"></i>
+                            <span><strong>Aviso:</strong> Por favor acudir 15 minutos antes a la compuerta para recibir el agua a tiempo.</span>
+                          </div>
+
+                        </article>
+                      }
+                    </div>
+                  }
                 </section>
               }
             </div>

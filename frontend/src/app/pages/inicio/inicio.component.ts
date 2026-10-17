@@ -35,6 +35,7 @@ export class InicioComponent implements OnInit {
   sectorIdModal = 0;
   diaSeleccionadoModal = 'TODOS';
   busquedaModal = '';
+  vistaCronograma: 'tabla' | 'tarjetas' = 'tabla';
 
   ngOnInit() {
     this.http.get<ApiResponse<StatsPublicos>>(`${environment.apiUrl}/personas/stats`).subscribe({
@@ -178,6 +179,18 @@ export class InicioComponent implements OnInit {
     if (h === 12) return `12${minStr} del mediodía`;
     if (h > 12 && h < 19) return `${h - 12}${minStr} de la tarde`;
     return `${h - 12}${minStr} de la noche`;
+  }
+
+  convertirA12h(hora24: string): string {
+    if (!hora24) return '';
+    const parts = hora24.split(':');
+    let h = parseInt(parts[0], 10);
+    const m = parts.length > 1 ? parts[1] : '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    const hFormatted = h < 10 ? `0${h}` : `${h}`;
+    return `${hFormatted}:${m} ${ampm}`;
   }
 
   imprimirCronograma() {

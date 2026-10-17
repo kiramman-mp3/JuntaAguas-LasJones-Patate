@@ -874,6 +874,64 @@
   }
 }
 
+/* SELECTOR DE FORMATO DE VISTA (PLANILLA O TARJETAS) */
+.vista-selector-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.25rem 0.2rem;
+  margin-top: -0.25rem;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .vista-selector-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-muted, #64748b);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .vista-selector-btns {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn-vista-pill {
+    border: 1px solid var(--border-strong, #cbd5e1);
+    background: var(--bg-surface-hover, #f1f5f9);
+    color: var(--text-main, #334155);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-full, 9999px);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--color-primary-light, #e0f2fe);
+      border-color: var(--color-primary, #0284c7);
+      color: var(--color-primary, #0284c7);
+    }
+
+    &.active {
+      background: var(--color-primary, #0284c7);
+      border-color: var(--color-primary, #0284c7);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+    }
+  }
+}
+
 /* MENSAJE DE BÚSQUEDA SIN RESULTADOS */
 .no-matches-box {
   text-align: center;
@@ -958,6 +1016,173 @@
       border: 1px solid rgba(2, 132, 199, 0.2);
       padding: 0.35rem 0.75rem;
       border-radius: var(--radius-full, 9999px);
+    }
+  }
+}
+
+/* VISTA PLANILLA OFICIAL (TABLA DIRECTA TIPO PDF) */
+.tabla-cronograma-card {
+  background: var(--bg-surface, #ffffff);
+  border: 1.5px solid var(--border-strong, #cbd5e1);
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .tabla-responsive-scroll {
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  .tabla-comunitaria {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    text-align: left;
+
+    th, td {
+      padding: 0.7rem 0.9rem;
+      border-bottom: 1px solid var(--border-color, #e2e8f0);
+      vertical-align: middle;
+    }
+
+    th {
+      background: var(--bg-surface-hover, #f8fafc);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #64748b);
+      border-bottom: 2px solid var(--border-strong, #cbd5e1);
+    }
+
+    .fila-turno {
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: var(--color-primary-light, #f0f9ff);
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+
+    .celda-num {
+      text-align: center;
+      font-weight: 800;
+      color: var(--text-muted, #94a3b8);
+      font-size: 0.85rem;
+    }
+
+    .celda-horario {
+      .horario-box-celda {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+
+        .hora-24-txt {
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: var(--color-primary, #0284c7);
+        }
+
+        .hora-12-txt {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: var(--text-muted, #475569);
+          margin-top: 1px;
+        }
+      }
+    }
+
+    .celda-duracion {
+      text-align: center;
+
+      .duracion-pill-tabla {
+        display: inline-block;
+        font-size: 0.82rem;
+        font-weight: 800;
+        padding: 0.25rem 0.65rem;
+        background: rgba(16, 185, 129, 0.12);
+        color: #047857;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        border-radius: var(--radius-full, 9999px);
+        white-space: nowrap;
+      }
+    }
+
+    .celda-jornada {
+      text-align: center;
+
+      .jornada-pill-tabla {
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 800;
+        padding: 0.25rem 0.7rem;
+        border-radius: var(--radius-full, 9999px);
+        white-space: nowrap;
+
+        &.franja-manana {
+          background: #fef3c7;
+          color: #92400e;
+          border: 1px solid #fde68a;
+        }
+
+        &.franja-tarde {
+          background: #e0f2fe;
+          color: #0369a1;
+          border: 1px solid #bae6fd;
+        }
+
+        &.franja-noche {
+          background: #ede9fe;
+          color: #5b21b6;
+          border: 1px solid #ddd6fe;
+        }
+      }
+    }
+
+    .celda-comunero {
+      .comunero-nombre-tabla {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        text-transform: uppercase;
+        display: block;
+      }
+    }
+
+    .celda-lote {
+      text-align: center;
+
+      .lote-tag-tabla {
+        font-weight: 800;
+        font-size: 0.86rem;
+        color: var(--color-primary, #0284c7);
+        background: var(--bg-surface-hover, #f1f5f9);
+        border: 1.5px solid var(--border-color, #cbd5e1);
+        padding: 0.22rem 0.55rem;
+        border-radius: var(--radius-sm, 6px);
+        white-space: nowrap;
+      }
+    }
+
+    .celda-tipo {
+      text-align: center;
+
+      .tipo-tag-tabla {
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm, 6px);
+        background: var(--color-primary-light, #e0f2fe);
+        color: var(--color-primary, #0284c7);
+
+        &.tipo-adicional {
+          background: var(--color-warning-light, #fef3c7);
+          color: var(--color-warning-strong, #b45309);
+        }
+      }
     }
   }
 }
@@ -1355,6 +1580,65 @@
 
     .day-title-text {
       color: #f1f5f9;
+    }
+  }
+
+  .btn-vista-pill {
+    background: rgba(11, 17, 32, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+
+    &:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+  }
+
+  .tabla-cronograma-card {
+    background: #1e293b;
+    border-color: rgba(255, 255, 255, 0.1);
+
+    .tabla-comunitaria {
+      th {
+        background: rgba(15, 23, 42, 0.7);
+        border-bottom-color: rgba(255, 255, 255, 0.12);
+        color: #94a3b8;
+      }
+
+      td {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+      }
+
+      .fila-turno:hover {
+        background: rgba(56, 189, 248, 0.08);
+      }
+
+      .celda-horario {
+        .hora-24-txt {
+          color: #38bdf8;
+        }
+
+        .hora-12-txt {
+          color: #cbd5e1;
+        }
+      }
+
+      .celda-comunero .comunero-nombre-tabla {
+        color: #f8fafc;
+      }
+
+      .celda-lote .lote-tag-tabla {
+        background: rgba(15, 23, 42, 0.6);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: #38bdf8;
+      }
     }
   }
 
