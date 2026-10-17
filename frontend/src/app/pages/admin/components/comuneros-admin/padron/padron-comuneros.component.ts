@@ -77,7 +77,11 @@ export class PadronComunerosComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
     this.error.set(false);
-    this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro, this.sectorFiltro ?? undefined).subscribe({
+    const peticion$ = this.sectorFiltro
+      ? this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro, this.sectorFiltro)
+      : this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro);
+
+    peticion$.subscribe({
       next: (res) => {
         const total = res?.pagination?.total ?? 0;
         // Si la página quedó vacía (por ejemplo, al filtrar), se vuelve a la última que tiene datos.
