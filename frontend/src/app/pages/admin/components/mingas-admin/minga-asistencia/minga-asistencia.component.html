@@ -70,8 +70,39 @@
                 </button>
               </div>
               @if (a.estado === 'JUSTIFICADO') {
-                <input class="input input--sm roster__reason" [(ngModel)]="a.motivo_justificacion" [disabled]="cerrada || guardando" maxlength="255"
-                  placeholder="Motivo de justificación" [attr.aria-label]="'Motivo de ' + a.nombre" />
+                <div class="roster__justification-block">
+                  <input class="input input--sm roster__reason" [(ngModel)]="a.motivo_justificacion" [disabled]="cerrada || guardando" maxlength="255"
+                    placeholder="Motivo de justificación" [attr.aria-label]="'Motivo de ' + a.nombre" />
+
+                  <div class="roster__attachment">
+                    @if (a.archivo_justificacion_url) {
+                      <div class="roster__file-chip" [title]="a.archivo_justificacion_nombre || 'Archivo adjunto'">
+                        <i class="ri-attachment-2" aria-hidden="true"></i>
+                        <span class="roster__file-name">{{ a.archivo_justificacion_nombre || 'Justificativo adjunto' }}</span>
+                        <button type="button" class="btn btn--ghost btn--xs" (click)="descargarArchivo(a)" title="Descargar comprobante" aria-label="Descargar comprobante">
+                          <i class="ri-download-2-line" aria-hidden="true"></i>
+                        </button>
+                        @if (!cerrada) {
+                          <button type="button" class="btn btn--ghost btn--xs btn--danger" (click)="eliminarArchivo(a)" title="Quitar archivo adjunto" aria-label="Quitar archivo">
+                            <i class="ri-delete-bin-line" aria-hidden="true"></i>
+                          </button>
+                        }
+                      </div>
+                    } @else if (!cerrada) {
+                      <label class="btn btn--outline btn--xs roster__attach-btn" [class.is-loading]="subiendoPersonaId === a.persona_id">
+                        @if (subiendoPersonaId === a.persona_id) {
+                          <span class="spinner spinner--xs" aria-hidden="true"></span>
+                          <span>Subiendo…</span>
+                        } @else {
+                          <i class="ri-upload-cloud-line" aria-hidden="true"></i>
+                          <span>Adjuntar archivo (opcional)</span>
+                        }
+                        <input type="file" class="sr-only" (change)="adjuntarArchivo(a, $event)" [disabled]="subiendoPersonaId === a.persona_id"
+                          accept=".pdf,image/png,image/jpeg" />
+                      </label>
+                    }
+                  </div>
+                </div>
               }
             </li>
           }

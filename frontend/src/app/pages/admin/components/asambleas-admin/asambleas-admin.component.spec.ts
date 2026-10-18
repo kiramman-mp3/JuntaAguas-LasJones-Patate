@@ -183,6 +183,16 @@ describe('Módulo de Asambleas', () => {
     expect(adminMock.registrarAsistencias).not.toHaveBeenCalled();
   });
 
+  it('mantiene abierto el registro de asistencia cuando la asamblea está REALIZADO y solo bloquea en CANCELADO', () => {
+    const fixtureRealizada = TestBed.createComponent(AsambleaAsistenciaComponent);
+    fixtureRealizada.componentRef.setInput('asamblea', { ...asambleaMock, estado: 'REALIZADO' });
+    expect(fixtureRealizada.componentInstance.soloLectura()).toBe(false);
+
+    const fixtureCancelada = TestBed.createComponent(AsambleaAsistenciaComponent);
+    fixtureCancelada.componentRef.setInput('asamblea', { ...asambleaMock, estado: 'CANCELADO' });
+    expect(fixtureCancelada.componentInstance.soloLectura()).toBe(true);
+  });
+
   describe('Actas (AsambleaActasComponent)', () => {
     let component: AsambleaActasComponent;
 
