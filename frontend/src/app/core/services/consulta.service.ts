@@ -10,6 +10,7 @@ export interface DeudaItem {
   valor: number;
   estado: 'PENDIENTE' | 'PAGADA' | 'ANULADA';
   fechaEmision: string;
+  pagoId?: number | null;
 }
 
 export interface ConsultaResultadoResponse {
