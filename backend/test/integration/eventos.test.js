@@ -123,7 +123,7 @@ test('finalizar exige asistencia completa, estado anunciado y fecha alcanzada', 
   assert.equal((await finalizar(futura)).status, 409);
 });
 
-test('finalizar es idempotente y cierra la asistencia', async () => {
+test('finalizar es idempotente y mantiene el registro de asistencia abierto', async () => {
   const id = await eventoPasado();
   await tomarAsistencia(id);
   assert.equal((await finalizar(id)).body.multasGeneradas, 1);
@@ -131,12 +131,14 @@ test('finalizar es idempotente y cierra la asistencia', async () => {
   assert.equal(otra.status, 200);
   assert.equal(otra.body.yaFinalizada, true);
   assert.equal(otra.body.multasGeneradas, 0);
-  assert.equal((await tomarAsistencia(id)).status, 409);
+  // El registro de asistencia se mantiene abierto tras finalizar para rectificaciones
+  const postFinal = await tomarAsistencia(id);
+  assert.equal(postFinal.status, 200);
   const [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM obligaciones WHERE evento_id = ?', [id]);
   assert.equal(total, 1);
 });
 
-test('las justificaciones requieren motivo y no generan multa', async () => {
+test('las justificaciones requieren motivo, admiten archivo opcional y no generan multa', async () => {
   const id = await eventoPasado({ tipo: 'MINGA' });
   const padron = (await request(app).get(`/api/mingas/${id}/asistencias`).set(auth(admin))).body.data;
   const sinMotivo = padron.map((p) => ({ persona_id: p.persona_id, estado: 'JUSTIFICADO' }));
@@ -147,6 +149,30 @@ test('las justificaciones requieren motivo y no generan multa', async () => {
   const res = await finalizar(id, 'mingas');
   assert.equal(res.status, 200);
   assert.equal(res.body.multasGeneradas, 0);
+
+  // Carga opcional de archivo de justificación
+  const personaId = padron[0].persona_id;
+  const pdfFirma = Buffer.from('%PDF-1.4 prueba justificativo');
+  const subida = await request(app)
+    .post(`/api/mingas/${id}/asistencias/${personaId}/justificante`)
+    .set(auth(admin))
+    .attach('archivo', pdfFirma, 'justificante_medico.pdf');
+  assert.equal(subida.status, 200);
+  assert.ok(subida.body.url);
+  assert.equal(subida.body.nombre, 'justificante_medico.pdf');
+
+  // Descarga del justificante adjunto
+  const descarga = await request(app)
+    .get(`/api/mingas/${id}/asistencias/${personaId}/justificante`)
+    .set(auth(admin));
+  assert.equal(descarga.status, 200);
+  assert.equal(descarga.headers['content-type'], 'application/pdf');
+
+  // Padrón reporta archivo adjunto
+  const padronActual = (await request(app).get(`/api/mingas/${id}/asistencias`).set(auth(admin))).body.data;
+  const comunero = padronActual.find((p) => p.persona_id === personaId);
+  assert.equal(comunero.archivo_justificacion_nombre, 'justificante_medico.pdf');
+  assert.ok(comunero.archivo_justificacion_url);
 });
 
 test('rechaza personas repetidas o ajenas al padrón', async () => {
