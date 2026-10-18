@@ -176,7 +176,12 @@ async function consultaPublicaPorCedula(req, res) {
 
   const [obligaciones] = await db.query(
     `SELECT o.id, o.periodo_anio, o.periodo_mes, o.fecha_emision, o.valor, o.estado, o.observacion,
-            c.nombre AS concepto_nombre, c.codigo AS concepto_codigo
+            c.nombre AS concepto_nombre, c.codigo AS concepto_codigo,
+            (SELECT pd.pago_id
+             FROM pago_detalles pd
+             JOIN pagos p ON p.id = pd.pago_id AND p.estado = 'VIGENTE'
+             WHERE pd.obligacion_id = o.id
+             ORDER BY p.id DESC LIMIT 1) AS pago_id
      FROM obligaciones o
      JOIN conceptos_cobro c ON c.id = o.concepto_id
      WHERE o.persona_id = ? AND o.estado <> 'ANULADA'
@@ -205,7 +210,8 @@ async function consultaPublicaPorCedula(req, res) {
         periodo: o.periodo_mes ? `Mes ${o.periodo_mes}` : (o.observacion || 'Cuota/Multa'),
         valor: Number(o.valor),
         estado: o.estado,
-        fechaEmision: o.fecha_emision
+        fechaEmision: o.fecha_emision,
+        pagoId: o.pago_id || null
       }))
     }
   });
