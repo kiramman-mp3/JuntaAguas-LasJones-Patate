@@ -197,8 +197,8 @@ export class MingaAsistenciaComponent implements OnInit {
       persona_id: a.persona_id,
       estado: a.estado,
       motivo_justificacion: a.estado === 'JUSTIFICADO' ? a.motivo_justificacion.trim() : null,
-      archivo_justificacion_url: a.estado === 'JUSTIFICADO' ? a.archivo_justificacion_url : null,
-      archivo_justificacion_nombre: a.estado === 'JUSTIFICADO' ? a.archivo_justificacion_nombre : null
+      archivo_justificacion_url: a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_url ?? null) : null,
+      archivo_justificacion_nombre: a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_nombre ?? null) : null
     }));
     this.guardando = true;
     this.admin

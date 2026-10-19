@@ -181,11 +181,11 @@ describe('Gestión de Mingas', () => {
     expect(admin.cambiarEstadoMinga).not.toHaveBeenCalled();
   });
 
-  it('impide modificar una asistencia finalizada desde la interfaz', () => {
+  it('mantiene abierta una asistencia en estado REALIZADO cuando no está cancelada', () => {
     admin.getAsistenciasMinga.mockReturnValue(of({ estado: 'REALIZADO', data: [] }));
     const asistencia = abrirAsistencia({ ...minga, estado: 'REALIZADO' });
     asistencia.guardar();
-    expect(asistencia.cerrada).toBe(true);
+    expect(asistencia.cerrada).toBe(false);
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
