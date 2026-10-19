@@ -43,7 +43,6 @@ router.get('/:id', ...soloAdmin, eventoController.getEventoById);
 router.post('/:id/estado', ...soloAdmin, eventoController.cambiarEstado);
 router.post('/:id/finalizar', ...soloAdmin, eventoController.finalizarEventoYGenerarMultas);
 router.post('/:id/puntos', ...soloAdmin, eventoController.savePuntosAsamblea);
-router.post('/:id/puntos/:puntoId/estado', ...soloAdmin, eventoController.cambiarEstadoActaPunto);
 router.post('/:id/asistencias', ...soloAdmin, eventoController.registrarAsistencias);
 router.get('/:id/asistencias', ...soloAdmin, eventoController.getAsistencias);
 router.get('/:id/pdf-asistencia', ...soloAdmin, eventoController.descargarPDFAsistencia);

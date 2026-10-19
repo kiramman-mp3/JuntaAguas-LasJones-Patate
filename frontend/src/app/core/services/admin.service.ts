@@ -150,10 +150,6 @@ export class AdminService {
     return this.http.post<RespuestaMensaje & { data: unknown[] }>(`${this.baseUrl}/eventos/${id}/puntos`, { puntos });
   }
 
-  cambiarEstadoActaPunto(id: number, puntoId: number, payload: object): Observable<RespuestaMensaje & { data: unknown }> {
-    return this.http.post<RespuestaMensaje & { data: unknown }>(`${this.baseUrl}/eventos/${id}/puntos/${puntoId}/estado`, payload);
-  }
-
   cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<RespuestaMensaje & { estado: string }> {
     return this.http.post<RespuestaMensaje & { estado: string }>(`${this.baseUrl}/mingas/${id}/estado`, { estado });
   }

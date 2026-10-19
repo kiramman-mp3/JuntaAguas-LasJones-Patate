@@ -198,8 +198,8 @@ test('guardar actas conserva los ids de los puntos y elimina los quitados', asyn
   assert.equal(puntos[0].resolucion, 'Aprobado por mayoría');
   assert.ok(!puntos.some((p) => p.id === originales[1].id));
 
-  const acta = await request(app).post(`/api/eventos/${id}/puntos/${puntos[0].id}/estado`).set(auth(admin)).send({ estado_acta: 'INVENTADO' });
-  assert.equal(acta.status, 400);
+  const actaPorPunto = await request(app).post(`/api/eventos/${id}/puntos/${puntos[0].id}/estado`).set(auth(admin)).send({ estado_acta: 'APROBADA' });
+  assert.equal(actaPorPunto.status, 404, 'ya no existen actas por punto');
 });
 
 test('el listado calcula asistentes y multas por evento', async () => {

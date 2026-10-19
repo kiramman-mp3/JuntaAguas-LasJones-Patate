@@ -344,16 +344,7 @@ async function guardarPuntos(conexion, id, puntos) {
   return { data: actualizados, archivosEliminados: eliminados.map((p) => p.acta_firmada_url).filter(Boolean) };
 }
 
-/** Actualiza los datos del acta de un punto. */
-async function actualizarActaPunto(conexion, eventoId, puntoId, cambios) {
-  if (!Object.keys(cambios).length) throw badRequest('No se enviaron cambios para el acta.');
-  const [r] = await conexion.query('UPDATE puntos_asamblea SET ? WHERE id = ? AND evento_id = ?', [cambios, puntoId, eventoId]);
-  if (!r.affectedRows) throw notFound('Punto de asamblea no encontrado.');
-  const [[actualizado]] = await conexion.query('SELECT * FROM puntos_asamblea WHERE id = ?', [puntoId]);
-  return actualizado;
-}
-
 module.exports = {
-  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos, actualizarActaPunto,
+  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos,
   ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto
 };

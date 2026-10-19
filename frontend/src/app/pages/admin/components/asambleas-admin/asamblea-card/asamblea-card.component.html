@@ -138,7 +138,7 @@
       {{ a.estado === 'REALIZADO' ? 'Ver asistencia' : 'Tomar asistencia' }}
     </button>
     <button type="button" class="btn btn--outline btn--sm" (click)="actas.emit()" [disabled]="a.estado === 'CANCELADO'">
-      <i class="ri-file-text-line" aria-hidden="true"></i> Actas
+      <i class="ri-file-text-line" aria-hidden="true"></i> Acta
     </button>
 
     <!-- Solo el siguiente paso del flujo queda a la vista -->

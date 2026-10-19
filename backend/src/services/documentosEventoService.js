@@ -1,6 +1,5 @@
 /**
- * Documentos firmados de un evento: convocatoria, acta general, lista de asistencia u otros,
- * y el acta firmada de cada punto de una asamblea.
+ * Documentos firmados de un evento: convocatoria, acta general, lista de asistencia u otros.
  */
 const db = require('../config/db');
 const { guardarDocumento, eliminarDocumento } = require('./documentStorage');
@@ -19,30 +18,16 @@ function nombreVisible(original, respaldo) {
  * si termina bien, se borra el archivo que reemplazó.
  * @returns {{ url: string, nombre: string }}
  */
-async function guardarDocumentoFirmado({ eventoId, tipo, puntoId = null, archivo, cuentaId }) {
+async function guardarDocumentoFirmado({ eventoId, tipo, archivo, cuentaId }) {
   const [eventos] = await db.query('SELECT id FROM eventos WHERE id = ?', [eventoId]);
   if (!eventos.length) throw notFound('Evento no encontrado.');
-  if (puntoId) {
-    const [puntos] = await db.query('SELECT id FROM puntos_asamblea WHERE id = ? AND evento_id = ?', [puntoId, eventoId]);
-    if (!puntos.length) throw notFound('El punto del acta no pertenece a este evento.');
-  }
 
-  const { url, mime } = await guardarDocumento(archivo.buffer, puntoId ? 'acta_punto' : tipo.toLowerCase());
+  const { url, mime } = await guardarDocumento(archivo.buffer, tipo.toLowerCase());
   const nombre = nombreVisible(archivo.originalname, `${tipo}_firmado`);
 
   let urlAnterior;
   try {
     urlAnterior = await withTransaction(async (conexion) => {
-      if (puntoId) {
-        const [[punto]] = await conexion.query('SELECT acta_firmada_url FROM puntos_asamblea WHERE id = ? FOR UPDATE', [puntoId]);
-        await conexion.query(
-          `UPDATE puntos_asamblea
-           SET acta_firmada_url = ?, acta_firmada_nombre = ?, estado_acta = 'FIRMADA', fecha_acta = UTC_TIMESTAMP()
-           WHERE id = ?`,
-          [url, nombre, puntoId]
-        );
-        return punto?.acta_firmada_url ?? null;
-      }
       const [existente] = await conexion.query(
         'SELECT ruta_archivo_firmado FROM documentos_evento WHERE evento_id = ? AND tipo = ? FOR UPDATE', [eventoId, tipo]
       );

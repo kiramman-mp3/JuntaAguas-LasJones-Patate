@@ -1,5 +1,4 @@
 export type EstadoAsamblea = 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'REALIZADO' | 'CANCELADO';
-export type EstadoActa = 'BORRADOR' | 'APROBADA' | 'FIRMADA';
 export type EstadoAsistencia = 'PENDIENTE' | 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
 
 export interface PuntoAsamblea {
@@ -10,9 +9,6 @@ export interface PuntoAsamblea {
   tratado?: string;
   resolucion?: string;
   titulo_acta?: string;
-  estado_acta?: EstadoActa;
-  acta_firmada_url?: string;
-  acta_firmada_nombre?: string;
   responsables?: string;
   fecha_acta?: string;
 }
