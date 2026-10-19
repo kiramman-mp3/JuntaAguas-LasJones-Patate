@@ -35,10 +35,9 @@ export class DocumentosService {
     return null;
   }
 
-  subir(eventoId: number, tipo: TipoDocumento, archivo: File, puntoId?: number): Observable<DocumentoSubido> {
+  subir(eventoId: number, tipo: TipoDocumento, archivo: File): Observable<DocumentoSubido> {
     const datos = new FormData();
     datos.append('tipo', tipo);
-    if (puntoId) datos.append('punto_id', String(puntoId));
     datos.append('archivo', archivo, archivo.name);
     return this.http.post<DocumentoSubido>(`${environment.apiUrl}/eventos/${eventoId}/documentos`, datos);
   }

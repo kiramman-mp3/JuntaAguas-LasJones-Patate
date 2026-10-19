@@ -9,10 +9,10 @@ import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
-import { AsambleaItem, EstadoActa, PuntoAsamblea } from '../asamblea.model';
+import { AsambleaItem, PuntoAsamblea } from '../asamblea.model';
 import { AsambleasService } from '../asambleas.service';
 
-/** Redacción de las actas de una asamblea: una por punto tratado, más temas nuevos de la sesión (F07). */
+/** Redacción del acta general de una asamblea: los puntos tratados y los temas nuevos de la sesión (F07). */
 @Component({
   selector: 'app-asamblea-actas',
   standalone: true,
@@ -33,13 +33,15 @@ export class AsambleaActasComponent implements OnInit {
   readonly cargando = signal(true);
   readonly errorCarga = signal(false);
   readonly guardando = signal(false);
-  readonly subiendoPuntoId = signal<number | null>(null);
+  readonly subiendoActa = signal(false);
+  readonly actaFirmadaUrl = signal<string | undefined>(undefined);
 
   puntos: PuntoAsamblea[] = [];
   mostrarNuevoTema = false;
   nuevoTema = { punto_tratar: '', tratado: '', resolucion: '', responsables: '' };
 
   ngOnInit(): void {
+    this.actaFirmadaUrl.set(this.asamblea().acta_firmada_url);
     this.cargar();
   }
 
@@ -68,11 +70,10 @@ export class AsambleaActasComponent implements OnInit {
     this.puntos.push({
       orden,
       punto_tratar: `${orden}. ${tema}`,
-      titulo_acta: `Acta del Punto ${orden}: ${tema}`,
+      titulo_acta: tema,
       tratado: this.nuevoTema.tratado.trim(),
       resolucion: this.nuevoTema.resolucion.trim(),
-      responsables: this.nuevoTema.responsables.trim(),
-      estado_acta: this.nuevoTema.resolucion.trim() ? 'APROBADA' : 'BORRADOR'
+      responsables: this.nuevoTema.responsables.trim()
     });
     this.nuevoTema = { punto_tratar: '', tratado: '', resolucion: '', responsables: '' };
     this.mostrarNuevoTema = false;
@@ -83,18 +84,14 @@ export class AsambleaActasComponent implements OnInit {
     this.admin.guardarPuntosAsamblea(this.asamblea().id, this.puntos).subscribe({
       next: (res) => {
         this.guardando.set(false);
-        if (res?.data) this.puntos = res.data.map((p: any) => ({ ...p, acta_firmada_url: p.acta_firmada_url || undefined }));
-        this.notify.success('Las actas y puntos de la asamblea se guardaron correctamente.');
+        if (res?.data) this.puntos = res.data as PuntoAsamblea[];
+        this.notify.success('El acta de la asamblea se guardó correctamente.');
       },
       error: (err) => {
         this.guardando.set(false);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo guardar', mensaje: err?.error?.message || 'Error al guardar puntos de asamblea.' });
       }
     });
-  }
-
-  descargarActaPorPunto(punto: PuntoAsamblea): void {
-    this.actas.generarActaPuntoPDF(this.asamblea(), punto);
   }
 
   descargarActaGeneral(): void {
@@ -105,39 +102,25 @@ export class AsambleaActasComponent implements OnInit {
     this.documentos.abrir(url);
   }
 
-  subirActaFirmada(punto: PuntoAsamblea, input: HTMLInputElement): void {
+  subirActaFirmada(input: HTMLInputElement): void {
     const archivo = input.files?.[0];
     input.value = '';
-    if (!archivo || !punto.id) return;
+    if (!archivo) return;
     const problema = this.documentos.validarArchivo(archivo);
     if (problema) {
       this.dialog.aviso({ tipo: 'WARNING', titulo: 'Archivo no válido', mensaje: problema });
       return;
     }
-    this.subiendoPuntoId.set(punto.id);
-    this.documentos.subir(this.asamblea().id, 'ACTA', archivo, punto.id).subscribe({
+    this.subiendoActa.set(true);
+    this.documentos.subir(this.asamblea().id, 'ACTA', archivo).subscribe({
       next: (res) => {
-        this.subiendoPuntoId.set(null);
-        punto.acta_firmada_url = res.url;
-        punto.acta_firmada_nombre = res.nombre_archivo;
-        punto.estado_acta = 'FIRMADA';
-        this.notify.success(`Acta firmada del punto ${punto.orden} subida.`);
+        this.subiendoActa.set(false);
+        this.actaFirmadaUrl.set(res.url);
+        this.notify.success('Acta general firmada subida.');
       },
       error: (err) => {
-        this.subiendoPuntoId.set(null);
+        this.subiendoActa.set(false);
         this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo subir el acta', mensaje: err?.error?.message || 'Error al subir el acta firmada.' });
-      }
-    });
-  }
-
-  cambiarEstadoActa(punto: PuntoAsamblea, estado: EstadoActa): void {
-    const anterior = punto.estado_acta;
-    punto.estado_acta = estado;
-    if (!punto.id) return;
-    this.admin.cambiarEstadoActaPunto(this.asamblea().id, punto.id, { estado_acta: estado }).subscribe({
-      error: (err) => {
-        punto.estado_acta = anterior;
-        this.notify.warning(err.error?.message || 'No se pudo actualizar el estado del acta.');
       }
     });
   }
