@@ -35,7 +35,8 @@ export class AsambleaAsistenciaComponent implements OnInit {
   readonly estadoFiltro = signal<FiltroEstado>('TODOS');
 
   readonly resumen = computed(() => resumirAsistencia(this.personas()));
-  readonly soloLectura = computed(() => this.asamblea().estado === 'REALIZADO');
+  readonly soloLectura = computed(() => this.asamblea().estado === 'CANCELADO');
+  readonly subiendoArchivo = signal<number | null>(null);
 
   readonly filtradas = computed(() => {
     const q = this.filtro().toLowerCase().trim();
@@ -68,17 +69,111 @@ export class AsambleaAsistenciaComponent implements OnInit {
   }
 
   marcarTodos(estado: 'PRESENTE' | 'AUSENTE'): void {
-    this.personas.update((lista) => lista.map((p) => ({ ...p, estado, motivo_justificacion: '' })));
+    this.personas.update((lista) => lista.map((p) => ({ ...p, estado, motivo_justificacion: '', archivo_justificacion_url: null, archivo_justificacion_nombre: null })));
   }
 
   setEstado(persona: AsistentePadron, estado: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO'): void {
     this.personas.update((lista) =>
-      lista.map((p) => (p === persona ? { ...p, estado, motivo_justificacion: estado === 'JUSTIFICADO' ? p.motivo_justificacion : '' } : p))
+      lista.map((p) =>
+        p === persona
+          ? {
+              ...p,
+              estado,
+              motivo_justificacion: estado === 'JUSTIFICADO' ? p.motivo_justificacion : '',
+              archivo_justificacion_url: estado === 'JUSTIFICADO' ? p.archivo_justificacion_url : null,
+              archivo_justificacion_nombre: estado === 'JUSTIFICADO' ? p.archivo_justificacion_nombre : null
+            }
+          : p
+      )
     );
   }
 
   setMotivo(persona: AsistentePadron, motivo: string): void {
     persona.motivo_justificacion = motivo;
+  }
+
+  adjuntarArchivo(persona: AsistentePadron, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      this.dialog.aviso({
+        tipo: 'WARNING',
+        titulo: 'Archivo demasiado pesado',
+        mensaje: 'El archivo adjunto no puede superar los 10 MB.'
+      });
+      input.value = '';
+      return;
+    }
+
+    this.subiendoArchivo.set(persona.persona_id);
+    this.admin.subirJustificanteAsistencia(this.asamblea().id, persona.persona_id, file, persona.motivo_justificacion).subscribe({
+      next: (res: any) => {
+        this.subiendoArchivo.set(null);
+        persona.archivo_justificacion_url = res.url;
+        persona.archivo_justificacion_nombre = res.nombre;
+        if (!persona.motivo_justificacion.trim()) {
+          persona.motivo_justificacion = 'Inasistencia justificada con documento';
+        }
+        input.value = '';
+      },
+      error: (err: any) => {
+        this.subiendoArchivo.set(null);
+        input.value = '';
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'Error al subir archivo',
+          mensaje: err?.error?.message || 'No se pudo subir el archivo de justificación.'
+        });
+      }
+    });
+  }
+
+  descargarArchivo(persona: AsistentePadron): void {
+    this.admin.descargarJustificanteAsistencia(this.asamblea().id, persona.persona_id).subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : 'jpg';
+        a.download = persona.archivo_justificacion_nombre || `Justificante_${persona.cedula}.${ext}`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      },
+      error: () => {
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'Error de descarga',
+          mensaje: 'No se pudo descargar el archivo de justificación.'
+        });
+      }
+    });
+  }
+
+  async eliminarArchivo(persona: AsistentePadron): Promise<void> {
+    const seguro = await this.dialog.confirmar({
+      tipo: 'DANGER',
+      titulo: '¿Quitar archivo adjunto?',
+      mensaje: `¿Desea eliminar el archivo "${persona.archivo_justificacion_nombre || 'justificativo'}"? La justificación escrita se mantendrá.`,
+      textoConfirmar: 'Quitar archivo',
+      textoCancelar: 'Cancelar'
+    });
+    if (!seguro) return;
+
+    this.admin.eliminarJustificanteAsistencia(this.asamblea().id, persona.persona_id).subscribe({
+      next: () => {
+        persona.archivo_justificacion_url = null;
+        persona.archivo_justificacion_nombre = null;
+      },
+      error: (err: any) => {
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'Error al quitar archivo',
+          mensaje: err?.error?.message || 'No se pudo eliminar el archivo adjunto.'
+        });
+      }
+    });
   }
 
   guardar(): void {
@@ -97,7 +192,9 @@ export class AsambleaAsistenciaComponent implements OnInit {
     const payload = personas.map((p) => ({
       persona_id: p.persona_id,
       estado: p.estado,
-      motivo_justificacion: p.estado === 'JUSTIFICADO' ? p.motivo_justificacion.trim() : null
+      motivo_justificacion: p.estado === 'JUSTIFICADO' ? p.motivo_justificacion.trim() : null,
+      archivo_justificacion_url: p.estado === 'JUSTIFICADO' ? p.archivo_justificacion_url : null,
+      archivo_justificacion_nombre: p.estado === 'JUSTIFICADO' ? p.archivo_justificacion_nombre : null
     }));
     this.admin.registrarAsistencias(this.asamblea().id, payload).subscribe({
       next: () => {

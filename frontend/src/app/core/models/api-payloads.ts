@@ -193,6 +193,8 @@ export interface AsistenciaPadron {
   cedula: string;
   estado: EstadoAsistencia;
   motivo_justificacion: string;
+  archivo_justificacion_url?: string | null;
+  archivo_justificacion_nombre?: string | null;
   hora_registro: string | null;
 }
 
@@ -200,6 +202,8 @@ export interface AsistenciaRegistro {
   persona_id: number;
   estado: EstadoAsistencia;
   motivo_justificacion?: string | null;
+  archivo_justificacion_url?: string | null;
+  archivo_justificacion_nombre?: string | null;
 }
 
 export interface PadronRespuesta extends RespuestaApi<AsistenciaPadron[]> {

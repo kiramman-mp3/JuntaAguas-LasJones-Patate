@@ -84,8 +84,12 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `GET` | `/eventos/:id` | Público / Autenticado | Detalle del evento con puntos del orden del día y resoluciones. |
 | `POST` | `/eventos` | ADMIN / SECRETARIO | Programar Asamblea o Minga (define `genera_multa_ausencia` y `valor_multa`). |
 | `POST` | `/eventos/:id/puntos` | ADMIN / SECRETARIO | Guardar puntos a tratar y resoluciones aprobadas en asamblea. |
-| `POST` | `/eventos/:id/asistencias` | ADMIN / SECRETARIO | Toma de asistencia digital (`PRESENTE`, `AUSENTE`, `JUSTIFICADO`). |
-| `POST` | `/eventos/:id/finalizar` | ADMIN / SECRETARIO | **Generación Automática de Multas:** Cierra el evento y crea obligaciones de multa para todas las personas ausentes. |
+| `GET` | `/eventos/:id/asistencias` | ADMIN / SECRETARIO | Padrón de asistencia con estados, motivos y metadatos de archivos de justificación adjuntos. |
+| `POST` | `/eventos/:id/asistencias` | ADMIN / SECRETARIO | Registro de asistencia continuo (`PRESENTE`, `AUSENTE`, `JUSTIFICADO`). Permanece abierto aún en eventos `REALIZADO` y sincroniza multas ante rectificaciones. |
+| `POST` | `/eventos/:id/asistencias/:personaId/justificante` | ADMIN / SECRETARIO | Subir archivo de justificación opcional (PDF, PNG, JPG hasta 10MB) mediante `multipart/form-data`. |
+| `GET` | `/eventos/:id/asistencias/:personaId/justificante` | Autenticado | Descargar archivo probatorio de justificación adjunto a la asistencia. |
+| `DELETE` | `/eventos/:id/asistencias/:personaId/justificante` | ADMIN / SECRETARIO | Desvincular y eliminar archivo físico de justificación de la asistencia. |
+| `POST` | `/eventos/:id/finalizar` | ADMIN / SECRETARIO | **Generación Automática de Multas:** Finaliza el evento y genera obligaciones de multa para ausentes, manteniendo el registro abierto para justificaciones posteriores. |
 | `POST` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Subir documento firmado del evento o de un punto del acta (`multipart/form-data`). |
 | `GET` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Listar metadatos de documentos firmados del evento (sin contenido binario). |
 | `GET` | `/eventos/:id/pdf-asistencia` | ADMIN / SECRETARIO | Descargar hoja de asistencia en PDF con padrón de comuneros para firmas físicas. |

@@ -48,6 +48,8 @@ export interface AsistentePadron {
   sector?: string;
   estado: EstadoAsistencia;
   motivo_justificacion: string;
+  archivo_justificacion_url?: string | null;
+  archivo_justificacion_nombre?: string | null;
 }
 
 export interface ResumenAsistencia {

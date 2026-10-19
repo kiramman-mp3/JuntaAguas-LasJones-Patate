@@ -63,14 +63,17 @@ describe('Cobro en caja', () => {
     expect(c.total()).toBe(5);
   });
 
-  it('en efectivo exige cubrir el total y calcula el cambio', () => {
+  it('ofrece solo transferencia y depósito y exige referencia para ambos', () => {
     const { c } = crear();
-    expect(c.bloqueo()).toContain('valor recibido');
-    c.onRecibido(5);
-    expect(c.bloqueo()).toContain('Faltan $3.50');
-    c.onRecibido(10);
-    expect(c.bloqueo()).toBe('');
-    expect(c.cambio()).toBe(1.5);
+    expect(c.metodos.map(m => m.valor)).toEqual(['TRANSFERENCIA', 'DEPOSITO']);
+    expect(c.metodo()).toBe('TRANSFERENCIA');
+    for (const metodo of ['TRANSFERENCIA', 'DEPOSITO'] as const) {
+      c.metodo.set(metodo);
+      c.referencia.set('');
+      expect(c.bloqueo()).toContain('referencia');
+      c.referencia.set('123');
+      expect(c.bloqueo()).toBe('');
+    }
   });
 
   it('en transferencia exige la referencia y la envía con el pago', () => {
@@ -127,7 +130,7 @@ describe('Cobro en caja', () => {
 
   it('si el servidor rechaza el pago no muestra comprobante', () => {
     const { c } = crear(vi.fn(() => throwError(() => ({ error: { message: 'La obligación #1 ya se encuentra PAGADA' } }))));
-    c.valorExacto();
+    c.referencia.set('123');
     c.cobrar();
     expect(c.comprobante()).toBeNull();
     expect(c.procesando()).toBe(false);

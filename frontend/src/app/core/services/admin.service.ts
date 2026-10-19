@@ -120,6 +120,21 @@ export class AdminService {
     return this.http.get<PadronRespuesta>(`${this.baseUrl}/eventos/${eventoId}/asistencias`);
   }
 
+  subirJustificanteAsistencia(eventoId: number, personaId: number, archivo: File, motivo?: string): Observable<RespuestaApi<{ url: string; nombre: string }>> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    if (motivo) formData.append('motivo_justificacion', motivo);
+    return this.http.post<RespuestaApi<{ url: string; nombre: string }>>(`${this.baseUrl}/eventos/${eventoId}/asistencias/${personaId}/justificante`, formData);
+  }
+
+  descargarJustificanteAsistencia(eventoId: number, personaId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/eventos/${eventoId}/asistencias/${personaId}/justificante`, { responseType: 'blob' });
+  }
+
+  eliminarJustificanteAsistencia(eventoId: number, personaId: number): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(`${this.baseUrl}/eventos/${eventoId}/asistencias/${personaId}/justificante`);
+  }
+
   cambiarEstadoAsamblea(id: number, estado: EstadoEvento): Observable<RespuestaMensaje & { estado: EstadoEvento }> {
     return this.http.post<RespuestaMensaje & { estado: EstadoEvento }>(`${this.baseUrl}/eventos/${id}/estado`, { estado });
   }
@@ -150,6 +165,21 @@ export class AdminService {
 
   registrarAsistenciasMinga(id: number, asistencias: AsistenciaRegistro[]): Observable<RespuestaMensaje & { registradas: number }> {
     return this.http.post<RespuestaMensaje & { registradas: number }>(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias });
+  }
+
+  subirJustificanteAsistenciaMinga(mingaId: number, personaId: number, archivo: File, motivo?: string): Observable<RespuestaApi<{ url: string; nombre: string }>> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    if (motivo) formData.append('motivo_justificacion', motivo);
+    return this.http.post<RespuestaApi<{ url: string; nombre: string }>>(`${this.baseUrl}/mingas/${mingaId}/asistencias/${personaId}/justificante`, formData);
+  }
+
+  descargarJustificanteAsistenciaMinga(mingaId: number, personaId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/mingas/${mingaId}/asistencias/${personaId}/justificante`, { responseType: 'blob' });
+  }
+
+  eliminarJustificanteAsistenciaMinga(mingaId: number, personaId: number): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(`${this.baseUrl}/mingas/${mingaId}/asistencias/${personaId}/justificante`);
   }
 
   getDashboardResumen(): Observable<RespuestaApi<DashboardResumen>> {

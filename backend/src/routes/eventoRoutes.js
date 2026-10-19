@@ -34,6 +34,19 @@ const router = express.Router();
  *     tags: [Eventos y Asistencias]
  *     summary: Generar y descargar hoja de asistencia en PDF para firmas en territorio
  *     security: [{ bearerAuth: [] }]
+ * /eventos/{id}/asistencias/{personaId}/justificante:
+ *   post:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Adjuntar archivo de justificación opcional (PDF, PNG, JPG) para una inasistencia
+ *     security: [{ bearerAuth: [] }]
+ *   get:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Descargar archivo de justificación de la asistencia
+ *     security: [{ bearerAuth: [] }]
+ *   delete:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Eliminar archivo de justificación de la asistencia
+ *     security: [{ bearerAuth: [] }]
  */
 router.get('/publicos', eventoController.getEventosPublicos);
 router.get('/', ...soloAdmin, eventoController.getEventos);
@@ -46,8 +59,12 @@ router.post('/:id/puntos', ...soloAdmin, eventoController.savePuntosAsamblea);
 router.post('/:id/puntos/:puntoId/estado', ...soloAdmin, eventoController.cambiarEstadoActaPunto);
 router.post('/:id/asistencias', ...soloAdmin, eventoController.registrarAsistencias);
 router.get('/:id/asistencias', ...soloAdmin, eventoController.getAsistencias);
+router.post('/:id/asistencias/:personaId/justificante', ...soloAdmin, recibirArchivo, eventoController.subirJustificante);
+router.get('/:id/asistencias/:personaId/justificante', ...soloAdmin, eventoController.descargarJustificante);
+router.delete('/:id/asistencias/:personaId/justificante', ...soloAdmin, eventoController.eliminarJustificante);
 router.get('/:id/pdf-asistencia', ...soloAdmin, eventoController.descargarPDFAsistencia);
 router.post('/:id/documentos', ...soloAdmin, recibirArchivo, eventoController.guardarDocumentoEvento);
 router.get('/:id/documentos', ...soloAdmin, eventoController.getDocumentosEvento);
 
 module.exports = router;
+

@@ -120,9 +120,18 @@ describe('Gestión de Mingas', () => {
     const asistencia = abrirAsistencia();
     asistencia.guardar();
     expect(admin.registrarAsistenciasMinga).toHaveBeenCalledWith(1, [
-      { persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
-      { persona_id: 2, estado: 'PENDIENTE', motivo_justificacion: null },
+      { persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud', archivo_justificacion_url: null, archivo_justificacion_nombre: null },
+      { persona_id: 2, estado: 'PENDIENTE', motivo_justificacion: null, archivo_justificacion_url: null, archivo_justificacion_nombre: null },
     ]);
+  });
+
+  it('mantiene abierto el registro de asistencia cuando la minga está REALIZADO y solo cierra en CANCELADO', () => {
+    const asistencia = abrirAsistencia();
+    asistencia.estado = 'REALIZADO';
+    expect(asistencia.cerrada).toBe(false);
+
+    asistencia.estado = 'CANCELADO';
+    expect(asistencia.cerrada).toBe(true);
   });
 
   it('permite corregir una justificación vacía y volver a guardar', () => {
@@ -172,11 +181,11 @@ describe('Gestión de Mingas', () => {
     expect(admin.cambiarEstadoMinga).not.toHaveBeenCalled();
   });
 
-  it('impide modificar una asistencia finalizada desde la interfaz', () => {
+  it('mantiene abierta una asistencia en estado REALIZADO cuando no está cancelada', () => {
     admin.getAsistenciasMinga.mockReturnValue(of({ estado: 'REALIZADO', data: [] }));
     const asistencia = abrirAsistencia({ ...minga, estado: 'REALIZADO' });
     asistencia.guardar();
-    expect(asistencia.cerrada).toBe(true);
+    expect(asistencia.cerrada).toBe(false);
     expect(admin.registrarAsistenciasMinga).not.toHaveBeenCalled();
   });
 
