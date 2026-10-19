@@ -45,19 +45,8 @@ const puntoSchema = z.object({
 });
 const puntosSchema = z.object({ puntos: z.array(puntoSchema).max(100) });
 
-const actaPuntoSchema = z.object({
-  estado_acta: z.enum(['BORRADOR', 'APROBADA', 'FIRMADA']).optional(),
-  resolucion: z.string().max(20000).nullish(),
-  tratado: z.string().max(20000).nullish(),
-  responsables: z.string().trim().max(255).nullish(),
-  titulo_acta: z.string().trim().max(255).nullish()
-});
-
 const documentoSchema = z.object({
-  tipo: z.enum(['CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO'], { error: 'Tipo de documento inválido.' }),
-  punto_id: z.coerce.number().int().positive().optional()
+  tipo: z.enum(['CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO'], { error: 'Tipo de documento inválido.' })
 });
 
-const puntoParam = z.object({ id: z.coerce.number().int().positive(), puntoId: z.coerce.number().int().positive() });
-
-module.exports = { TIPOS, ESTADOS, listarSchema, crearSchema, puntosSchema, actaPuntoSchema, documentoSchema, puntoParam };
+module.exports = { TIPOS, ESTADOS, listarSchema, crearSchema, puntosSchema, documentoSchema };
