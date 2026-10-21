@@ -40,7 +40,7 @@ function exigirAbierto(evento) {
 }
 
 /**
- * Padrón de asistencia: comuneros activos más quien ya tenga un registro en el evento
+ * Padrón de asistencia: usuarios activos más quien ya tenga un registro en el evento
  * (por si fue desactivado después). Incluye el resumen por estado.
  */
 async function obtenerPadron(conexion, evento) {
@@ -138,7 +138,7 @@ async function finalizar(conexion, evento, ahora = new Date()) {
 
   const { personas, resumen } = await obtenerPadron(conexion, evento);
   if (!resumen.total || resumen.pendientes) {
-    throw conflict('Complete y guarde la asistencia de todos los comuneros antes de finalizar.', { resumen });
+    throw conflict('Complete y guarde la asistencia de todos los usuarios antes de finalizar.', { resumen });
   }
 
   let multasGeneradas = 0;
@@ -216,7 +216,7 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
     params
   );
 
-  // Eventos cerrados reportan su padrón real; los abiertos, los comuneros activos actuales.
+  // Eventos cerrados reportan su padrón real; los abiertos, los usuarios activos actuales.
   const data = filas.map((e) => ({
     ...e,
     asistentes: Number(e.asistentes),

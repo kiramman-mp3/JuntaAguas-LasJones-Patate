@@ -42,7 +42,7 @@ const actualizarSchema = z.object({
   observacion: z.preprocess((v) => (typeof v === 'string' && !v.trim() ? null : v), z.string().trim().max(255).nullish())
 }).refine(horarioValido, errorHorario);
 
-/** Turnos activos. Un comunero solo recibe los suyos. */
+/** Turnos activos. Un usuario solo recibe los suyos. */
 async function getTurnos(req, res) {
   const filtros = filtrosQuery.parse(req.query);
   const personaId = personaPermitida(req.user, filtros.persona_id);
@@ -159,7 +159,7 @@ async function getCronogramaPorSectores(req, res) {
   return res.json({ status: 'OK', data: resultado });
 }
 
-/** Cronograma público sin cédulas para comuneros y visitantes en la landing page. */
+/** Cronograma público sin cédulas para usuarios y visitantes en la landing page. */
 async function getCronogramaPublico(req, res) {
   const filtros = filtrosQuery.parse(req.query);
   const condiciones = ["t.estado = 'ACTIVO'", "s.activo = TRUE"];
@@ -249,7 +249,7 @@ async function createTurno(req, res) {
     detalle: { ...datos, montoTurno: resultado.monto, obligacionId: resultado.obligacionId }
   });
   const message = resultado.obligacionId
-    ? `Turno de agua asignado con éxito. Se generó un cobro automático de $${resultado.monto.toFixed(2)} a la cuenta del comunero.`
+    ? `Turno de agua asignado con éxito. Se generó un cobro automático de $${resultado.monto.toFixed(2)} a la cuenta del usuario.`
     : 'Turno de agua asignado correctamente.';
   return res.status(201).json({ status: 'OK', message, turnoId: resultado.turnoId, obligacionId: resultado.obligacionId });
 }

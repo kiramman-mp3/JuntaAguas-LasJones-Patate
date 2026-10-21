@@ -2,7 +2,7 @@
   <section class="fin-panel" aria-labelledby="cobro-buscar-titulo">
     <div class="fin-panel__head">
       <div>
-        <h3 class="fin-panel__title" id="cobro-buscar-titulo"><i class="ri-hand-coin-line" aria-hidden="true"></i> Cobrar a un comunero</h3>
+        <h3 class="fin-panel__title" id="cobro-buscar-titulo"><i class="ri-hand-coin-line" aria-hidden="true"></i> Cobrar a un usuario</h3>
         <p class="fin-panel__desc">Busque por apellido, nombre o cédula. Se muestran todas sus obligaciones pendientes: cuotas de agua, multas y otros rubros.</p>
       </div>
     </div>
@@ -11,18 +11,18 @@
       <i class="ri-search-line" aria-hidden="true"></i>
       <input #campoBusqueda class="input" type="search" autocomplete="off"
         placeholder="Ej.: Chicaiza o 1804567890"
-        aria-label="Buscar comunero" aria-describedby="cobro-busqueda-ayuda"
+        aria-label="Buscar usuario" aria-describedby="cobro-busqueda-ayuda"
         [ngModel]="termino()" (ngModelChange)="onBuscar($event)" />
     </div>
     <p class="field__hint" id="cobro-busqueda-ayuda" aria-live="polite">
       @if (buscando()) { Buscando… }
       @else if (errorBusqueda()) { <span class="field__error">{{ errorBusqueda() }}</span> }
-      @else if (termino().trim().length >= 2 && !resultados().length) { No hay comuneros que coincidan con «{{ termino().trim() }}». }
+      @else if (termino().trim().length >= 2 && !resultados().length) { No hay usuarios que coincidan con «{{ termino().trim() }}». }
       @else if (termino().trim().length < 2) { Escriba al menos 2 caracteres. }
     </p>
 
     @if (resultados().length) {
-      <ul class="result-list" aria-label="Comuneros encontrados">
+      <ul class="result-list" aria-label="Usuarios encontrados">
         @for (r of resultados(); track r.id) {
           <li class="result-list__item">
             <button type="button" class="result-list__btn" (click)="seleccionarComunero(r)">
@@ -47,7 +47,7 @@
           <p class="fin-panel__desc">Cédula {{ comunero()!.cedula }} · Pendiente total <strong class="money">${{ totalPendiente().toFixed(2) }}</strong></p>
         </div>
         <button type="button" class="btn btn--outline btn--sm pressable" (click)="cambiarComunero()">
-          <i class="ri-user-search-line" aria-hidden="true"></i> Cambiar comunero
+          <i class="ri-user-search-line" aria-hidden="true"></i> Cambiar usuario
         </button>
       </div>
 
@@ -66,7 +66,7 @@
         <div class="empty-state">
           <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
           <strong>Al día</strong>
-          <p>Este comunero no tiene obligaciones pendientes.</p>
+          <p>Este usuario no tiene obligaciones pendientes.</p>
         </div>
       } @else {
         <div class="fin-panel__head">
@@ -187,10 +187,10 @@
             <i class="ri-download-2-line" aria-hidden="true"></i> Descargar PDF
           </button>
           <button type="button" class="btn btn--outline btn--block pressable" (click)="comprobante.set(null)">
-            Seguir cobrando a este comunero
+            Seguir cobrando a este usuario
           </button>
           <button type="button" class="btn btn--outline btn--block pressable" (click)="cambiarComunero()">
-            Cobrar a otro comunero
+            Cobrar a otro usuario
           </button>
         </div>
       } @else {

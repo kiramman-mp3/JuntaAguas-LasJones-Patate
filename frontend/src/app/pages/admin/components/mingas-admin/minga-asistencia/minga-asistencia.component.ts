@@ -75,7 +75,7 @@ export class MingaAsistenciaComponent implements OnInit {
           this.disponible = true;
           this.asistencias = res.data || [];
         },
-        error: () => (this.error = 'No se pudieron cargar los comuneros y sus asistencias. Intente nuevamente.')
+        error: () => (this.error = 'No se pudieron cargar los usuarios y sus asistencias. Intente nuevamente.')
       });
   }
 

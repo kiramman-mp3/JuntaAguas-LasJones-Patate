@@ -75,8 +75,8 @@
             <span class="text-muted">Se emitirán</span>
             <span class="summary__total money">{{ p.generadas }} cuotas</span>
             <span>de <strong class="money">${{ p.valor.toFixed(2) }}</strong> · total <strong class="money">${{ p.total.toFixed(2) }}</strong></span>
-            @if (p.existentes) { <span class="field__hint">{{ p.existentes }} comuneros ya tienen su cuota de este mes.</span> }
-            <span class="field__hint">Reciben cuota los {{ p.comuneros }} comuneros activos con al menos un lote. Vencen el último día del mes.</span>
+            @if (p.existentes) { <span class="field__hint">{{ p.existentes }} usuarios ya tienen su cuota de este mes.</span> }
+            <span class="field__hint">Reciben cuota los {{ p.comuneros }} usuarios activos con al menos un lote. Vencen el último día del mes.</span>
           </div>
           <button type="button" class="btn btn--primary btn--lg btn--block pressable" style="margin-top: 1rem" [disabled]="emitiendo()" (click)="emitir()">
             <i class="ri-send-plane-line" aria-hidden="true"></i> {{ emitiendo() ? 'Emitiendo…' : 'Emitir ' + p.generadas + ' cuotas' }}
@@ -85,7 +85,7 @@
           <div class="empty-state">
             <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
             <strong>Mes al día</strong>
-            <p>Los {{ p.existentes }} comuneros con lote ya tienen su cuota de este mes.</p>
+            <p>Los {{ p.existentes }} usuarios con lote ya tienen su cuota de este mes.</p>
           </div>
         }
       }

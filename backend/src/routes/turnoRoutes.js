@@ -9,7 +9,7 @@ const router = express.Router();
  * /turnos:
  *   get:
  *     tags: [Turnos de Agua]
- *     summary: Turnos activos. El administrador ve todos; un comunero solo los suyos.
+ *     summary: Turnos activos. El administrador ve todos; un usuario solo los suyos.
  *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Turnos de Agua]

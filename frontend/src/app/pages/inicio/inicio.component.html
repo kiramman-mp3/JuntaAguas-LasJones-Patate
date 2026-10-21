@@ -8,7 +8,7 @@
       >
       <h1 class="hero__title">Gestión del Agua de Riego y Servicios Comunitarios</h1>
       <p class="hero__description">
-        Plataforma oficial para la administración de los comuneros, turnos de agua, convocatorias a
+        Plataforma oficial para la administración de los usuarios, turnos de agua, convocatorias a
         mingas y consulta pública de obligaciones.
       </p>
     </div>
@@ -25,7 +25,7 @@
         <div class="preview-stats">
           <div class="stat-box">
             <span class="stat-number">{{ totalComuneros || 0 }}</span>
-            <span class="stat-label">Comuneros activos</span>
+            <span class="stat-label">Usuarios activos</span>
           </div>
           <div class="stat-box">
             <span class="stat-number">3</span>
@@ -186,7 +186,7 @@
             <i class="ri-information-fill" aria-hidden="true"></i>
           </div>
           <div class="nota-texto">
-            <strong>Carta Informativa para los Comuneros:</strong>
+            <strong>Carta Informativa para los Usuarios:</strong>
             <span>Este horario indica los días y horas exactas en los que se abre el canal para cada lote. Busque su nombre en la lista y acuda con 15 minutos de anticipación a la compuerta.</span>
           </div>
         </div>
@@ -237,7 +237,7 @@
               <div class="metric-icon"><i class="ri-user-star-line" aria-hidden="true"></i></div>
               <div class="metric-content">
                 <span class="metric-val">{{ sectorCronograma.total_turnos }}</span>
-                <span class="metric-desc">Comuneros con turno</span>
+                <span class="metric-desc">Usuarios con turno</span>
               </div>
             </div>
 
@@ -259,7 +259,7 @@
           </div>
 
           <!-- BARRA DE BÚSQUEDA GRANDE Y FÁCIL PARA PERSONAS ADULTAS -->
-          <div class="search-comunero-container">
+          <div class="search-usuario-container">
             <div class="search-input-wrapper">
               <i class="ri-search-2-line search-icon" aria-hidden="true"></i>
               <input
@@ -267,7 +267,7 @@
                 class="search-input"
                 [(ngModel)]="busquedaModal"
                 placeholder="¿Busca su turno? Escriba aquí su apellido o código de lote (ej: Altamirano, Tamayo, LJB-002)..."
-                aria-label="Buscar comunero o lote en el cronograma"
+                aria-label="Buscar usuario o lote en el cronograma"
               />
               @if (busquedaModal) {
                 <button type="button" class="btn-clear-search" (click)="busquedaModal = ''" aria-label="Borrar búsqueda">
@@ -408,8 +408,8 @@
                                     {{ obtenerFranjaHoraria(t.hora_inicio).texto }}
                                   </span>
                                 </td>
-                                <td class="celda-comunero">
-                                  <strong class="comunero-nombre-tabla">{{ t.comunero_nombre }}</strong>
+                                <td class="celda-usuario">
+                                  <strong class="usuario-nombre-tabla">{{ t.comunero_nombre }}</strong>
                                 </td>
                                 <td class="celda-lote">
                                   <span class="lote-tag-tabla">{{ t.lote_codigo }}</span>
@@ -463,12 +463,12 @@
                             </div>
                           </div>
 
-                          <!-- Comunero Beneficiario en grande y con alto contraste -->
-                          <div class="comunero-destacado-box">
-                            <span class="comunero-rotulo">
-                              <i class="ri-user-star-fill" aria-hidden="true"></i> BENEFICIARIO / COMUNERO:
+                          <!-- Usuario beneficiario en grande y con alto contraste -->
+                          <div class="usuario-destacado-box">
+                            <span class="usuario-rotulo">
+                              <i class="ri-user-star-fill" aria-hidden="true"></i> USUARIO BENEFICIARIO:
                             </span>
-                            <h4 class="comunero-nombre-grande">{{ t.comunero_nombre }}</h4>
+                            <h4 class="usuario-nombre-grande">{{ t.comunero_nombre }}</h4>
                           </div>
 
                           <!-- Ficha de Datos del Terreno -->
@@ -501,7 +501,7 @@
                             }
                           </div>
 
-                          <!-- Recomendación y aviso para el comunero -->
+                          <!-- Recomendación y aviso para el usuario -->
                           <div class="turno-card-aviso">
                             <i class="ri-alarm-warning-line" aria-hidden="true"></i>
                             <span><strong>Aviso:</strong> Por favor acudir 15 minutos antes a la compuerta para recibir el agua a tiempo.</span>
@@ -528,14 +528,14 @@
             <h2 class="impresion-titulo-doc">CRONOGRAMA OFICIAL Y NÓMINA DE TURNOS DE RIEGO</h2>
             <div class="impresion-meta-grid">
               <div class="meta-item"><strong>SECTOR:</strong> {{ nombreSectorModal | uppercase }}</div>
-              <div class="meta-item"><strong>TOTAL BENEFICIARIOS:</strong> {{ sectorCronograma.total_turnos }} comuneros</div>
+              <div class="meta-item"><strong>TOTAL BENEFICIARIOS:</strong> {{ sectorCronograma.total_turnos }} usuarios</div>
               <div class="meta-item"><strong>HORAS TOTALES:</strong> {{ sectorCronograma.total_horas }}h semanales</div>
               <div class="meta-item"><strong>LOTES EN RIEGO:</strong> {{ sectorCronograma.total_lotes }} lotes</div>
             </div>
           </header>
 
           <div class="impresion-disposicion">
-            <strong>DISPOSICIÓN COMUNITARIA:</strong> Los comuneros deben presentarse con 15 minutos de anticipación en la compuerta o toma correspondiente. El agua se entrega en estricto orden de turno. Se prohíbe desviar caudales o manipular compuertas sin autorización del operador.
+            <strong>DISPOSICIÓN COMUNITARIA:</strong> Los usuarios deben presentarse con 15 minutos de anticipación en la compuerta o toma correspondiente. El agua se entrega en estricto orden de turno. Se prohíbe desviar caudales o manipular compuertas sin autorización del operador.
           </div>
 
           <div class="impresion-listado-dias">

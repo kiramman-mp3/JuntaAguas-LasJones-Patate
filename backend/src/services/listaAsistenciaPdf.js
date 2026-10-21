@@ -31,7 +31,7 @@ function escribirListaAsistencia(destino, evento, personas) {
     doc.fillColor('#0f172a').fontSize(9);
     doc.text('Nº', 45, y + 5, { width: 30 });
     doc.text('Cédula', 80, y + 5, { width: 80 });
-    doc.text('Apellidos y Nombres (Comunero)', 165, y + 5, { width: 220 });
+    doc.text('Apellidos y Nombres (Usuario)', 165, y + 5, { width: 220 });
     doc.text('Firma / Huella', 390, y + 5, { width: 150 });
     return y + 22;
   };

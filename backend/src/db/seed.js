@@ -97,7 +97,7 @@ async function insertarFilas(conexion, sql, filas, lote = 500) {
   }
 }
 
-/** Comuneros con un perfil de pago y asistencia que guía la simulación. */
+/** Usuarios con un perfil de pago y asistencia que guía la simulación. */
 function generarPersonas(azar, total) {
   const cedulas = new Set();
   const personas = [];
@@ -150,7 +150,7 @@ async function crearPersonasYCuentas(conexion, azar, { totalComuneros, password 
   const rol = Object.fromEntries(roles.map((x) => [x.codigo, x.id]));
   const hash = await hashPassword(password);
 
-  // Cuentas: la directiva (ADMIN), un comunero de demostración y una parte de los comuneros,
+  // Cuentas: la directiva (ADMIN), un usuario de demostración y una parte de los usuarios,
   // estos últimos con contraseña temporal pendiente de cambio, como al crearlas desde la interfaz.
   const conCuenta = personas.slice(0, directiva.length + 1)
     .concat(personas.slice(directiva.length + 1).filter(() => azar.probabilidad(0.25)));
@@ -318,7 +318,7 @@ async function realizarEvento(conexion, azar, eventoId, personasPorId, cuentaId)
   return multasGeneradas;
 }
 
-/** El comunero paga en una sola transacción todo lo que adeuda a la fecha, como en ventanilla. */
+/** El usuario paga en una sola transacción todo lo que adeuda a la fecha, como en ventanilla. */
 async function pagarPendientes(conexion, azar, persona, fecha, cuentaId) {
   const [pendientes] = await conexion.query(
     "SELECT id FROM obligaciones WHERE persona_id = ? AND estado = 'PENDIENTE' AND fecha_emision <= ? ORDER BY fecha_emision",
@@ -404,13 +404,13 @@ async function crearPlanAnual(conexion, anio, hoy, cuentaId) {
 }
 
 /**
- * Siembra la base completa. Exige una base migrada y sin comuneros.
+ * Siembra la base completa. Exige una base migrada y sin usuarios.
  * @param {import('mysql2/promise').Connection} conexion conexión posicionada en la base, con dateStrings para DATE
  * @param {{ hoy?: string, semilla?: number, totalComuneros?: number, meses?: number, password: string, log?: Function }} opciones
  */
 async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComuneros = 120, meses: totalMeses = 22, password, log = console.log }) {
   const [[{ total }]] = await conexion.query('SELECT COUNT(*) AS total FROM personas');
-  if (total > 0) throw new Error('La base ya tiene comuneros registrados. Use --reset para recrearla antes de sembrar.');
+  if (total > 0) throw new Error('La base ya tiene usuarios registrados. Use --reset para recrearla antes de sembrar.');
 
   const azar = crearAzar(semilla);
   const actual = { anio: Number(hoy.slice(0, 4)), mes: Number(hoy.slice(5, 7)) };
@@ -419,7 +419,7 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
 
   await conexion.beginTransaction();
   try {
-    log('[seed] Comuneros, cuentas, sectores y lotes...');
+    log('[seed] Usuarios, cuentas, sectores y lotes...');
     const { personas, admin, demo, cuentas } = await crearPersonasYCuentas(conexion, azar, { totalComuneros, password });
     const personasPorId = new Map(personas.map((p) => [p.id, p]));
     const { lotes } = await crearSectoresYLotes(conexion, azar, personas, fechaInicio);
@@ -439,7 +439,7 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
       await finanzas.registrarTarifa(conexion, { conceptoId: concepto.id, valor, vigenciaDesde: fechaIso(anioMultas, mesMultas, 1), observacion: 'Multa por inasistencia' });
     }
 
-    // Algunos comuneros dejan la Junta a mitad del período (venta del terreno, fallecimiento).
+    // Algunos usuarios dejan la Junta a mitad del período (venta del terreno, fallecimiento).
     const retiros = new Map();
     for (const p of personas.slice(3).filter(() => azar.probabilidad(0.03))) {
       retiros.set(p.id, azar.entero(Math.floor(totalMeses / 3), totalMeses - 2));

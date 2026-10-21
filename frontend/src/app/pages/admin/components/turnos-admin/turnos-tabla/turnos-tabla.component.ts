@@ -10,7 +10,7 @@ import { Turno } from '../turno.model';
       <table class="table-custom table-custom--stack">
         <thead>
           <tr>
-            <th>Comunero</th>
+            <th>Usuario</th>
             <th>Lote</th>
             <th>Sector</th>
             <th>Día</th>
@@ -22,7 +22,7 @@ import { Turno } from '../turno.model';
         <tbody>
           @for (t of turnos(); track t.id) {
             <tr>
-              <td data-label="Comunero"><strong>{{ t.usuario }}</strong></td>
+              <td data-label="Usuario"><strong>{{ t.usuario }}</strong></td>
               <td data-label="Lote"><span class="pill pill--primary">{{ t.lote }}</span></td>
               <td data-label="Sector">{{ t.sector }}</td>
               <td data-label="Día">{{ t.dia }}</td>

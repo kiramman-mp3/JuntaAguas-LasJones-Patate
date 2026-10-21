@@ -110,7 +110,7 @@ export class HistorialPagosComponent {
     if (pago.estado === 'ANULADO' || this.procesandoId()) return;
     const motivo = await this.dialog.solicitar({
       titulo: `Anular ${numeroRecibo(pago.id)}`,
-      mensaje: `El pago de ${pago.comunero_nombre} por $${Number(pago.valor_total).toFixed(2)} quedará anulado y sus obligaciones volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
+      mensaje: `El pago de ${pago.comunero_nombre} por $${Number(pago.valor_total).toFixed(2)} quedará anulado y las obligaciones del usuario volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
       placeholder: 'Motivo de la anulación',
       textoConfirmar: 'Anular pago',
       tipo: 'DANGER'

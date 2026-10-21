@@ -64,7 +64,7 @@ async function listarObligaciones(conexion, { personaId, estado, anio, mes }) {
   return filas;
 }
 
-/** Obligaciones de un comunero por cédula: solo cuotas de agua o todo lo demás (multas y otros). */
+/** Obligaciones de un usuario por cédula: solo cuotas de agua o todo lo demás (multas y otros). */
 async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes, mensualidades }) {
   const [personas] = await conexion.query('SELECT id FROM personas WHERE cedula = ?', [cedula]);
   if (!personas.length) throw notFound('No existe una persona registrada con esa cédula.');

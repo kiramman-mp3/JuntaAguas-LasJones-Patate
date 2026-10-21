@@ -16,7 +16,7 @@ export const DIAS_SEMANA: DiaSemana[] = [
   { valor: 7, label: 'Domingo', corto: 'Dom' }
 ];
 
-/** Turno de riego listo para mostrarse (nombres de comunero, lote, sector y día resueltos). */
+/** Turno de riego listo para mostrarse (nombres de usuario, lote, sector y día resueltos). */
 export interface Turno {
   id: number;
   persona_id: number;

@@ -31,7 +31,7 @@
         <span class="stat-tile__icon stat-tile__icon--danger" aria-hidden="true"><i class="ri-error-warning-line"></i></span>
         <span class="stat-tile__label">Pendiente por cobrar</span>
         <span class="stat-tile__value">${{ r.finanzas.carteraPendiente | number: '1.2-2' }}</span>
-        <span class="stat-tile__hint">${{ r.finanzas.carteraVencida | number: '1.2-2' }} vencido · {{ r.finanzas.comunerosEnMora }} en mora</span>
+        <span class="stat-tile__hint">${{ r.finanzas.carteraVencida | number: '1.2-2' }} vencido · {{ r.finanzas.comunerosEnMora }} usuarios en mora</span>
       </div>
       <div class="stat-tile">
         <span class="stat-tile__icon stat-tile__icon--warning" aria-hidden="true"><i class="ri-shopping-bag-line"></i></span>
@@ -53,7 +53,7 @@
     <div class="quick-grid">
       <a class="quick-tile" routerLink="/admin/cobros/cobrar">
         <span class="quick-tile__icon" aria-hidden="true"><i class="ri-hand-coin-line"></i></span>
-        <span class="quick-tile__text"><strong>Registrar cobro</strong><span>Cobro en caja a un comunero</span></span>
+        <span class="quick-tile__text"><strong>Registrar cobro</strong><span>Cobro en caja a un usuario</span></span>
         <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
       </a>
       <a class="quick-tile quick-tile--warning" routerLink="/admin/cobros/egresos" [queryParams]="{ nuevo: 'egreso' }">

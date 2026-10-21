@@ -373,7 +373,7 @@ frontend/src/
     ├── _ui.scss           # Primitivas de shared/ui: encabezado, navegación por secciones, estados vacíos
     ├── _admin.scss        # Barras de filtros, superficies, tablas apilables, formularios del panel
     ├── _eventos.scss      # Tarjetas de asambleas y mingas, documentos firmados, pase de lista
-    ├── _turnos.scss       # Calendario semanal y selector de comuneros
+    ├── _turnos.scss       # Calendario semanal y selector de usuarios
     └── _finanzas.scss     # Módulo financiero
 ```
 

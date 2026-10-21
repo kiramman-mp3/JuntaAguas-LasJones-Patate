@@ -81,7 +81,7 @@ export class ComprobantePdfService {
 
     doc.setFontSize(9);
     const filas: [string, string][] = [
-      ['Comunero:', c.comuneroNombre],
+      ['Usuario:', c.comuneroNombre],
       ['Cédula:', c.comuneroCedula],
       ['Fecha / hora:', c.fechaHora],
       ['Forma de pago:', c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'EFECTIVO')]

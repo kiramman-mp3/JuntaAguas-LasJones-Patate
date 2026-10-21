@@ -54,7 +54,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
     this.errorCarga.set(false);
-    // El servidor devuelve el padrón completo con el estado ya guardado de cada comunero.
+    // El servidor devuelve el padrón completo con el estado ya guardado de cada usuario.
     this.asambleas.padron(this.asamblea().id).subscribe({
       next: (padron) => {
         this.personas.set(padron);
@@ -88,7 +88,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'Justificación requerida',
-        mensaje: `Hay ${sinMotivo} comunero(s) marcados como justificados sin motivo escrito. Ingrese el justificativo antes de guardar.`
+        mensaje: `Hay ${sinMotivo} usuario(s) marcados como justificados sin motivo escrito. Ingrese el justificativo antes de guardar.`
       });
       return;
     }

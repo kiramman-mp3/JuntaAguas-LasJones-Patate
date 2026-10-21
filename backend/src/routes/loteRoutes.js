@@ -30,7 +30,7 @@ router.post('/sectores', ...soloAdmin, loteController.createSector);
  * /lotes:
  *   get:
  *     tags: [Lotes y Sectores]
- *     summary: Listar lotes. El administrador ve todos; un comunero solo los suyos.
+ *     summary: Listar lotes. El administrador ve todos; un usuario solo los suyos.
  *     description: Con page devuelve una página (limit, máximo 100) y el total en pagination; sin page, la lista completa.
  *     security: [{ bearerAuth: [] }]
  *     parameters:

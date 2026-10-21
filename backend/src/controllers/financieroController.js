@@ -41,7 +41,7 @@ async function createTarifa(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Tarifa registrada correctamente.', tarifaId });
 }
 
-/** Cuentas por cobrar. Un comunero solo recibe las suyas. */
+/** Cuentas por cobrar. Un usuario solo recibe las suyas. */
 async function getObligaciones(req, res) {
   const filtros = obligacionesQuery.parse(req.query);
   const personaId = personaPermitida(req.user, filtros.persona_id);
@@ -86,7 +86,7 @@ async function registrarPago(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Pago registrado exitosamente.', ...resultado });
 }
 
-/** Pagos registrados. Un comunero solo recibe los suyos. */
+/** Pagos registrados. Un usuario solo recibe los suyos. */
 async function getPagos(req, res) {
   const filtros = pagosQuery.parse(req.query);
   const personaId = personaPermitida(req.user, filtros.persona_id);
@@ -150,10 +150,10 @@ const porCedula = (mensualidades) => async (req, res) => {
   return res.json({ status: 'OK', data: await consultas.obligacionesPorCedula(db, { ...filtros, mensualidades }) });
 };
 
-/** Multas y otros cobros (todo lo que no es cuota mensual de agua) de un comunero. */
+/** Multas y otros cobros (todo lo que no es cuota mensual de agua) de un usuario. */
 const getObligacionesMultas = porCedula(false);
 
-/** Cuotas mensuales de agua de un comunero. */
+/** Cuotas mensuales de agua de un usuario. */
 const getObligacionesMensualidad = porCedula(true);
 
 /** Emitir (o simular) las cuotas mensuales de agua de un período. */

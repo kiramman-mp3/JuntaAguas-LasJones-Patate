@@ -5,7 +5,7 @@ const swaggerDefinition = {
   info: {
     title: 'API REST — Sistema Integrado de Gestión Junta La Jones (Patate)',
     version: '1.0.0',
-    description: 'Documentación oficial e interactiva de las APIs REST para la administración de comuneros, lotes georreferenciados, turnos de agua, asistencias a asambleas/mingas, recaudación financiera y auditoría.',
+    description: 'Documentación oficial e interactiva de las APIs REST para la administración de usuarios, lotes georreferenciados, turnos de agua, asistencias a asambleas/mingas, recaudación financiera y auditoría.',
     contact: {
       name: 'Junta de Agua y Riego La Jones',
       url: 'https://github.com/kiramman-mp3/JuntaAguas-LasJones-Patate'
@@ -78,7 +78,7 @@ const swaggerDefinition = {
   },
   tags: [
     { name: 'Autenticación', description: 'Endpoints para inicio de sesión y gestión de credenciales' },
-    { name: 'Comuneros (Personas)', description: 'Gestión de comuneros y consulta pública de deudas por cédula' },
+    { name: 'Usuarios (Personas)', description: 'Gestión de usuarios y consulta pública de deudas por cédula' },
     { name: 'Lotes y Sectores', description: 'Terrenos georreferenciados y titularidad' },
     { name: 'Turnos de Agua', description: 'Horarios de distribución de agua de riego' },
     { name: 'Eventos y Asistencias', description: 'Asambleas, Mingas y generación automática de multas' },

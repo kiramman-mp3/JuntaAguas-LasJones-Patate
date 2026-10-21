@@ -20,7 +20,7 @@
       <div class="search-field toolbar__grow">
         <i class="ri-search-line" aria-hidden="true"></i>
         <input class="input input--sm" type="search" [ngModel]="filtro()" (ngModelChange)="filtro.set($event)"
-          placeholder="Nombre, cédula o sector…" aria-label="Filtrar comuneros" />
+          placeholder="Nombre, cédula o sector…" aria-label="Filtrar usuarios" />
       </div>
       <select class="input input--sm toolbar__select" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event)" aria-label="Filtrar por estado">
         <option value="TODOS">Todos los estados</option>
@@ -48,7 +48,7 @@
         <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
       </app-empty-state>
     } @else if (filtradas().length === 0) {
-      <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda o el estado elegido." />
+      <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún usuario coincide con la búsqueda o el estado elegido." />
     } @else {
       <ul class="roster">
         @for (p of filtradas(); track p.persona_id; let i = $index) {

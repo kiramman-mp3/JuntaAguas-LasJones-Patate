@@ -64,7 +64,7 @@ export class TurnoAsignarComponent implements OnInit {
         this.buscando.set(false);
         this.comuneros.set(res?.data ?? []);
         this.totalComuneros.set(res?.pagination?.total ?? res?.data?.length ?? 0);
-        if (!res) this.notify.error('No se pudo buscar comuneros. Revise su conexión.');
+        if (!res) this.notify.error('No se pudo buscar usuarios. Revise su conexión.');
       });
     this.busqueda$.next('');
   }
@@ -88,7 +88,7 @@ export class TurnoAsignarComponent implements OnInit {
       },
       error: () => {
         this.cargandoLotes.set(false);
-        this.notify.error('No se pudieron cargar los lotes del comunero.');
+        this.notify.error('No se pudieron cargar los lotes del usuario.');
       }
     });
   }
@@ -99,7 +99,7 @@ export class TurnoAsignarComponent implements OnInit {
 
   guardar(): void {
     const t = this.turno;
-    if (!t.persona_id) return this.notify.warning('Debe seleccionar un comunero.');
+    if (!t.persona_id) return this.notify.warning('Debe seleccionar un usuario.');
     if (!t.lote_id) return this.notify.warning('Debe seleccionar un lote para asignar el turno.');
     if (!t.hora_inicio || !t.hora_fin) return this.notify.warning('Debe definir la hora de inicio y fin.');
     if (t.hora_inicio >= t.hora_fin) return this.notify.warning('La hora de fin debe ser posterior a la de inicio.');

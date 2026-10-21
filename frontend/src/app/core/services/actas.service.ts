@@ -321,7 +321,7 @@ export class ActasService {
         { text: `Patate, ${fechaTexto}`, style: 'docDate' },
         { text: '\n' },
         {
-          text: `Se convoca con carácter de OBLIGATORIO a todos los usuarios y comuneros pertenecientes a la Junta de Riego La Jones - Patate a participar en el siguiente evento programado:\n\n`,
+          text: `Se convoca con carácter de OBLIGATORIO a todos los usuarios pertenecientes a la Junta de Riego La Jones - Patate a participar en el siguiente evento programado:\n\n`,
           style: 'paragraph'
         },
         {

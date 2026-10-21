@@ -59,8 +59,8 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | :--- | :--- | :--- | :--- |
 | `GET` | `/lotes/sectores` | Público / Autenticado | Catálogo de sectores de riego en Patate. |
 | `POST` | `/lotes/sectores` | ADMIN | Crear nuevo sector. |
-| `GET` | `/lotes` | Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios (`?sector_id=...&busqueda=...`). Con `?page=1&limit=25` (máximo 100) devuelve una página y el total en `pagination`; sin `page`, la lista completa. Un comunero solo recibe sus lotes. |
-| `POST` | `/lotes` | ADMIN / SECRETARIO | Crear terreno y asociarlo a un comunero (`persona_lotes`). |
+| `GET` | `/lotes` | Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios (`?sector_id=...&busqueda=...`). Con `?page=1&limit=25` (máximo 100) devuelve una página y el total en `pagination`; sin `page`, la lista completa. Un usuario solo recibe sus lotes. |
+| `POST` | `/lotes` | ADMIN / SECRETARIO | Crear terreno y asociarlo a un usuario (`persona_lotes`). |
 | `POST` | `/lotes/:loteId/vincular-persona` | ADMIN / SECRETARIO | Vincular coppropietario o representante a un lote existente. |
 
 ---
@@ -88,7 +88,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `POST` | `/eventos/:id/finalizar` | ADMIN / SECRETARIO | **Generación Automática de Multas:** Cierra el evento y crea obligaciones de multa para todas las personas ausentes. |
 | `POST` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Subir documento firmado del evento o de un punto del acta (`multipart/form-data`). |
 | `GET` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Listar metadatos de documentos firmados del evento (sin contenido binario). |
-| `GET` | `/eventos/:id/pdf-asistencia` | ADMIN / SECRETARIO | Descargar hoja de asistencia en PDF con padrón de comuneros para firmas físicas. |
+| `GET` | `/eventos/:id/pdf-asistencia` | ADMIN / SECRETARIO | Descargar hoja de asistencia en PDF con padrón de usuarios para firmas físicas. |
 
 ---
 

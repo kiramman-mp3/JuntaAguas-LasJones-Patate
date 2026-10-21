@@ -50,7 +50,7 @@ async function registrarTarifa(conexion, { conceptoId, valor, vigenciaDesde, vig
 }
 
 /**
- * Genera la cuota mensual de agua para cada comunero activo con al menos un lote activo.
+ * Genera la cuota mensual de agua para cada usuario activo con al menos un lote activo.
  * Es idempotente: las cuotas ya emitidas del período se respetan (clave única persona/concepto/año/mes).
  */
 async function generarFacturacionMensual(conexion, { anio, mes, simular = false }) {
@@ -118,7 +118,7 @@ async function resumenFacturacionAnual(conexion, anio) {
 }
 
 /**
- * Registra el pago completo de una o varias obligaciones pendientes del mismo comunero.
+ * Registra el pago completo de una o varias obligaciones pendientes del mismo usuario.
  * @returns {{ pagoId: number, valorTotal: number }}
  */
 async function registrarPago(conexion, { personaId, obligacionesIds, metodo = 'TRANSFERENCIA', referencia = null, observacion = null, cuentaId, fechaPago = null }) {
@@ -131,7 +131,7 @@ async function registrarPago(conexion, { personaId, obligacionesIds, metodo = 'T
 
   for (const ob of obligaciones) {
     if (Number(ob.persona_id) !== Number(personaId)) {
-      throw badRequest(`La obligación #${ob.id} no pertenece al comunero seleccionado.`);
+      throw badRequest(`La obligación #${ob.id} no pertenece al usuario seleccionado.`);
     }
     if (ob.estado !== 'PENDIENTE') {
       throw conflict(`La obligación #${ob.id} ya se encuentra ${ob.estado} y no se puede cobrar.`);
@@ -176,7 +176,7 @@ async function anularPago(conexion, { pagoId, motivo, cuentaId }) {
 /** Crea una obligación manual (cuota extraordinaria, reposición, etc.). */
 async function crearObligacionManual(conexion, datos) {
   const [personas] = await conexion.query("SELECT id FROM personas WHERE id = ? AND estado = 'ACTIVO'", [datos.persona_id]);
-  if (!personas.length) throw notFound('El comunero no existe o está inactivo.');
+  if (!personas.length) throw notFound('El usuario no existe o está inactivo.');
   const [conceptos] = await conexion.query('SELECT id FROM conceptos_cobro WHERE id = ? AND activo = TRUE', [datos.concepto_id]);
   if (!conceptos.length) throw notFound('Concepto de cobro no encontrado.');
   try {
@@ -188,7 +188,7 @@ async function crearObligacionManual(conexion, datos) {
     );
     return r.insertId;
   } catch (error) {
-    if (error.code === 'ER_DUP_ENTRY') throw conflict('El comunero ya tiene una obligación de ese concepto para el mismo período.');
+    if (error.code === 'ER_DUP_ENTRY') throw conflict('El usuario ya tiene una obligación de ese concepto para el mismo período.');
     throw error;
   }
 }

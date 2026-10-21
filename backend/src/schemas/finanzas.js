@@ -16,7 +16,7 @@ const obligacionesQuery = z.object({
 });
 
 const porCedulaQuery = z.object({
-  cedula: z.string({ error: 'Debe enviar la cédula del comunero.' }).trim().regex(/^\d{10}$/, 'La cédula debe tener 10 dígitos.'),
+  cedula: z.string({ error: 'Debe enviar la cédula del usuario.' }).trim().regex(/^\d{10}$/, 'La cédula debe tener 10 dígitos.'),
   estado: z.enum(ESTADOS_OBLIGACION).optional(),
   anio: anio.optional(),
   mes: mes.optional()
