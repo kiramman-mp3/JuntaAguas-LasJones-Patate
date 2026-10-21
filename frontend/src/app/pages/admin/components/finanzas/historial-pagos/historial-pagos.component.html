@@ -65,7 +65,7 @@
               <td class="money"><strong>{{ numeroRecibo(p.id) }}</strong></td>
               <td>{{ p.fecha_pago | fechaLocal:'conHora' }}</td>
               <td>
-                {{ p.comunero_nombre }}<br />
+                {{ p.usuario_nombre }}<br />
                 <span class="fin-table__muted">{{ p.cedula }} · {{ p.obligaciones_pagadas }} {{ p.obligaciones_pagadas === 1 ? 'obligación' : 'obligaciones' }}</span>
               </td>
               <td>

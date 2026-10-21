@@ -53,7 +53,7 @@ async function listarObligaciones(conexion, { personaId, estado, anio, mes }) {
   if (mes) { condiciones.push('o.periodo_mes = ?'); params.push(mes); }
   const [filas] = await conexion.query(
     `SELECT o.*, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula
      FROM obligaciones o
      JOIN personas p ON p.id = o.persona_id
      JOIN conceptos_cobro c ON c.id = o.concepto_id
@@ -76,7 +76,7 @@ async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes, mens
   if (mes) { condiciones.push('o.periodo_mes = ?'); params.push(mes); }
   const [filas] = await conexion.query(
     `SELECT o.*, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula
      FROM obligaciones o
      JOIN personas p ON p.id = o.persona_id
      JOIN conceptos_cobro c ON c.id = o.concepto_id
@@ -103,7 +103,7 @@ async function listarPagos(conexion, { personaId, estado, desde, hasta }) {
   if (estado) { condiciones.push('p.estado = ?'); params.push(estado); }
   filtroFechaPago('p.fecha_pago', { desde, hasta }, condiciones, params);
   const [filas] = await conexion.query(
-    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS comunero_nombre, per.cedula,
+    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula,
             CONCAT(reg.nombres, ' ', reg.apellidos) AS registrado_por_usuario,
             (SELECT COUNT(*) FROM pago_detalles pd WHERE pd.pago_id = p.id) AS obligaciones_pagadas
      FROM pagos p
@@ -120,7 +120,7 @@ async function listarPagos(conexion, { personaId, estado, desde, hasta }) {
 /** Pago con sus líneas (para reimprimir el comprobante). Devuelve null si no existe. */
 async function detallePago(conexion, id) {
   const [filas] = await conexion.query(
-    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS comunero_nombre, per.cedula
+    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula
      FROM pagos p JOIN personas per ON per.id = p.persona_id WHERE p.id = ?`,
     [id]
   );
@@ -182,7 +182,7 @@ async function balance(conexion, { desde, hasta }) {
   const [[cartera]] = await conexion.query(
     `SELECT COALESCE(SUM(valor), 0) AS totalPendientes,
             COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < ? THEN valor END), 0) AS totalVencido,
-            COUNT(DISTINCT persona_id) AS comunerosConDeuda
+            COUNT(DISTINCT persona_id) AS usuariosConDeuda
      FROM obligaciones WHERE estado = 'PENDIENTE'`,
     [hoy()]
   );
@@ -208,7 +208,7 @@ async function balance(conexion, { desde, hasta }) {
       totalEgresos: Number(totalEgresos),
       totalPendientes: Number(cartera.totalPendientes),
       totalVencido: Number(cartera.totalVencido),
-      comunerosConDeuda: Number(cartera.comunerosConDeuda),
+      usuariosConDeuda: Number(cartera.usuariosConDeuda),
       balanceAlDia: restarMontos(totalIngresos, totalEgresos),
       desde: desde ?? null,
       hasta: hasta ?? null,

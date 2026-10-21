@@ -8,7 +8,7 @@ import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 import { ApiResponse, EventoItem, SectorItem } from '../../core/models/api-payloads';
 
 interface StatsPublicos {
-  totalComuneros: number;
+  totalUsuarios: number;
   totalLotes: number;
   totalSectores: number;
 }
@@ -24,7 +24,7 @@ export class InicioComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  totalComuneros = 0;
+  totalUsuarios = 0;
   proximosEventos: EventoItem[] = [];
   sectores: SectorItem[] = [];
 
@@ -41,7 +41,7 @@ export class InicioComponent implements OnInit {
     this.http.get<ApiResponse<StatsPublicos>>(`${environment.apiUrl}/personas/stats`).subscribe({
       next: (res) => {
         if (res?.data) {
-          this.totalComuneros = res.data.totalComuneros;
+          this.totalUsuarios = res.data.totalUsuarios;
           this.cdr.detectChanges();
         }
       },
@@ -124,7 +124,7 @@ export class InicioComponent implements OnInit {
       .map((d: any) => {
         const turnosFiltrados = (d.turnos || []).filter((t: any) => {
           if (!query) return true;
-          const nombre = (t.comunero_nombre || '').toLowerCase();
+          const nombre = (t.usuario_nombre || '').toLowerCase();
           const lote = (t.lote_codigo || '').toLowerCase();
           return nombre.includes(query) || lote.includes(query);
         });

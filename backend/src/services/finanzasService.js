@@ -70,7 +70,7 @@ async function generarFacturacionMensual(conexion, { anio, mes, simular = false 
   );
   const nuevos = candidatos.filter((c) => !Number(c.ya_emitida));
   const resultado = {
-    anio, mes, valor: Number(tarifa.valor), comuneros: candidatos.length,
+    anio, mes, valor: Number(tarifa.valor), usuarios: candidatos.length,
     generadas: nuevos.length, existentes: candidatos.length - nuevos.length,
     total: redondear(nuevos.length * Number(tarifa.valor))
   };

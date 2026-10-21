@@ -5,7 +5,7 @@ import { Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap,
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { ComprobantePdfService, Comprobante } from '../../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
-import { ComuneroBusqueda, MESES, MetodoPagoNuevo, ObligacionItem, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
+import { UsuarioBusqueda, MESES, MetodoPagoNuevo, ObligacionItem, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
 import { formatearFecha } from '../../../../../core/utils/fechas';
 import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
@@ -37,7 +37,7 @@ const SIN_MES = 'sin-mes';
 const redondear = (n: number) => Math.round(n * 100) / 100;
 
 /**
- * Cobro en caja: buscar al comunero en el servidor, elegir sus obligaciones pendientes
+ * Cobro en caja: buscar al usuario en el servidor, elegir sus obligaciones pendientes
  * (cuotas de agua, multas u otros rubros), registrar el pago y entregar el comprobante.
  */
 @Component({
@@ -59,11 +59,11 @@ export class CobroCajaComponent {
   private busqueda$ = new Subject<string>();
 
   readonly termino = signal('');
-  readonly resultados = signal<ComuneroBusqueda[]>([]);
+  readonly resultados = signal<UsuarioBusqueda[]>([]);
   readonly buscando = signal(false);
   readonly errorBusqueda = signal('');
 
-  readonly comunero = signal<ComuneroBusqueda | null>(null);
+  readonly usuario = signal<UsuarioBusqueda | null>(null);
   readonly obligaciones = signal<ObligacionItem[]>([]);
   readonly cargandoObligaciones = signal(false);
   readonly errorObligaciones = signal('');
@@ -154,7 +154,7 @@ export class CobroCajaComponent {
           return of(null);
         }
         this.buscando.set(true);
-        return this.finanzas.buscarComuneros(texto).pipe(catchError(() => {
+        return this.finanzas.buscarUsuarios(texto).pipe(catchError(() => {
           this.errorBusqueda.set('No se pudo buscar. Revise su conexión e intente de nuevo.');
           return of(null);
         }));
@@ -173,8 +173,8 @@ export class CobroCajaComponent {
     this.busqueda$.next(texto.trim());
   }
 
-  seleccionarComunero(c: ComuneroBusqueda): void {
-    this.comunero.set(c);
+  seleccionarUsuario(c: UsuarioBusqueda): void {
+    this.usuario.set(c);
     this.resultados.set([]);
     this.termino.set('');
     this.comprobante.set(null);
@@ -182,8 +182,8 @@ export class CobroCajaComponent {
     this.cargarObligaciones();
   }
 
-  cambiarComunero(): void {
-    this.comunero.set(null);
+  cambiarUsuario(): void {
+    this.usuario.set(null);
     this.obligaciones.set([]);
     this.seleccion.set(new Set());
     this.plegados.set(new Set());
@@ -193,7 +193,7 @@ export class CobroCajaComponent {
   }
 
   cargarObligaciones(): void {
-    const c = this.comunero();
+    const c = this.usuario();
     if (!c) return;
     this.cargandoObligaciones.set(true);
     this.errorObligaciones.set('');
@@ -257,7 +257,7 @@ export class CobroCajaComponent {
   }
 
   cobrar(): void {
-    const c = this.comunero();
+    const c = this.usuario();
     if (!c || this.bloqueo() || this.procesando()) return;
     const lineas = this.seleccionadas().map((o) => ({
       concepto: o.concepto_nombre || 'Obligación',
@@ -282,8 +282,8 @@ export class CobroCajaComponent {
         this.comprobante.set({
           numero: numeroRecibo(res.pagoId),
           fechaHora: formatearFecha(new Date(), 'conHora'),
-          comuneroNombre: `${c.nombres} ${c.apellidos}`.trim(),
-          comuneroCedula: c.cedula,
+          usuarioNombre: `${c.nombres} ${c.apellidos}`.trim(),
+          usuarioCedula: c.cedula,
           lineas,
           total: res.valorTotal ?? total,
           metodo,

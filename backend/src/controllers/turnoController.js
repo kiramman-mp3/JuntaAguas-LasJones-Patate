@@ -56,7 +56,7 @@ async function getTurnos(req, res) {
   const [filas] = await db.query(
     `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
             t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula,
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
             l.codigo AS lote_codigo, l.superficie_m2,
             s.id AS sector_id, s.nombre AS sector_nombre
      FROM turnos_riego t
@@ -88,7 +88,7 @@ async function getCronogramaPorSectores(req, res) {
   const [filas] = await db.query(
     `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
             t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula,
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
             l.codigo AS lote_codigo, l.superficie_m2,
             s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
             TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
@@ -132,7 +132,7 @@ async function getCronogramaPorSectores(req, res) {
       diaObj.turnos.push({
         id: fila.id,
         persona_id: fila.persona_id,
-        comunero_nombre: fila.comunero_nombre,
+        usuario_nombre: fila.usuario_nombre,
         cedula: fila.cedula,
         lote_id: fila.lote_id,
         lote_codigo: fila.lote_codigo,
@@ -176,7 +176,7 @@ async function getCronogramaPublico(req, res) {
 
   const [filas] = await db.query(
     `SELECT t.id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre,
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre,
             l.codigo AS lote_codigo,
             s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
             TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
@@ -217,7 +217,7 @@ async function getCronogramaPublico(req, res) {
     if (diaObj) {
       diaObj.turnos.push({
         id: fila.id,
-        comunero_nombre: fila.comunero_nombre,
+        usuario_nombre: fila.usuario_nombre,
         lote_codigo: fila.lote_codigo,
         tipo: fila.tipo,
         hora_inicio: String(fila.hora_inicio).substring(0, 5),

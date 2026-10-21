@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  BalanceRespuesta, ComuneroBusqueda, ConceptoCobro, Egreso, HistorialAnual, NuevaTarifa, NuevoEgreso, NuevoPago,
+  BalanceRespuesta, UsuarioBusqueda, ConceptoCobro, Egreso, HistorialAnual, NuevaTarifa, NuevoEgreso, NuevoPago,
   ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoFacturacion, ResumenFacturacion, Tarifa
 } from '../models/finanzas';
 
@@ -22,9 +22,9 @@ export class FinanzasService {
   private http = inject(HttpClient);
   private url = `${environment.apiUrl}/financiero`;
 
-  /** Búsqueda de comuneros en el servidor (como máximo `limite` resultados). */
-  buscarComuneros(termino: string, limite = 8): Observable<Respuesta<ComuneroBusqueda[]>> {
-    return this.http.get<Respuesta<ComuneroBusqueda[]>>(`${environment.apiUrl}/personas`, {
+  /** Búsqueda de usuarios en el servidor (como máximo `limite` resultados). */
+  buscarUsuarios(termino: string, limite = 8): Observable<Respuesta<UsuarioBusqueda[]>> {
+    return this.http.get<Respuesta<UsuarioBusqueda[]>>(`${environment.apiUrl}/personas`, {
       params: parametros({ busqueda: termino.trim(), page: 1, limit: limite })
     });
   }

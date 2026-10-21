@@ -104,7 +104,7 @@ export class MingasAdminComponent implements OnInit {
   }
 
   porcentaje(m: Minga) {
-    return m.totalComuneros ? Math.round((m.asistentes / m.totalComuneros) * 100) : 0;
+    return m.totalUsuarios ? Math.round((m.asistentes / m.totalUsuarios) * 100) : 0;
   }
 
   cargar() {
@@ -128,7 +128,7 @@ export class MingasAdminComponent implements OnInit {
               ...m,
               fecha: String(m.fecha || '').split('T')[0],
               asistentes: Number(m.asistentes) || 0,
-              totalComuneros: Number(m.totalComuneros) || 0,
+              totalUsuarios: Number(m.totalUsuarios) || 0,
               valor_multa: Number(m.valor_multa) || 0,
               genera_multa_ausencia: Boolean(m.genera_multa_ausencia)
             }));

@@ -24,7 +24,7 @@
         </div>
         <div class="preview-stats">
           <div class="stat-box">
-            <span class="stat-number">{{ totalComuneros || 0 }}</span>
+            <span class="stat-number">{{ totalUsuarios || 0 }}</span>
             <span class="stat-label">Usuarios activos</span>
           </div>
           <div class="stat-box">
@@ -142,7 +142,7 @@
   </div>
 </section>
 
-<!-- MODAL CRONOGRAMA DE AGUA POR SECTOR (DISEÑADO PARA ADULTOS MAYORES Y COMUNEROS DE PATATE) -->
+<!-- MODAL CRONOGRAMA DE AGUA POR SECTOR (DISEÑADO PARA ADULTOS MAYORES Y USUARIOS DE PATATE) -->
 @if (modalCronogramaAbierto) {
   <div
     class="modal-backdrop cronograma-backdrop"
@@ -385,7 +385,7 @@
                               <th style="width: 22%;">HORARIO (24h y 12h)</th>
                               <th style="width: 14%; text-align: center;">DURACIÓN</th>
                               <th style="width: 12%; text-align: center;">JORNADA</th>
-                              <th style="width: 33%;">COMUNERO / BENEFICIARIO</th>
+                              <th style="width: 33%;">USUARIO / BENEFICIARIO</th>
                               <th style="width: 7%; text-align: center;">LOTE</th>
                               <th style="width: 7%; text-align: center;">TIPO</th>
                             </tr>
@@ -409,7 +409,7 @@
                                   </span>
                                 </td>
                                 <td class="celda-usuario">
-                                  <strong class="usuario-nombre-tabla">{{ t.comunero_nombre }}</strong>
+                                  <strong class="usuario-nombre-tabla">{{ t.usuario_nombre }}</strong>
                                 </td>
                                 <td class="celda-lote">
                                   <span class="lote-tag-tabla">{{ t.lote_codigo }}</span>
@@ -468,7 +468,7 @@
                             <span class="usuario-rotulo">
                               <i class="ri-user-star-fill" aria-hidden="true"></i> USUARIO BENEFICIARIO:
                             </span>
-                            <h4 class="usuario-nombre-grande">{{ t.comunero_nombre }}</h4>
+                            <h4 class="usuario-nombre-grande">{{ t.usuario_nombre }}</h4>
                           </div>
 
                           <!-- Ficha de Datos del Terreno -->
@@ -554,7 +554,7 @@
                         <th style="width: 17%; text-align: center;">HORARIO</th>
                         <th style="width: 13%; text-align: center;">DURACIÓN</th>
                         <th style="width: 12%; text-align: center;">JORNADA</th>
-                        <th style="width: 35%;">COMUNERO / BENEFICIARIO</th>
+                        <th style="width: 35%;">USUARIO / BENEFICIARIO</th>
                         <th style="width: 9%; text-align: center;">LOTE</th>
                         <th style="width: 9%; text-align: center;">TIPO</th>
                       </tr>
@@ -566,7 +566,7 @@
                           <td style="text-align: center; font-weight: bold;">{{ t.hora_inicio }} – {{ t.hora_fin }}</td>
                           <td style="text-align: center;">{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</td>
                           <td style="text-align: center;">{{ obtenerFranjaHoraria(t.hora_inicio).texto }}</td>
-                          <td style="font-weight: bold; text-transform: uppercase;">{{ t.comunero_nombre }}</td>
+                          <td style="font-weight: bold; text-transform: uppercase;">{{ t.usuario_nombre }}</td>
                           <td style="text-align: center; font-weight: bold;">{{ t.lote_codigo }}</td>
                           <td style="text-align: center; font-size: 8pt;">{{ t.tipo === 'ADICIONAL' ? 'Adicional' : 'Ordinario' }}</td>
                         </tr>

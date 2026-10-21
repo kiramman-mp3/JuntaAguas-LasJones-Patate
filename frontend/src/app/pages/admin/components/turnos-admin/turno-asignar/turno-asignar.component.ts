@@ -10,7 +10,7 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA } from '../turno.model';
 
 /**
- * Asignación de un turno de riego: se busca el comunero en el servidor (máximo 20 resultados),
+ * Asignación de un turno de riego: se busca el usuario en el servidor (máximo 20 resultados),
  * se elige uno de sus lotes y el horario semanal. Un turno adicional genera un cobro.
  */
 @Component({
@@ -28,9 +28,9 @@ export class TurnoAsignarComponent implements OnInit {
   readonly asignado = output<void>();
 
   readonly dias = DIAS_SEMANA;
-  readonly comuneros = signal<any[]>([]);
-  /** Total de comuneros activos que coinciden con la búsqueda (el servidor devuelve como máximo 20). */
-  readonly totalComuneros = signal(0);
+  readonly usuarios = signal<any[]>([]);
+  /** Total de usuarios activos que coinciden con la búsqueda (el servidor devuelve como máximo 20). */
+  readonly totalUsuarios = signal(0);
   readonly buscando = signal(false);
   readonly lotes = signal<any[]>([]);
   readonly cargandoLotes = signal(false);
@@ -62,8 +62,8 @@ export class TurnoAsignarComponent implements OnInit {
       )
       .subscribe((res) => {
         this.buscando.set(false);
-        this.comuneros.set(res?.data ?? []);
-        this.totalComuneros.set(res?.pagination?.total ?? res?.data?.length ?? 0);
+        this.usuarios.set(res?.data ?? []);
+        this.totalUsuarios.set(res?.pagination?.total ?? res?.data?.length ?? 0);
         if (!res) this.notify.error('No se pudo buscar usuarios. Revise su conexión.');
       });
     this.busqueda$.next('');

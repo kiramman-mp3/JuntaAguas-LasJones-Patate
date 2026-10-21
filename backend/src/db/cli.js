@@ -38,7 +38,7 @@ async function sembrarBase(flags) {
     await migrate(conexion);
     const { sembrar } = require('./seed');
     const r = await sembrar(conexion, { password });
-    console.log(`[seed] ${r.comuneros} usuarios (${r.retirados} retirados), ${r.cuentas} cuentas, ${r.lotes} lotes, ${r.turnos} turnos.`);
+    console.log(`[seed] ${r.usuarios} usuarios (${r.retirados} retirados), ${r.cuentas} cuentas, ${r.lotes} lotes, ${r.turnos} turnos.`);
     console.log(`[seed] ${r.facturas} cuotas de agua, ${r.eventosRealizados} eventos realizados, ${r.multas} multas, ${r.pagos} pagos (${r.anulaciones} anulados).`);
     console.log(`[seed] ${r.egresos} egresos, ${r.bienes} bienes de inventario, ${r.actividades} actividades del plan anual.`);
     console.log('[seed] Credenciales (todas las cuentas sembradas usan la misma contraseña):');

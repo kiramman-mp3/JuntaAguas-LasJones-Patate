@@ -15,10 +15,10 @@
           <span class="picker__count" aria-live="polite">
             @if (buscando()) {
               Buscando…
-            } @else if (comuneros().length < totalComuneros()) {
-              {{ comuneros().length }} de {{ totalComuneros() }}
+            } @else if (usuarios().length < totalUsuarios()) {
+              {{ usuarios().length }} de {{ totalUsuarios() }}
             } @else {
-              {{ totalComuneros() }} disponibles
+              {{ totalUsuarios() }} disponibles
             }
           </span>
         </div>
@@ -27,7 +27,7 @@
           <input type="search" class="input" placeholder="Nombre o cédula…" [(ngModel)]="busqueda" (ngModelChange)="buscar($event)" aria-label="Buscar usuario" />
         </div>
         <div class="picker__list" role="listbox" aria-label="Usuarios" [class.is-refreshing]="buscando()">
-          @for (u of comuneros(); track u.id) {
+          @for (u of usuarios(); track u.id) {
             <button type="button" role="option" class="picker__option" [class.is-selected]="turno.persona_id === u.id"
               [attr.aria-selected]="turno.persona_id === u.id" (click)="seleccionar(u)">
               <span class="avatar" aria-hidden="true">{{ (u.nombres || '').charAt(0) }}{{ (u.apellidos || '').charAt(0) }}</span>

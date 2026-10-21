@@ -9,7 +9,7 @@ import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { AsistenciaMinga, EstadoAsistenciaMinga, Minga } from '../minga.model';
 
-/** Registro de asistencia de una minga. Los comuneros sin marcar quedan pendientes. */
+/** Registro de asistencia de una minga. Los usuarios sin marcar quedan pendientes. */
 @Component({
   selector: 'app-minga-asistencia',
   standalone: true,

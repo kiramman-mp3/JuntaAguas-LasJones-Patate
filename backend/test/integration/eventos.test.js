@@ -9,7 +9,7 @@ const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, crearPersona, auth } = require('../helpers/fixtures');
 
 let admin;
-const comuneros = [];
+const usuarios = [];
 
 function enDias(dias) {
   const d = new Date(`${hoy()}T12:00:00Z`);
@@ -26,7 +26,7 @@ async function eventoPasado({ tipo = 'ASAMBLEA', fecha = '2026-01-10', estado = 
   return r.insertId;
 }
 
-/** Marca a todos los comuneros del padrón; el primero queda AUSENTE. */
+/** Marca a todos los usuarios del padrón; el primero queda AUSENTE. */
 async function tomarAsistencia(eventoId, { ruta = 'eventos' } = {}) {
   const padron = await request(app).get(`/api/${ruta}/${eventoId}/asistencias`).set(auth(admin));
   const asistencias = padron.body.data.map((p, i) => ({ persona_id: p.persona_id, estado: i === 0 ? 'AUSENTE' : 'PRESENTE' }));
@@ -38,7 +38,7 @@ const finalizar = (eventoId, ruta = 'eventos') => request(app).post(`/api/${ruta
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  for (let i = 0; i < 3; i++) comuneros.push(await crearPersona({ nombres: `Comunero ${i}` }));
+  for (let i = 0; i < 3; i++) usuarios.push(await crearPersona({ nombres: `Usuario ${i}` }));
   // La multa de asamblea se configura como tarifa; la de minga se deja sin configurar a propósito.
   await db.query(
     `INSERT INTO tarifas (concepto_id, valor, vigencia_desde) SELECT id, 12.50, '2020-01-01' FROM conceptos_cobro WHERE codigo = 'MULTA_ASAMBLEA'`
@@ -114,7 +114,7 @@ test('finalizar exige asistencia completa, estado anunciado y fecha alcanzada', 
   const incompleta = await eventoPasado();
   const res = await finalizar(incompleta);
   assert.equal(res.status, 409);
-  assert.equal(res.body.resumen.pendientes, comuneros.length + 1);
+  assert.equal(res.body.resumen.pendientes, usuarios.length + 1);
 
   assert.equal((await finalizar(await eventoPasado({ estado: 'BORRADOR' }))).status, 409);
   assert.equal((await finalizar(await eventoPasado({ estado: 'CANCELADO' }))).status, 409);
@@ -151,7 +151,7 @@ test('las justificaciones requieren motivo y no generan multa', async () => {
 
 test('rechaza personas repetidas o ajenas al padrón', async () => {
   const id = await eventoPasado();
-  const p = comuneros[0].personaId;
+  const p = usuarios[0].personaId;
   const repetida = await request(app).post(`/api/eventos/${id}/asistencias`).set(auth(admin))
     .send({ asistencias: [{ persona_id: p, estado: 'PRESENTE' }, { persona_id: p, estado: 'AUSENTE' }] });
   assert.equal(repetida.status, 400);
@@ -207,8 +207,8 @@ test('el listado calcula asistentes y multas por evento', async () => {
   assert.equal(res.status, 200);
   assert.ok(res.body.data.length >= 2);
   for (const e of res.body.data) {
-    assert.equal(e.asistentes, comuneros.length);
-    assert.equal(e.totalComuneros, comuneros.length + 1);
+    assert.equal(e.asistentes, usuarios.length);
+    assert.equal(e.totalUsuarios, usuarios.length + 1);
     assert.equal(e.multas_generadas, 1);
   }
 });

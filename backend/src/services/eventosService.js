@@ -196,7 +196,7 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
   if (desde) { filtros.push('e.fecha >= ?'); params.push(desde); }
   if (hasta) { filtros.push('e.fecha <= ?'); params.push(hasta); }
 
-  const [[{ totalComuneros }]] = await conexion.query("SELECT COUNT(*) AS totalComuneros FROM personas WHERE estado = 'ACTIVO'");
+  const [[{ totalUsuarios }]] = await conexion.query("SELECT COUNT(*) AS totalUsuarios FROM personas WHERE estado = 'ACTIVO'");
   const [filas] = await conexion.query(
     `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
             e.requiere_asistencia, e.genera_multa_ausencia, e.valor_multa, e.created_by_cuenta_id, e.created_at,
@@ -222,7 +222,7 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
     asistentes: Number(e.asistentes),
     registrados: Number(e.registrados),
     multas_generadas: Number(e.multas_generadas),
-    totalComuneros: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalComuneros
+    totalUsuarios: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalUsuarios
   }));
   return data;
 }

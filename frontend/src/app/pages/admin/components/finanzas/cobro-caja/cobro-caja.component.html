@@ -1,4 +1,4 @@
-@if (!comunero()) {
+@if (!usuario()) {
   <section class="fin-panel" aria-labelledby="cobro-buscar-titulo">
     <div class="fin-panel__head">
       <div>
@@ -25,7 +25,7 @@
       <ul class="result-list" aria-label="Usuarios encontrados">
         @for (r of resultados(); track r.id) {
           <li class="result-list__item">
-            <button type="button" class="result-list__btn" (click)="seleccionarComunero(r)">
+            <button type="button" class="result-list__btn" (click)="seleccionarUsuario(r)">
               <span>
                 <strong>{{ r.apellidos }} {{ r.nombres }}</strong>
                 @if (r.estado === 'INACTIVO') { <span class="badge badge--warning">Inactivo</span> }
@@ -43,10 +43,10 @@
     <section class="fin-panel" aria-labelledby="cobro-obligaciones-titulo">
       <div class="fin-panel__head">
         <div>
-          <h3 class="fin-panel__title" id="cobro-obligaciones-titulo">{{ comunero()!.apellidos }} {{ comunero()!.nombres }}</h3>
-          <p class="fin-panel__desc">Cédula {{ comunero()!.cedula }} · Pendiente total <strong class="money">${{ totalPendiente().toFixed(2) }}</strong></p>
+          <h3 class="fin-panel__title" id="cobro-obligaciones-titulo">{{ usuario()!.apellidos }} {{ usuario()!.nombres }}</h3>
+          <p class="fin-panel__desc">Cédula {{ usuario()!.cedula }} · Pendiente total <strong class="money">${{ totalPendiente().toFixed(2) }}</strong></p>
         </div>
-        <button type="button" class="btn btn--outline btn--sm pressable" (click)="cambiarComunero()">
+        <button type="button" class="btn btn--outline btn--sm pressable" (click)="cambiarUsuario()">
           <i class="ri-user-search-line" aria-hidden="true"></i> Cambiar usuario
         </button>
       </div>
@@ -189,7 +189,7 @@
           <button type="button" class="btn btn--outline btn--block pressable" (click)="comprobante.set(null)">
             Seguir cobrando a este usuario
           </button>
-          <button type="button" class="btn btn--outline btn--block pressable" (click)="cambiarComunero()">
+          <button type="button" class="btn btn--outline btn--block pressable" (click)="cambiarUsuario()">
             Cobrar a otro usuario
           </button>
         </div>

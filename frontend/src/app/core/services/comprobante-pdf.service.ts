@@ -10,11 +10,11 @@ export interface ComprobanteLinea {
 export interface Comprobante {
   numero: string;
   fechaHora: string;
-  comuneroNombre: string;
-  comuneroCedula: string;
+  usuarioNombre: string;
+  usuarioCedula: string;
   lineas: ComprobanteLinea[];
   total: number;
-  /** Solo en pagos en efectivo: lo que entregó el comunero. */
+  /** Solo en pagos en efectivo: lo que entregó el usuario. */
   valorRecibido?: number;
   metodo?: string;
   referencia?: string | null;
@@ -81,8 +81,8 @@ export class ComprobantePdfService {
 
     doc.setFontSize(9);
     const filas: [string, string][] = [
-      ['Usuario:', c.comuneroNombre],
-      ['Cédula:', c.comuneroCedula],
+      ['Usuario:', c.usuarioNombre],
+      ['Cédula:', c.usuarioCedula],
       ['Fecha / hora:', c.fechaHora],
       ['Forma de pago:', c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'EFECTIVO')]
     ];

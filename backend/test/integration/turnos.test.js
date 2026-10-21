@@ -8,22 +8,22 @@ const db = require('../../src/config/db');
 const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, auth, crearSector, crearLote, conceptoId } = require('../helpers/fixtures');
 
-let admin, comunero, vecino, lote, loteVecino;
+let admin, usuario, vecino, lote, loteVecino;
 
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario();
+  usuario = await crearUsuario();
   vecino = await crearUsuario();
   const sector = await crearSector('La Jones Alta');
-  lote = await crearLote({ sectorId: sector, personaId: comunero.personaId, codigo: 'LJA-101' });
+  lote = await crearLote({ sectorId: sector, personaId: usuario.personaId, codigo: 'LJA-101' });
   loteVecino = await crearLote({ sectorId: sector, personaId: vecino.personaId, codigo: 'LJA-102' });
 });
 after(closeDatabase);
 
 const crear = (body) => request(app).post('/api/turnos').set(auth(admin)).send(body);
 const editar = (id, body) => request(app).put(`/api/turnos/${id}`).set(auth(admin)).send(body);
-const base = () => ({ persona_id: comunero.personaId, lote_id: lote, dia_semana: 2 });
+const base = () => ({ persona_id: usuario.personaId, lote_id: lote, dia_semana: 2 });
 
 test('las horas sin cero inicial se comparan como horas, no como texto', async () => {
   // Como texto, '9:00' > '10:00'; antes este turno válido se rechazaba.
@@ -40,7 +40,7 @@ test('las horas sin cero inicial se comparan como horas, no como texto', async (
   assert.equal((await crear({ ...base(), dia_semana: 8, hora_inicio: '06:00', hora_fin: '07:00' })).status, 400);
 });
 
-test('el lote debe pertenecer al comunero', async () => {
+test('el lote debe pertenecer al usuario', async () => {
   const r = await crear({ ...base(), lote_id: loteVecino, hora_inicio: '06:00', hora_fin: '07:00' });
   assert.equal(r.status, 400);
   assert.match(r.body.message, /LJA-102/);
@@ -107,7 +107,7 @@ test('el cronograma de agua devuelve los turnos agrupados por sectores y días',
   }
 });
 
-test('el cronograma público no expone cédulas de los comuneros', async () => {
+test('el cronograma público no expone cédulas de los usuarios', async () => {
   const res = await request(app).get('/api/turnos/cronograma-publico');
   assert.equal(res.status, 200);
   assert.equal(res.body.status, 'OK');

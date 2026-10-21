@@ -48,7 +48,7 @@ export class PadronUsuariosComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      if (this.nuevo() === 'usuario' || this.nuevo() === 'comunero') {
+      if (this.nuevo() === 'usuario') {
         untracked(() => this.formulario.set({ usuario: null }));
       }
     });

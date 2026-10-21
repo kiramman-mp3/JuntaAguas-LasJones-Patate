@@ -131,13 +131,13 @@ function generarPersonas(azar, total) {
   return personas;
 }
 
-async function crearPersonasYCuentas(conexion, azar, { totalComuneros, password }) {
+async function crearPersonasYCuentas(conexion, azar, { totalUsuarios, password }) {
   // La directiva va primero: sus cuentas son las administradoras.
   const directiva = [
     { cargo: 'Presidente', nombres: 'Carlos Eduardo', apellidos: 'Moreta Salazar' },
     { cargo: 'Tesorera', nombres: 'María Rosa', apellidos: 'Quispe Toapanta' }
   ];
-  const personas = generarPersonas(azar, directiva.length + totalComuneros);
+  const personas = generarPersonas(azar, directiva.length + totalUsuarios);
   directiva.forEach((d, i) => Object.assign(personas[i], { nombres: d.nombres, apellidos: d.apellidos, perfil: 'PUNTUAL', cargo: d.cargo }));
 
   const [r] = await conexion.query(
@@ -406,9 +406,9 @@ async function crearPlanAnual(conexion, anio, hoy, cuentaId) {
 /**
  * Siembra la base completa. Exige una base migrada y sin usuarios.
  * @param {import('mysql2/promise').Connection} conexion conexión posicionada en la base, con dateStrings para DATE
- * @param {{ hoy?: string, semilla?: number, totalComuneros?: number, meses?: number, password: string, log?: Function }} opciones
+ * @param {{ hoy?: string, semilla?: number, totalUsuarios?: number, meses?: number, password: string, log?: Function }} opciones
  */
-async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComuneros = 120, meses: totalMeses = 22, password, log = console.log }) {
+async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsuarios = 120, meses: totalMeses = 22, password, log = console.log }) {
   const [[{ total }]] = await conexion.query('SELECT COUNT(*) AS total FROM personas');
   if (total > 0) throw new Error('La base ya tiene usuarios registrados. Use --reset para recrearla antes de sembrar.');
 
@@ -420,7 +420,7 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
   await conexion.beginTransaction();
   try {
     log('[seed] Usuarios, cuentas, sectores y lotes...');
-    const { personas, admin, demo, cuentas } = await crearPersonasYCuentas(conexion, azar, { totalComuneros, password });
+    const { personas, admin, demo, cuentas } = await crearPersonasYCuentas(conexion, azar, { totalUsuarios, password });
     const personasPorId = new Map(personas.map((p) => [p.id, p]));
     const { lotes } = await crearSectoresYLotes(conexion, azar, personas, fechaInicio);
     const turnos = await crearTurnos(conexion, lotes, fechaInicio);
@@ -498,7 +498,7 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
 
     await conexion.commit();
     return {
-      ...resumen, comuneros: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades,
+      ...resumen, usuarios: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades,
       anulaciones: recientes.length, retirados: retiros.size,
       admin: { cedula: admin.cedula, nombre: `${admin.nombres} ${admin.apellidos}` },
       demo: { cedula: demo.cedula, nombre: `${demo.nombres} ${demo.apellidos}` }

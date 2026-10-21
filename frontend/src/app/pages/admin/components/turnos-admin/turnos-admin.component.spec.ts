@@ -8,7 +8,7 @@ import { TurnosAdminComponent } from './turnos-admin.component';
 import { TurnoAsignarComponent } from './turno-asignar/turno-asignar.component';
 
 const turnosApi = [
-  { id: 1, persona_id: 7, lote_id: 3, dia_semana: 1, hora_inicio: '08:00:00', hora_fin: '10:00:00', tipo: 'REGULAR', comunero_nombre: 'Ana Pérez', lote_codigo: 'LJA-001', sector_nombre: 'La Merced' },
+  { id: 1, persona_id: 7, lote_id: 3, dia_semana: 1, hora_inicio: '08:00:00', hora_fin: '10:00:00', tipo: 'REGULAR', usuario_nombre: 'Ana Pérez', lote_codigo: 'LJA-001', sector_nombre: 'La Merced' },
   { id: 2, persona_id: 8, lote_id: 4, dia_semana: 3, hora_inicio: '14:00:00', hora_fin: '16:00:00', tipo: 'ADICIONAL', nombres: 'Luis', apellidos: 'Mora', lote_codigo: 'LJA-002', sector_nombre: 'Centro' }
 ];
 
@@ -97,7 +97,7 @@ describe('Turnos de agua', () => {
     expect(component.turnosDeLaPagina()).toHaveLength(25);
   });
 
-  it('al seleccionar un comunero propone su primer lote y valida el horario', () => {
+  it('al seleccionar un usuario propone su primer lote y valida el horario', () => {
     const component = TestBed.createComponent(TurnoAsignarComponent).componentInstance;
     component.seleccionar({ id: 7, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' } as any);
     expect(admin.getLotes).toHaveBeenCalledWith(undefined, undefined, 7);

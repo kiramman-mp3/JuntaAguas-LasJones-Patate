@@ -10,7 +10,7 @@ export interface Minga {
   genera_multa_ausencia: boolean;
   valor_multa: number;
   asistentes: number;
-  totalComuneros: number;
+  totalUsuarios: number;
   lista_asistencia_firmada_url?: string;
 }
 

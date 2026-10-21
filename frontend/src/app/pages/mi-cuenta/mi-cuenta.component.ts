@@ -138,8 +138,8 @@ export class MiCuentaComponent implements OnInit {
           const comprobante = {
             numero: numeroRecibo(p.id),
             fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
-            comuneroNombre: p.comunero_nombre,
-            comuneroCedula: p.cedula,
+            usuarioNombre: p.usuario_nombre,
+            usuarioCedula: p.cedula,
             lineas: (p.detalles || []).map((d) => ({
               concepto: d.concepto_nombre,
               periodo: etiquetaPeriodo(d.periodo_anio, d.periodo_mes),

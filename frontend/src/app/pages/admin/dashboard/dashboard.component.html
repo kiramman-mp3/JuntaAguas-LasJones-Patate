@@ -31,7 +31,7 @@
         <span class="stat-tile__icon stat-tile__icon--danger" aria-hidden="true"><i class="ri-error-warning-line"></i></span>
         <span class="stat-tile__label">Pendiente por cobrar</span>
         <span class="stat-tile__value">${{ r.finanzas.carteraPendiente | number: '1.2-2' }}</span>
-        <span class="stat-tile__hint">${{ r.finanzas.carteraVencida | number: '1.2-2' }} vencido · {{ r.finanzas.comunerosEnMora }} usuarios en mora</span>
+        <span class="stat-tile__hint">${{ r.finanzas.carteraVencida | number: '1.2-2' }} vencido · {{ r.finanzas.usuariosEnMora }} usuarios en mora</span>
       </div>
       <div class="stat-tile">
         <span class="stat-tile__icon stat-tile__icon--warning" aria-hidden="true"><i class="ri-shopping-bag-line"></i></span>
@@ -79,7 +79,7 @@
       <section class="surface surface--padded" aria-labelledby="operativo-titulo">
         <h3 id="operativo-titulo" class="section-head__title">Resumen operativo</h3>
         <dl class="metric-list">
-          <div><dt>Usuarios activos</dt><dd>{{ r.comunidad.comunerosActivos }}</dd></div>
+          <div><dt>Usuarios activos</dt><dd>{{ r.comunidad.usuariosActivos }}</dd></div>
           <div><dt>Lotes en {{ r.comunidad.sectores }} sectores</dt><dd>{{ r.comunidad.lotes }}</dd></div>
           <div><dt>Turnos de riego activos</dt><dd>{{ r.comunidad.turnosActivos }}</dd></div>
           <div><dt>Asambleas y mingas del año</dt><dd>{{ r.comunidad.eventosAnio }}</dd></div>

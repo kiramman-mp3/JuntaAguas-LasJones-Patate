@@ -38,8 +38,6 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
   rutaGestionUsuarios('usuarios'),
-  // Mantiene accesibles los enlaces guardados con la ruta anterior.
-  rutaGestionUsuarios('comuneros'),
   {
     path: 'asistencias',
     loadComponent: () => import('./components/asistencias-admin/asistencias-admin.component').then(m => m.AsistenciasAdminComponent),

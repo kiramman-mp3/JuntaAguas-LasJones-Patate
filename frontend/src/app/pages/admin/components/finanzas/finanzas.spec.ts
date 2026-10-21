@@ -16,7 +16,7 @@ import { FinanzasComponent } from './finanzas.component';
 import { GRUPOS_FINANZAS, grupoDeSeccion } from './grupos-finanzas';
 
 const balance = {
-  totalIngresos: 100, totalEgresos: 40, totalPendientes: 30, totalVencido: 10, comunerosConDeuda: 3,
+  totalIngresos: 100, totalEgresos: 40, totalPendientes: 30, totalVencido: 10, usuariosConDeuda: 3,
   balanceAlDia: 60, desde: null, hasta: null, fechaReporte: ''
 };
 
@@ -40,17 +40,17 @@ function configurar(api: Partial<Record<keyof FinanzasService, unknown>>, dialog
 }
 
 describe('Cobro en caja', () => {
-  const comunero = { id: 7, cedula: '1804567890', nombres: 'Rosa', apellidos: 'Caiza', estado: 'ACTIVO' as const };
+  const usuario = { id: 7, cedula: '1804567890', nombres: 'Rosa', apellidos: 'Caiza', estado: 'ACTIVO' as const };
 
   function crear(registrarPago = vi.fn(() => of({ status: 'OK' as const, message: '', pagoId: 15, valorTotal: 8.5 }))) {
     configurar({
-      buscarComuneros: () => of({ status: 'OK', data: [comunero] }),
+      buscarUsuarios: () => of({ status: 'OK', data: [usuario] }),
       getObligaciones: () => of({ status: 'OK', data: [obligacion(1, 'AGUA_MENSUAL', 3.5), obligacion(2, 'MULTA_MINGA', 5, null)] }),
       registrarPago
     });
     const fixture = TestBed.createComponent(CobroCajaComponent);
     const c = fixture.componentInstance;
-    c.seleccionarComunero(comunero);
+    c.seleccionarUsuario(usuario);
     return { c, registrarPago };
   }
 
@@ -97,7 +97,7 @@ describe('Cobro en caja', () => {
       ] })
     });
     const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
-    c.seleccionarComunero(comunero);
+    c.seleccionarUsuario(usuario);
 
     const arbol = c.arbol();
     expect(arbol.map((a) => [a.etiqueta, a.total])).toEqual([['2025', 3], ['2026', 17], ['Sin período', 2]]);
@@ -109,7 +109,7 @@ describe('Cobro en caja', () => {
   it('marca o desmarca un mes o un año completo y refleja la selección parcial', () => {
     configurar({ getObligaciones: () => of({ status: 'OK', data: [obligacion(1, 'AGUA_MENSUAL', 3.5, 1), obligacion(2, 'MULTA_MINGA', 5, 2)] }) });
     const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
-    c.seleccionarComunero(comunero);
+    c.seleccionarUsuario(usuario);
     const [anio] = c.arbol();
     const [enero, febrero] = anio.meses;
 
@@ -138,7 +138,7 @@ describe('Cobro en caja', () => {
 });
 
 describe('Facturación mensual', () => {
-  const previa: ResultadoFacturacion = { anio: 2026, mes: 3, valor: 3.5, comuneros: 110, generadas: 108, existentes: 2, total: 378 };
+  const previa: ResultadoFacturacion = { anio: 2026, mes: 3, valor: 3.5, usuarios: 110, generadas: 108, existentes: 2, total: 378 };
 
   it('calcula la vista previa al elegir un mes y solo emite tras confirmar', async () => {
     const facturarMes = vi.fn((_a: number, _m: number, simular: boolean) => of({ status: 'OK' as const, message: 'ok', data: simular ? previa : { ...previa } }));
@@ -240,8 +240,8 @@ describe('Historial financiero', () => {
 
   it('al abrir un mes consulta sus movimientos una sola vez, con el rango del mes', () => {
     const getPagos = vi.fn(() => of({ status: 'OK' as const, data: [
-      { id: 3, fecha_pago: '2026-02-10T15:00:00.000Z', valor_total: 30, estado: 'VIGENTE', comunero_nombre: 'Rosa Caiza', observacion: null },
-      { id: 4, fecha_pago: '2026-02-11T15:00:00.000Z', valor_total: 8, estado: 'ANULADO', comunero_nombre: 'Luis Toapanta', observacion: null }
+      { id: 3, fecha_pago: '2026-02-10T15:00:00.000Z', valor_total: 30, estado: 'VIGENTE', usuario_nombre: 'Rosa Caiza', observacion: null },
+      { id: 4, fecha_pago: '2026-02-11T15:00:00.000Z', valor_total: 8, estado: 'ANULADO', usuario_nombre: 'Luis Toapanta', observacion: null }
     ] }));
     const getEgresos = vi.fn(() => of({ status: 'OK' as const, data: [] }));
     configurar({ getHistorialAnual: () => of({ status: 'OK', data: historial }), getPagos, getEgresos });

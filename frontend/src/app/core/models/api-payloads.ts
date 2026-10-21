@@ -63,7 +63,7 @@ export interface TurnoItem {
   vigencia_hasta?: string;
   estado: 'ACTIVO' | 'INACTIVO';
   observacion?: string;
-  comunero_nombre?: string;
+  usuario_nombre?: string;
   cedula?: string;
   lote_codigo?: string;
   sector_nombre?: string;
@@ -83,7 +83,7 @@ export interface EventoItem {
   genera_multa_ausencia: boolean;
   valor_multa?: number;
   asistentes?: number;
-  totalComuneros?: number;
+  totalUsuarios?: number;
   creado_por_usuario?: string;
 }
 
@@ -102,7 +102,7 @@ export interface ObligacionItem {
   observacion?: string;
   concepto_codigo?: string;
   concepto_nombre?: string;
-  comunero_nombre?: string;
+  usuario_nombre?: string;
   cedula?: string;
 }
 
@@ -110,7 +110,7 @@ export interface ObligacionItem {
 export interface DashboardResumen {
   fecha: string;
   comunidad: {
-    comunerosActivos: number;
+    usuariosActivos: number;
     lotes: number;
     sectores: number;
     turnosActivos: number;
@@ -125,7 +125,7 @@ export interface DashboardResumen {
     saldoCaja: number;
     carteraPendiente: number;
     carteraVencida: number;
-    comunerosEnMora: number;
+    usuariosEnMora: number;
   };
   cobranza: { emitido: number; cobrado: number; porcentaje: number | null };
   asistencia: {

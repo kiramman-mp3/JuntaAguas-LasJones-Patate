@@ -78,7 +78,7 @@ export class AsambleasService {
       genera_multa_ausencia: e.genera_multa_ausencia !== false && e.genera_multa_ausencia !== 0,
       valor_multa: Number(e.valor_multa) || 0,
       asistentes: Number(e.asistentes) || 0,
-      totalComuneros: Number(e.totalComuneros) || 0,
+      totalUsuarios: Number(e.totalUsuarios) || 0,
       convocatoria_firmada_url: e.convocatoria_firmada_url || undefined,
       convocatoria_firmada_nombre: e.convocatoria_firmada_nombre || undefined,
       acta_firmada_url: e.acta_firmada_url || undefined,
