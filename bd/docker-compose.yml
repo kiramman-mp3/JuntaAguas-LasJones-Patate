@@ -9,7 +9,7 @@ services:
       MYSQL_USER: junta_user
       MYSQL_PASSWORD: junta_password
     ports:
-      - "3306:3306"
+      - "3310:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
