@@ -32,7 +32,7 @@ export class AdminComponent {
 
   readonly menu: ItemMenu[] = [
     { ruta: '/admin/dashboard', etiqueta: 'Dashboard', corta: 'Inicio', icono: 'ri-dashboard-line' },
-    { ruta: '/admin/comuneros', etiqueta: 'Comuneros y lotes', corta: 'Comuneros', icono: 'ri-team-line' },
+    { ruta: '/admin/usuarios', etiqueta: 'Gestión de Usuarios', corta: 'Usuarios', icono: 'ri-team-line' },
     { ruta: '/admin/asistencias', etiqueta: 'Asistencias', corta: 'Eventos', icono: 'ri-calendar-check-line' },
     { ruta: '/admin/turnos', etiqueta: 'Turnos de agua', corta: 'Turnos', icono: 'ri-drop-line' }
   ];

@@ -5,7 +5,7 @@
 
 ## 1. 📌 Introducción y Servidor Base
 
-La API REST del sistema está construida en **Node.js con Express** sobre una base de datos relacional **MySQL**. Proporciona endpoints para la gestión de comuneros, lotes georreferenciados, turnos de agua, asistencias a asambleas/mingas con multas automáticas, recaudación financiera y auditoría.
+La API REST del sistema está construida en **Node.js con Express** sobre una base de datos relacional **MySQL**. Proporciona endpoints para la gestión de usuarios registrados como personas, lotes georreferenciados, turnos de agua, asistencias a asambleas/mingas con multas automáticas, recaudación financiera y auditoría.
 
 - **URL Base de la API:** `http://localhost:3000/api`
 - **Documentación Interactiva Swagger UI:** [`http://localhost:3000/api-docs`](http://localhost:3000/api-docs) (o `http://localhost:3000/api/docs`)
@@ -24,7 +24,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 - **Roles del Sistema:**
   - `ADMIN`: Acceso total a todos los módulos y auditoría.
   - `TESORERO`: Acceso a la recaudación de pagos, egresos, tarifas y reporte de balance al día.
-  - `SECRETARIO`: Acceso a la gestión de comuneros, lotes, turnos, asambleas y control de asistencias.
+  - `SECRETARIO`: Acceso a la gestión de usuarios, lotes, turnos, asambleas y control de asistencias.
   - `USUARIO`: Acceso a la consulta pública y su portal personal.
 
 ---
@@ -41,14 +41,14 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ---
 
-### 3.2. 👤 Comuneros / Personas (`/api/personas`)
+### 3.2. 👤 Usuarios administrados (personas, `/api/personas`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/personas/consulta/:cedula` | **PÚBLICO** | **Endpoint de la Consulta Web:** Busca comunero por cédula y devuelve su lote, sector y todas las obligaciones pendientes y pagadas. |
-| `GET` | `/personas` | Autenticado | Listado y búsqueda administrativa de comuneros con paginación (`?busqueda=...&estado=...`). |
-| `GET` | `/personas/:id` | Autenticado | Detalle completo de un comunero, incluyendo sus lotes vinculados, turnos y deudas. |
-| `POST` | `/personas` | ADMIN / SECRETARIO | Registro de nuevo comunero con opción de creación de cuenta de acceso. |
+| `GET` | `/personas/consulta/:cedula` | **PÚBLICO** | **Endpoint de la Consulta Web:** Busca una persona por cédula y devuelve su lote, sector y todas las obligaciones pendientes y pagadas. |
+| `GET` | `/personas` | Autenticado | Listado y búsqueda administrativa de usuarios con paginación (`?busqueda=...&estado=...`). |
+| `GET` | `/personas/:id` | Autenticado | Detalle completo de una persona, incluyendo sus lotes vinculados, turnos y deudas. |
+| `POST` | `/personas` | ADMIN / SECRETARIO | Registro de un usuario con opción de creación de cuenta de acceso. |
 | `PUT` | `/personas/:id` | ADMIN / SECRETARIO | Actualización de datos personales. |
 
 ---

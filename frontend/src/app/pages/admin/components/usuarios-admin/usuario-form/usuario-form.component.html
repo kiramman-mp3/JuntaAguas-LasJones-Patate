@@ -1,6 +1,6 @@
 @if (!ocultarFormulario) {
   <app-modal
-    [titulo]="modoEdicion ? 'Editar comunero' : 'Registrar comunero'"
+    [titulo]="modoEdicion ? 'Editar usuario' : 'Registrar usuario'"
     [subtitulo]="modoEdicion ? form.apellidos + ' ' + form.nombres + ' · C.I. ' + form.cedula : 'Datos personales y acceso al sistema.'"
     [icono]="modoEdicion ? 'ri-user-settings-line' : 'ri-user-add-line'"
     tamano="md"
@@ -59,13 +59,13 @@
           @if (!modoEdicion) {
             <label class="switch-row">
               <input type="checkbox" name="crearCuenta" [(ngModel)]="form.crearCuenta" />
-              <span>Generar cuenta de acceso para este comunero</span>
+              <span>Generar cuenta de acceso para este usuario</span>
             </label>
             @if (form.crearCuenta) {
               <div class="form-group">
                 <label for="com-rol">Rol</label>
                 <select id="com-rol" class="input" name="rol" [(ngModel)]="form.rol">
-                  <option value="USUARIO">Comunero (consulta su propia información)</option>
+                  <option value="USUARIO">Usuario (consulta su propia información)</option>
                   <option value="ADMIN">Administrador (directiva, acceso total)</option>
                 </select>
               </div>
@@ -73,7 +73,7 @@
             }
           } @else if (cuenta) {
             <p class="text-muted small">
-              {{ cuenta.rol === 'ADMIN' ? 'Administrador' : 'Comunero' }} · cuenta {{ cuenta.estado | lowercase }}.
+              {{ cuenta.rol === 'ADMIN' ? 'Administrador' : 'Usuario' }} · cuenta {{ cuenta.estado | lowercase }}.
               Si olvidó su contraseña, genere una temporal: deberá cambiarla al ingresar.
             </p>
             <div>
@@ -82,10 +82,10 @@
               </button>
             </div>
           } @else {
-            <p class="text-muted small">Este comunero aún no tiene cuenta.</p>
+            <p class="text-muted small">Este usuario aún no tiene cuenta.</p>
             <div class="inline-field">
               <select class="input input--sm" name="rolCuenta" [(ngModel)]="form.rol" aria-label="Rol de la cuenta">
-                <option value="USUARIO">Comunero</option>
+                <option value="USUARIO">Usuario</option>
                 <option value="ADMIN">Administrador</option>
               </select>
               <button type="button" class="btn btn--outline btn--sm" (click)="crearCuenta()" [disabled]="gestionandoCuenta()">

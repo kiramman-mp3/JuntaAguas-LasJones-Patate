@@ -1,7 +1,30 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { grupoDeSeccion } from './components/finanzas/grupos-finanzas';
 
 const cargarFinanzas = () => import('./components/finanzas/finanzas.component').then(m => m.FinanzasComponent);
+const cargarGestionUsuarios = () => import('./components/usuarios-admin/usuarios-admin.component').then(m => m.UsuariosAdminComponent);
+
+const seccionesGestionUsuarios: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'padron' },
+  {
+    path: 'padron',
+    title: 'Padrón de usuarios · Junta La Jones',
+    loadComponent: () => import('./components/usuarios-admin/padron/padron-usuarios.component').then(m => m.PadronUsuariosComponent)
+  },
+  {
+    path: 'lotes',
+    title: 'Catastro de lotes · Junta La Jones',
+    loadComponent: () => import('./components/usuarios-admin/catastro/catastro-lotes.component').then(m => m.CatastroLotesComponent)
+  },
+  { path: '**', redirectTo: 'padron' }
+];
+
+const rutaGestionUsuarios = (path: string): Route => ({
+  path,
+  title: 'Gestión de Usuarios · Junta La Jones',
+  loadComponent: cargarGestionUsuarios,
+  children: seccionesGestionUsuarios
+});
 
 /**
  * Secciones del panel administrativo. Los parámetros de ruta y de consulta llegan
@@ -14,24 +37,9 @@ export const ADMIN_ROUTES: Routes = [
     title: 'Dashboard · Junta La Jones',
     loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
-  {
-    path: 'comuneros',
-    loadComponent: () => import('./components/comuneros-admin/comuneros-admin.component').then(m => m.ComunerosAdminComponent),
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'padron' },
-      {
-        path: 'padron',
-        title: 'Padrón de comuneros · Junta La Jones',
-        loadComponent: () => import('./components/comuneros-admin/padron/padron-comuneros.component').then(m => m.PadronComunerosComponent)
-      },
-      {
-        path: 'lotes',
-        title: 'Catastro de lotes · Junta La Jones',
-        loadComponent: () => import('./components/comuneros-admin/catastro/catastro-lotes.component').then(m => m.CatastroLotesComponent)
-      },
-      { path: '**', redirectTo: 'padron' }
-    ]
-  },
+  rutaGestionUsuarios('usuarios'),
+  // Mantiene accesibles los enlaces guardados con la ruta anterior.
+  rutaGestionUsuarios('comuneros'),
   {
     path: 'asistencias',
     loadComponent: () => import('./components/asistencias-admin/asistencias-admin.component').then(m => m.AsistenciasAdminComponent),

@@ -24,7 +24,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 | Ruta | Qué hace |
 |---|---|
 | `/admin/dashboard` | Indicadores reales: recaudado, cartera pendiente y vencida, morosos, egresos, saldo de caja, porcentaje de cobro, asistencia y próximos eventos. |
-| `/admin/comuneros` | Comuneros, cuentas de acceso con contraseña temporal, lotes georreferenciados (mapa) y transferencia de titularidad con auditoría. |
+| `/admin/usuarios` | Gestión de usuarios, cuentas de acceso con contraseña temporal, lotes georreferenciados (mapa) y transferencia de titularidad con auditoría. |
 | `/admin/asistencias` | Asambleas y mingas: convocatoria, padrón de asistencia, finalización con multas automáticas por ausencia, acta general de la asamblea, documentos firmados, hoja de asistencia en PDF y convocatoria publicada en el grupo de WhatsApp de la Junta. |
 | `/admin/turnos` | Turnos de riego semanales sin cruces de horario; un turno adicional genera su cobro. |
 | `/admin/finanzas/cobrar` | Cobro en caja: búsqueda del comunero, obligaciones pendientes (cuotas, multas y otros rubros), efectivo o transferencia, comprobante en PDF. |
@@ -145,8 +145,8 @@ Es seguro repetirlo: nunca siembra datos de prueba ni borra información; en una
 Primeros pasos en el panel, con la base vacía:
 
 - **Ajustes → Tarifas:** registre la cuota de agua y las multas por inasistencia a asamblea y a minga (sin ellas no se pueden facturar meses ni crear eventos con multa).
-- **Comuneros y lotes → Catastro:** cree los sectores y luego los lotes.
-- **Comuneros y lotes → Padrón:** registre a los comuneros y sus cuentas de acceso.
+- **Gestión de Usuarios → Catastro:** cree los sectores y luego los lotes.
+- **Gestión de Usuarios → Padrón:** registre usuarios y sus cuentas de acceso.
 - **WhatsApp** (menú lateral): pulse *Conectar WhatsApp*, escanee el código QR con el teléfono de la Junta (*Dispositivos vinculados*) y elija el grupo donde se publicarán las convocatorias.
 
 Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1`; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador en el servidor.
