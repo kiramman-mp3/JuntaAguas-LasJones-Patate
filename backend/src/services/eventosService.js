@@ -235,7 +235,7 @@ async function listarEventosPublicos(conexion, limite) {
             (SELECT d.ruta_archivo_firmado FROM documentos_evento d
               WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS convocatoria_firmada_url
      FROM eventos e
-     WHERE e.estado IN ('PROGRAMADO', 'CONVOCADO') AND e.fecha >= ?
+     WHERE e.estado IN ('PROGRAMADO') AND e.fecha >= ?
      ORDER BY e.fecha ASC, e.hora_inicio ASC
      LIMIT ?`,
     [hoy(), limite]
