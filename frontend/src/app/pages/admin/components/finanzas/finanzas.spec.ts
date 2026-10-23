@@ -6,7 +6,7 @@ import { FinanzasService } from '../../../../core/services/finanzas.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { ComprobantePdfService } from '../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { ObligacionItem, ResultadoFacturacion } from '../../../../core/models/finanzas';
+import { ObligacionItem, PagoAnualAgua, ResultadoFacturacion } from '../../../../core/models/finanzas';
 import { CobroCajaComponent } from './cobro-caja/cobro-caja.component';
 import { FacturacionMensualComponent } from './facturacion-mensual/facturacion-mensual.component';
 import { TarifasComponent } from './tarifas/tarifas.component';
@@ -25,12 +25,18 @@ const obligacion = (id: number, codigo: string, valor: number, mes: number | nul
   valor, origen: 'AUTOMATICA', estado: 'PENDIENTE', concepto_codigo: codigo, concepto_nombre: codigo
 });
 
+const anual = (id: number, anio: number, valor = 10): PagoAnualAgua => ({ id, persona_id: 7, periodo_anio: anio, valor_total: valor, estado: 'PENDIENTE' });
+
 function configurar(api: Partial<Record<keyof FinanzasService, unknown>>, dialog: Partial<DialogService> = {}) {
   const notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
-      { provide: FinanzasService, useValue: { getBalance: () => of({ status: 'OK', balance, resumenMensual: [], carteraPorConcepto: [] }), ...api } },
+      { provide: FinanzasService, useValue: {
+        getBalance: () => of({ status: 'OK', balance, resumenMensual: [], carteraPorConcepto: [] }),
+        getObligacionesAnualesAgua: () => of({ status: 'OK', data: [] }),
+        ...api
+      } },
       { provide: DialogService, useValue: dialog },
       { provide: NotificationService, useValue: notify },
       { provide: ComprobantePdfService, useValue: { imprimir: vi.fn(), descargar: vi.fn() } }
@@ -42,25 +48,34 @@ function configurar(api: Partial<Record<keyof FinanzasService, unknown>>, dialog
 describe('Cobro en caja', () => {
   const usuario = { id: 7, cedula: '1804567890', nombres: 'Rosa', apellidos: 'Caiza', estado: 'ACTIVO' as const };
 
-  function crear(registrarPago = vi.fn(() => of({ status: 'OK' as const, message: '', pagoId: 15, valorTotal: 8.5 }))) {
+  function crear(
+    registrarPago = vi.fn(() => of({ status: 'OK' as const, message: '', pagoId: 15, valorTotal: 8.5 })),
+    registrarPagoAnualAgua = vi.fn(() => of({ status: 'OK' as const, message: '', pagoId: 21, valorTotal: 20 }))
+  ) {
     configurar({
       buscarUsuarios: () => of({ status: 'OK', data: [usuario] }),
       getObligaciones: () => of({ status: 'OK', data: [obligacion(1, 'AGUA_MENSUAL', 3.5), obligacion(2, 'MULTA_MINGA', 5, null)] }),
-      registrarPago
+      getObligacionesAnualesAgua: () => of({ status: 'OK', data: [anual(50, 2025), anual(51, 2026)] }),
+      registrarPago,
+      registrarPagoAnualAgua
     });
     const fixture = TestBed.createComponent(CobroCajaComponent);
     const c = fixture.componentInstance;
     c.seleccionarUsuario(usuario);
-    return { c, registrarPago };
+    return { c, registrarPago, registrarPagoAnualAgua };
   }
 
-  it('preselecciona todo lo pendiente y filtra por tipo sin perder la selección', () => {
+  it('preselecciona lo pendiente de cada pestaña sin mezclar el pago anual de agua con las multas', () => {
     const { c } = crear();
+    expect(c.filtro()).toBe('AGUA');
+    expect(c.total()).toBe(20);
+    c.alternarSeleccionAgua(50);
+    expect(c.total()).toBe(10);
+
+    c.filtro.set('OTRAS');
     expect(c.total()).toBe(8.5);
-    c.filtro.set('AGUA');
-    expect(c.visibles().map((o) => o.id)).toEqual([1]);
     c.alternarVisibles();
-    expect(c.total()).toBe(5);
+    expect(c.total()).toBe(0);
   });
 
   it('ofrece solo transferencia y depósito y exige referencia para ambos', () => {
@@ -76,14 +91,27 @@ describe('Cobro en caja', () => {
     }
   });
 
-  it('en transferencia exige la referencia y la envía con el pago', () => {
-    const { c, registrarPago } = crear();
-    c.metodo.set('TRANSFERENCIA');
+  it('el pago anual de agua usa su propio servicio y no ofrece adjuntar comprobante a un pago de otra tabla', () => {
+    const { c, registrarPago, registrarPagoAnualAgua } = crear();
     expect(c.bloqueo()).toContain('referencia');
     c.referencia.set(' 778899 ');
     c.cobrar();
-    expect(registrarPago).toHaveBeenCalledWith({ persona_id: 7, obligacionesIds: [2, 1], metodo: 'TRANSFERENCIA', referencia: '778899', observacion: undefined });
+    expect(registrarPagoAnualAgua).toHaveBeenCalledWith({ persona_id: 7, obligacionesIds: [50, 51], metodo: 'TRANSFERENCIA', referencia: '778899', observacion: undefined });
+    expect(registrarPago).not.toHaveBeenCalled();
+    expect(c.comprobante()?.numero).toBe('REC-AGUA-000021');
+    expect(c.pagoRegistradoId()).toBeNull();
+  });
+
+  it('las multas y otros rubros se cobran con el pago general y permiten adjuntar el comprobante bancario', () => {
+    const { c, registrarPago, registrarPagoAnualAgua } = crear();
+    c.filtro.set('OTRAS');
+    c.metodo.set('DEPOSITO');
+    c.referencia.set('778899');
+    c.cobrar();
+    expect(registrarPago).toHaveBeenCalledWith({ persona_id: 7, obligacionesIds: [2, 1], metodo: 'DEPOSITO', referencia: '778899', observacion: undefined });
+    expect(registrarPagoAnualAgua).not.toHaveBeenCalled();
     expect(c.comprobante()?.numero).toBe('REC-000015');
+    expect(c.pagoRegistradoId()).toBe(15);
   });
 
   it('agrupa lo pendiente en árbol año → mes → concepto con subtotal por mes y total por año', () => {
@@ -98,6 +126,7 @@ describe('Cobro en caja', () => {
     });
     const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
     c.seleccionarUsuario(usuario);
+    c.filtro.set('OTRAS');
 
     const arbol = c.arbol();
     expect(arbol.map((a) => [a.etiqueta, a.total])).toEqual([['2025', 3], ['2026', 17], ['Sin período', 2]]);
@@ -110,6 +139,7 @@ describe('Cobro en caja', () => {
     configurar({ getObligaciones: () => of({ status: 'OK', data: [obligacion(1, 'AGUA_MENSUAL', 3.5, 1), obligacion(2, 'MULTA_MINGA', 5, 2)] }) });
     const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
     c.seleccionarUsuario(usuario);
+    c.filtro.set('OTRAS');
     const [anio] = c.arbol();
     const [enero, febrero] = anio.meses;
 
@@ -129,11 +159,15 @@ describe('Cobro en caja', () => {
   });
 
   it('si el servidor rechaza el pago no muestra comprobante', () => {
-    const { c } = crear(vi.fn(() => throwError(() => ({ error: { message: 'La obligación #1 ya se encuentra PAGADA' } }))));
-    c.referencia.set('123');
-    c.cobrar();
-    expect(c.comprobante()).toBeNull();
-    expect(c.procesando()).toBe(false);
+    const rechazo = () => throwError(() => ({ error: { message: 'La obligación #1 ya se encuentra PAGADA' } }));
+    const { c } = crear(vi.fn(rechazo), vi.fn(rechazo));
+    for (const pestana of ['AGUA', 'OTRAS'] as const) {
+      c.filtro.set(pestana);
+      c.referencia.set('123');
+      c.cobrar();
+      expect(c.comprobante()).toBeNull();
+      expect(c.procesando()).toBe(false);
+    }
   });
 });
 

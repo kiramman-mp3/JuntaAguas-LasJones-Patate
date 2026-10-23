@@ -5,7 +5,7 @@ import { Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap,
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { ComprobantePdfService, Comprobante } from '../../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
-import { ComuneroBusqueda, MESES, MetodoPagoNuevo, ObligacionItem, etiquetaPeriodo, numeroRecibo,numeroReciboPagonual,PagoAnualAgua } from '../../../../../core/models/finanzas';
+import { UsuarioBusqueda, MESES, MetodoPagoNuevo, ObligacionItem, etiquetaPeriodo, numeroRecibo,numeroReciboPagonual,PagoAnualAgua } from '../../../../../core/models/finanzas';
 import { formatearFecha } from '../../../../../core/utils/fechas';
 import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
@@ -222,7 +222,7 @@ export class CobroCajaComponent {
   }
 
 cargarObligaciones(): void {
-    const c = this.comunero();
+    const c = this.usuario();
     if (!c) return;
 
     // 1. Cargar obligaciones generales
@@ -247,7 +247,7 @@ cargarObligaciones(): void {
     // 2. Cargar pagos anuales de agua (Aplicando la misma lógica)
     this.cargandoObligacionesPagoAnualAgua.set(true);
 
-    this.finanzas.getPagosPendientesPersona(Number(c.id)).subscribe({
+    this.finanzas.getObligacionesAnualesAgua(Number(c.id)).subscribe({
       next: (res) => {
         const listaPagos = res.data || [];
         const ordenadasAgua = [...listaPagos].sort((a, b) => (a.periodo_anio ?? 0) - (b.periodo_anio ?? 0) || a.id - b.id);
@@ -365,7 +365,7 @@ formatearValor(valor: any): string {
   }
 
 cobrar(): void {
-  const c = this.comunero();
+  const c = this.usuario();
   if (!c || this.bloqueo() || this.procesando()) return;
 
   // 1. Armamos las líneas adaptándonos al tipo (para que no falle TypeScript)
@@ -388,6 +388,7 @@ cobrar(): void {
   const total = this.total();
   const observacion = this.observacion().trim();
   const referencia = this.referencia().trim();
+  const anual = this.filtro() === 'AGUA';
 
   this.procesando.set(true);
 
@@ -401,11 +402,10 @@ cobrar(): void {
   };
 
   // 3. Evaluamos qué pestaña está activa (AGUA u OTRAS) con if/else
-  if (this.filtro() === 'AGUA') {
-    this.finanzas.marcarPagoPagado(payload).subscribe({
+  if (anual) {
+    this.finanzas.registrarPagoAnualAgua(payload).subscribe({
       next: (res) => {
-        // Al ser el endpoint de agua, res es de tipo Respuesta<PagoAnualAgua>
-        this.procesarPagoExitoso(res, lineas, total, metodo, referencia, observacion, c);
+        this.procesarPagoExitoso(res, lineas, total, metodo, referencia, observacion, c, anual);
       },
       error: (err) => {
         this.procesando.set(false);
@@ -415,8 +415,7 @@ cobrar(): void {
   } else {
     this.finanzas.registrarPago(payload).subscribe({
       next: (res) => {
-        // Al ser el endpoint normal, res es de tipo PagoRegistrado
-        this.procesarPagoExitoso(res, lineas, total, metodo, referencia, observacion, c);
+        this.procesarPagoExitoso(res, lineas, total, metodo, referencia, observacion, c, anual);
       },
       error: (err) => {
         this.procesando.set(false);
@@ -434,21 +433,20 @@ private procesarPagoExitoso(
   metodo: any, 
   referencia: string, 
   observacion: string, 
-  c: any
+  c: any,
+  anual: boolean
 ): void {
   this.procesando.set(false);
-  // Rescatamos el ID del pago devuelto (ajustado por si viene en diferentes propiedades)
-  const pagoId = res.pagoId || res.id; 
-  const numero = this.filtro() === 'AGUA' 
-  ? numeroReciboPagonual(pagoId) 
-  : numeroRecibo(pagoId);
-  this.pagoRegistradoId.set(pagoId);
+  const pagoId = res.pagoId;
+  const numero = anual ? numeroReciboPagonual(pagoId) : numeroRecibo(pagoId);
+  // El comprobante bancario se adjunta a pagos de la tabla general; el pago anual de agua no lo admite aún.
+  this.pagoRegistradoId.set(anual ? null : pagoId);
 
   this.comprobante.set({
     numero: numero,
     fechaHora: formatearFecha(new Date(), 'conHora'),
-    comuneroNombre: `${c.nombres} ${c.apellidos}`.trim(),
-    comuneroCedula: c.cedula,
+    usuarioNombre: `${c.nombres} ${c.apellidos}`.trim(),
+    usuarioCedula: c.cedula,
     lineas,
     total: res.valorTotal ?? total,
     metodo,
