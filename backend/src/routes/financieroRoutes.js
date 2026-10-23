@@ -156,5 +156,8 @@ router.get('/egresos', ...soloAdmin, financieroController.getEgresos);
 router.post('/egresos', ...soloAdmin, financieroController.createEgreso);
 router.get('/balance', ...soloAdmin, financieroController.getBalanceReport);
 router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
-
+/* Regristro de pagos anuales */
+router.get('/pagos_pendientes/:personaId', ...soloAdmin, financieroController.getPagosPendientesPersona);
+router.patch('/marcar_pagado', ...soloAdmin, financieroController.patchMarcarPagoPagado);
+router.post('/crear_pago_masivo', ...soloAdmin, financieroController.postRegistrarPagoMasivo);
 module.exports = router;

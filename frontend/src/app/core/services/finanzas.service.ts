@@ -3,8 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  BalanceRespuesta, UsuarioBusqueda, ConceptoCobro, Egreso, HistorialAnual, NuevaTarifa, NuevoEgreso, NuevoPago,
-  ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoFacturacion, ResumenFacturacion, Tarifa
+  BalanceRespuesta, ComuneroBusqueda, ConceptoCobro, Egreso, HistorialAnual, NuevaTarifa, NuevoEgreso, NuevoPago,
+  ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoFacturacion, ResumenFacturacion, Tarifa,PagoAnualAgua
 } from '../models/finanzas';
 
 /** Parámetros de consulta sin valores vacíos. */
@@ -95,5 +95,20 @@ export class FinanzasService {
   /** Emite las cuotas de agua del mes; con `simular` solo calcula cuántas se emitirían. */
   facturarMes(anio: number, mes: number, simular: boolean): Observable<Respuesta<ResultadoFacturacion>> {
     return this.http.post<Respuesta<ResultadoFacturacion>>(`${this.url}/facturacion/mensual`, { anio, mes, simular });
+  }
+
+ /** 1. Obtener los pagos pendientes de una persona específica (Retorna una lista) */
+  getPagosPendientesPersona(personaId: number): Observable<Respuesta<PagoAnualAgua[]>> {
+    return this.http.get<Respuesta<PagoAnualAgua[]>>(`${this.url}/pagos_pendientes/${personaId}`);
+  }
+
+  /** 2. Marcar un pago anual como PAGADO (Retorna un mensaje de éxito) */
+  marcarPagoPagado(payload: NuevoPago): Observable<Respuesta<PagoAnualAgua>> {
+    return this.http.patch<Respuesta<PagoAnualAgua>>(`${this.url}/marcar_pagado`, payload);
+  }
+
+  /** 3. Generar / Crear el pago masivo para todas las personas en un año (Retorna un mensaje de éxito) */
+  crearPagoMasivo(payload: { anio: number; valor_total: number }): Observable<Respuesta<PagoAnualAgua>> {
+    return this.http.post<Respuesta<PagoAnualAgua>>(`${this.url}/crear_pago_masivo`, payload);
   }
 }

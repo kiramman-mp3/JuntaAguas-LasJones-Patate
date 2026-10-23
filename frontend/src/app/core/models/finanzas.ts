@@ -14,7 +14,7 @@ export interface Respuesta<T> {
 }
 
 export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'OTRO';
-export type MetodoPagoNuevo = 'TRANSFERENCIA' | 'DEPOSITO';
+export type MetodoPagoNuevo = 'TRANSFERENCIA' | 'DEPOSITO'|'EFECTIVO';
 export type EstadoPago = 'VIGENTE' | 'ANULADO';
 
 export interface Pago {
@@ -190,6 +190,14 @@ export interface UsuarioBusqueda {
   celular?: string | null;
 }
 
+export interface PagoAnualAgua {
+  id: number;
+  persona_id: number;
+  periodo_anio: number;
+  valor_total: number;
+  estado: 'PENDIENTE' | 'PAGADO';
+}
+
 export const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -203,6 +211,9 @@ export function etiquetaPeriodo(anio: number | null | undefined, mes: number | n
 
 export function numeroRecibo(id: number): string {
   return `REC-${String(id).padStart(6, '0')}`;
+}
+export function numeroReciboPagonual(id: number): string {
+  return `REC-AGUA-${String(id).padStart(6, '0')}`;
 }
 
 export function numeroEgreso(id: number): string {
