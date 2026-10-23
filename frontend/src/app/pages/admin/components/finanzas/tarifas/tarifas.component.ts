@@ -29,7 +29,7 @@ function inicioMesSiguiente(hoy: string): string {
   selector: 'app-tarifas',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, ModalA11yDirective],
-  templateUrl: './tarifas.component.html'
+  templateUrl: './tarifas.component.html',
 })
 export class TarifasComponent {
   private finanzas = inject(FinanzasService);
@@ -47,10 +47,12 @@ export class TarifasComponent {
   form: FormTarifa = { concepto_id: null, valor: null, vigencia_desde: '', observacion: '' };
 
   /** Historial agrupado por concepto, del más reciente al más antiguo. */
-  readonly historial = computed(() => this.conceptos().map((c) => ({
-    concepto: c,
-    tarifas: this.tarifas().filter((t) => t.concepto_id === c.id)
-  })));
+  readonly historial = computed(() =>
+    this.conceptos().map((c) => ({
+      concepto: c,
+      tarifas: this.tarifas().filter((t) => t.concepto_id === c.id),
+    })),
+  );
 
   constructor() {
     this.cargar();
@@ -59,16 +61,24 @@ export class TarifasComponent {
   cargar(): void {
     this.cargando.set(true);
     this.error.set('');
-    forkJoin({ conceptos: this.finanzas.getConceptos(), tarifas: this.finanzas.getTarifas() }).subscribe({
+    forkJoin({
+      conceptos: this.finanzas.getConceptos(),
+      tarifas: this.finanzas.getTarifas(),
+    }).subscribe({
       next: ({ conceptos, tarifas }) => {
-        this.conceptos.set(conceptos.data.map((c) => ({ ...c, tarifa_actual: c.tarifa_actual === null ? null : Number(c.tarifa_actual) })));
+        this.conceptos.set(
+          conceptos.data.map((c) => ({
+            ...c,
+            tarifa_actual: c.tarifa_actual === null ? null : Number(c.tarifa_actual),
+          })),
+        );
         this.tarifas.set(tarifas.data.map((t) => ({ ...t, valor: Number(t.valor) })));
         this.cargando.set(false);
       },
       error: (err) => {
         this.cargando.set(false);
         this.error.set(err.error?.message || 'No se pudieron cargar las tarifas.');
-      }
+      },
     });
   }
 
@@ -81,13 +91,21 @@ export class TarifasComponent {
 
   /** Última fecha de inicio registrada de un concepto: la tarifa nueva debe empezar después. */
   private ultimoInicio(conceptoId: number | null): string | null {
-    const fechas = this.tarifas().filter((t) => t.concepto_id === conceptoId).map((t) => t.vigencia_desde).sort();
+    const fechas = this.tarifas()
+      .filter((t) => t.concepto_id === conceptoId)
+      .map((t) => t.vigencia_desde)
+      .sort();
     return fechas.length ? fechas[fechas.length - 1] : null;
   }
 
   abrirFormulario(concepto?: ConceptoCobro): void {
     const id = concepto?.id ?? this.conceptos()[0]?.id ?? null;
-    this.form = { concepto_id: id, valor: concepto?.tarifa_actual ?? null, vigencia_desde: this.fechaSugerida(id), observacion: '' };
+    this.form = {
+      concepto_id: id,
+      valor: concepto?.tarifa_actual ?? null,
+      vigencia_desde: this.fechaSugerida(id),
+      observacion: '',
+    };
     this.intentoGuardar.set(false);
     this.formularioVisible.set(true);
   }
@@ -113,18 +131,21 @@ export class TarifasComponent {
     const errores: Partial<Record<keyof FormTarifa, string>> = {};
     if (!f.concepto_id) errores.concepto_id = 'Elija el concepto.';
     const valor = Number(f.valor);
-    if (f.valor === null || !Number.isFinite(valor) || valor <= 0) errores.valor = 'Ingrese un valor mayor a cero.';
-    else if (Math.round(valor * 100) !== valor * 100) errores.valor = 'Use como máximo dos decimales.';
+    if (f.valor === null || !Number.isFinite(valor) || valor <= 0)
+      errores.valor = 'Ingrese un valor mayor a cero.';
+    else if (Math.round(valor * 100) !== valor * 100)
+      errores.valor = 'Use como máximo dos decimales.';
     if (!f.vigencia_desde) errores.vigencia_desde = 'Indique desde cuándo rige.';
     else {
       const ultimo = this.ultimoInicio(f.concepto_id);
-      if (ultimo && f.vigencia_desde <= ultimo) errores.vigencia_desde = `Debe ser posterior al ${ultimo}, inicio de la última tarifa.`;
+      if (ultimo && f.vigencia_desde <= ultimo)
+        errores.vigencia_desde = `Debe ser posterior al ${ultimo}, inicio de la última tarifa.`;
     }
     return errores;
   }
 
   errorDe(campo: keyof FormTarifa): string {
-    return this.intentoGuardar() ? this.errores()[campo] ?? '' : '';
+    return this.intentoGuardar() ? (this.errores()[campo] ?? '') : '';
   }
 
   /** Nombre del concepto elegido en el formulario. */
@@ -136,22 +157,24 @@ export class TarifasComponent {
     this.intentoGuardar.set(true);
     if (Object.keys(this.errores()).length || this.guardando()) return;
     this.guardando.set(true);
-    this.finanzas.registrarTarifa({
-      concepto_id: this.form.concepto_id!,
-      valor: Number(this.form.valor),
-      vigencia_desde: this.form.vigencia_desde,
-      observacion: this.form.observacion.trim() || undefined
-    }).subscribe({
-      next: (res) => {
-        this.guardando.set(false);
-        this.formularioVisible.set(false);
-        this.notify.success(res.message || 'Tarifa registrada.');
-        this.cargar();
-      },
-      error: (err) => {
-        this.guardando.set(false);
-        this.notify.error(err.error?.message || 'No se pudo registrar la tarifa.');
-      }
-    });
+    this.finanzas
+      .registrarTarifa({
+        concepto_id: this.form.concepto_id!,
+        valor: Number(this.form.valor),
+        vigencia_desde: this.form.vigencia_desde,
+        observacion: this.form.observacion.trim() || undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.guardando.set(false);
+          this.formularioVisible.set(false);
+          this.notify.success(res.message || 'Tarifa registrada.');
+          this.cargar();
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          this.notify.error(err.error?.message || 'No se pudo registrar la tarifa.');
+        },
+      });
   }
 }

@@ -1,4 +1,12 @@
-import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
@@ -14,7 +22,7 @@ import { AsistenciaMinga, EstadoAsistenciaMinga, Minga } from '../minga.model';
   selector: 'app-minga-asistencia',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, ModalComponent, SkeletonComponent, EmptyStateComponent],
-  templateUrl: './minga-asistencia.component.html'
+  templateUrl: './minga-asistencia.component.html',
 })
 export class MingaAsistenciaComponent implements OnInit {
   private admin = inject(AdminService);
@@ -36,7 +44,9 @@ export class MingaAsistenciaComponent implements OnInit {
 
   get filtradas() {
     const texto = this.buscar.trim().toLocaleLowerCase('es');
-    return this.asistencias.filter((a) => `${a.nombre} ${a.cedula}`.toLocaleLowerCase('es').includes(texto));
+    return this.asistencias.filter((a) =>
+      `${a.nombre} ${a.cedula}`.toLocaleLowerCase('es').includes(texto),
+    );
   }
 
   get totalPresentes() {
@@ -44,7 +54,10 @@ export class MingaAsistenciaComponent implements OnInit {
   }
 
   get totalPendientes() {
-    return this.asistencias.filter((a) => a.estado === 'PENDIENTE' || (a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())).length;
+    return this.asistencias.filter(
+      (a) =>
+        a.estado === 'PENDIENTE' || (a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim()),
+    ).length;
   }
 
   get cerrada() {
@@ -67,7 +80,7 @@ export class MingaAsistenciaComponent implements OnInit {
         finalize(() => {
           this.cargando = false;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: (res) => {
@@ -75,7 +88,9 @@ export class MingaAsistenciaComponent implements OnInit {
           this.disponible = true;
           this.asistencias = res.data || [];
         },
-        error: () => (this.error = 'No se pudieron cargar los usuarios y sus asistencias. Intente nuevamente.')
+        error: () =>
+          (this.error =
+            'No se pudieron cargar los usuarios y sus asistencias. Intente nuevamente.'),
       });
   }
 
@@ -88,20 +103,31 @@ export class MingaAsistenciaComponent implements OnInit {
   marcarPresentes(): void {
     if (this.cerrada) return;
     // Respeta las justificaciones previamente registradas.
-    this.filtradas.filter((a) => a.estado !== 'JUSTIFICADO').forEach((a) => (a.estado = 'PRESENTE'));
+    this.filtradas
+      .filter((a) => a.estado !== 'JUSTIFICADO')
+      .forEach((a) => (a.estado = 'PRESENTE'));
   }
 
   guardar(): void {
-    if (this.cerrada || this.guardando || this.cargando || !this.disponible || !this.asistencias.length) return;
+    if (
+      this.cerrada ||
+      this.guardando ||
+      this.cargando ||
+      !this.disponible ||
+      !this.asistencias.length
+    )
+      return;
     this.error = '';
-    if (this.asistencias.some((a) => a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())) {
+    if (
+      this.asistencias.some((a) => a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())
+    ) {
       this.error = 'Escriba el motivo de cada ausencia justificada.';
       return;
     }
     const payload = this.asistencias.map((a) => ({
       persona_id: a.persona_id,
       estado: a.estado,
-      motivo_justificacion: a.estado === 'JUSTIFICADO' ? a.motivo_justificacion.trim() : null
+      motivo_justificacion: a.estado === 'JUSTIFICADO' ? a.motivo_justificacion.trim() : null,
     }));
     this.guardando = true;
     this.admin
@@ -111,11 +137,13 @@ export class MingaAsistenciaComponent implements OnInit {
         finalize(() => {
           this.guardando = false;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: () => this.guardada.emit(),
-        error: (err) => (this.error = err.error?.message || 'No se pudo guardar la asistencia. Intente nuevamente.')
+        error: (err) =>
+          (this.error =
+            err.error?.message || 'No se pudo guardar la asistencia. Intente nuevamente.'),
       });
   }
 }

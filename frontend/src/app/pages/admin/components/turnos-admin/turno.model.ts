@@ -11,7 +11,7 @@ export const DIAS_SEMANA: DiaSemana[] = [
   { valor: 4, label: 'Jueves', corto: 'Jue' },
   { valor: 5, label: 'Viernes', corto: 'Vie' },
   { valor: 6, label: 'Sábado', corto: 'Sáb' },
-  { valor: 7, label: 'Domingo', corto: 'Dom' }
+  { valor: 7, label: 'Domingo', corto: 'Dom' },
 ];
 
 /** Turno de riego listo para mostrarse (nombres de usuario, lote, sector y día resueltos). */
@@ -60,8 +60,11 @@ export function filtrarTurnos(turnos: Turno[], f: FiltrosTurno): Turno[] {
   const q = f.busqueda.trim().toLowerCase();
   return turnos.filter(
     (t) =>
-      (!q || t.usuario.toLowerCase().includes(q) || t.lote.toLowerCase().includes(q) || t.sector.toLowerCase().includes(q)) &&
+      (!q ||
+        t.usuario.toLowerCase().includes(q) ||
+        t.lote.toLowerCase().includes(q) ||
+        t.sector.toLowerCase().includes(q)) &&
       (!f.dia || t.dia === f.dia) &&
-      (!f.sector || t.sector === f.sector)
+      (!f.sector || t.sector === f.sector),
   );
 }

@@ -23,7 +23,7 @@ interface ItemMenu {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, WhatsAppPanelComponent],
   templateUrl: './admin.component.html',
-  styleUrls: ['./admin.component.scss']
+  styleUrls: ['./admin.component.scss'],
 })
 export class AdminComponent {
   readonly whatsapp = inject(WhatsAppSesionService);
@@ -31,30 +31,65 @@ export class AdminComponent {
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly menu: ItemMenu[] = [
-    { ruta: '/admin/dashboard', etiqueta: 'Dashboard', corta: 'Inicio', icono: 'ri-dashboard-line' },
-    { ruta: '/admin/usuarios', etiqueta: 'Gestión de Usuarios', corta: 'Usuarios', icono: 'ri-team-line' },
-    { ruta: '/admin/asistencias', etiqueta: 'Asistencias', corta: 'Eventos', icono: 'ri-calendar-check-line' },
-    { ruta: '/admin/turnos', etiqueta: 'Turnos de agua', corta: 'Turnos', icono: 'ri-drop-line' }
+    {
+      ruta: '/admin/dashboard',
+      etiqueta: 'Dashboard',
+      corta: 'Inicio',
+      icono: 'ri-dashboard-line',
+    },
+    {
+      ruta: '/admin/usuarios',
+      etiqueta: 'Gestión de Usuarios',
+      corta: 'Usuarios',
+      icono: 'ri-team-line',
+    },
+    {
+      ruta: '/admin/asistencias',
+      etiqueta: 'Asistencias',
+      corta: 'Eventos',
+      icono: 'ri-calendar-check-line',
+    },
+    { ruta: '/admin/turnos', etiqueta: 'Turnos de agua', corta: 'Turnos', icono: 'ri-drop-line' },
   ];
 
   readonly menuFinanzas: ItemMenu[] = [
-    { ruta: '/admin/cobros', etiqueta: 'Cobros y pagos', corta: 'Cobros', icono: 'ri-hand-coin-line' },
+    {
+      ruta: '/admin/cobros',
+      etiqueta: 'Cobros y pagos',
+      corta: 'Cobros',
+      icono: 'ri-hand-coin-line',
+    },
     { ruta: '/admin/ajustes', etiqueta: 'Ajustes', corta: 'Ajustes', icono: 'ri-settings-3-line' },
-    { ruta: '/admin/historial', etiqueta: 'Historial', corta: 'Historial', icono: 'ri-history-line' }
+    {
+      ruta: '/admin/historial',
+      etiqueta: 'Historial',
+      corta: 'Historial',
+      icono: 'ri-history-line',
+    },
   ];
 
   readonly menuDirectiva: ItemMenu[] = [
-    { ruta: '/admin/gestion', etiqueta: 'Gestión interna', corta: 'Gestión', icono: 'ri-briefcase-4-line' }
+    {
+      ruta: '/admin/gestion',
+      etiqueta: 'Gestión interna',
+      corta: 'Gestión',
+      icono: 'ri-briefcase-4-line',
+    },
   ];
 
   /** Panel de la barra inferior (móvil) con los apartados financieros y la gestión interna. */
   readonly finanzasAbierto = signal(false);
 
   private readonly url = toSignal(
-    this.router.events.pipe(filter((e) => e instanceof NavigationEnd), map(() => this.router.url)),
-    { initialValue: this.router.url }
+    this.router.events.pipe(
+      filter((e) => e instanceof NavigationEnd),
+      map(() => this.router.url),
+    ),
+    { initialValue: this.router.url },
   );
-  readonly enFinanzas = computed(() => [...this.menuFinanzas, ...this.menuDirectiva].some((i) => this.url().startsWith(i.ruta)));
+  readonly enFinanzas = computed(() =>
+    [...this.menuFinanzas, ...this.menuDirectiva].some((i) => this.url().startsWith(i.ruta)),
+  );
 
   @HostListener('document:mousedown', ['$event'])
   alTocarFuera(evento: MouseEvent): void {

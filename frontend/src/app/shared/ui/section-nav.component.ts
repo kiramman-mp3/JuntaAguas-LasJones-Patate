@@ -41,7 +41,7 @@ export interface SeccionNav {
         }
       </div>
     </nav>
-  `
+  `,
 })
 export class SectionNavComponent {
   private router = inject(Router);
@@ -52,9 +52,9 @@ export class SectionNavComponent {
   private readonly url = toSignal(
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),
-      map(() => this.router.url)
+      map(() => this.router.url),
     ),
-    { initialValue: this.router.url }
+    { initialValue: this.router.url },
   );
 
   readonly indiceActivo = computed(() => {
@@ -64,8 +64,8 @@ export class SectionNavComponent {
         paths: 'subset',
         queryParams: 'ignored',
         fragment: 'ignored',
-        matrixParams: 'ignored'
-      })
+        matrixParams: 'ignored',
+      }),
     );
   });
 }

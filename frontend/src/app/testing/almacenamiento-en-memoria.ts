@@ -5,11 +5,17 @@
 export function almacenamientoEnMemoria(): Storage {
   const datos = new Map<string, string>();
   return {
-    get length() { return datos.size; },
+    get length() {
+      return datos.size;
+    },
     clear: () => datos.clear(),
     getItem: (k) => datos.get(k) ?? null,
     key: (i) => [...datos.keys()][i] ?? null,
-    removeItem: (k) => { datos.delete(k); },
-    setItem: (k, v) => { datos.set(k, String(v)); }
+    removeItem: (k) => {
+      datos.delete(k);
+    },
+    setItem: (k, v) => {
+      datos.set(k, String(v));
+    },
   };
 }

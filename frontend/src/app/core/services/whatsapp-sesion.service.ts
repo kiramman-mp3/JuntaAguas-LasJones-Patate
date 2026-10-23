@@ -10,7 +10,8 @@ const EN_CURSO = ['INICIANDO', 'ESPERANDO_QR'];
 const INTERVALO_SONDEO_MS = 2000;
 
 /** Cuerpo de error de la API ({ message, codigo }) dentro de un HttpErrorResponse. */
-const cuerpoError = (err: unknown) => (err as { error?: { message?: string; codigo?: string } } | null)?.error;
+const cuerpoError = (err: unknown) =>
+  (err as { error?: { message?: string; codigo?: string } } | null)?.error;
 const mensajeDe = (err: unknown, respaldo: string): string => cuerpoError(err)?.message || respaldo;
 
 /**
@@ -54,7 +55,7 @@ export class WhatsAppSesionService implements OnDestroy {
     if (!silencioso) this.cargando.set(true);
     this.admin.getWhatsAppEstado().subscribe({
       next: (res) => this.aplicarEstado(res.data),
-      error: () => this.cargando.set(false)
+      error: () => this.cargando.set(false),
     });
   }
 
@@ -66,7 +67,7 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.cargando.set(false);
         this.notify.error(mensajeDe(err, 'No se pudo iniciar WhatsApp.'));
-      }
+      },
     });
   }
 
@@ -74,8 +75,9 @@ export class WhatsAppSesionService implements OnDestroy {
     const confirmado = await this.dialog.confirmar({
       tipo: 'DANGER',
       titulo: 'Desvincular WhatsApp',
-      mensaje: '¿Desvincular el teléfono de la Junta? Para volver a enviar convocatorias habrá que escanear un código QR nuevo.',
-      textoConfirmar: 'Desvincular'
+      mensaje:
+        '¿Desvincular el teléfono de la Junta? Para volver a enviar convocatorias habrá que escanear un código QR nuevo.',
+      textoConfirmar: 'Desvincular',
     });
     if (!confirmado) return;
     this.cargando.set(true);
@@ -87,7 +89,7 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.cargando.set(false);
         this.notify.error(mensajeDe(err, 'No se pudo cerrar la sesión de WhatsApp.'));
-      }
+      },
     });
   }
 
@@ -101,7 +103,7 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.cargandoGrupos.set(false);
         this.notify.error(mensajeDe(err, 'No se pudieron cargar los grupos de WhatsApp.'));
-      }
+      },
     });
   }
 
@@ -118,7 +120,7 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.guardandoGrupo.set(false);
         this.notify.error(mensajeDe(err, 'No se pudo guardar el grupo.'));
-      }
+      },
     });
   }
 
@@ -135,7 +137,7 @@ export class WhatsAppSesionService implements OnDestroy {
         tipo: 'CONFIRM',
         titulo: 'Convocar por WhatsApp',
         mensaje: `¿Publicar la convocatoria de "${evento.titulo}" en el grupo de WhatsApp de la Junta?`,
-        textoConfirmar: 'Publicar convocatoria'
+        textoConfirmar: 'Publicar convocatoria',
       });
       if (!confirmado) return null;
       return await this.enviar(evento.id);
@@ -159,11 +161,15 @@ export class WhatsAppSesionService implements OnDestroy {
       return null;
     }
     if (codigo === 'GRUPO_NO_CONFIGURADO') {
-      this.notify.warning(mensajeDe(err, 'Elija primero el grupo de WhatsApp de las convocatorias.'));
+      this.notify.warning(
+        mensajeDe(err, 'Elija primero el grupo de WhatsApp de las convocatorias.'),
+      );
       this.abrir();
       return null;
     }
-    this.notify.error(mensajeDe(err, 'No se pudo publicar la convocatoria. Revise la conexión de WhatsApp.'));
+    this.notify.error(
+      mensajeDe(err, 'No se pudo publicar la convocatoria. Revise la conexión de WhatsApp.'),
+    );
     return null;
   }
 

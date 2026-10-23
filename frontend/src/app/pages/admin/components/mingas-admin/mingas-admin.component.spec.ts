@@ -41,7 +41,14 @@ describe('Gestión de Mingas', () => {
   beforeEach(async () => {
     admin = {
       getEventos: vi.fn(() => of({ data: [minga] })),
-      getSectores: vi.fn(() => of({ data: [{ id: 1, nombre: 'Patate Viejo' }, { id: 2, nombre: 'La Merced' }] })),
+      getSectores: vi.fn(() =>
+        of({
+          data: [
+            { id: 1, nombre: 'Patate Viejo' },
+            { id: 2, nombre: 'La Merced' },
+          ],
+        }),
+      ),
       createEvento: vi.fn(() => of({ eventoId: 1 })),
       getPersonas: vi.fn(() =>
         of({
@@ -54,18 +61,40 @@ describe('Gestión de Mingas', () => {
       getAsistencias: vi.fn(() =>
         of({ data: [{ persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' }] }),
       ),
-      getAsistenciasMinga: vi.fn(() => of({
-        estado: 'BORRADOR', resumen: { total: 2, presentes: 0, ausentes: 0, justificados: 1, pendientes: 1 },
-        data: [
-          { persona_id: 1, nombre: 'Pérez Ana', cedula: '1800000001', estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
-          { persona_id: 2, nombre: 'Mora Luis', cedula: '1800000002', estado: 'PENDIENTE', motivo_justificacion: '' },
-        ],
-      })),
+      getAsistenciasMinga: vi.fn(() =>
+        of({
+          estado: 'BORRADOR',
+          resumen: { total: 2, presentes: 0, ausentes: 0, justificados: 1, pendientes: 1 },
+          data: [
+            {
+              persona_id: 1,
+              nombre: 'Pérez Ana',
+              cedula: '1800000001',
+              estado: 'JUSTIFICADO',
+              motivo_justificacion: 'Salud',
+            },
+            {
+              persona_id: 2,
+              nombre: 'Mora Luis',
+              cedula: '1800000002',
+              estado: 'PENDIENTE',
+              motivo_justificacion: '',
+            },
+          ],
+        }),
+      ),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
       registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
-      cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
+      cambiarEstadoMinga: vi.fn((_id: number, estado: string) =>
+        of({ estado, message: 'Actualizado' }),
+      ),
       finalizarMinga: vi.fn(() => of({ estado: 'REALIZADO', message: 'Finalizada' })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO' }, message: 'Publicada' })),
+      enviarConvocatoriaWhatsApp: vi.fn(() =>
+        of({
+          data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO' },
+          message: 'Publicada',
+        }),
+      ),
     };
     consulta = {
       subirDocumentoEvento: vi.fn(),
@@ -228,7 +257,9 @@ describe('Gestión de Mingas', () => {
   });
 
   it('confirma el resumen guardado antes de finalizar', async () => {
-    admin.getAsistenciasMinga.mockReturnValue(of({ resumen: { total: 2, presentes: 1, ausentes: 1, justificados: 0, pendientes: 0 } }));
+    admin.getAsistenciasMinga.mockReturnValue(
+      of({ resumen: { total: 2, presentes: 1, ausentes: 1, justificados: 0, pendientes: 0 } }),
+    );
     const dialog = TestBed.inject(DialogService) as any;
     await component.finalizarMinga({ ...minga });
     expect(admin.finalizarMinga).toHaveBeenCalledWith(1);

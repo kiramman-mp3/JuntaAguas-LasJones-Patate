@@ -24,5 +24,5 @@ export function cargarJsPdf(): Promise<ModulosJsPdf> {
 /** Cargador de jsPDF que usan los servicios de PDF; las pruebas lo reemplazan por uno falso. */
 export const CARGADOR_JSPDF = new InjectionToken<() => Promise<ModulosJsPdf>>('CARGADOR_JSPDF', {
   providedIn: 'root',
-  factory: () => cargarJsPdf
+  factory: () => cargarJsPdf,
 });

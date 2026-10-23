@@ -5,5 +5,5 @@ export const environment = {
   // Origen del backend: se usa para abrir archivos subidos (/uploads/...) y PDFs.
   serverUrl: 'http://localhost:3000',
   // Base de la API REST.
-  apiUrl: 'http://localhost:3000/api'
+  apiUrl: 'http://localhost:3000/api',
 };

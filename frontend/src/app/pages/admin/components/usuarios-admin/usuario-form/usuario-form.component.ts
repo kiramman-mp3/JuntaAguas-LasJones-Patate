@@ -5,7 +5,10 @@ import { AdminService } from '../../../../../core/services/admin.service';
 import { DialogService } from '../../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ROLES, Rol } from '../../../../../core/auth/session';
-import { CredencialTemporal, PasswordTemporalComponent } from '../../../../../shared/password-temporal/password-temporal.component';
+import {
+  CredencialTemporal,
+  PasswordTemporalComponent,
+} from '../../../../../shared/password-temporal/password-temporal.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { PersonaListado } from '../../../../../core/models/api-payloads';
 
@@ -18,7 +21,7 @@ import { PersonaListado } from '../../../../../core/models/api-payloads';
   selector: 'app-usuario-form',
   standalone: true,
   imports: [FormsModule, LowerCasePipe, ModalComponent, PasswordTemporalComponent],
-  templateUrl: './usuario-form.component.html'
+  templateUrl: './usuario-form.component.html',
 })
 export class UsuarioFormComponent implements OnInit {
   private admin = inject(AdminService);
@@ -52,7 +55,7 @@ export class UsuarioFormComponent implements OnInit {
     fecha_nacimiento: '',
     estado: 'ACTIVO',
     crearCuenta: true,
-    rol: ROLES.USUARIO as Rol
+    rol: ROLES.USUARIO as Rol,
   };
 
   ngOnInit(): void {
@@ -72,7 +75,7 @@ export class UsuarioFormComponent implements OnInit {
       fecha_nacimiento: u.fecha_nacimiento || '',
       estado: u.estado,
       crearCuenta: false,
-      rol: ROLES.USUARIO
+      rol: ROLES.USUARIO,
     };
   }
 
@@ -93,7 +96,7 @@ export class UsuarioFormComponent implements OnInit {
         error: (err) => {
           this.guardando.set(false);
           this.notify.error(err.error?.message || 'Error al actualizar usuario.');
-        }
+        },
       });
       return;
     }
@@ -112,7 +115,7 @@ export class UsuarioFormComponent implements OnInit {
       error: (err) => {
         this.guardando.set(false);
         this.notify.error(err.error?.message || 'Error al registrar usuario.');
-      }
+      },
     });
   }
 
@@ -129,7 +132,7 @@ export class UsuarioFormComponent implements OnInit {
       error: (err) => {
         this.gestionandoCuenta.set(false);
         this.notify.error(err.error?.message || 'No se pudo crear la cuenta.');
-      }
+      },
     });
   }
 
@@ -140,7 +143,7 @@ export class UsuarioFormComponent implements OnInit {
       tipo: 'WARNING',
       titulo: 'Restablecer contraseña',
       mensaje: `Se generará una contraseña temporal para ${this.form.nombres} ${this.form.apellidos} y su contraseña actual dejará de funcionar.`,
-      textoConfirmar: 'Restablecer'
+      textoConfirmar: 'Restablecer',
     });
     if (!confirmado) return;
     this.gestionandoCuenta.set(true);
@@ -152,7 +155,7 @@ export class UsuarioFormComponent implements OnInit {
       error: (err) => {
         this.gestionandoCuenta.set(false);
         this.notify.error(err.error?.message || 'No se pudo restablecer la contraseña.');
-      }
+      },
     });
   }
 
@@ -173,7 +176,7 @@ export class UsuarioFormComponent implements OnInit {
     this.credencialTemporal = {
       nombre: `${this.form.nombres} ${this.form.apellidos}`.trim(),
       cedula: this.form.cedula,
-      password
+      password,
     };
   }
 }

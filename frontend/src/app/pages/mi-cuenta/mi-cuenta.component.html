@@ -66,8 +66,19 @@
                   [disabled]="imprimiendo === clave(r.tipo, r.id)"
                   [title]="'Imprimir comprobante oficial ' + r.numero"
                 >
-                  <i [class]="imprimiendo === clave(r.tipo, r.id) ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
-                  {{ imprimiendo === clave(r.tipo, r.id) ? 'Imprimiendo…' : 'Imprimir comprobante (' + r.numero + ')' }}
+                  <i
+                    [class]="
+                      imprimiendo === clave(r.tipo, r.id)
+                        ? 'ri-loader-4-line spin'
+                        : 'ri-printer-line'
+                    "
+                    aria-hidden="true"
+                  ></i>
+                  {{
+                    imprimiendo === clave(r.tipo, r.id)
+                      ? 'Imprimiendo…'
+                      : 'Imprimir comprobante (' + r.numero + ')'
+                  }}
                 </button>
               </div>
             }
@@ -158,9 +169,12 @@
             <div class="card__header card__header--flex">
               <div>
                 <h4 class="card__title">
-                  <i class="ri-file-text-line" aria-hidden="true"></i> Comprobantes de Pago Realizados
+                  <i class="ri-file-text-line" aria-hidden="true"></i> Comprobantes de Pago
+                  Realizados
                 </h4>
-                <p class="caption">Recibos oficiales emitidos por recaudación y pagos registrados.</p>
+                <p class="caption">
+                  Recibos oficiales emitidos por recaudación y pagos registrados.
+                </p>
               </div>
             </div>
 
@@ -201,8 +215,19 @@
                             [disabled]="imprimiendo === clave(p.tipo, p.id)"
                             [title]="'Imprimir comprobante oficial ' + p.numero"
                           >
-                            <i [class]="imprimiendo === clave(p.tipo, p.id) ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
-                            {{ imprimiendo === clave(p.tipo, p.id) ? 'Abriendo…' : 'Imprimir comprobante' }}
+                            <i
+                              [class]="
+                                imprimiendo === clave(p.tipo, p.id)
+                                  ? 'ri-loader-4-line spin'
+                                  : 'ri-printer-line'
+                              "
+                              aria-hidden="true"
+                            ></i>
+                            {{
+                              imprimiendo === clave(p.tipo, p.id)
+                                ? 'Abriendo…'
+                                : 'Imprimir comprobante'
+                            }}
                           </button>
                           <button
                             type="button"
@@ -211,7 +236,14 @@
                             [disabled]="descargando === clave(p.tipo, p.id)"
                             [title]="'Descargar PDF del comprobante ' + p.numero"
                           >
-                            <i [class]="descargando === clave(p.tipo, p.id) ? 'ri-loader-4-line spin' : 'ri-download-2-line'" aria-hidden="true"></i>
+                            <i
+                              [class]="
+                                descargando === clave(p.tipo, p.id)
+                                  ? 'ri-loader-4-line spin'
+                                  : 'ri-download-2-line'
+                              "
+                              aria-hidden="true"
+                            ></i>
                             {{ descargando === clave(p.tipo, p.id) ? 'Descargando…' : 'PDF' }}
                           </button>
                           @if (p.tipo === 'GENERAL' && p.comprobante_url) {
@@ -278,11 +310,20 @@
                             [disabled]="imprimiendo === clave(r.tipo, r.id)"
                             title="Imprimir el comprobante de este pago"
                           >
-                            <i [class]="imprimiendo === clave(r.tipo, r.id) ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                            <i
+                              [class]="
+                                imprimiendo === clave(r.tipo, r.id)
+                                  ? 'ri-loader-4-line spin'
+                                  : 'ri-printer-line'
+                              "
+                              aria-hidden="true"
+                            ></i>
                             {{ imprimiendo === clave(r.tipo, r.id) ? 'Abriendo…' : 'Imprimir' }}
                           </button>
                         } @else {
-                          <span class="text-muted" title="Este pago no tiene un comprobante vigente">—</span>
+                          <span class="text-muted" title="Este pago no tiene un comprobante vigente"
+                            >—</span
+                          >
                         }
                       </td>
                     </tr>
@@ -310,8 +351,19 @@
                   [disabled]="imprimiendo === clave(r.tipo, r.id)"
                   [title]="'Imprimir comprobante ' + r.numero"
                 >
-                  <i [class]="imprimiendo === clave(r.tipo, r.id) ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
-                  {{ imprimiendo === clave(r.tipo, r.id) ? 'Abriendo comprobante…' : 'Imprimir comprobante de pago (' + r.numero + ')' }}
+                  <i
+                    [class]="
+                      imprimiendo === clave(r.tipo, r.id)
+                        ? 'ri-loader-4-line spin'
+                        : 'ri-printer-line'
+                    "
+                    aria-hidden="true"
+                  ></i>
+                  {{
+                    imprimiendo === clave(r.tipo, r.id)
+                      ? 'Abriendo comprobante…'
+                      : 'Imprimir comprobante de pago (' + r.numero + ')'
+                  }}
                 </button>
               </div>
             }

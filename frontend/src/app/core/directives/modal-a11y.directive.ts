@@ -1,4 +1,12 @@
-import { Directive, ElementRef, HostListener, OnDestroy, OnInit, AfterViewInit, inject } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  AfterViewInit,
+  inject,
+} from '@angular/core';
 
 /**
  * Directiva de accesibilidad para modales.
@@ -37,7 +45,7 @@ function desbloquearScroll(): void {
 }
 @Directive({
   selector: '[appModalA11y]',
-  standalone: true
+  standalone: true,
 })
 export class ModalA11yDirective implements OnInit, AfterViewInit, OnDestroy {
   private elementoPrevio: HTMLElement | null = null;
@@ -130,11 +138,11 @@ export class ModalA11yDirective implements OnInit, AfterViewInit, OnDestroy {
       'textarea:not([disabled])',
       'input:not([disabled]):not([type="hidden"])',
       'select:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])'
+      '[tabindex]:not([tabindex="-1"])',
     ].join(',');
 
-    return Array.from(
-      this.host.nativeElement.querySelectorAll<HTMLElement>(selector)
-    ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+    return Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>(selector)).filter(
+      (el) => el.offsetParent !== null || el === document.activeElement,
+    );
   }
 }

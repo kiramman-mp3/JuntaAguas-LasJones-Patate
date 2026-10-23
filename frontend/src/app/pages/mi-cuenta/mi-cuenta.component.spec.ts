@@ -10,8 +10,17 @@ import { ComprobantePdfService } from '../../core/services/comprobante-pdf.servi
 import { NotificationService } from '../../core/services/notification.service';
 
 const deuda = (parcial: Partial<DeudaItem>): DeudaItem => ({
-  id: 1, tipo: 'OBLIGACION', concepto: 'Multa', anio: 2026, periodo: 'Cuota/Multa', valor: 10,
-  estado: 'PENDIENTE', fechaEmision: '2026-01-01', pagoId: null, pagoAnualId: null, ...parcial
+  id: 1,
+  tipo: 'OBLIGACION',
+  concepto: 'Multa',
+  anio: 2026,
+  periodo: 'Cuota/Multa',
+  valor: 10,
+  estado: 'PENDIENTE',
+  fechaEmision: '2026-01-01',
+  pagoId: null,
+  pagoAnualId: null,
+  ...parcial,
 });
 
 describe('Mi cuenta', () => {
@@ -21,20 +30,46 @@ describe('Mi cuenta', () => {
   function crear(deudas: DeudaItem[], totalPendiente: number) {
     finanzas = {
       getRecibos: vi.fn(() => of([])),
-      getComprobante: vi.fn(() => of({ numero: 'REC-AGUA-000009', fechaHora: '', usuarioNombre: '', usuarioCedula: '', lineas: [], total: 42 }))
+      getComprobante: vi.fn(() =>
+        of({
+          numero: 'REC-AGUA-000009',
+          fechaHora: '',
+          usuarioNombre: '',
+          usuarioCedula: '',
+          lineas: [],
+          total: 42,
+        }),
+      ),
     };
     pdf = { imprimir: vi.fn(async () => undefined), descargar: vi.fn(async () => undefined) };
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: AuthService, useValue: { getUser: () => ({ cedula: '1804567890' }), logout: vi.fn() } },
-        { provide: ConsultaService, useValue: { consultarPorCedula: () => of({ status: 'OK', resultado: {
-          cedula: '1804567890', nombres: 'Rosa Caiza', sector: 'La Jones', loteCodigo: 'LJA-001', totalPendiente, deudas
-        } }) } },
+        {
+          provide: AuthService,
+          useValue: { getUser: () => ({ cedula: '1804567890' }), logout: vi.fn() },
+        },
+        {
+          provide: ConsultaService,
+          useValue: {
+            consultarPorCedula: () =>
+              of({
+                status: 'OK',
+                resultado: {
+                  cedula: '1804567890',
+                  nombres: 'Rosa Caiza',
+                  sector: 'La Jones',
+                  loteCodigo: 'LJA-001',
+                  totalPendiente,
+                  deudas,
+                },
+              }),
+          },
+        },
         { provide: FinanzasService, useValue: finanzas },
         { provide: ComprobantePdfService, useValue: pdf },
-        { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } }
-      ]
+        { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } },
+      ],
     });
     const c = TestBed.createComponent(MiCuentaComponent).componentInstance;
     c.ngOnInit();
@@ -48,11 +83,14 @@ describe('Mi cuenta', () => {
   });
 
   it('cada obligación pagada imprime su propio comprobante; sin uno vigente no ofrece otro', () => {
-    const c = crear([
-      deuda({ id: 7, tipo: 'AGUA_ANUAL', estado: 'PAGADA', pagoAnualId: 9 }),
-      deuda({ id: 8, estado: 'PAGADA', pagoId: 15 }),
-      deuda({ id: 9, estado: 'PAGADA' })
-    ], 0);
+    const c = crear(
+      [
+        deuda({ id: 7, tipo: 'AGUA_ANUAL', estado: 'PAGADA', pagoAnualId: 9 }),
+        deuda({ id: 8, estado: 'PAGADA', pagoId: 15 }),
+        deuda({ id: 9, estado: 'PAGADA' }),
+      ],
+      0,
+    );
     const [agua, multa, huerfana] = c.deudasPagadas;
     expect(c.reciboDe(agua)).toEqual({ tipo: 'AGUA', id: 9 });
     expect(c.reciboDe(multa)).toEqual({ tipo: 'GENERAL', id: 15 });

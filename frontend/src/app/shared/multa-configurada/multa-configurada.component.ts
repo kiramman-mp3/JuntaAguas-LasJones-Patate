@@ -2,7 +2,10 @@ import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FinanzasService } from '../../core/services/finanzas.service';
 
-const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = { ASAMBLEA: 'MULTA_ASAMBLEA', MINGA: 'MULTA_MINGA' };
+const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = {
+  ASAMBLEA: 'MULTA_ASAMBLEA',
+  MINGA: 'MULTA_MINGA',
+};
 
 /**
  * Muestra la multa por inasistencia que aplicará el servidor: la tarifa vigente del concepto
@@ -14,19 +17,26 @@ const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = { ASAMBLEA: 'MULTA_ASAMBL
   imports: [RouterLink],
   template: `
     @if (cargando()) {
-      <p class="multa-info"><span class="spinner spinner--sm" aria-hidden="true"></span> Consultando la multa configurada…</p>
+      <p class="multa-info">
+        <span class="spinner spinner--sm" aria-hidden="true"></span> Consultando la multa
+        configurada…
+      </p>
     } @else if (valor() !== null) {
       <p class="multa-info" role="status">
         <i class="ri-price-tag-3-line" aria-hidden="true"></i>
-        <span>Multa configurada: <strong class="money">\${{ valor()!.toFixed(2) }}</strong> por ausencia sin justificación.</span>
+        <span
+          >Multa configurada: <strong class="money">\${{ valor()!.toFixed(2) }}</strong> por
+          ausencia sin justificación.</span
+        >
         <a routerLink="/admin/ajustes/tarifas" class="multa-info__link">Cambiar en Ajustes</a>
       </p>
     } @else {
       <p class="alert alert--warning" role="alert">
         <i class="ri-alert-line" aria-hidden="true"></i>
         <span>
-          No hay una tarifa de multa {{ tipo() === 'ASAMBLEA' ? 'de asamblea' : 'de minga' }} configurada.
-          Regístrela en <a routerLink="/admin/ajustes/tarifas">Ajustes → Tarifas</a> o desactive la multa.
+          No hay una tarifa de multa
+          {{ tipo() === 'ASAMBLEA' ? 'de asamblea' : 'de minga' }} configurada. Regístrela en
+          <a routerLink="/admin/ajustes/tarifas">Ajustes → Tarifas</a> o desactive la multa.
         </span>
       </p>
     }
@@ -58,8 +68,8 @@ const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = { ASAMBLEA: 'MULTA_ASAMBL
         color: inherit;
         font-weight: 700;
       }
-    `
-  ]
+    `,
+  ],
 })
 export class MultaConfiguradaComponent implements OnInit {
   private finanzas = inject(FinanzasService);
@@ -76,7 +86,7 @@ export class MultaConfiguradaComponent implements OnInit {
         this.valor.set(concepto?.tarifa_actual != null && valor > 0 ? valor : null);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: () => this.cargando.set(false),
     });
   }
 }

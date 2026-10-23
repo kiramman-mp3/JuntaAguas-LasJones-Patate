@@ -21,11 +21,11 @@ import { SectionNavComponent, SeccionNav } from '../../../../shared/ui/section-n
       <app-section-nav [items]="secciones" etiqueta="Secciones de usuarios" />
       <router-outlet />
     </section>
-  `
+  `,
 })
 export class UsuariosAdminComponent {
   readonly secciones: SeccionNav[] = [
     { ruta: '/admin/usuarios/padron', etiqueta: 'Padrón', icono: 'ri-user-line' },
-    { ruta: '/admin/usuarios/lotes', etiqueta: 'Catastro de lotes', icono: 'ri-map-pin-line' }
+    { ruta: '/admin/usuarios/lotes', etiqueta: 'Catastro de lotes', icono: 'ri-map-pin-line' },
   ];
 }

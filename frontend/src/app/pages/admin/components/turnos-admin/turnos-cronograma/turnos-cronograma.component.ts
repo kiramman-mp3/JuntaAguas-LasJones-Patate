@@ -65,9 +65,7 @@ interface SectorAgrupado {
                 </div>
                 <div>
                   <h4 class="sector-block__title">{{ sec.nombre }}</h4>
-                  <p class="sector-block__meta">
-                    Sector de riego oficial · Junta La Jones Patate
-                  </p>
+                  <p class="sector-block__meta">Sector de riego oficial · Junta La Jones Patate</p>
                 </div>
               </div>
 
@@ -173,370 +171,372 @@ interface SectorAgrupado {
       </div>
     </div>
   `,
-  styles: [`
-    .cronograma-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-      padding: 0.5rem 1rem 1.5rem;
-    }
-
-    .cronograma-nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-      padding-bottom: 0.25rem;
-    }
-
-    .cronograma-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.45rem 0.85rem;
-      border-radius: var(--radius-full, 9999px);
-      border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
-      background: var(--bg-surface, #ffffff);
-      color: var(--text-color, #1f2937);
-      font-size: 0.84rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      i {
-        font-size: 1rem;
-        color: var(--text-muted, #6b7280);
-      }
-
-      &__count {
-        display: inline-block;
-        padding: 0.1rem 0.45rem;
-        border-radius: var(--radius-full, 9999px);
-        background: var(--bg-surface-hover, rgba(0, 0, 0, 0.05));
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--text-muted, #6b7280);
-      }
-
-      &:hover {
-        background: var(--bg-surface-hover, rgba(0, 0, 0, 0.05));
-        border-color: var(--color-primary, #0284c7);
-      }
-
-      &--active {
-        background: var(--color-primary, #0284c7);
-        color: #ffffff;
-        border-color: var(--color-primary, #0284c7);
-
-        i {
-          color: #ffffff;
-        }
-
-        .cronograma-chip__count {
-          background: rgba(255, 255, 255, 0.25);
-          color: #ffffff;
-        }
-      }
-    }
-
-    .cronograma-sectors {
-      display: flex;
-      flex-direction: column;
-      gap: 1.75rem;
-    }
-
-    .sector-block {
-      border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
-      border-radius: var(--radius-xl, 14px);
-      background: var(--bg-surface, #ffffff);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-      overflow: hidden;
-      transition: box-shadow 0.2s ease;
-
-      &:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      }
-
-      &__head {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1rem 1.25rem;
-        background: linear-gradient(to right, rgba(2, 132, 199, 0.05), transparent);
-        border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
-      }
-
-      &__title-area {
-        display: flex;
-        align-items: center;
-        gap: 0.85rem;
-      }
-
-      &__title {
-        margin: 0;
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: var(--text-color, #111827);
-        letter-spacing: -0.01em;
-      }
-
-      &__meta {
-        margin: 0.15rem 0 0;
-        font-size: 0.8rem;
-        color: var(--text-muted, #6b7280);
-      }
-
-      &__stats {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.6rem;
-      }
-    }
-
-    .sector-badge-icon {
-      display: grid;
-      place-items: center;
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: var(--radius-lg, 10px);
-      background: rgba(2, 132, 199, 0.12);
-      color: var(--color-primary, #0284c7);
-      font-size: 1.3rem;
-    }
-
-    .stat-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-md, 8px);
-      background: var(--bg-surface-hover, rgba(0, 0, 0, 0.04));
-      font-size: 0.8rem;
-      color: var(--text-color, #374151);
-
-      i {
-        color: var(--color-primary, #0284c7);
-      }
-
-      strong {
-        font-weight: 700;
-      }
-
-      span {
-        color: var(--text-muted, #6b7280);
-        font-size: 0.75rem;
-      }
-
-      &--accent {
-        background: rgba(16, 185, 129, 0.1);
-        color: #065f46;
-
-        i {
-          color: #10b981;
-        }
-      }
-    }
-
-    .sector-week {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 0.5rem;
-      padding: 0.85rem;
-      background: var(--bg-surface-hover, rgba(0, 0, 0, 0.02));
-
-      @media (max-width: 1200px) {
-        grid-template-columns: none;
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(190px, 35%);
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        scroll-snap-type: x mandatory;
-        padding: 0.75rem;
-      }
-
-      @media (max-width: 640px) {
-        grid-auto-columns: 80%;
-      }
-    }
-
-    .sector-day {
-      display: flex;
-      flex-direction: column;
-      min-height: 260px;
-      border-radius: var(--radius-lg, 10px);
-      background: var(--bg-surface, #ffffff);
-      border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
-      scroll-snap-align: start;
-      overflow: hidden;
-
-      &--has-turnos {
-        border-color: rgba(2, 132, 199, 0.25);
-      }
-
-      &__head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.55rem 0.7rem;
-        background: var(--bg-surface-hover, rgba(0, 0, 0, 0.03));
-        border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.05));
-      }
-
-      &__name {
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: var(--text-color, #1f2937);
-      }
-
-      &__badge {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--color-primary, #0284c7);
-        padding: 0.1rem 0.4rem;
-        background: rgba(2, 132, 199, 0.08);
-        border-radius: var(--radius-sm, 4px);
-
-        &--empty {
-          color: var(--text-muted, #9ca3af);
-          background: transparent;
-        }
-      }
-
-      &__shifts {
+  styles: [
+    `
+      .cronograma-container {
         display: flex;
         flex-direction: column;
-        gap: 0.45rem;
-        padding: 0.55rem;
-        overflow-y: auto;
-        flex: 1;
+        gap: 1.25rem;
+        padding: 0.5rem 1rem 1.5rem;
       }
 
-      &__empty {
+      .cronograma-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        padding-bottom: 0.25rem;
+      }
+
+      .cronograma-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-full, 9999px);
+        border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+        background: var(--bg-surface, #ffffff);
+        color: var(--text-color, #1f2937);
+        font-size: 0.84rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        i {
+          font-size: 1rem;
+          color: var(--text-muted, #6b7280);
+        }
+
+        &__count {
+          display: inline-block;
+          padding: 0.1rem 0.45rem;
+          border-radius: var(--radius-full, 9999px);
+          background: var(--bg-surface-hover, rgba(0, 0, 0, 0.05));
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: var(--text-muted, #6b7280);
+        }
+
+        &:hover {
+          background: var(--bg-surface-hover, rgba(0, 0, 0, 0.05));
+          border-color: var(--color-primary, #0284c7);
+        }
+
+        &--active {
+          background: var(--color-primary, #0284c7);
+          color: #ffffff;
+          border-color: var(--color-primary, #0284c7);
+
+          i {
+            color: #ffffff;
+          }
+
+          .cronograma-chip__count {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+          }
+        }
+      }
+
+      .cronograma-sectors {
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+      }
+
+      .sector-block {
+        border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+        border-radius: var(--radius-xl, 14px);
+        background: var(--bg-surface, #ffffff);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        transition: box-shadow 0.2s ease;
+
+        &:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        &__head {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          padding: 1rem 1.25rem;
+          background: linear-gradient(to right, rgba(2, 132, 199, 0.05), transparent);
+          border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
+        }
+
+        &__title-area {
+          display: flex;
+          align-items: center;
+          gap: 0.85rem;
+        }
+
+        &__title {
+          margin: 0;
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: var(--text-color, #111827);
+          letter-spacing: -0.01em;
+        }
+
+        &__meta {
+          margin: 0.15rem 0 0;
+          font-size: 0.8rem;
+          color: var(--text-muted, #6b7280);
+        }
+
+        &__stats {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 0.6rem;
+        }
+      }
+
+      .sector-badge-icon {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: var(--radius-lg, 10px);
+        background: rgba(2, 132, 199, 0.12);
+        color: var(--color-primary, #0284c7);
+        font-size: 1.3rem;
+      }
+
+      .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--radius-md, 8px);
+        background: var(--bg-surface-hover, rgba(0, 0, 0, 0.04));
+        font-size: 0.8rem;
+        color: var(--text-color, #374151);
+
+        i {
+          color: var(--color-primary, #0284c7);
+        }
+
+        strong {
+          font-weight: 700;
+        }
+
+        span {
+          color: var(--text-muted, #6b7280);
+          font-size: 0.75rem;
+        }
+
+        &--accent {
+          background: rgba(16, 185, 129, 0.1);
+          color: #065f46;
+
+          i {
+            color: #10b981;
+          }
+        }
+      }
+
+      .sector-week {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.5rem;
+        padding: 0.85rem;
+        background: var(--bg-surface-hover, rgba(0, 0, 0, 0.02));
+
+        @media (max-width: 1200px) {
+          grid-template-columns: none;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(190px, 35%);
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          scroll-snap-type: x mandatory;
+          padding: 0.75rem;
+        }
+
+        @media (max-width: 640px) {
+          grid-auto-columns: 80%;
+        }
+      }
+
+      .sector-day {
+        display: flex;
+        flex-direction: column;
+        min-height: 260px;
+        border-radius: var(--radius-lg, 10px);
+        background: var(--bg-surface, #ffffff);
+        border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
+        scroll-snap-align: start;
+        overflow: hidden;
+
+        &--has-turnos {
+          border-color: rgba(2, 132, 199, 0.25);
+        }
+
+        &__head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.55rem 0.7rem;
+          background: var(--bg-surface-hover, rgba(0, 0, 0, 0.03));
+          border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.05));
+        }
+
+        &__name {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: var(--text-color, #1f2937);
+        }
+
+        &__badge {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--color-primary, #0284c7);
+          padding: 0.1rem 0.4rem;
+          background: rgba(2, 132, 199, 0.08);
+          border-radius: var(--radius-sm, 4px);
+
+          &--empty {
+            color: var(--text-muted, #9ca3af);
+            background: transparent;
+          }
+        }
+
+        &__shifts {
+          display: flex;
+          flex-direction: column;
+          gap: 0.45rem;
+          padding: 0.55rem;
+          overflow-y: auto;
+          flex: 1;
+        }
+
+        &__empty {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 2.5rem 0.5rem;
+          text-align: center;
+          color: var(--text-muted, #9ca3af);
+          font-size: 0.76rem;
+          gap: 0.25rem;
+
+          i {
+            font-size: 1.25rem;
+            opacity: 0.4;
+          }
+        }
+      }
+
+      .cronograma-shift {
+        position: relative;
+        border-radius: 8px;
+        background: var(--bg-surface, #ffffff);
+        border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+        border-left: 3px solid var(--color-primary, #0284c7);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
+
+        &:hover {
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+          transform: translateY(-1px);
+        }
+
+        &__body {
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
+          width: 100%;
+          padding: 0.5rem 0.55rem;
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        &__time {
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+          font-size: 0.72rem;
+          color: var(--color-primary, #0284c7);
+
+          strong {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+          }
+
+          i {
+            font-size: 0.8rem;
+          }
+        }
+
+        &__who {
+          font-size: 0.82rem;
+          font-weight: 600;
+          color: var(--text-color, #1f2937);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        &__lot {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          font-size: 0.72rem;
+          color: var(--text-muted, #6b7280);
+
+          i {
+            font-size: 0.75rem;
+          }
+        }
+
+        &__actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 0.15rem;
+          padding: 0.15rem 0.4rem 0.35rem;
+          border-top: 1px dashed var(--border-color, rgba(0, 0, 0, 0.05));
+        }
+      }
+
+      .badge-mini {
+        display: inline-block;
+        padding: 0.05rem 0.3rem;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 700;
+
+        &--warning {
+          background: #fef3c7;
+          color: #92400e;
+        }
+      }
+
+      .empty-cronograma {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 2.5rem 0.5rem;
+        padding: 4rem 1rem;
         text-align: center;
-        color: var(--text-muted, #9ca3af);
-        font-size: 0.76rem;
-        gap: 0.25rem;
-
-        i {
-          font-size: 1.25rem;
-          opacity: 0.4;
-        }
-      }
-    }
-
-    .cronograma-shift {
-      position: relative;
-      border-radius: 8px;
-      background: var(--bg-surface, #ffffff);
-      border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
-      border-left: 3px solid var(--color-primary, #0284c7);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-      transition: all 0.2s ease;
-
-      &:hover {
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-        transform: translateY(-1px);
-      }
-
-      &__body {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-        width: 100%;
-        padding: 0.5rem 0.55rem;
-        border: 0;
-        background: transparent;
-        color: inherit;
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-      }
-
-      &__time {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        font-size: 0.72rem;
-        color: var(--color-primary, #0284c7);
-
-        strong {
-          font-weight: 700;
-          font-variant-numeric: tabular-nums;
-        }
-
-        i {
-          font-size: 0.8rem;
-        }
-      }
-
-      &__who {
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: var(--text-color, #1f2937);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      &__lot {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-size: 0.72rem;
         color: var(--text-muted, #6b7280);
 
         i {
-          font-size: 0.75rem;
+          font-size: 2.5rem;
+          opacity: 0.4;
+          margin-bottom: 0.5rem;
         }
       }
-
-      &__actions {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 0.15rem;
-        padding: 0.15rem 0.4rem 0.35rem;
-        border-top: 1px dashed var(--border-color, rgba(0, 0, 0, 0.05));
-      }
-    }
-
-    .badge-mini {
-      display: inline-block;
-      padding: 0.05rem 0.3rem;
-      border-radius: 4px;
-      font-size: 0.65rem;
-      font-weight: 700;
-
-      &--warning {
-        background: #fef3c7;
-        color: #92400e;
-      }
-    }
-
-    .empty-cronograma {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 1rem;
-      text-align: center;
-      color: var(--text-muted, #6b7280);
-
-      i {
-        font-size: 2.5rem;
-        opacity: 0.4;
-        margin-bottom: 0.5rem;
-      }
-    }
-  `]
+    `,
+  ],
 })
 export class TurnosCronogramaComponent {
   readonly turnos = input.required<Turno[]>();
@@ -584,7 +584,7 @@ export class TurnosCronogramaComponent {
         return {
           dia,
           turnos: turnosDia,
-          horasDia: Number((minutosDia / 60).toFixed(1))
+          horasDia: Number((minutosDia / 60).toFixed(1)),
         };
       });
 
@@ -593,7 +593,7 @@ export class TurnosCronogramaComponent {
         totalTurnos: turnosSector.length,
         totalHoras: Number((totalMinutos / 60).toFixed(1)),
         lotesUnicos,
-        dias
+        dias,
       };
     });
   });

@@ -27,8 +27,17 @@ import { mensajeError } from '../../../../core/utils/errores';
 @Component({
   selector: 'app-mingas-admin',
   standalone: true,
-  imports: [CurrencyPipe, FechaLocalPipe, FormsModule, EmptyStateComponent, SkeletonComponent, MenuComponent, MingaFormComponent, MingaAsistenciaComponent],
-  templateUrl: './mingas-admin.component.html'
+  imports: [
+    CurrencyPipe,
+    FechaLocalPipe,
+    FormsModule,
+    EmptyStateComponent,
+    SkeletonComponent,
+    MenuComponent,
+    MingaFormComponent,
+    MingaAsistenciaComponent,
+  ],
+  templateUrl: './mingas-admin.component.html',
 })
 export class MingasAdminComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -60,8 +69,12 @@ export class MingasAdminComponent implements OnInit {
     const hoy = hoyEnEcuador();
     return this.mingas.filter(
       (m) =>
-        (!texto || `${m.titulo} ${m.lugar} ${m.sector_nombre || ''}`.toLocaleLowerCase('es').includes(texto)) &&
-        (this.periodo === 'TODAS' || (this.periodo === 'PROXIMAS' ? m.fecha >= hoy : m.fecha < hoy))
+        (!texto ||
+          `${m.titulo} ${m.lugar} ${m.sector_nombre || ''}`
+            .toLocaleLowerCase('es')
+            .includes(texto)) &&
+        (this.periodo === 'TODAS' ||
+          (this.periodo === 'PROXIMAS' ? m.fecha >= hoy : m.fecha < hoy)),
     );
   }
 
@@ -89,7 +102,7 @@ export class MingasAdminComponent implements OnInit {
       PROGRAMADO: 'Programada',
       CONVOCADO: 'Convocada',
       REALIZADO: 'Realizada',
-      CANCELADO: 'Cancelada'
+      CANCELADO: 'Cancelada',
     };
     return etiquetas[estado] || 'Sin estado';
   }
@@ -99,7 +112,7 @@ export class MingasAdminComponent implements OnInit {
       PROGRAMADO: 'badge--info',
       CONVOCADO: 'badge--warning',
       REALIZADO: 'badge--success',
-      CANCELADO: 'badge--danger'
+      CANCELADO: 'badge--danger',
     };
     return tonos[estado] || 'badge--neutral';
   }
@@ -118,7 +131,7 @@ export class MingasAdminComponent implements OnInit {
         finalize(() => {
           this.cargando = false;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: (res) => {
@@ -131,16 +144,20 @@ export class MingasAdminComponent implements OnInit {
               asistentes: Number(m.asistentes) || 0,
               totalUsuarios: Number(m.totalUsuarios) || 0,
               valor_multa: Number(m.valor_multa) || 0,
-              genera_multa_ausencia: Boolean(m.genera_multa_ausencia)
+              genera_multa_ausencia: Boolean(m.genera_multa_ausencia),
             }));
         },
-        error: (err) => (this.error = err.error?.message || 'No se pudieron cargar las mingas. Intente nuevamente.')
+        error: (err) =>
+          (this.error =
+            err.error?.message || 'No se pudieron cargar las mingas. Intente nuevamente.'),
       });
   }
 
   onCreada() {
     this.formularioAbierto = false;
-    this.notify.success('Minga registrada. Puede enviar la convocatoria por WhatsApp desde sus acciones.');
+    this.notify.success(
+      'Minga registrada. Puede enviar la convocatoria por WhatsApp desde sus acciones.',
+    );
     this.cargar();
   }
 
@@ -161,7 +178,7 @@ export class MingasAdminComponent implements OnInit {
         tipo: 'DANGER',
         titulo: 'Cancelar minga',
         mensaje: `¿Cancelar la minga "${minga.titulo}"? Su asistencia quedará cerrada y no se generarán multas.`,
-        textoConfirmar: 'Cancelar minga'
+        textoConfirmar: 'Cancelar minga',
       });
       if (!confirmado) return;
     }
@@ -173,7 +190,7 @@ export class MingasAdminComponent implements OnInit {
         finalize(() => {
           this.actualizandoId = null;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: (res) => {
@@ -181,7 +198,7 @@ export class MingasAdminComponent implements OnInit {
           this.notify.success(res.message);
           this.cargar();
         },
-        error: (err) => this.notify.error(err.error?.message || 'No se pudo actualizar la minga.')
+        error: (err) => this.notify.error(err.error?.message || 'No se pudo actualizar la minga.'),
       });
   }
 
@@ -191,7 +208,9 @@ export class MingasAdminComponent implements OnInit {
     try {
       const r = (await firstValueFrom(this.admin.getAsistenciasMinga(minga.id))).resumen;
       if (!r.total || r.pendientes) {
-        this.notify.warning(`Complete y guarde la asistencia antes de finalizar. Pendientes: ${r.pendientes}.`);
+        this.notify.warning(
+          `Complete y guarde la asistencia antes de finalizar. Pendientes: ${r.pendientes}.`,
+        );
         return;
       }
       const multa = minga.genera_multa_ausencia
@@ -201,7 +220,7 @@ export class MingasAdminComponent implements OnInit {
         tipo: 'CONFIRM',
         titulo: 'Finalizar minga',
         mensaje: `Asistencia guardada: ${r.presentes} presentes, ${r.ausentes} ausentes y ${r.justificados} justificados.${multa} La asistencia quedará cerrada.`,
-        textoConfirmar: 'Finalizar minga'
+        textoConfirmar: 'Finalizar minga',
       });
       if (!confirmado) return;
       const res = await firstValueFrom(this.admin.finalizarMinga(minga.id));
@@ -234,7 +253,7 @@ export class MingasAdminComponent implements OnInit {
         finalize(() => {
           this.descargandoId = null;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: (blob) => {
@@ -245,7 +264,7 @@ export class MingasAdminComponent implements OnInit {
           enlace.click();
           setTimeout(() => URL.revokeObjectURL(url), 1000);
         },
-        error: () => this.notify.error('No se pudo descargar la lista de asistencia.')
+        error: () => this.notify.error('No se pudo descargar la lista de asistencia.'),
       });
   }
 
@@ -253,7 +272,11 @@ export class MingasAdminComponent implements OnInit {
     const archivo = input.files?.[0];
     input.value = '';
     if (!archivo || this.subiendoId !== null) return;
-    if (!['application/pdf', 'image/jpeg', 'image/png'].includes(archivo.type) || archivo.size > 10 * 1024 * 1024 || archivo.size === 0) {
+    if (
+      !['application/pdf', 'image/jpeg', 'image/png'].includes(archivo.type) ||
+      archivo.size > 10 * 1024 * 1024 ||
+      archivo.size === 0
+    ) {
       this.notify.warning('Seleccione un PDF, JPG o PNG válido de hasta 10 MB.');
       return;
     }
@@ -265,14 +288,15 @@ export class MingasAdminComponent implements OnInit {
         finalize(() => {
           this.subiendoId = null;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: () => {
           this.notify.success('Lista firmada guardada.');
           this.cargar();
         },
-        error: (err) => this.notify.error(err.error?.message || 'No se pudo subir la lista firmada.')
+        error: (err) =>
+          this.notify.error(err.error?.message || 'No se pudo subir la lista firmada.'),
       });
   }
 

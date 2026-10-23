@@ -12,7 +12,11 @@ import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
 import { AsambleaItem, DocumentoFirmado, estadoTexto } from './asamblea.model';
 import { AsambleasService } from './asambleas.service';
-import { AsambleaCardComponent, SubidaDocumento, TipoDocumentoAsamblea } from './asamblea-card/asamblea-card.component';
+import {
+  AsambleaCardComponent,
+  SubidaDocumento,
+  TipoDocumentoAsamblea,
+} from './asamblea-card/asamblea-card.component';
 import { AsambleaFormComponent } from './asamblea-form/asamblea-form.component';
 import { AsambleaAsistenciaComponent } from './asamblea-asistencia/asamblea-asistencia.component';
 import { AsambleaActasComponent } from './asamblea-actas/asamblea-actas.component';
@@ -38,9 +42,9 @@ type EstadoDestino = 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO';
     AsambleaFormComponent,
     AsambleaAsistenciaComponent,
     AsambleaActasComponent,
-    DocumentoFirmadoComponent
+    DocumentoFirmadoComponent,
   ],
-  templateUrl: './asambleas-admin.component.html'
+  templateUrl: './asambleas-admin.component.html',
 })
 export class AsambleasAdminComponent implements OnInit {
   private servicio = inject(AsambleasService);
@@ -76,14 +80,20 @@ export class AsambleasAdminComponent implements OnInit {
         (subtipo === 'TODAS' || a.subtipo_asamblea === subtipo) &&
         !(periodo === 'PROXIMAS' && a.fecha < hoy) &&
         !(periodo === 'ANTERIORES' && a.fecha >= hoy) &&
-        (!q || a.titulo.toLowerCase().includes(q) || !!a.lugar?.toLowerCase().includes(q) || !!a.descripcion?.toLowerCase().includes(q))
+        (!q ||
+          a.titulo.toLowerCase().includes(q) ||
+          !!a.lugar?.toLowerCase().includes(q) ||
+          !!a.descripcion?.toLowerCase().includes(q)),
     );
   });
 
   /** Próximas (la más cercana primero) y anteriores (la más reciente primero), sin grupos vacíos. */
   readonly secciones = computed(() => agruparPorFecha(this.filtradas(), hoyEnEcuador()));
 
-  readonly hayFiltros = computed(() => !!this.busqueda().trim() || this.subtipoFiltro() !== 'TODAS' || this.periodo() !== 'TODAS');
+  readonly hayFiltros = computed(
+    () =>
+      !!this.busqueda().trim() || this.subtipoFiltro() !== 'TODAS' || this.periodo() !== 'TODAS',
+  );
 
   ngOnInit(): void {
     this.cargar();
@@ -100,7 +110,7 @@ export class AsambleasAdminComponent implements OnInit {
       error: () => {
         this.cargando.set(false);
         this.error.set('No se pudo cargar la lista de asambleas. Intente nuevamente.');
-      }
+      },
     });
   }
 
@@ -127,8 +137,16 @@ export class AsambleasAdminComponent implements OnInit {
   verDocumento(asamblea: AsambleaItem, tipo: TipoDocumentoAsamblea): void {
     this.documento.set(
       tipo === 'CONVOCATORIA'
-        ? { titulo: 'Convocatoria firmada', url: asamblea.convocatoria_firmada_url || '', nombre: asamblea.convocatoria_firmada_nombre || 'Convocatoria_Firmada.pdf' }
-        : { titulo: 'Lista de asistencia firmada', url: asamblea.lista_asistencia_firmada_url || '', nombre: 'Lista_Asistencia_Firmada.pdf' }
+        ? {
+            titulo: 'Convocatoria firmada',
+            url: asamblea.convocatoria_firmada_url || '',
+            nombre: asamblea.convocatoria_firmada_nombre || 'Convocatoria_Firmada.pdf',
+          }
+        : {
+            titulo: 'Lista de asistencia firmada',
+            url: asamblea.lista_asistencia_firmada_url || '',
+            nombre: 'Lista_Asistencia_Firmada.pdf',
+          },
     );
   }
 
@@ -140,7 +158,7 @@ export class AsambleasAdminComponent implements OnInit {
         tipo: 'DANGER',
         titulo: '¿Cancelar asamblea?',
         mensaje: `La asamblea "${asamblea.titulo}" quedará archivada como cancelada y no generará multas a los usuarios.`,
-        textoConfirmar: 'Sí, cancelar asamblea'
+        textoConfirmar: 'Sí, cancelar asamblea',
       });
       if (!confirmado) return;
     }
@@ -153,21 +171,29 @@ export class AsambleasAdminComponent implements OnInit {
       },
       error: (err) => {
         this.ocupadaId.set(null);
-        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo cambiar el estado', mensaje: err?.error?.message || 'Error al actualizar el estado de la asamblea.' });
-      }
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'No se pudo cambiar el estado',
+          mensaje: err?.error?.message || 'Error al actualizar el estado de la asamblea.',
+        });
+      },
     });
   }
 
   async finalizarAsamblea(asamblea: AsambleaItem): Promise<void> {
     if (asamblea.estado !== 'CONVOCADO') {
-      this.dialog.aviso({ tipo: 'WARNING', titulo: 'Acción no permitida', mensaje: 'Solo se puede finalizar una asamblea convocada.' });
+      this.dialog.aviso({
+        tipo: 'WARNING',
+        titulo: 'Acción no permitida',
+        mensaje: 'Solo se puede finalizar una asamblea convocada.',
+      });
       return;
     }
     if (asamblea.fecha > hoyEnEcuador()) {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'La sesión aún no ocurre',
-        mensaje: `La asamblea "${asamblea.titulo}" está programada para el ${asamblea.fecha}. Solo puede darse por realizada desde esa fecha. Si se suspendió, use "Cancelar".`
+        mensaje: `La asamblea "${asamblea.titulo}" está programada para el ${asamblea.fecha}. Solo puede darse por realizada desde esa fecha. Si se suspendió, use "Cancelar".`,
       });
       return;
     }
@@ -175,7 +201,8 @@ export class AsambleasAdminComponent implements OnInit {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'Asistencia requerida',
-        mensaje: 'Registre y guarde el pase de lista antes de finalizar (constan 0 asistentes). Si no hubo cuórum, use "Cancelar".'
+        mensaje:
+          'Registre y guarde el pase de lista antes de finalizar (constan 0 asistentes). Si no hubo cuórum, use "Cancelar".',
       });
       return;
     }
@@ -186,7 +213,7 @@ export class AsambleasAdminComponent implements OnInit {
       tipo: 'CONFIRM',
       titulo: 'Finalizar asamblea',
       mensaje: `Se cerrará la asistencia con ${asamblea.asistentes} usuarios presentes.${multa} Esta acción es irreversible.`,
-      textoConfirmar: 'Dar por realizada'
+      textoConfirmar: 'Dar por realizada',
     });
     if (!confirmado) return;
 
@@ -195,12 +222,18 @@ export class AsambleasAdminComponent implements OnInit {
       next: (res) => {
         this.ocupadaId.set(null);
         this.actualizar(asamblea.id, { estado: 'REALIZADO' });
-        this.notify.success(`Asamblea finalizada. Se generaron ${res?.multasGeneradas || 0} multas automáticas.`);
+        this.notify.success(
+          `Asamblea finalizada. Se generaron ${res?.multasGeneradas || 0} multas automáticas.`,
+        );
       },
       error: (err) => {
         this.ocupadaId.set(null);
-        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo finalizar', mensaje: err?.error?.message || 'Error al finalizar la asamblea.' });
-      }
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'No se pudo finalizar',
+          mensaje: err?.error?.message || 'Error al finalizar la asamblea.',
+        });
+      },
     });
   }
 
@@ -231,22 +264,31 @@ export class AsambleasAdminComponent implements OnInit {
       return;
     }
     this.ocupadaId.set(asamblea.id);
-    this.documentos.subir(asamblea.id, tipo === 'CONVOCATORIA' ? 'CONVOCATORIA' : 'OTRO', archivo).subscribe({
-      next: (res) => {
-        this.ocupadaId.set(null);
-        this.actualizar(
-          asamblea.id,
-          tipo === 'CONVOCATORIA'
-            ? { convocatoria_firmada_url: res.url, convocatoria_firmada_nombre: res.nombre_archivo }
-            : { lista_asistencia_firmada_url: res.url }
-        );
-        this.notify.success('Documento firmado subido y registrado.');
-      },
-      error: (err) => {
-        this.ocupadaId.set(null);
-        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo subir el documento', mensaje: err?.error?.message || 'Error al subir el documento firmado.' });
-      }
-    });
+    this.documentos
+      .subir(asamblea.id, tipo === 'CONVOCATORIA' ? 'CONVOCATORIA' : 'OTRO', archivo)
+      .subscribe({
+        next: (res) => {
+          this.ocupadaId.set(null);
+          this.actualizar(
+            asamblea.id,
+            tipo === 'CONVOCATORIA'
+              ? {
+                  convocatoria_firmada_url: res.url,
+                  convocatoria_firmada_nombre: res.nombre_archivo,
+                }
+              : { lista_asistencia_firmada_url: res.url },
+          );
+          this.notify.success('Documento firmado subido y registrado.');
+        },
+        error: (err) => {
+          this.ocupadaId.set(null);
+          this.dialog.aviso({
+            tipo: 'DANGER',
+            titulo: 'No se pudo subir el documento',
+            mensaje: err?.error?.message || 'Error al subir el documento firmado.',
+          });
+        },
+      });
   }
 
   /** Aplica un cambio a una asamblea de la lista sin volver a pedirla al servidor. */

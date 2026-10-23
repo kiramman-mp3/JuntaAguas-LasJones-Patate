@@ -7,7 +7,9 @@ import { environment } from '../../../environments/environment';
 
 describe('AuthService', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     session.limpiar();
   });
 

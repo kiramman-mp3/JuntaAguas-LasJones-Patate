@@ -18,12 +18,12 @@ import { SectionNavComponent, SeccionNav } from '../../../../shared/ui/section-n
       <app-section-nav [items]="secciones" etiqueta="Secciones de gestión interna" />
       <router-outlet />
     </section>
-  `
+  `,
 })
 export class GestionAdminComponent {
   readonly secciones: SeccionNav[] = [
     { ruta: '/admin/gestion/auditoria', etiqueta: 'Auditoría', icono: 'ri-shield-check-line' },
     { ruta: '/admin/gestion/inventario', etiqueta: 'Inventario', icono: 'ri-archive-line' },
-    { ruta: '/admin/gestion/plan-anual', etiqueta: 'Plan anual', icono: 'ri-calendar-todo-line' }
+    { ruta: '/admin/gestion/plan-anual', etiqueta: 'Plan anual', icono: 'ri-calendar-todo-line' },
   ];
 }

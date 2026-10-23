@@ -18,12 +18,20 @@ export const PORCENTAJE_TITULARIDAD = 100;
   imports: [FormsModule, ModalComponent],
   template: `
     @let c = usuario();
-    <app-modal titulo="Asignar terreno" [subtitulo]="c.apellidos + ' ' + c.nombres + ' · C.I. ' + c.cedula" icono="ri-link" tamano="sm"
-      [bloqueado]="guardando()" (cerrar)="cerrar.emit()">
+    <app-modal
+      titulo="Asignar terreno"
+      [subtitulo]="c.apellidos + ' ' + c.nombres + ' · C.I. ' + c.cedula"
+      icono="ri-link"
+      tamano="sm"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrar.emit()"
+    >
       <form (ngSubmit)="guardar()" #vincularForm="ngForm">
         <div class="modal__body form-stack">
           <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;"
+            >
               <label for="vin-lote" style="margin-bottom: 0;">Lote *</label>
               @if (!cargando() && lotes().length > 0) {
                 <small class="text-muted" style="font-size: 0.75rem;">
@@ -44,17 +52,35 @@ export const PORCENTAJE_TITULARIDAD = 100;
                 aria-label="Buscar lote"
               />
             </div>
-            <select id="vin-lote" class="input" name="lote_id" [ngModel]="loteId()" (ngModelChange)="loteId.set($event)" required [disabled]="cargando()">
+            <select
+              id="vin-lote"
+              class="input"
+              name="lote_id"
+              [ngModel]="loteId()"
+              (ngModelChange)="loteId.set($event)"
+              required
+              [disabled]="cargando()"
+            >
               <option [ngValue]="null">
-                {{ cargando() ? 'Cargando lotes…' : lotesFiltrados().length ? 'Elija un lote (' + lotesFiltrados().length + ' disponibles)…' : 'No hay lotes con ese criterio' }}
+                {{
+                  cargando()
+                    ? 'Cargando lotes…'
+                    : lotesFiltrados().length
+                      ? 'Elija un lote (' + lotesFiltrados().length + ' disponibles)…'
+                      : 'No hay lotes con ese criterio'
+                }}
               </option>
               @for (lote of lotesFiltrados(); track lote.id) {
-                <option [ngValue]="lote.id">{{ lote.sector_nombre }} — Lote {{ lote.codigo }}{{ lote.propietarios ? ' (de ' + lote.propietarios + ')' : ' (sin dueño)' }}</option>
+                <option [ngValue]="lote.id">
+                  {{ lote.sector_nombre }} — Lote {{ lote.codigo
+                  }}{{ lote.propietarios ? ' (de ' + lote.propietarios + ')' : ' (sin dueño)' }}
+                </option>
               }
             </select>
             @if (busqueda() && lotesFiltrados().length === 0 && !cargando()) {
               <small class="field-error" style="margin-top: 0.25rem;">
-                <i class="ri-information-line" aria-hidden="true"></i> No se encontraron lotes que coincidan con "{{ busqueda() }}".
+                <i class="ri-information-line" aria-hidden="true"></i> No se encontraron lotes que
+                coincidan con "{{ busqueda() }}".
               </small>
             }
           </div>
@@ -78,13 +104,28 @@ export const PORCENTAJE_TITULARIDAD = 100;
           @if (titularActual(); as titular) {
             <div class="alert alert--warning" role="alert" animate.enter="reveal-enter">
               <i class="ri-swap-line" aria-hidden="true"></i>
-              <span>Este lote pertenece a <strong>{{ titular }}</strong>. Al asignarlo se le transfiere el 100 % a {{ c.nombres }} {{ c.apellidos }}, junto con sus turnos de riego activos.</span>
+              <span
+                >Este lote pertenece a <strong>{{ titular }}</strong
+                >. Al asignarlo se le transfiere el 100 % a {{ c.nombres }} {{ c.apellidos }}, junto
+                con sus turnos de riego activos.</span
+              >
             </div>
           }
         </div>
         <div class="modal__footer">
-          <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cancelar</button>
-          <button type="submit" class="btn btn--primary" [disabled]="vincularForm.invalid || guardando()">
+          <button
+            type="button"
+            class="btn btn--outline"
+            (click)="cerrar.emit()"
+            [disabled]="guardando()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="vincularForm.invalid || guardando()"
+          >
             @if (guardando()) {
               <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
             } @else if (titularActual()) {
@@ -96,7 +137,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
         </div>
       </form>
     </app-modal>
-  `
+  `,
 })
 export class VincularLoteComponent implements OnInit {
   private admin = inject(AdminService);
@@ -140,7 +181,8 @@ export class VincularLoteComponent implements OnInit {
   /** Dueño actual del lote elegido, si es otro usuario (el traspaso es total). */
   readonly titularActual = computed<string | null>(() => {
     const lote = this.lotes().find((l) => l.id === this.loteId());
-    if (!lote?.propietario_id || Number(lote.propietario_id) === Number(this.usuario().id)) return null;
+    if (!lote?.propietario_id || Number(lote.propietario_id) === Number(this.usuario().id))
+      return null;
     return lote.propietario_nombre || lote.propietarios || null;
   });
 
@@ -153,7 +195,7 @@ export class VincularLoteComponent implements OnInit {
       error: () => {
         this.cargando.set(false);
         this.notify.error('Error al cargar lotes para vinculación.');
-      }
+      },
     });
   }
 
@@ -165,7 +207,11 @@ export class VincularLoteComponent implements OnInit {
     }
     this.guardando.set(true);
     this.admin
-      .vincularPersonaLote(loteId, { persona_id: this.usuario().id, tipo_relacion: this.tipoRelacion, porcentaje: PORCENTAJE_TITULARIDAD })
+      .vincularPersonaLote(loteId, {
+        persona_id: this.usuario().id,
+        tipo_relacion: this.tipoRelacion,
+        porcentaje: PORCENTAJE_TITULARIDAD,
+      })
       .subscribe({
         next: (res) => {
           this.guardando.set(false);
@@ -175,7 +221,7 @@ export class VincularLoteComponent implements OnInit {
         error: (err) => {
           this.guardando.set(false);
           this.notify.error(err.error?.message || 'Error al asignar el lote.');
-        }
+        },
       });
   }
 }

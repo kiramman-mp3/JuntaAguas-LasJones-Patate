@@ -15,8 +15,16 @@ import { SectorFormComponent } from '../sector-form/sector-form.component';
 @Component({
   selector: 'app-catastro-lotes',
   standalone: true,
-  imports: [FormsModule, EmptyStateComponent, SkeletonComponent, PaginadorComponent, LoteFormComponent, LoteDetalleComponent, SectorFormComponent],
-  templateUrl: './catastro-lotes.component.html'
+  imports: [
+    FormsModule,
+    EmptyStateComponent,
+    SkeletonComponent,
+    PaginadorComponent,
+    LoteFormComponent,
+    LoteDetalleComponent,
+    SectorFormComponent,
+  ],
+  templateUrl: './catastro-lotes.component.html',
 })
 export class CatastroLotesComponent implements OnInit {
   private admin = inject(AdminService);
@@ -64,25 +72,32 @@ export class CatastroLotesComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
     this.error.set(false);
-    this.admin.getLotesPaginados(this.pagina(), this.porPagina(), this.sectorFiltro || undefined, this.busqueda).subscribe({
-      next: (res) => {
-        const total = res?.pagination?.total ?? 0;
-        // Si la página quedó vacía (por ejemplo, al filtrar), se vuelve a la última que tiene datos.
-        const ultima = Math.max(1, Math.ceil(total / this.porPagina()));
-        if (this.pagina() > ultima) {
-          this.pagina.set(ultima);
-          this.cargar();
-          return;
-        }
-        this.lotes.set(res?.data ?? []);
-        this.total.set(total);
-        this.cargando.set(false);
-      },
-      error: () => {
-        this.error.set(true);
-        this.cargando.set(false);
-      }
-    });
+    this.admin
+      .getLotesPaginados(
+        this.pagina(),
+        this.porPagina(),
+        this.sectorFiltro || undefined,
+        this.busqueda,
+      )
+      .subscribe({
+        next: (res) => {
+          const total = res?.pagination?.total ?? 0;
+          // Si la página quedó vacía (por ejemplo, al filtrar), se vuelve a la última que tiene datos.
+          const ultima = Math.max(1, Math.ceil(total / this.porPagina()));
+          if (this.pagina() > ultima) {
+            this.pagina.set(ultima);
+            this.cargar();
+            return;
+          }
+          this.lotes.set(res?.data ?? []);
+          this.total.set(total);
+          this.cargando.set(false);
+        },
+        error: () => {
+          this.error.set(true);
+          this.cargando.set(false);
+        },
+      });
   }
 
   filtrar(inmediato = false): void {

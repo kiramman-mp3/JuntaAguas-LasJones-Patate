@@ -18,7 +18,7 @@ import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
   selector: 'app-historial-pagos',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, TitleCasePipe, ComprobanteBancarioComponent],
-  templateUrl: './historial-pagos.component.html'
+  templateUrl: './historial-pagos.component.html',
 })
 export class HistorialPagosComponent {
   private finanzas = inject(FinanzasService);
@@ -42,14 +42,33 @@ export class HistorialPagosComponent {
   readonly filtrados = computed(() => {
     const t = this.texto().trim().toLowerCase();
     const tipo = this.tipo();
-    return this.recibos().filter((r) =>
-      (!tipo || r.tipo === tipo) &&
-      (!t || [r.usuario_nombre, r.cedula, r.numero, r.referencia, r.registrado_por_usuario, r.detalle]
-        .some((campo) => String(campo ?? '').toLowerCase().includes(t))));
+    return this.recibos().filter(
+      (r) =>
+        (!tipo || r.tipo === tipo) &&
+        (!t ||
+          [
+            r.usuario_nombre,
+            r.cedula,
+            r.numero,
+            r.referencia,
+            r.registrado_por_usuario,
+            r.detalle,
+          ].some((campo) =>
+            String(campo ?? '')
+              .toLowerCase()
+              .includes(t),
+          )),
+    );
   });
 
-  readonly totalVigente = computed(() =>
-    Math.round(this.filtrados().filter((r) => r.estado === 'VIGENTE').reduce((s, r) => s + r.valor_total, 0) * 100) / 100);
+  readonly totalVigente = computed(
+    () =>
+      Math.round(
+        this.filtrados()
+          .filter((r) => r.estado === 'VIGENTE')
+          .reduce((s, r) => s + r.valor_total, 0) * 100,
+      ) / 100,
+  );
 
   constructor() {
     this.cargar();
@@ -66,16 +85,22 @@ export class HistorialPagosComponent {
     }
     this.cargando.set(true);
     this.error.set('');
-    this.finanzas.getRecibos({ desde: this.desde() || undefined, hasta: this.hasta() || undefined, estado: this.estado() || undefined }).subscribe({
-      next: (recibos) => {
-        this.recibos.set(recibos);
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        this.error.set(err.error?.message || 'No se pudo cargar el historial de pagos.');
-      }
-    });
+    this.finanzas
+      .getRecibos({
+        desde: this.desde() || undefined,
+        hasta: this.hasta() || undefined,
+        estado: this.estado() || undefined,
+      })
+      .subscribe({
+        next: (recibos) => {
+          this.recibos.set(recibos);
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.error.set(err.error?.message || 'No se pudo cargar el historial de pagos.');
+        },
+      });
   }
 
   reimprimir(recibo: Recibo): void {
@@ -94,7 +119,7 @@ export class HistorialPagosComponent {
       error: (err) => {
         this.procesando.set(null);
         this.notify.error(err.error?.message || 'No se pudo consultar el pago.');
-      }
+      },
     });
   }
 
@@ -105,7 +130,7 @@ export class HistorialPagosComponent {
       mensaje: `El pago de ${recibo.usuario_nombre} por $${recibo.valor_total.toFixed(2)} quedará anulado y sus obligaciones volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
       placeholder: 'Motivo de la anulación',
       textoConfirmar: 'Anular pago',
-      tipo: 'DANGER'
+      tipo: 'DANGER',
     });
     if (!motivo?.trim()) return;
     if (motivo.trim().length < 5) {
@@ -123,7 +148,7 @@ export class HistorialPagosComponent {
       error: (err) => {
         this.procesando.set(null);
         this.notify.error(err.error?.message || 'No se pudo anular el pago.');
-      }
+      },
     });
   }
 }

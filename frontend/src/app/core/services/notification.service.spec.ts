@@ -42,6 +42,11 @@ describe('NotificationService', () => {
 
   it('limita la pila a cuatro avisos visibles', () => {
     for (let i = 0; i < 6; i++) servicio.info(`Aviso ${i}`);
-    expect(servicio.toasts().map((t) => t.mensaje)).toEqual(['Aviso 2', 'Aviso 3', 'Aviso 4', 'Aviso 5']);
+    expect(servicio.toasts().map((t) => t.mensaje)).toEqual([
+      'Aviso 2',
+      'Aviso 3',
+      'Aviso 4',
+      'Aviso 5',
+    ]);
   });
 });

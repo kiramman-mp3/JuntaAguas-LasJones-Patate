@@ -97,21 +97,39 @@ export interface Recibo {
 
 export function reciboDePago(p: Pago): Recibo {
   return {
-    tipo: 'GENERAL', id: p.id, numero: numeroRecibo(p.id), fecha_pago: p.fecha_pago,
-    usuario_nombre: p.usuario_nombre, cedula: p.cedula,
+    tipo: 'GENERAL',
+    id: p.id,
+    numero: numeroRecibo(p.id),
+    fecha_pago: p.fecha_pago,
+    usuario_nombre: p.usuario_nombre,
+    cedula: p.cedula,
     detalle: `${p.obligaciones_pagadas} ${p.obligaciones_pagadas === 1 ? 'obligación' : 'obligaciones'}`,
-    metodo: p.metodo, referencia: p.referencia, valor_total: Number(p.valor_total), estado: p.estado,
-    motivo_anulacion: p.motivo_anulacion, comprobante_url: p.comprobante_url ?? null, registrado_por_usuario: p.registrado_por_usuario
+    metodo: p.metodo,
+    referencia: p.referencia,
+    valor_total: Number(p.valor_total),
+    estado: p.estado,
+    motivo_anulacion: p.motivo_anulacion,
+    comprobante_url: p.comprobante_url ?? null,
+    registrado_por_usuario: p.registrado_por_usuario,
   };
 }
 
 export function reciboDePagoAnual(p: PagoAnual): Recibo {
   return {
-    tipo: 'AGUA', id: p.id, numero: numeroReciboAgua(p.id), fecha_pago: p.fecha_pago,
-    usuario_nombre: p.usuario_nombre, cedula: p.cedula,
+    tipo: 'AGUA',
+    id: p.id,
+    numero: numeroReciboAgua(p.id),
+    fecha_pago: p.fecha_pago,
+    usuario_nombre: p.usuario_nombre,
+    cedula: p.cedula,
     detalle: p.anios ? `Agua ${p.anios}` : 'Pago anual de agua',
-    metodo: p.metodo, referencia: p.referencia, valor_total: Number(p.valor_total), estado: p.estado,
-    motivo_anulacion: p.motivo_anulacion, comprobante_url: null, registrado_por_usuario: p.registrado_por_usuario
+    metodo: p.metodo,
+    referencia: p.referencia,
+    valor_total: Number(p.valor_total),
+    estado: p.estado,
+    motivo_anulacion: p.motivo_anulacion,
+    comprobante_url: null,
+    registrado_por_usuario: p.registrado_por_usuario,
   };
 }
 
@@ -267,12 +285,25 @@ export interface ResumenAnualAgua {
 }
 
 export const MESES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ] as const;
 
 /** Etiqueta legible del período de una obligación ('Marzo 2026', '2026' o '—'). */
-export function etiquetaPeriodo(anio: number | null | undefined, mes: number | null | undefined): string {
+export function etiquetaPeriodo(
+  anio: number | null | undefined,
+  mes: number | null | undefined,
+): string {
   if (!anio) return '—';
   return mes && mes >= 1 && mes <= 12 ? `${MESES[mes - 1]} ${anio}` : String(anio);
 }

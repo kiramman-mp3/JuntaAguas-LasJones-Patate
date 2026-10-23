@@ -38,30 +38,66 @@ describe('Módulo de Asambleas', () => {
       createEvento: vi.fn(() => of({ status: 'OK', eventoId: 10 })),
       cambiarEstadoAsamblea: vi.fn((_id: number, estado: string) => of({ status: 'OK', estado })),
       finalizarAsamblea: vi.fn(() => of({ status: 'OK', multasGeneradas: 3 })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ status: 'OK', message: 'Publicada', data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO' } })),
-      guardarPuntosAsamblea: vi.fn((_id: number, puntos: any[]) => of({ status: 'OK', data: puntos })),
+      enviarConvocatoriaWhatsApp: vi.fn(() =>
+        of({
+          status: 'OK',
+          message: 'Publicada',
+          data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO' },
+        }),
+      ),
+      guardarPuntosAsamblea: vi.fn((_id: number, puntos: any[]) =>
+        of({ status: 'OK', data: puntos }),
+      ),
       getPersonas: vi.fn(() => of({ data: [] })),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
-      getAsistencias: vi.fn(() => of({
-        status: 'OK',
-        data: [
-          { persona_id: 1, cedula: '1800000001', nombre: 'Moreta Carlos', estado: 'PRESENTE', motivo_justificacion: '' },
-          { persona_id: 2, cedula: '1800000002', nombre: 'Quispe Rosa', estado: 'JUSTIFICADO', motivo_justificacion: 'Enfermedad' }
-        ],
-        resumen: { total: 2, presentes: 1, ausentes: 0, justificados: 1, pendientes: 0 }
-      }))
+      getAsistencias: vi.fn(() =>
+        of({
+          status: 'OK',
+          data: [
+            {
+              persona_id: 1,
+              cedula: '1800000001',
+              nombre: 'Moreta Carlos',
+              estado: 'PRESENTE',
+              motivo_justificacion: '',
+            },
+            {
+              persona_id: 2,
+              cedula: '1800000002',
+              nombre: 'Quispe Rosa',
+              estado: 'JUSTIFICADO',
+              motivo_justificacion: 'Enfermedad',
+            },
+          ],
+          resumen: { total: 2, presentes: 1, ausentes: 0, justificados: 1, pendientes: 0 },
+        }),
+      ),
     };
 
     consultaMock = {
-      getEventoDetalle: vi.fn(() => of({
-        status: 'OK',
-        evento: asambleaMock,
-        puntos: [
-          { id: 1, orden: 1, punto_tratar: 'Constatación del cuórum', tratado: 'Verificado', resolucion: 'Instalada' },
-          { id: 2, orden: 2, punto_tratar: 'Presupuesto 2026', tratado: 'Debate de cuotas', resolucion: 'Aprobado' }
-        ]
-      })),
-      urlDocumento: vi.fn((url: string) => url)
+      getEventoDetalle: vi.fn(() =>
+        of({
+          status: 'OK',
+          evento: asambleaMock,
+          puntos: [
+            {
+              id: 1,
+              orden: 1,
+              punto_tratar: 'Constatación del cuórum',
+              tratado: 'Verificado',
+              resolucion: 'Instalada',
+            },
+            {
+              id: 2,
+              orden: 2,
+              punto_tratar: 'Presupuesto 2026',
+              tratado: 'Debate de cuotas',
+              resolucion: 'Aprobado',
+            },
+          ],
+        }),
+      ),
+      urlDocumento: vi.fn((url: string) => url),
     };
 
     actasMock = { generarConvocatoriaPDF: vi.fn(), generarActaPDF: vi.fn() };
@@ -72,8 +108,8 @@ describe('Módulo de Asambleas', () => {
         { provide: AdminService, useValue: adminMock },
         { provide: ConsultaService, useValue: consultaMock },
         { provide: ActasService, useValue: actasMock },
-        { provide: DialogService, useValue: dialogMock }
-      ]
+        { provide: DialogService, useValue: dialogMock },
+      ],
     }).compileComponents();
   });
 
@@ -146,7 +182,7 @@ describe('Módulo de Asambleas', () => {
       hora_fin: '21:00',
       lugar: 'Sede Central',
       genera_multa_ausencia: true,
-      puntos_orden_dia: ['Punto 1', 'Punto 2']
+      puntos_orden_dia: ['Punto 1', 'Punto 2'],
     };
     component.guardar();
     const payload = adminMock.createEvento.mock.calls[0][0];
@@ -200,7 +236,7 @@ describe('Módulo de Asambleas', () => {
         punto_tratar: 'Reparación compuerta lateral',
         tratado: 'Se revisa daño por lluvia',
         resolucion: 'Aprobar partida de $150',
-        responsables: 'Comisión técnica'
+        responsables: 'Comisión técnica',
       };
       component.agregarTemaNuevo();
       expect(component.puntos.length).toBe(3);

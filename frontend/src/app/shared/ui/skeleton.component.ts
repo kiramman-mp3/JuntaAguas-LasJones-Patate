@@ -8,7 +8,11 @@ import { Component, computed, input } from '@angular/core';
   selector: 'app-skeleton',
   standalone: true,
   template: `
-    <div class="skeleton-group" [class.skeleton-group--cards]="variante() === 'tarjetas'" aria-hidden="true">
+    <div
+      class="skeleton-group"
+      [class.skeleton-group--cards]="variante() === 'tarjetas'"
+      aria-hidden="true"
+    >
       @for (i of filasArr(); track i) {
         @if (variante() === 'tarjetas') {
           <div class="skeleton skeleton--card"></div>
@@ -23,7 +27,7 @@ import { Component, computed, input } from '@angular/core';
       }
     </div>
     <span class="sr-only" role="status">{{ mensaje() }}</span>
-  `
+  `,
 })
 export class SkeletonComponent {
   readonly filas = input(5);

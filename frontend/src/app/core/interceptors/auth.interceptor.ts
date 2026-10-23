@@ -6,7 +6,8 @@ import { environment } from '../../../environments/environment';
 import { session } from '../auth/session';
 
 /** Solo las peticiones al backend llevan el token; nunca se envía a terceros. */
-const esDelBackend = (url: string) => url.startsWith(environment.apiUrl) || url.startsWith(`${environment.serverUrl}/`);
+const esDelBackend = (url: string) =>
+  url.startsWith(environment.apiUrl) || url.startsWith(`${environment.serverUrl}/`);
 
 /**
  * Interceptor global de autenticación.
@@ -21,23 +22,32 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = session.token();
 
-  const peticion = token && esDelBackend(req.url) && !req.headers.has('Authorization')
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  const peticion =
+    token && esDelBackend(req.url) && !req.headers.has('Authorization')
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req;
 
   return next(peticion).pipe(
     catchError((error) => {
-      if (error?.status === 401 && !req.url.endsWith('/auth/login') && !req.url.endsWith('/auth/logout')) {
+      if (
+        error?.status === 401 &&
+        !req.url.endsWith('/auth/login') &&
+        !req.url.endsWith('/auth/logout')
+      ) {
         session.limpiar();
         const urlActual = router.url;
         if (!urlActual.startsWith('/login')) {
           router.navigate(['/login'], { queryParams: { returnUrl: urlActual } });
         }
       }
-      if (error?.status === 403 && error.error?.codigo === 'CAMBIO_PASSWORD_REQUERIDO' && !router.url.startsWith('/login')) {
+      if (
+        error?.status === 403 &&
+        error.error?.codigo === 'CAMBIO_PASSWORD_REQUERIDO' &&
+        !router.url.startsWith('/login')
+      ) {
         router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
       }
       return throwError(() => error);
-    })
+    }),
   );
 };

@@ -51,9 +51,15 @@
     color: var(--text-muted);
   }
 
-  &--positive .stat-tile__value { color: var(--color-success); }
-  &--negative .stat-tile__value { color: var(--color-danger); }
-  &--warning .stat-tile__value { color: #b45309; }
+  &--positive .stat-tile__value {
+    color: var(--color-success);
+  }
+  &--negative .stat-tile__value {
+    color: var(--color-danger);
+  }
+  &--warning .stat-tile__value {
+    color: #b45309;
+  }
 }
 
 /* --- Barra flotante con control segmentado --- */
@@ -91,7 +97,9 @@
     transform: translateX(calc(var(--i) * 100%));
     border-radius: 8px;
     background: var(--bg-surface);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.06);
+    box-shadow:
+      0 1px 3px rgba(15, 23, 42, 0.12),
+      0 1px 1px rgba(15, 23, 42, 0.06);
     transition: transform 0.35s var(--fin-ease, ease);
     pointer-events: none;
   }
@@ -114,14 +122,25 @@
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
-    transition: color 0.2s ease, transform 0.1s ease-out;
+    transition:
+      color 0.2s ease,
+      transform 0.1s ease-out;
 
-    &:active { transform: scale(0.97); }
-    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+    &:active {
+      transform: scale(0.97);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 1px;
+    }
 
-    &--active { color: var(--text-main); }
+    &--active {
+      color: var(--text-main);
+    }
 
-    i { font-size: 1rem; }
+    i {
+      font-size: 1rem;
+    }
   }
 
   /* En pantallas angostas se desplaza horizontalmente y el activo se marca en sí mismo. */
@@ -130,9 +149,15 @@
     overflow-x: auto;
     scrollbar-width: none;
 
-    &::-webkit-scrollbar { display: none; }
-    &__thumb { display: none; }
-    &__item { flex: 0 0 auto; }
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    &__thumb {
+      display: none;
+    }
+    &__item {
+      flex: 0 0 auto;
+    }
     &__item--active {
       background: var(--bg-surface);
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
@@ -219,7 +244,9 @@
   border-radius: 12px;
   overflow: hidden;
 
-  &__item + &__item { border-top: 1px solid var(--border-color); }
+  &__item + &__item {
+    border-top: 1px solid var(--border-color);
+  }
 
   &__btn {
     width: 100%;
@@ -235,12 +262,23 @@
     text-align: left;
     cursor: pointer;
 
-    &:hover { background: var(--bg-surface-hover); }
-    &:active { background: var(--color-primary-light); }
-    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+    &:hover {
+      background: var(--bg-surface-hover);
+    }
+    &:active {
+      background: var(--color-primary-light);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
   }
 
-  &__meta { color: var(--text-muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  &__meta {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* --- Filas seleccionables (obligaciones) --- */
@@ -263,9 +301,14 @@
   border-radius: 12px;
   background: var(--bg-surface);
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease-out;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.1s ease-out;
 
-  &:active { transform: scale(0.99); }
+  &:active {
+    transform: scale(0.99);
+  }
   &--checked {
     border-color: var(--color-primary);
     background: var(--color-primary-light);
@@ -277,9 +320,18 @@
     accent-color: var(--color-primary);
   }
 
-  &__title { font-weight: 600; font-size: 0.9rem; }
-  &__meta { color: var(--text-muted); font-size: 0.78rem; }
-  &__value { font-weight: 700; font-variant-numeric: tabular-nums; }
+  &__title {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  &__meta {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+  &__value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .group-label {
@@ -328,7 +380,8 @@
   flex-direction: column;
   gap: 0.35rem;
 
-  > label, > .field__label {
+  > label,
+  > .field__label {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-muted);
@@ -368,10 +421,18 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease-out;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease-out;
 
-  &:active { transform: scale(0.96); }
-  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+  &:active {
+    transform: scale(0.96);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
   &--active {
     background: var(--text-main);
     border-color: var(--text-main);
@@ -403,15 +464,33 @@
     vertical-align: middle;
   }
 
-  tr:last-child td { border-bottom: 0; }
-  tbody tr:hover td { background: var(--bg-surface-hover); }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  tbody tr:hover td {
+    background: var(--bg-surface-hover);
+  }
 
-  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .acciones { text-align: right; white-space: nowrap; }
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .acciones {
+    text-align: right;
+    white-space: nowrap;
+  }
 
-  &__muted { color: var(--text-muted); font-size: 0.78rem; }
-  tr.is-anulado td { color: var(--text-muted); }
-  tr.is-anulado .money { text-decoration: line-through; }
+  &__muted {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+  tr.is-anulado td {
+    color: var(--text-muted);
+  }
+  tr.is-anulado .money {
+    text-decoration: line-through;
+  }
 }
 
 .table-scroll {
@@ -432,13 +511,28 @@
   color: var(--text-muted);
   cursor: pointer;
   font-size: 1.05rem;
-  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease-out;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease-out;
 
-  &:hover { background: var(--bg-surface-hover); color: var(--text-main); }
-  &:active { transform: scale(0.94); }
-  &:focus-visible { outline: 2px solid var(--color-primary); }
-  &--danger:hover { color: var(--color-danger); }
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
+  &:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-main);
+  }
+  &:active {
+    transform: scale(0.94);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+  }
+  &--danger:hover {
+    color: var(--color-danger);
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 /* --- Calendario de facturación --- */
@@ -461,20 +555,40 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease-out;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease-out;
 
-  &:hover:not(:disabled) { border-color: var(--color-primary); }
-  &:active:not(:disabled) { transform: scale(0.98); }
-  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-  &:disabled { cursor: default; opacity: 0.45; }
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  &:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
 
   &--selected {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.18);
   }
 
-  &__name { font-weight: 700; font-size: 0.95rem; }
-  &__meta { font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  &__name {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  &__meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
 
   &__bar {
     height: 6px;
@@ -508,9 +622,15 @@
     background: currentColor;
   }
 
-  &--ok { color: var(--color-success); }
-  &--pending { color: #b45309; }
-  &--none { color: var(--text-muted); }
+  &--ok {
+    color: var(--color-success);
+  }
+  &--pending {
+    color: #b45309;
+  }
+  &--none {
+    color: var(--text-muted);
+  }
 }
 
 .preview-card {
@@ -567,11 +687,18 @@
     gap: 0.75rem;
     padding: 1.1rem 1.25rem 0.5rem;
 
-    h3 { margin: 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; }
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
   }
 
   &__header,
-  &__footer { flex-shrink: 0; }
+  &__footer {
+    flex-shrink: 0;
+  }
 
   &__body {
     flex: 1;
@@ -594,13 +721,23 @@
 }
 
 @keyframes fin-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fin-rise {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -612,7 +749,13 @@
 }
 
 @media (prefers-contrast: more) {
-  .segmented, .stat-tile, .fin-panel, .check-row, .month-tile { border-color: var(--text-main); }
+  .segmented,
+  .stat-tile,
+  .fin-panel,
+  .check-row,
+  .month-tile {
+    border-color: var(--text-main);
+  }
 }
 
 /* --- Historial financiero en árbol (año → mes → movimientos) --- */
@@ -632,8 +775,13 @@
     color: var(--text-muted);
     font-size: 0.875rem;
 
-    strong { color: var(--text-main); margin-left: 0.25rem; }
-    .is-negativo { color: var(--color-danger); }
+    strong {
+      color: var(--text-main);
+      margin-left: 0.25rem;
+    }
+    .is-negativo {
+      color: var(--color-danger);
+    }
   }
 
   &__anio {
@@ -664,12 +812,22 @@
     cursor: pointer;
     transition: background-color 0.15s ease;
 
-    &:hover { background: var(--bg-surface-hover); }
-    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+    &:hover {
+      background: var(--bg-surface-hover);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
 
-    &--anio { font-weight: 700; font-size: 1rem; }
+    &--anio {
+      font-weight: 700;
+      font-size: 1rem;
+    }
 
-    &[aria-expanded='true'] .fin-tree__chevron { transform: rotate(90deg); }
+    &[aria-expanded='true'] .fin-tree__chevron {
+      transform: rotate(90deg);
+    }
   }
 
   &__chevron {
@@ -693,15 +851,25 @@
     font-size: 0.85rem;
   }
 
-  &__ingreso { color: var(--color-success); }
-  &__egreso { color: var(--color-danger); }
+  &__ingreso {
+    color: var(--color-success);
+  }
+  &__egreso {
+    color: var(--color-danger);
+  }
 
-  .is-negativo { color: var(--color-danger); }
+  .is-negativo {
+    color: var(--color-danger);
+  }
 
-  .fin-table .badge { margin-right: 0.35rem; }
+  .fin-table .badge {
+    margin-right: 0.35rem;
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    &__chevron { transition: none; }
+    &__chevron {
+      transition: none;
+    }
   }
 }
 
@@ -728,11 +896,15 @@
     color: var(--text-muted);
   }
 
-  &--activo &__titulo { color: var(--color-primary); }
+  &--activo &__titulo {
+    color: var(--color-primary);
+  }
 }
 
 /* Un grupo sin la sección activa no muestra el indicador. */
-.segmented--inactivo .segmented__thumb { opacity: 0; }
+.segmented--inactivo .segmented__thumb {
+  opacity: 0;
+}
 
 /* --- Cobro en caja: árbol año → mes → concepto con subtotales --- */
 .cobro-tree {
@@ -742,9 +914,13 @@
     gap: 0.25rem;
     padding-left: 0.85rem;
 
-    .fin-tree__nodo { padding-left: 0.4rem; }
+    .fin-tree__nodo {
+      padding-left: 0.4rem;
+    }
 
-    &--anio { background: var(--bg-surface-hover); }
+    &--anio {
+      background: var(--bg-surface-hover);
+    }
   }
 
   &__check {
@@ -772,7 +948,9 @@
   &__meses {
     padding: 0.25rem 0.5rem 0.5rem 1rem;
 
-    > li + li { border-top: 1px dashed var(--border-color); }
+    > li + li {
+      border-top: 1px dashed var(--border-color);
+    }
   }
 
   &__conceptos {
@@ -792,7 +970,11 @@
   }
 
   @media (max-width: 600px) {
-    &__meses { padding-left: 0.25rem; }
-    &__conceptos { padding-left: 0.5rem; }
+    &__meses {
+      padding-left: 0.25rem;
+    }
+    &__conceptos {
+      padding-left: 0.5rem;
+    }
   }
 }

@@ -10,8 +10,20 @@ const LUGAR_POR_DEFECTO = 'Casa Comunal Junta La Jones';
 
 /** Puntos con los que arranca el acta de una asamblea que aún no tiene ninguno guardado. */
 const PUNTOS_INICIALES: PuntoAsamblea[] = [
-  { orden: 1, punto_tratar: '1. Constatación del cuórum reglamentario', tratado: 'Se procede con el llamado a lista.', resolucion: 'Se declara formalmente instalada la asamblea.', titulo_acta: 'Constatación del cuórum reglamentario' },
-  { orden: 2, punto_tratar: '2. Lectura y aprobación del acta anterior', tratado: 'Se da lectura al acta previa.', resolucion: 'Aprobada por unanimidad sin objeciones.', titulo_acta: 'Lectura y aprobación del acta anterior' }
+  {
+    orden: 1,
+    punto_tratar: '1. Constatación del cuórum reglamentario',
+    tratado: 'Se procede con el llamado a lista.',
+    resolucion: 'Se declara formalmente instalada la asamblea.',
+    titulo_acta: 'Constatación del cuórum reglamentario',
+  },
+  {
+    orden: 2,
+    punto_tratar: '2. Lectura y aprobación del acta anterior',
+    tratado: 'Se da lectura al acta previa.',
+    resolucion: 'Aprobada por unanimidad sin objeciones.',
+    titulo_acta: 'Lectura y aprobación del acta anterior',
+  },
 ];
 
 /**
@@ -24,7 +36,9 @@ export class AsambleasService {
   private consulta = inject(ConsultaService);
 
   listar(): Observable<AsambleaItem[]> {
-    return this.admin.getEventos('ASAMBLEA').pipe(map((res) => (res?.data ?? []).map((e) => this.aAsamblea(e))));
+    return this.admin
+      .getEventos('ASAMBLEA')
+      .pipe(map((res) => (res?.data ?? []).map((e) => this.aAsamblea(e))));
   }
 
   padron(asambleaId: number): Observable<AsistentePadron[]> {
@@ -35,9 +49,9 @@ export class AsambleasService {
           cedula: p.cedula,
           nombre: p.nombre,
           estado: p.estado || 'PENDIENTE',
-          motivo_justificacion: p.motivo_justificacion || ''
-        }))
-      )
+          motivo_justificacion: p.motivo_justificacion || '',
+        })),
+      ),
     );
   }
 
@@ -56,15 +70,19 @@ export class AsambleasService {
           resolucion: p.resolucion || '',
           titulo_acta: p.titulo_acta || p.punto_tratar || '',
           responsables: String(p['responsables'] ?? ''),
-          fecha_acta: p['fecha_acta'] ? String(p['fecha_acta']) : undefined
+          fecha_acta: p['fecha_acta'] ? String(p['fecha_acta']) : undefined,
         }));
-      })
+      }),
     );
   }
 
   private aAsamblea(e: EventoItem): AsambleaItem {
-    const extraordinaria = e.subtipo_asamblea ? e.subtipo_asamblea === 'EXTRAORDINARIA' : e.titulo?.toUpperCase().includes('EXTRAORDINARIA');
-    const subtipo: AsambleaItem['subtipo_asamblea'] = extraordinaria ? 'EXTRAORDINARIA' : 'ORDINARIA';
+    const extraordinaria = e.subtipo_asamblea
+      ? e.subtipo_asamblea === 'EXTRAORDINARIA'
+      : e.titulo?.toUpperCase().includes('EXTRAORDINARIA');
+    const subtipo: AsambleaItem['subtipo_asamblea'] = extraordinaria
+      ? 'EXTRAORDINARIA'
+      : 'ORDINARIA';
     return {
       id: e.id,
       tipo: 'ASAMBLEA',
@@ -85,7 +103,7 @@ export class AsambleasService {
       acta_firmada_url: e.acta_firmada_url || undefined,
       acta_firmada_nombre: e.acta_firmada_nombre || undefined,
       lista_asistencia_url: e.lista_asistencia_url || undefined,
-      lista_asistencia_firmada_url: e.lista_asistencia_firmada_url || undefined
+      lista_asistencia_firmada_url: e.lista_asistencia_firmada_url || undefined,
     };
   }
 }

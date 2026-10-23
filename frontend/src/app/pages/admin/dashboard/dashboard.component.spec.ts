@@ -8,14 +8,27 @@ import { ChangeDetectorRef } from '@angular/core';
 
 const resumen = {
   fecha: '2026-10-06',
-  comunidad: { usuariosActivos: 114, lotes: 190, sectores: 4, turnosActivos: 182, cuentasActivas: 27, eventosAnio: 15 },
+  comunidad: {
+    usuariosActivos: 114,
+    lotes: 190,
+    sectores: 4,
+    turnosActivos: 182,
+    cuentasActivas: 27,
+    eventosAnio: 15,
+  },
   finanzas: {
-    recaudadoMes: 120.5, recaudadoAnio: 5300, egresosMes: 150, egresosAnio: 2100, saldoCaja: 7041.5,
-    carteraPendiente: 1200, carteraVencida: 800, usuariosEnMora: 21
+    recaudadoMes: 120.5,
+    recaudadoAnio: 5300,
+    egresosMes: 150,
+    egresosAnio: 2100,
+    saldoCaja: 7041.5,
+    carteraPendiente: 1200,
+    carteraVencida: 800,
+    usuariosEnMora: 21,
   },
   cobranza: { emitido: 3500, cobrado: 3000, porcentaje: 0.857 },
   asistencia: { promedio: 0.88, ultimosEventos: [] },
-  proximosEventos: []
+  proximosEventos: [],
 } satisfies DashboardResumen;
 
 const cdr = { detectChanges: vi.fn() } as any;
@@ -26,8 +39,8 @@ describe('Dashboard de administración', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: AdminService, useValue: admin },
-        { provide: ChangeDetectorRef, useValue: cdr }
-      ]
+        { provide: ChangeDetectorRef, useValue: cdr },
+      ],
     });
     const component = TestBed.runInInjectionContext(() => new DashboardComponent());
     component.ngOnInit();
@@ -43,8 +56,8 @@ describe('Dashboard de administración', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: AdminService, useValue: admin },
-        { provide: ChangeDetectorRef, useValue: cdr }
-      ]
+        { provide: ChangeDetectorRef, useValue: cdr },
+      ],
     });
     const component = TestBed.runInInjectionContext(() => new DashboardComponent());
     component.ngOnInit();

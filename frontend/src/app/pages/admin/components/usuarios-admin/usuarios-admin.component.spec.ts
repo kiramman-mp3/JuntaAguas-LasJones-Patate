@@ -22,8 +22,8 @@ const configurar = (adminMock: any) => {
     providers: [
       { provide: AdminService, useValue: admin },
       { provide: NotificationService, useValue: notifyStub },
-      { provide: DialogService, useValue: dialogStub }
-    ]
+      { provide: DialogService, useValue: dialogStub },
+    ],
   });
 };
 
@@ -57,7 +57,9 @@ describe('Código de nuevo lote (LoteFormComponent)', () => {
   });
 
   it('mantiene el formulario editable y muestra el conflicto devuelto por el servidor', () => {
-    configurar({ createLote: vi.fn(() => throwError(() => ({ error: { message: 'Código ya registrado' } }))) });
+    configurar({
+      createLote: vi.fn(() => throwError(() => ({ error: { message: 'Código ya registrado' } }))),
+    });
     const component = TestBed.createComponent(LoteFormComponent).componentInstance;
     const creado = vi.fn();
     component.creado.subscribe(creado);
@@ -90,14 +92,27 @@ describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
   };
 
   it('envía el rol como código y muestra la contraseña temporal al crear el usuario', () => {
-    configurar({ createPersona: vi.fn(() => of({ status: 'OK', passwordTemporal: 'Kx7pQ2mR9a' })) });
+    configurar({
+      createPersona: vi.fn(() => of({ status: 'OK', passwordTemporal: 'Kx7pQ2mR9a' })),
+    });
     const component = crear();
     const guardado = vi.fn();
     component.guardado.subscribe(guardado);
-    Object.assign(component.form, { cedula: '1803456789', nombres: 'Rosa Elena', apellidos: 'Caiza Toapanta' });
+    Object.assign(component.form, {
+      cedula: '1803456789',
+      nombres: 'Rosa Elena',
+      apellidos: 'Caiza Toapanta',
+    });
     component.guardar();
-    expect((admin.createPersona.mock.calls[0] as any[])[0]).toMatchObject({ crearCuenta: true, rol: 'USUARIO' });
-    expect(component.credencialTemporal).toEqual({ nombre: 'Rosa Elena Caiza Toapanta', cedula: '1803456789', password: 'Kx7pQ2mR9a' });
+    expect((admin.createPersona.mock.calls[0] as any[])[0]).toMatchObject({
+      crearCuenta: true,
+      rol: 'USUARIO',
+    });
+    expect(component.credencialTemporal).toEqual({
+      nombre: 'Rosa Elena Caiza Toapanta',
+      cedula: '1803456789',
+      password: 'Kx7pQ2mR9a',
+    });
     expect(component.ocultarFormulario).toBe(true);
     // El formulario termina solo cuando el administrador confirma que anotó la contraseña.
     expect(guardado).not.toHaveBeenCalled();
@@ -107,8 +122,19 @@ describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
   });
 
   it('restablece la contraseña tras confirmar y muestra la nueva', async () => {
-    configurar({ restablecerPassword: vi.fn(() => of({ status: 'OK', message: '', passwordTemporal: 'Nueva7Temp' })) });
-    const component = crear({ id: 9, cedula: '1803456789', nombres: 'Rosa', apellidos: 'Caiza', cuenta_estado: 'ACTIVA', rol: 'USUARIO' });
+    configurar({
+      restablecerPassword: vi.fn(() =>
+        of({ status: 'OK', message: '', passwordTemporal: 'Nueva7Temp' }),
+      ),
+    });
+    const component = crear({
+      id: 9,
+      cedula: '1803456789',
+      nombres: 'Rosa',
+      apellidos: 'Caiza',
+      cuenta_estado: 'ACTIVA',
+      rol: 'USUARIO',
+    });
     expect(component.cuenta).toEqual({ estado: 'ACTIVA', rol: 'USUARIO' });
     await component.restablecerPassword();
     expect(admin.restablecerPassword).toHaveBeenCalledWith(9);
@@ -116,7 +142,9 @@ describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
   });
 
   it('crea la cuenta de un usuario que no la tenía', () => {
-    configurar({ crearCuenta: vi.fn(() => of({ status: 'OK', message: '', passwordTemporal: 'Cuenta9New' })) });
+    configurar({
+      crearCuenta: vi.fn(() => of({ status: 'OK', message: '', passwordTemporal: 'Cuenta9New' })),
+    });
     const component = crear({ id: 4, cedula: '1803456789', nombres: 'Luis', apellidos: 'Aldaz' });
     expect(component.cuenta).toBeNull();
     component.crearCuenta();
@@ -135,20 +163,42 @@ describe('Titularidad única (VincularLoteComponent)', () => {
     return fixture.componentInstance;
   };
 
-  beforeEach(() => configurar({
-    getLotes: vi.fn(() => of({ data: [
-      { id: 10, codigo: 'LJA-010', propietario_id: 8, propietario_nombre: 'Luis Mora', propietarios: 'Luis Mora' },
-      { id: 11, codigo: 'LJA-011' },
-      { id: 12, codigo: 'LJA-012', propietario_id: 3, propietario_nombre: 'Ana Pérez', propietarios: 'Ana Pérez' }
-    ] })),
-    vincularPersonaLote: vi.fn(() => of({ status: 'OK', message: 'Titularidad transferida' }))
-  }));
+  beforeEach(() =>
+    configurar({
+      getLotes: vi.fn(() =>
+        of({
+          data: [
+            {
+              id: 10,
+              codigo: 'LJA-010',
+              propietario_id: 8,
+              propietario_nombre: 'Luis Mora',
+              propietarios: 'Luis Mora',
+            },
+            { id: 11, codigo: 'LJA-011' },
+            {
+              id: 12,
+              codigo: 'LJA-012',
+              propietario_id: 3,
+              propietario_nombre: 'Ana Pérez',
+              propietarios: 'Ana Pérez',
+            },
+          ],
+        }),
+      ),
+      vincularPersonaLote: vi.fn(() => of({ status: 'OK', message: 'Titularidad transferida' })),
+    }),
+  );
 
   it('siempre asigna el 100 % de la propiedad, sin porcentajes parciales', () => {
     const c = crear();
     c.loteId.set(11);
     c.guardar();
-    expect(admin.vincularPersonaLote).toHaveBeenCalledWith(11, { persona_id: 3, tipo_relacion: 'PROPIETARIO', porcentaje: 100 });
+    expect(admin.vincularPersonaLote).toHaveBeenCalledWith(11, {
+      persona_id: 3,
+      tipo_relacion: 'PROPIETARIO',
+      porcentaje: 100,
+    });
   });
 
   it('advierte que asignar un lote con dueño transfiere la propiedad completa', () => {
@@ -197,12 +247,19 @@ describe('Sectores (SectorFormComponent)', () => {
     c.creado.subscribe(creado);
     c.nombre = '  La Jones Alto ';
     c.guardar();
-    expect(admin.createSector).toHaveBeenCalledWith({ nombre: 'La Jones Alto', descripcion: undefined });
+    expect(admin.createSector).toHaveBeenCalledWith({
+      nombre: 'La Jones Alto',
+      descripcion: undefined,
+    });
     expect(creado).toHaveBeenCalled();
   });
 
   it('muestra el conflicto si el sector ya existe', () => {
-    configurar({ createSector: vi.fn(() => throwError(() => ({ error: { message: 'Ya existe el sector Centro.' } }))) });
+    configurar({
+      createSector: vi.fn(() =>
+        throwError(() => ({ error: { message: 'Ya existe el sector Centro.' } })),
+      ),
+    });
     const c = TestBed.createComponent(SectorFormComponent).componentInstance;
     c.nombre = 'Centro';
     c.guardar();
@@ -216,7 +273,12 @@ describe('Lotes de un usuario (LotesUsuarioComponent)', () => {
 
   it('muestra el estado vacío cuando el usuario no tiene lotes en lugar de quedarse cargando', () => {
     const fixture = TestBed.createComponent(LotesUsuarioComponent);
-    fixture.componentRef.setInput('usuario', { id: 3, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' });
+    fixture.componentRef.setInput('usuario', {
+      id: 3,
+      nombres: 'Ana',
+      apellidos: 'Pérez',
+      cedula: '1800000001',
+    });
     fixture.componentInstance.ngOnInit();
     expect(admin.getLotes).toHaveBeenCalledWith(undefined, undefined, 3);
     expect(fixture.componentInstance.cargando()).toBe(false);
@@ -225,7 +287,11 @@ describe('Lotes de un usuario (LotesUsuarioComponent)', () => {
 });
 
 describe('Paginación del padrón (PadronUsuariosComponent)', () => {
-  const pagina = (total: number, n = 2) => of({ data: Array.from({ length: n }, (_, i) => ({ id: i + 1, nombres: 'A', apellidos: 'B' })), pagination: { total, page: 1, limit: 25 } });
+  const pagina = (total: number, n = 2) =>
+    of({
+      data: Array.from({ length: n }, (_, i) => ({ id: i + 1, nombres: 'A', apellidos: 'B' })),
+      pagination: { total, page: 1, limit: 25 },
+    });
 
   it('pide la página y la cantidad elegidas al servidor', () => {
     configurar({ getPersonas: vi.fn(() => pagina(60)) });
@@ -259,10 +325,17 @@ describe('Paginación del padrón (PadronUsuariosComponent)', () => {
 });
 
 describe('Paginación del catastro (CatastroLotesComponent)', () => {
-  const pagina = (total: number) => of({ data: [{ id: 1, codigo: 'LJA-001', sector_nombre: 'Alto' }], pagination: { total, page: 1, limit: 25 } });
+  const pagina = (total: number) =>
+    of({
+      data: [{ id: 1, codigo: 'LJA-001', sector_nombre: 'Alto' }],
+      pagination: { total, page: 1, limit: 25 },
+    });
 
   it('pide al servidor la página, la cantidad y los filtros', () => {
-    configurar({ getSectores: vi.fn(() => of({ data: [{ id: 4, nombre: 'Alto' }] })), getLotesPaginados: vi.fn(() => pagina(80)) });
+    configurar({
+      getSectores: vi.fn(() => of({ data: [{ id: 4, nombre: 'Alto' }] })),
+      getLotesPaginados: vi.fn(() => pagina(80)),
+    });
     const fixture = TestBed.createComponent(CatastroLotesComponent);
     fixture.detectChanges();
     const c = fixture.componentInstance;

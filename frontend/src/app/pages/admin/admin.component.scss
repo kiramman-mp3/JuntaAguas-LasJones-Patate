@@ -68,8 +68,14 @@
     min-width: 0;
     line-height: 1.2;
 
-    strong { font-size: 1rem; letter-spacing: -0.01em; }
-    span { font-size: 0.74rem; color: var(--text-muted); }
+    strong {
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+    }
+    span {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
   }
 
   &__nav {
@@ -87,7 +93,9 @@
     border-top: 1px solid var(--border-color);
   }
 
-  &__status { padding: 0 0.75rem; }
+  &__status {
+    padding: 0 0.75rem;
+  }
 }
 
 .nav-item {
@@ -106,14 +114,19 @@
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease-out;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.1s ease-out;
 
   i {
     font-size: 1.2rem;
     flex-shrink: 0;
   }
 
-  &__label { display: none; }
+  &__label {
+    display: none;
+  }
   &__label--full {
     display: inline;
     white-space: nowrap;
@@ -127,7 +140,9 @@
   }
 
   /* Respuesta inmediata al presionar */
-  &:active { transform: scale(0.97); }
+  &:active {
+    transform: scale(0.97);
+  }
 
   &:focus-visible {
     outline: 2px solid var(--color-primary);
@@ -140,7 +155,9 @@
     font-weight: 600;
   }
 
-  &--whatsapp:hover { color: #16a34a; }
+  &--whatsapp:hover {
+    color: #16a34a;
+  }
 }
 
 /* --- Riel de iconos (tablet) --- */
@@ -149,17 +166,26 @@
     align-items: center;
     padding: 1rem 0.6rem;
 
-    &__brand { padding: 0; }
+    &__brand {
+      padding: 0;
+    }
     &__brand-text,
-    &__status { display: none; }
-    &__nav, &__footer { width: 100%; }
+    &__status {
+      display: none;
+    }
+    &__nav,
+    &__footer {
+      width: 100%;
+    }
   }
 
   .nav-item {
     justify-content: center;
     padding: 0.6rem;
 
-    i { font-size: 1.35rem; }
+    i {
+      font-size: 1.35rem;
+    }
 
     /* La etiqueta sigue disponible para lectores de pantalla. */
     &__label--full {
@@ -187,7 +213,10 @@
     overflow: visible;
     z-index: 90;
 
-    &__brand, &__footer { display: none; }
+    &__brand,
+    &__footer {
+      display: none;
+    }
 
     &__nav {
       flex-direction: row;
@@ -207,7 +236,9 @@
     font-size: 0.66rem;
     font-weight: 600;
 
-    i { font-size: 1.35rem; }
+    i {
+      font-size: 1.35rem;
+    }
 
     &__label {
       display: block;
@@ -217,10 +248,16 @@
       white-space: nowrap;
     }
 
-    &__label--full { display: none; }
+    &__label--full {
+      display: none;
+    }
 
-    &.active { background: transparent; }
-    &.active i { transform: translateY(-1px); }
+    &.active {
+      background: transparent;
+    }
+    &.active i {
+      transform: translateY(-1px);
+    }
   }
 }
 
@@ -243,8 +280,12 @@
 }
 
 @keyframes admin-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -275,7 +316,9 @@
 }
 
 /* La pestaña "Finanzas" solo existe en la barra inferior del móvil. */
-.tab-more { display: none; }
+.tab-more {
+  display: none;
+}
 
 @media (max-width: 1099px) and (min-width: 760px) {
   .sidebar__group-title {
@@ -288,7 +331,9 @@
 }
 
 @media (max-width: 759px) {
-  .sidebar__group { display: none; }
+  .sidebar__group {
+    display: none;
+  }
 
   .tab-more {
     position: relative;
@@ -296,7 +341,9 @@
     flex: 1 1 0;
     min-width: 0;
 
-    > .nav-item { width: 100%; }
+    > .nav-item {
+      width: 100%;
+    }
 
     &__panel {
       position: absolute;
@@ -315,7 +362,9 @@
       box-shadow: var(--shadow-lg);
       transform-origin: bottom right;
 
-      &--enter { animation: tab-more-in 0.22s var(--ease-out) both; }
+      &--enter {
+        animation: tab-more-in 0.22s var(--ease-out) both;
+      }
     }
 
     &__item {
@@ -330,22 +379,35 @@
       font-weight: 500;
       text-decoration: none;
 
-      i { font-size: 1.15rem; color: var(--text-muted); }
+      i {
+        font-size: 1.15rem;
+        color: var(--text-muted);
+      }
 
-      &:active { background: var(--bg-surface-hover); }
+      &:active {
+        background: var(--bg-surface-hover);
+      }
 
       &.active {
         background: var(--color-primary-light);
         color: var(--color-primary);
         font-weight: 600;
 
-        i { color: var(--color-primary); }
+        i {
+          color: var(--color-primary);
+        }
       }
     }
   }
 }
 
 @keyframes tab-more-in {
-  from { opacity: 0; transform: scale(0.94) translateY(6px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
