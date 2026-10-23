@@ -31,7 +31,7 @@ interface DialogState {
  * Reemplazan window.confirm / window.alert / window.prompt.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DialogService {
   readonly estado = signal<DialogState>(this.estadoInicial());
@@ -47,7 +47,7 @@ export class DialogService {
       placeholder: '',
       valor: '',
       esPrompt: false,
-      resolver: undefined
+      resolver: undefined,
     };
   }
 
@@ -61,7 +61,7 @@ export class DialogService {
         mensaje: opciones.mensaje,
         textoConfirmar: opciones.textoConfirmar ?? 'Confirmar',
         textoCancelar: opciones.textoCancelar ?? 'Cancelar',
-        resolver: (v) => resolve(!!v)
+        resolver: (v) => resolve(!!v),
       });
     });
   }
@@ -75,7 +75,7 @@ export class DialogService {
       mensaje: opciones.mensaje,
       textoConfirmar: opciones.textoConfirmar ?? 'Entendido',
       textoCancelar: '',
-      resolver: undefined
+      resolver: undefined,
     });
   }
 
@@ -92,7 +92,7 @@ export class DialogService {
         placeholder: opciones.placeholder ?? '',
         valor: opciones.valorInicial ?? '',
         esPrompt: true,
-        resolver: (v) => resolve(v ? String(v) : null)
+        resolver: (v) => resolve(v ? String(v) : null),
       });
     });
   }

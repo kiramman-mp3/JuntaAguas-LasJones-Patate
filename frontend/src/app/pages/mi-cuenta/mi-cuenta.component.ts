@@ -23,7 +23,7 @@ interface UsuarioResultado {
   standalone: true,
   imports: [CommonModule, FechaLocalPipe],
   templateUrl: './mi-cuenta.component.html',
-  styleUrls: ['./mi-cuenta.component.scss']
+  styleUrls: ['./mi-cuenta.component.scss'],
 })
 export class MiCuentaComponent implements OnInit {
   cargando = true;
@@ -76,7 +76,7 @@ export class MiCuentaComponent implements OnInit {
           this.errorMensaje = 'Error al cargar los datos. Intente más tarde.';
         }
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -91,7 +91,7 @@ export class MiCuentaComponent implements OnInit {
       error: () => {
         this.cargandoPagos = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -104,11 +104,11 @@ export class MiCuentaComponent implements OnInit {
   }
 
   get deudasPendientes(): DeudaItem[] {
-    return this.resultado ? this.resultado.deudas.filter(d => d.estado === 'PENDIENTE') : [];
+    return this.resultado ? this.resultado.deudas.filter((d) => d.estado === 'PENDIENTE') : [];
   }
 
   get deudasPagadas(): DeudaItem[] {
-    return this.resultado ? this.resultado.deudas.filter(d => d.estado === 'PAGADA') : [];
+    return this.resultado ? this.resultado.deudas.filter((d) => d.estado === 'PAGADA') : [];
   }
 
   /** Saldo pendiente calculado por el servidor (en centavos, sin error de redondeo). */
@@ -126,14 +126,16 @@ export class MiCuentaComponent implements OnInit {
 
   /** Recibo con el que se pagó una obligación, o null si no tiene uno vigente. */
   reciboDe(item: DeudaItem): { tipo: TipoRecibo; id: number } | null {
-    if (item.tipo === 'AGUA_ANUAL') return item.pagoAnualId ? { tipo: 'AGUA', id: item.pagoAnualId } : null;
+    if (item.tipo === 'AGUA_ANUAL')
+      return item.pagoAnualId ? { tipo: 'AGUA', id: item.pagoAnualId } : null;
     return item.pagoId ? { tipo: 'GENERAL', id: item.pagoId } : null;
   }
 
   imprimirComprobante(tipo: TipoRecibo, id: number, descargar = false): void {
     if (this.imprimiendo || this.descargando) return;
     const clave = this.clave(tipo, id);
-    if (descargar) this.descargando = clave; else this.imprimiendo = clave;
+    if (descargar) this.descargando = clave;
+    else this.imprimiendo = clave;
     this.cdr.detectChanges();
 
     const terminar = () => {
@@ -158,8 +160,10 @@ export class MiCuentaComponent implements OnInit {
       },
       error: (err) => {
         terminar();
-        this.notify.error(err?.error?.message || 'No se pudo obtener la información del comprobante.');
-      }
+        this.notify.error(
+          err?.error?.message || 'No se pudo obtener la información del comprobante.',
+        );
+      },
     });
   }
 
@@ -174,7 +178,7 @@ export class MiCuentaComponent implements OnInit {
         a.click();
         URL.revokeObjectURL(url);
       },
-      error: () => this.notify.error('No se pudo descargar el respaldo bancario.')
+      error: () => this.notify.error('No se pudo descargar el respaldo bancario.'),
     });
   }
 

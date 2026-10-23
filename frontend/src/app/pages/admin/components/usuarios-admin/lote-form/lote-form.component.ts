@@ -13,7 +13,7 @@ const PATRON_CODIGO = /^[A-Z]{3}-\d{3,8}$/;
   selector: 'app-lote-form',
   standalone: true,
   imports: [FormsModule, ModalComponent, LotesMapComponent],
-  templateUrl: './lote-form.component.html'
+  templateUrl: './lote-form.component.html',
 })
 export class LoteFormComponent implements OnDestroy {
   private admin = inject(AdminService);
@@ -39,7 +39,7 @@ export class LoteFormComponent implements OnDestroy {
     longitud_aproximada: '',
     radio_error_m: 5,
     referencia_ubicacion: '',
-    observacion: ''
+    observacion: '',
   };
 
   ngOnDestroy(): void {
@@ -88,7 +88,7 @@ export class LoteFormComponent implements OnDestroy {
         this.error = err.error?.message || 'No se pudo sugerir un código. Intente nuevamente.';
         this.sugiriendoCodigo = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -116,7 +116,7 @@ export class LoteFormComponent implements OnDestroy {
         this.guardando = false;
         this.error = err.error?.message || 'Error al crear lote.';
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 }

@@ -1,4 +1,12 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, input, output, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import * as L from 'leaflet';
 
 /** Centro aproximado de Patate, Tungurahua. */
@@ -12,7 +20,7 @@ const ICONO = L.icon({
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   tooltipAnchor: [16, -28],
-  shadowSize: [41, 41]
+  shadowSize: [41, 41],
 });
 
 /**
@@ -23,7 +31,7 @@ const ICONO = L.icon({
 @Component({
   selector: 'app-lotes-map',
   standalone: true,
-  template: `<div #contenedor class="lote-map" [style.height.px]="alto()"></div>`
+  template: `<div #contenedor class="lote-map" [style.height.px]="alto()"></div>`,
 })
 export class LotesMapComponent implements AfterViewInit, OnDestroy {
   private readonly contenedor = viewChild.required<ElementRef<HTMLElement>>('contenedor');
@@ -46,16 +54,25 @@ export class LotesMapComponent implements AfterViewInit, OnDestroy {
     const tieneUbicacion = lat !== null && lng !== null && !Number.isNaN(lat) && !Number.isNaN(lng);
     const elemento = this.contenedor().nativeElement;
 
-    this.map = L.map(elemento).setView(tieneUbicacion ? [lat, lng] : CENTRO_PATATE, tieneUbicacion ? 16 : 14);
+    this.map = L.map(elemento).setView(
+      tieneUbicacion ? [lat, lng] : CENTRO_PATATE,
+      tieneUbicacion ? 16 : 14,
+    );
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap contributors',
     }).addTo(this.map);
 
     if (tieneUbicacion) {
       this.colocarMarcador(L.latLng(lat, lng));
       if (!this.editable() && this.radioError() > 0) {
-        L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.18, weight: 1.5, radius: this.radioError() }).addTo(this.map);
+        L.circle([lat, lng], {
+          color: '#ef4444',
+          fillColor: '#ef4444',
+          fillOpacity: 0.18,
+          weight: 1.5,
+          radius: this.radioError(),
+        }).addTo(this.map);
       }
     }
 

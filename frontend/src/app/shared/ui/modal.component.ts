@@ -14,12 +14,19 @@ let siguienteId = 0;
   standalone: true,
   imports: [ModalA11yDirective],
   template: `
-    <div appModalA11y class="modal-backdrop" animate.enter="modal-backdrop--enter" animate.leave="modal-backdrop--leave">
+    <div
+      appModalA11y
+      class="modal-backdrop"
+      animate.enter="modal-backdrop--enter"
+      animate.leave="modal-backdrop--leave"
+    >
       <div class="card modal" [class]="'modal--' + tamano()" [attr.aria-labelledby]="tituloId">
         <div class="modal__header">
           <div class="modal__heading">
             @if (icono()) {
-              <span class="modal__icon" [class]="'modal__icon--' + tono()" aria-hidden="true"><i [class]="icono()"></i></span>
+              <span class="modal__icon" [class]="'modal__icon--' + tono()" aria-hidden="true"
+                ><i [class]="icono()"></i
+              ></span>
             }
             <div class="modal__heading-text">
               <h3 [id]="tituloId">{{ titulo() }}</h3>
@@ -28,14 +35,20 @@ let siguienteId = 0;
               }
             </div>
           </div>
-          <button type="button" class="btn-close" (click)="cerrar.emit()" [disabled]="bloqueado()" aria-label="Cerrar">
+          <button
+            type="button"
+            class="btn-close"
+            (click)="cerrar.emit()"
+            [disabled]="bloqueado()"
+            aria-label="Cerrar"
+          >
             <i class="ri-close-line" aria-hidden="true"></i>
           </button>
         </div>
         <ng-content />
       </div>
     </div>
-  `
+  `,
 })
 export class ModalComponent {
   readonly titulo = input.required<string>();

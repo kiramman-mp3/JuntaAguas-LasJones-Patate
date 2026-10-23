@@ -73,15 +73,13 @@ import { environment } from '../../../environments/environment';
 import { EventoItem, RespuestaApi } from '../models/api-payloads';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ConsultaService {
   private apiUrl = environment.apiUrl;
 
   private readonly http = inject(HttpClient);
   private readonly documentos = inject(DocumentosService);
-
-
 
   consultarPorCedula(cedula: string): Observable<ConsultaResultadoResponse> {
     return this.http.get<ConsultaResultadoResponse>(`${this.apiUrl}/personas/consulta/${cedula}`);
@@ -96,7 +94,11 @@ export class ConsultaService {
     return this.http.get<EventoDetalleResponse>(`${this.apiUrl}/eventos/${id}`);
   }
 
-  subirDocumentoEvento(id: number, tipo: TipoDocumento, archivo: File): Observable<DocumentoSubido> {
+  subirDocumentoEvento(
+    id: number,
+    tipo: TipoDocumento,
+    archivo: File,
+  ): Observable<DocumentoSubido> {
     return this.documentos.subir(id, tipo, archivo);
   }
 
@@ -108,4 +110,3 @@ export class ConsultaService {
     return this.http.get(`${this.apiUrl}/eventos/${id}/pdf-asistencia`, { responseType: 'blob' });
   }
 }
-

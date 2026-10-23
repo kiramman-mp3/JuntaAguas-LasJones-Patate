@@ -8,7 +8,6 @@ import { session } from '../auth/session';
 import { environment } from '../../../environments/environment';
 import { almacenamientoEnMemoria } from '../../testing/almacenamiento-en-memoria';
 
-
 describe('authInterceptor', () => {
   let http: HttpClient;
   let backend: HttpTestingController;
@@ -17,7 +16,11 @@ describe('authInterceptor', () => {
     vi.stubGlobal('localStorage', almacenamientoEnMemoria());
     vi.stubGlobal('sessionStorage', almacenamientoEnMemoria());
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()]
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptors([authInterceptor])),
+        provideHttpClientTesting(),
+      ],
     });
     http = TestBed.inject(HttpClient);
     backend = TestBed.inject(HttpTestingController);
@@ -31,25 +34,37 @@ describe('authInterceptor', () => {
   it('agrega el token a las peticiones del backend', () => {
     session.guardar('token-123', { rol: 'ADMIN' });
     http.get(`${environment.apiUrl}/personas`).subscribe();
-    expect(backend.expectOne(`${environment.apiUrl}/personas`).request.headers.get('Authorization')).toBe('Bearer token-123');
+    expect(
+      backend.expectOne(`${environment.apiUrl}/personas`).request.headers.get('Authorization'),
+    ).toBe('Bearer token-123');
   });
 
   it('no envía el token a servicios de terceros', () => {
     session.guardar('token-123', { rol: 'ADMIN' });
     http.get('https://tile.openstreetmap.org/1/1/1.png').subscribe();
-    expect(backend.expectOne('https://tile.openstreetmap.org/1/1/1.png').request.headers.has('Authorization')).toBe(false);
+    expect(
+      backend
+        .expectOne('https://tile.openstreetmap.org/1/1/1.png')
+        .request.headers.has('Authorization'),
+    ).toBe(false);
   });
 
   it('sin sesión la petición sale sin cabecera', () => {
     http.get(`${environment.apiUrl}/eventos/publicos`).subscribe();
-    expect(backend.expectOne(`${environment.apiUrl}/eventos/publicos`).request.headers.has('Authorization')).toBe(false);
+    expect(
+      backend
+        .expectOne(`${environment.apiUrl}/eventos/publicos`)
+        .request.headers.has('Authorization'),
+    ).toBe(false);
   });
 
   it('ante un 401 limpia la sesión y lleva al login', () => {
     session.guardar('vencido', { rol: 'USUARIO' });
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     http.get(`${environment.apiUrl}/auth/me`).subscribe({ error: () => {} });
-    backend.expectOne(`${environment.apiUrl}/auth/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
+    backend
+      .expectOne(`${environment.apiUrl}/auth/me`)
+      .flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(session.token()).toBeNull();
     expect(navegar).toHaveBeenCalledWith(['/login'], expect.anything());
   });
@@ -58,7 +73,9 @@ describe('authInterceptor', () => {
     session.guardar('previo', { rol: 'USUARIO' });
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate');
     http.post(`${environment.apiUrl}/auth/login`, {}).subscribe({ error: () => {} });
-    backend.expectOne(`${environment.apiUrl}/auth/login`).flush({}, { status: 401, statusText: 'Unauthorized' });
+    backend
+      .expectOne(`${environment.apiUrl}/auth/login`)
+      .flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(session.token()).toBe('previo');
     expect(navegar).not.toHaveBeenCalled();
   });

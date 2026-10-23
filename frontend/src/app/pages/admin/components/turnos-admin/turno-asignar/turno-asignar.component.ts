@@ -16,7 +16,7 @@ import { DIAS_SEMANA } from '../turno.model';
   selector: 'app-turno-asignar',
   standalone: true,
   imports: [FormsModule, ModalComponent],
-  templateUrl: './turno-asignar.component.html'
+  templateUrl: './turno-asignar.component.html',
 })
 export class TurnoAsignarComponent implements OnInit {
   private admin = inject(AdminService);
@@ -43,7 +43,7 @@ export class TurnoAsignarComponent implements OnInit {
     dia_semana: 1,
     hora_inicio: '08:00',
     hora_fin: '10:00',
-    observacion: ''
+    observacion: '',
   };
 
   private busqueda$ = new Subject<string>();
@@ -54,8 +54,10 @@ export class TurnoAsignarComponent implements OnInit {
       .pipe(
         debounceTime(250),
         tap(() => this.buscando.set(true)),
-        switchMap((termino) => this.admin.getPersonas(1, 20, termino, 'ACTIVO').pipe(catchError(() => of(null)))),
-        takeUntilDestroyed(this.destroyRef)
+        switchMap((termino) =>
+          this.admin.getPersonas(1, 20, termino, 'ACTIVO').pipe(catchError(() => of(null))),
+        ),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((res) => {
         this.buscando.set(false);
@@ -86,7 +88,7 @@ export class TurnoAsignarComponent implements OnInit {
       error: () => {
         this.cargandoLotes.set(false);
         this.notify.error('No se pudieron cargar los lotes del usuario.');
-      }
+      },
     });
   }
 
@@ -94,8 +96,10 @@ export class TurnoAsignarComponent implements OnInit {
     const t = this.turno;
     if (!t.persona_id) return this.notify.warning('Debe seleccionar un usuario.');
     if (!t.lote_id) return this.notify.warning('Debe seleccionar un lote para asignar el turno.');
-    if (!t.hora_inicio || !t.hora_fin) return this.notify.warning('Debe definir la hora de inicio y fin.');
-    if (t.hora_inicio >= t.hora_fin) return this.notify.warning('La hora de fin debe ser posterior a la de inicio.');
+    if (!t.hora_inicio || !t.hora_fin)
+      return this.notify.warning('Debe definir la hora de inicio y fin.');
+    if (t.hora_inicio >= t.hora_fin)
+      return this.notify.warning('La hora de fin debe ser posterior a la de inicio.');
 
     this.guardando.set(true);
     this.admin.asignarTurno(t).subscribe({
@@ -107,7 +111,7 @@ export class TurnoAsignarComponent implements OnInit {
       error: (err) => {
         this.guardando.set(false);
         this.notify.error(err.error?.message || 'Error al asignar el turno.');
-      }
+      },
     });
   }
 }

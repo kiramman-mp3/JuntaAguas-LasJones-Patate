@@ -10,26 +10,59 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
   standalone: true,
   imports: [FormsModule, ModalComponent],
   template: `
-    <app-modal titulo="Nuevo sector" subtitulo="Los lotes se agrupan por sector y su código toma el prefijo del sector."
-      icono="ri-map-2-line" tamano="sm" [bloqueado]="guardando()" (cerrar)="cerrar.emit()">
+    <app-modal
+      titulo="Nuevo sector"
+      subtitulo="Los lotes se agrupan por sector y su código toma el prefijo del sector."
+      icono="ri-map-2-line"
+      tamano="sm"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrar.emit()"
+    >
       <form (ngSubmit)="guardar()" #sectorForm="ngForm">
         <div class="modal__body form-stack">
           <div class="form-group">
             <label for="sector-nombre">Nombre del sector *</label>
-            <input id="sector-nombre" class="input" name="nombre" [(ngModel)]="nombre" required minlength="2" maxlength="100"
-              placeholder="Ej: La Jones Alto" />
+            <input
+              id="sector-nombre"
+              class="input"
+              name="nombre"
+              [(ngModel)]="nombre"
+              required
+              minlength="2"
+              maxlength="100"
+              placeholder="Ej: La Jones Alto"
+            />
           </div>
           <div class="form-group">
-            <label for="sector-descripcion">Descripción <span class="text-muted">(opcional)</span></label>
-            <input id="sector-descripcion" class="input" name="descripcion" [(ngModel)]="descripcion" maxlength="255" />
+            <label for="sector-descripcion"
+              >Descripción <span class="text-muted">(opcional)</span></label
+            >
+            <input
+              id="sector-descripcion"
+              class="input"
+              name="descripcion"
+              [(ngModel)]="descripcion"
+              maxlength="255"
+            />
           </div>
           @if (error()) {
             <div class="alert alert--danger" role="alert">{{ error() }}</div>
           }
         </div>
         <div class="modal__footer">
-          <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cancelar</button>
-          <button type="submit" class="btn btn--primary" [disabled]="sectorForm.invalid || guardando()">
+          <button
+            type="button"
+            class="btn btn--outline"
+            (click)="cerrar.emit()"
+            [disabled]="guardando()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="sectorForm.invalid || guardando()"
+          >
             @if (guardando()) {
               <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
             } @else {
@@ -39,7 +72,7 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
         </div>
       </form>
     </app-modal>
-  `
+  `,
 })
 export class SectorFormComponent {
   private admin = inject(AdminService);
@@ -61,16 +94,18 @@ export class SectorFormComponent {
     }
     this.guardando.set(true);
     this.error.set('');
-    this.admin.createSector({ nombre, descripcion: this.descripcion.trim() || undefined }).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.notify.success(`Sector ${nombre} creado.`);
-        this.creado.emit();
-      },
-      error: (err) => {
-        this.guardando.set(false);
-        this.error.set(err.error?.message || 'No se pudo crear el sector.');
-      }
-    });
+    this.admin
+      .createSector({ nombre, descripcion: this.descripcion.trim() || undefined })
+      .subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.notify.success(`Sector ${nombre} creado.`);
+          this.creado.emit();
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          this.error.set(err.error?.message || 'No se pudo crear el sector.');
+        },
+      });
   }
 }

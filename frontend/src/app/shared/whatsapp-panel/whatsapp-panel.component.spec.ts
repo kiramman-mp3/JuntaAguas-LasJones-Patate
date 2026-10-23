@@ -14,7 +14,7 @@ describe('WhatsAppPanelComponent (Filtro de Grupos)', () => {
     { id: '120363000000000001@g.us', nombre: 'Usuarios La Jones', participantes: 120 },
     { id: '120363000000000002@g.us', nombre: 'Directiva Junta General', participantes: 8 },
     { id: '120363000000000003@g.us', nombre: 'Riego Sector Alto', participantes: 45 },
-    { id: '120363000000000004@g.us', nombre: 'Familia Perez', participantes: 15 }
+    { id: '120363000000000004@g.us', nombre: 'Familia Perez', participantes: 15 },
   ];
 
   beforeEach(() => {
@@ -26,14 +26,12 @@ describe('WhatsAppPanelComponent (Filtro de Grupos)', () => {
       guardandoGrupo: signal(false),
       cargarGrupos: vi.fn(),
       guardarGrupo: vi.fn(),
-      cerrar: vi.fn()
+      cerrar: vi.fn(),
     };
 
     TestBed.configureTestingModule({
       imports: [WhatsAppPanelComponent],
-      providers: [
-        { provide: WhatsAppSesionService, useValue: sesionMock }
-      ]
+      providers: [{ provide: WhatsAppSesionService, useValue: sesionMock }],
     });
 
     fixture = TestBed.createComponent(WhatsAppPanelComponent);

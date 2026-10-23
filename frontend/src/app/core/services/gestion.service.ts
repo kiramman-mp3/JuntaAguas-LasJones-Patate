@@ -83,7 +83,8 @@ export interface NuevaActividad {
 function parametros(valores: object): HttpParams {
   let params = new HttpParams();
   for (const [clave, valor] of Object.entries(valores)) {
-    if (valor !== null && valor !== undefined && valor !== '') params = params.set(clave, String(valor));
+    if (valor !== null && valor !== undefined && valor !== '')
+      params = params.set(clave, String(valor));
   }
   return params;
 }
@@ -95,7 +96,9 @@ export class GestionService {
   private url = environment.apiUrl;
 
   getAuditoria(filtros: FiltrosAuditoria = {}): Observable<RespuestaApi<RegistroAuditoria[]>> {
-    return this.http.get<RespuestaApi<RegistroAuditoria[]>>(`${this.url}/auditoria`, { params: parametros(filtros) });
+    return this.http.get<RespuestaApi<RegistroAuditoria[]>>(`${this.url}/auditoria`, {
+      params: parametros(filtros),
+    });
   }
 
   getInventario(): Observable<RespuestaApi<BienInventario[]>> {
@@ -103,18 +106,33 @@ export class GestionService {
   }
 
   registrarBien(bien: NuevoBien): Observable<RespuestaApi<unknown> & { bienId: number }> {
-    return this.http.post<RespuestaApi<unknown> & { bienId: number }>(`${this.url}/inventario`, bien);
+    return this.http.post<RespuestaApi<unknown> & { bienId: number }>(
+      `${this.url}/inventario`,
+      bien,
+    );
   }
 
   getPlanes(): Observable<RespuestaApi<PlanAnual[]>> {
     return this.http.get<RespuestaApi<PlanAnual[]>>(`${this.url}/planes`);
   }
 
-  crearPlan(anio: number, descripcion?: string): Observable<RespuestaApi<unknown> & { planId: number }> {
-    return this.http.post<RespuestaApi<unknown> & { planId: number }>(`${this.url}/planes`, { anio, descripcion });
+  crearPlan(
+    anio: number,
+    descripcion?: string,
+  ): Observable<RespuestaApi<unknown> & { planId: number }> {
+    return this.http.post<RespuestaApi<unknown> & { planId: number }>(`${this.url}/planes`, {
+      anio,
+      descripcion,
+    });
   }
 
-  agregarActividad(planId: number, actividad: NuevaActividad): Observable<RespuestaApi<unknown> & { actividadId: number }> {
-    return this.http.post<RespuestaApi<unknown> & { actividadId: number }>(`${this.url}/planes/${planId}/actividades`, actividad);
+  agregarActividad(
+    planId: number,
+    actividad: NuevaActividad,
+  ): Observable<RespuestaApi<unknown> & { actividadId: number }> {
+    return this.http.post<RespuestaApi<unknown> & { actividadId: number }>(
+      `${this.url}/planes/${planId}/actividades`,
+      actividad,
+    );
   }
 }

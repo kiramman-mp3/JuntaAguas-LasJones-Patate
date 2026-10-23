@@ -10,7 +10,7 @@ import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
   standalone: true,
   imports: [CommonModule, FechaLocalPipe],
   templateUrl: './eventos.component.html',
-  styleUrls: ['./eventos.component.scss']
+  styleUrls: ['./eventos.component.scss'],
 })
 export class EventosComponent implements OnInit {
   asambleasFuturas: EventoPublico[] = [];
@@ -21,8 +21,6 @@ export class EventosComponent implements OnInit {
   private readonly consultaService = inject(ConsultaService);
   private readonly actasService = inject(ActasService);
   private readonly cdr = inject(ChangeDetectorRef);
-
-
 
   ngOnInit() {
     this.consultaService.getEventosPublicos().subscribe({
@@ -47,7 +45,7 @@ export class EventosComponent implements OnInit {
       error: (err) => {
         console.error('Error al cargar eventos', err);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 

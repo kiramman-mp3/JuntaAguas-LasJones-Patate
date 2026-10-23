@@ -21,19 +21,46 @@ import { Turno } from '../turno.model';
         <tbody>
           @for (t of turnos(); track t.id) {
             <tr>
-              <td data-label="Usuario"><strong>{{ t.usuario }}</strong></td>
-              <td data-label="Lote"><span class="pill pill--primary">{{ t.lote }}</span></td>
+              <td data-label="Usuario">
+                <strong>{{ t.usuario }}</strong>
+              </td>
+              <td data-label="Lote">
+                <span class="pill pill--primary">{{ t.lote }}</span>
+              </td>
               <td data-label="Sector">{{ t.sector }}</td>
               <td data-label="Día">{{ t.dia }}</td>
-              <td data-label="Horario"><span class="time-range">{{ t.horaInicio }}<i class="ri-arrow-right-line" aria-hidden="true"></i>{{ t.horaFin }}</span></td>
+              <td data-label="Horario">
+                <span class="time-range"
+                  >{{ t.horaInicio }}<i class="ri-arrow-right-line" aria-hidden="true"></i
+                  >{{ t.horaFin }}</span
+                >
+              </td>
               <td class="cell-actions">
-                <button type="button" class="icon-btn" (click)="ver.emit(t)" title="Ver detalle" [attr.aria-label]="'Ver turno de ' + t.usuario">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="ver.emit(t)"
+                  title="Ver detalle"
+                  [attr.aria-label]="'Ver turno de ' + t.usuario"
+                >
                   <i class="ri-eye-line" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="icon-btn" (click)="editar.emit(t)" title="Editar" [attr.aria-label]="'Editar turno de ' + t.usuario">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="editar.emit(t)"
+                  title="Editar"
+                  [attr.aria-label]="'Editar turno de ' + t.usuario"
+                >
                   <i class="ri-edit-line" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="icon-btn icon-btn--danger" (click)="eliminar.emit(t)" title="Eliminar" [attr.aria-label]="'Eliminar turno de ' + t.usuario">
+                <button
+                  type="button"
+                  class="icon-btn icon-btn--danger"
+                  (click)="eliminar.emit(t)"
+                  title="Eliminar"
+                  [attr.aria-label]="'Eliminar turno de ' + t.usuario"
+                >
                   <i class="ri-delete-bin-line" aria-hidden="true"></i>
                 </button>
               </td>
@@ -42,7 +69,7 @@ import { Turno } from '../turno.model';
         </tbody>
       </table>
     </div>
-  `
+  `,
 })
 export class TurnosTablaComponent {
   readonly turnos = input.required<Turno[]>();

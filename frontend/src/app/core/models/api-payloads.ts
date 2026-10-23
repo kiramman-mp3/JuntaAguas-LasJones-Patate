@@ -165,7 +165,14 @@ export interface DashboardResumen {
   cobranza: { emitido: number; cobrado: number; porcentaje: number | null };
   asistencia: {
     promedio: number | null;
-    ultimosEventos: { id: number; tipo: 'ASAMBLEA' | 'MINGA'; titulo: string; fecha: string; presentes: number; registrados: number }[];
+    ultimosEventos: {
+      id: number;
+      tipo: 'ASAMBLEA' | 'MINGA';
+      titulo: string;
+      fecha: string;
+      presentes: number;
+      registrados: number;
+    }[];
   };
   proximosEventos: {
     id: number;
@@ -240,7 +247,13 @@ export interface AsistenciaRegistro {
 }
 
 export interface PadronRespuesta extends RespuestaApi<AsistenciaPadron[]> {
-  resumen: { total: number; presentes: number; ausentes: number; justificados: number; pendientes: number };
+  resumen: {
+    total: number;
+    presentes: number;
+    ausentes: number;
+    justificados: number;
+    pendientes: number;
+  };
   estado: EventoItem['estado'];
 }
 
@@ -251,7 +264,8 @@ export interface FinalizacionRespuesta extends RespuestaMensaje {
 }
 
 /** NO_DISPONIBLE: el servicio de WhatsApp no responde. NO_CONFIGURADO: falta su token en el backend. */
-export type EstadoConexionWhatsApp = 'DESCONECTADO' | 'INICIANDO' | 'ESPERANDO_QR' | 'CONECTADO' | 'NO_DISPONIBLE' | 'NO_CONFIGURADO';
+export type EstadoConexionWhatsApp =
+  'DESCONECTADO' | 'INICIANDO' | 'ESPERANDO_QR' | 'CONECTADO' | 'NO_DISPONIBLE' | 'NO_CONFIGURADO';
 
 export interface GrupoWhatsApp {
   id: string;

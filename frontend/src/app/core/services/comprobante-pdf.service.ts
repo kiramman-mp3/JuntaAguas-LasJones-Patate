@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { cargarJsPdf } from '../utils/jspdf';
-import { PagoAnualDetalle, PagoDetalle, etiquetaPeriodo, numeroRecibo, numeroReciboAgua } from '../models/finanzas';
+import {
+  PagoAnualDetalle,
+  PagoDetalle,
+  etiquetaPeriodo,
+  numeroRecibo,
+  numeroReciboAgua,
+} from '../models/finanzas';
 import { formatearFecha } from '../utils/fechas';
 
 export interface ComprobanteLinea {
@@ -31,12 +37,16 @@ export function comprobanteDePago(p: PagoDetalle): Comprobante {
     fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
     usuarioNombre: p.usuario_nombre,
     usuarioCedula: p.cedula,
-    lineas: (p.detalles ?? []).map((d) => ({ concepto: d.concepto_nombre, periodo: etiquetaPeriodo(d.periodo_anio, d.periodo_mes), valor: Number(d.valor_pagado) })),
+    lineas: (p.detalles ?? []).map((d) => ({
+      concepto: d.concepto_nombre,
+      periodo: etiquetaPeriodo(d.periodo_anio, d.periodo_mes),
+      valor: Number(d.valor_pagado),
+    })),
     total: Number(p.valor_total),
     metodo: p.metodo,
     referencia: p.referencia,
     observacion: p.estado === 'ANULADO' ? `Anulado: ${p.motivo_anulacion ?? ''}` : p.observacion,
-    anulado: p.estado === 'ANULADO'
+    anulado: p.estado === 'ANULADO',
   };
 }
 
@@ -47,12 +57,16 @@ export function comprobanteDePagoAnual(p: PagoAnualDetalle): Comprobante {
     fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
     usuarioNombre: p.usuario_nombre,
     usuarioCedula: p.cedula,
-    lineas: (p.detalles ?? []).map((d) => ({ concepto: 'Pago anual de agua', periodo: `Año ${d.periodo_anio}`, valor: Number(d.valor_pagado) })),
+    lineas: (p.detalles ?? []).map((d) => ({
+      concepto: 'Pago anual de agua',
+      periodo: `Año ${d.periodo_anio}`,
+      valor: Number(d.valor_pagado),
+    })),
     total: Number(p.valor_total),
     metodo: p.metodo,
     referencia: p.referencia,
     observacion: p.estado === 'ANULADO' ? `Anulado: ${p.motivo_anulacion ?? ''}` : p.observacion,
-    anulado: p.estado === 'ANULADO'
+    anulado: p.estado === 'ANULADO',
   };
 }
 
@@ -69,13 +83,23 @@ export class ComprobantePdfService {
     const url = doc.output('bloburl').toString();
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
-    Object.assign(iframe.style, { position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: '0' });
+    Object.assign(iframe.style, {
+      position: 'fixed',
+      right: '0',
+      bottom: '0',
+      width: '0',
+      height: '0',
+      border: '0',
+    });
     iframe.src = url;
     iframe.onload = () => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
       // El iframe se retira cuando el usuario ya cerró el diálogo de impresión.
-      setTimeout(() => { iframe.remove(); URL.revokeObjectURL(url); }, 60_000);
+      setTimeout(() => {
+        iframe.remove();
+        URL.revokeObjectURL(url);
+      }, 60_000);
     };
     document.body.appendChild(iframe);
   }
@@ -118,7 +142,10 @@ export class ComprobantePdfService {
       ['Usuario:', c.usuarioNombre],
       ['Cédula:', c.usuarioCedula],
       ['Fecha / hora:', c.fechaHora],
-      ['Forma de pago:', c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'EFECTIVO')]
+      [
+        'Forma de pago:',
+        c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'EFECTIVO'),
+      ],
     ];
     let y = 36;
     for (const [etiqueta, valor] of filas) {
@@ -145,10 +172,15 @@ export class ComprobantePdfService {
       styles: { fontSize: 8.5, textColor: [0, 0, 0] },
       headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       footStyles: { fillColor: [248, 248, 248], textColor: [0, 0, 0], fontStyle: 'bold' },
-      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 35 }, 2: { cellWidth: 23, halign: 'right' } }
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 23, halign: 'right' },
+      },
     });
 
-    const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y + 40;
+    const finalY =
+      (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y + 40;
     let notaY = finalY + 7;
     if (c.observacion) {
       doc.setFontSize(7.5);
@@ -159,7 +191,9 @@ export class ComprobantePdfService {
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(80, 80, 80);
-    doc.text('Gracias por mantener al día sus aportes a la Junta de Agua.', centro, notaY, { align: 'center' });
+    doc.text('Gracias por mantener al día sus aportes a la Junta de Agua.', centro, notaY, {
+      align: 'center',
+    });
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
     doc.text('CAJA GENERAL - JUNTA LA JONES', centro, notaY + 5, { align: 'center' });

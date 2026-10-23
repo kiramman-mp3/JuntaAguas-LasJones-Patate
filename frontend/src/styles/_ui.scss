@@ -54,12 +54,18 @@
     flex-wrap: wrap;
     gap: 0.6rem;
 
-    &:empty { display: none; }
+    &:empty {
+      display: none;
+    }
   }
 
   @media (max-width: 600px) {
-    &__actions { width: 100%; }
-    &__actions > .btn { flex: 1 1 auto; }
+    &__actions {
+      width: 100%;
+    }
+    &__actions > .btn {
+      flex: 1 1 auto;
+    }
   }
 }
 
@@ -75,9 +81,13 @@
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 
-  .segmented { max-width: 560px; }
+  .segmented {
+    max-width: 560px;
+  }
 
-  .segmented__item { text-decoration: none; }
+  .segmented__item {
+    text-decoration: none;
+  }
 }
 
 /* --- Módulo: pila vertical con ritmo constante --- */
@@ -117,8 +127,17 @@
     opacity: 0.7;
   }
 
-  strong { color: var(--text-main); font-size: 1rem; letter-spacing: -0.01em; }
-  p { margin: 0; font-size: 0.875rem; max-width: 42ch; line-height: 1.5; }
+  strong {
+    color: var(--text-main);
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+  }
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    max-width: 42ch;
+    line-height: 1.5;
+  }
 
   &__actions {
     display: flex;
@@ -127,7 +146,9 @@
     justify-content: center;
     margin-top: 0.6rem;
 
-    &:empty { display: none; }
+    &:empty {
+      display: none;
+    }
   }
 
   &--error &__icon {
@@ -148,7 +169,9 @@
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
     gap: 1rem;
 
-    .skeleton--card { height: 13rem; }
+    .skeleton--card {
+      height: 13rem;
+    }
   }
 }
 
@@ -159,8 +182,12 @@
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--border-color);
 
-  &:last-child { border-bottom: 0; }
-  .skeleton--text { margin: 0; }
+  &:last-child {
+    border-bottom: 0;
+  }
+  .skeleton--text {
+    margin: 0;
+  }
 }
 
 .skeleton--avatar {
@@ -172,10 +199,18 @@
 
 /* --- Modales: tamaños, cabecera y entrada/salida --- */
 .modal {
-  &--sm { max-width: 440px; }
-  &--md { max-width: 620px; }
-  &--lg { max-width: 820px; }
-  &--xl { max-width: 1040px; }
+  &--sm {
+    max-width: 440px;
+  }
+  &--md {
+    max-width: 620px;
+  }
+  &--lg {
+    max-width: 820px;
+  }
+  &--xl {
+    max-width: 1040px;
+  }
 
   > form {
     display: flex;
@@ -194,7 +229,9 @@
   &__heading-text {
     min-width: 0;
 
-    h3 { margin: 0; }
+    h3 {
+      margin: 0;
+    }
   }
 
   &__subtitle {
@@ -215,10 +252,22 @@
     background: var(--color-primary-light);
     color: var(--color-primary);
 
-    &--success { background: var(--color-success-light); color: var(--color-success-strong); }
-    &--warning { background: var(--color-warning-light); color: var(--color-warning-strong); }
-    &--danger { background: var(--color-danger-light); color: var(--color-danger); }
-    &--whatsapp { background: var(--color-success-light); color: #16a34a; }
+    &--success {
+      background: var(--color-success-light);
+      color: var(--color-success-strong);
+    }
+    &--warning {
+      background: var(--color-warning-light);
+      color: var(--color-warning-strong);
+    }
+    &--danger {
+      background: var(--color-danger-light);
+      color: var(--color-danger);
+    }
+    &--whatsapp {
+      background: var(--color-success-light);
+      color: #16a34a;
+    }
   }
 }
 
@@ -226,24 +275,38 @@
 .modal-backdrop--enter {
   animation: ui-fade 0.2s ease both;
 
-  .modal { animation: ui-rise 0.32s var(--ease-out) both; }
+  .modal {
+    animation: ui-rise 0.32s var(--ease-out) both;
+  }
 }
 
 .modal-backdrop--leave {
   animation: ui-fade 0.18s ease reverse both;
   pointer-events: none;
 
-  .modal { animation: ui-rise 0.18s ease-in reverse both; }
+  .modal {
+    animation: ui-rise 0.18s ease-in reverse both;
+  }
 }
 
 @keyframes ui-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes ui-rise {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -264,7 +327,11 @@
   border-top-color: var(--color-primary);
   animation: spin 0.8s linear infinite;
 
-  &--sm { width: 1rem; height: 1rem; border-width: 2px; }
+  &--sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 2px;
+  }
 }
 
 /* --- Pie de modal con acciones que se acomodan en pantallas angostas --- */
@@ -302,7 +369,9 @@ fieldset.modal__body {
     box-shadow: var(--shadow-lg);
     transform-origin: top right;
 
-    &--enter { animation: menu-in 0.2s var(--ease-out) both; }
+    &--enter {
+      animation: menu-in 0.2s var(--ease-out) both;
+    }
   }
 
   &__item {
@@ -323,15 +392,26 @@ fieldset.modal__body {
     cursor: pointer;
     transition: background-color var(--duration-fast) ease;
 
-    i { font-size: 1.05rem; color: var(--text-muted); }
+    i {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+    }
 
     &:hover:not(:disabled),
-    &:focus-visible { background: var(--bg-surface-hover); outline: none; }
+    &:focus-visible {
+      background: var(--bg-surface-hover);
+      outline: none;
+    }
 
-    &:disabled { opacity: 0.45; cursor: not-allowed; }
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
     &--danger,
-    &--danger i { color: var(--color-danger); }
+    &--danger i {
+      color: var(--color-danger);
+    }
   }
 
   &__divider {
@@ -342,6 +422,12 @@ fieldset.modal__body {
 }
 
 @keyframes menu-in {
-  from { opacity: 0; transform: scale(0.94) translateY(-4px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

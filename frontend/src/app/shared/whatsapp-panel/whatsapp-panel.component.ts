@@ -35,18 +35,24 @@ import { ModalComponent } from '../ui/modal.component';
                 </div>
 
                 <div class="form-group wa-panel__grupo">
-                  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;"
+                  >
                     <label for="wa-grupo" style="margin-bottom: 0;">Grupo de convocatorias</label>
-                     @if (!sesion.cargandoGrupos() && sesion.grupos().length > 0) {
+                    @if (!sesion.cargandoGrupos() && sesion.grupos().length > 0) {
                       <small class="text-muted" style="font-size: 0.75rem;">
                         {{ gruposFiltrados().length }} de {{ sesion.grupos().length }} grupos
                       </small>
                     }
                   </div>
                   @if (e.grupo) {
-                    <p class="wa-panel__actual">Actual: <strong>{{ e.grupo.nombre }}</strong></p>
+                    <p class="wa-panel__actual">
+                      Actual: <strong>{{ e.grupo.nombre }}</strong>
+                    </p>
                   } @else {
-                    <p class="wa-panel__aviso">Elija el grupo donde se publicarán las convocatorias.</p>
+                    <p class="wa-panel__aviso">
+                      Elija el grupo donde se publicarán las convocatorias.
+                    </p>
                   }
 
                   @if (!sesion.cargandoGrupos() && sesion.grupos().length > 0) {
@@ -73,31 +79,57 @@ import { ModalComponent } from '../ui/modal.component';
                       [disabled]="sesion.cargandoGrupos() || !sesion.grupos().length"
                     >
                       <option value="" disabled>
-                        {{ sesion.cargandoGrupos() ? 'Cargando grupos…' : gruposFiltrados().length ? 'Seleccione un grupo (' + gruposFiltrados().length + ' disponibles)' : busquedaGrupo() ? 'No hay grupos con ese nombre' : 'La cuenta no pertenece a ningún grupo' }}
+                        {{
+                          sesion.cargandoGrupos()
+                            ? 'Cargando grupos…'
+                            : gruposFiltrados().length
+                              ? 'Seleccione un grupo (' + gruposFiltrados().length + ' disponibles)'
+                              : busquedaGrupo()
+                                ? 'No hay grupos con ese nombre'
+                                : 'La cuenta no pertenece a ningún grupo'
+                        }}
                       </option>
                       @for (g of gruposFiltrados(); track g.id) {
-                        <option [value]="g.id">{{ g.nombre }}{{ g.participantes ? ' (' + g.participantes + ')' : '' }}</option>
+                        <option [value]="g.id">
+                          {{ g.nombre }}{{ g.participantes ? ' (' + g.participantes + ')' : '' }}
+                        </option>
                       }
                     </select>
-                    <button type="button" class="btn btn--ghost" (click)="sesion.cargarGrupos()"
-                      [disabled]="sesion.cargandoGrupos()" title="Volver a cargar los grupos" aria-label="Volver a cargar los grupos">
+                    <button
+                      type="button"
+                      class="btn btn--ghost"
+                      (click)="sesion.cargarGrupos()"
+                      [disabled]="sesion.cargandoGrupos()"
+                      title="Volver a cargar los grupos"
+                      aria-label="Volver a cargar los grupos"
+                    >
                       <i class="ri-refresh-line" aria-hidden="true"></i>
                     </button>
                   </div>
-                  @if (busquedaGrupo() && gruposFiltrados().length === 0 && !sesion.cargandoGrupos()) {
+                  @if (
+                    busquedaGrupo() && gruposFiltrados().length === 0 && !sesion.cargandoGrupos()
+                  ) {
                     <small class="field-error" style="margin-top: 0.25rem;">
-                      <i class="ri-information-line" aria-hidden="true"></i> Ningún grupo coincide con "{{ busquedaGrupo() }}".
+                      <i class="ri-information-line" aria-hidden="true"></i> Ningún grupo coincide
+                      con "{{ busquedaGrupo() }}".
                     </small>
                   }
-                  <button type="button" class="btn btn--whatsapp" (click)="guardar(e.grupo?.id)"
-                    [disabled]="sesion.guardandoGrupo() || !seleccion() || seleccion() === e.grupo?.id">
+                  <button
+                    type="button"
+                    class="btn btn--whatsapp"
+                    (click)="guardar(e.grupo?.id)"
+                    [disabled]="
+                      sesion.guardandoGrupo() || !seleccion() || seleccion() === e.grupo?.id
+                    "
+                  >
                     <i class="ri-save-line" aria-hidden="true"></i> Usar este grupo
                   </button>
                 </div>
               }
               @case ('ESPERANDO_QR') {
                 <p class="wa-panel__hint">
-                  Escanee el código con el WhatsApp de la Junta en <strong>Dispositivos vinculados</strong>.
+                  Escanee el código con el WhatsApp de la Junta en
+                  <strong>Dispositivos vinculados</strong>.
                 </p>
                 @if (e.qr) {
                   <img class="wa-panel__qr" [src]="e.qr" alt="Código QR para vincular WhatsApp" />
@@ -128,16 +160,31 @@ import { ModalComponent } from '../ui/modal.component';
           }
         </div>
         <div class="modal__footer modal__footer--wrap">
-          <button type="button" class="btn btn--ghost" (click)="sesion.consultar()" [disabled]="sesion.cargando()">
+          <button
+            type="button"
+            class="btn btn--ghost"
+            (click)="sesion.consultar()"
+            [disabled]="sesion.cargando()"
+          >
             <i class="ri-refresh-line" aria-hidden="true"></i> Actualizar
           </button>
           @if (sesion.estado()?.estado === 'DESCONECTADO') {
-            <button type="button" class="btn btn--whatsapp" (click)="sesion.conectar()" [disabled]="sesion.cargando()">
+            <button
+              type="button"
+              class="btn btn--whatsapp"
+              (click)="sesion.conectar()"
+              [disabled]="sesion.cargando()"
+            >
               <i class="ri-link" aria-hidden="true"></i> Conectar WhatsApp
             </button>
           }
           @if (sesion.estado()?.conectado) {
-            <button type="button" class="btn btn--danger" (click)="sesion.cerrarSesion()" [disabled]="sesion.cargando()">
+            <button
+              type="button"
+              class="btn btn--danger"
+              (click)="sesion.cerrarSesion()"
+              [disabled]="sesion.cargando()"
+            >
               <i class="ri-logout-box-r-line" aria-hidden="true"></i> Desvincular
             </button>
           }
@@ -220,8 +267,8 @@ import { ModalComponent } from '../ui/modal.component';
         border: 1px solid var(--border-color);
         box-shadow: var(--shadow-sm);
       }
-    `
-  ]
+    `,
+  ],
 })
 export class WhatsAppPanelComponent implements OnDestroy {
   readonly sesion = inject(WhatsAppSesionService);
@@ -236,7 +283,9 @@ export class WhatsAppPanelComponent implements OnDestroy {
     const todos = this.sesion.grupos();
     if (!q) return todos;
 
-    const coinciden = todos.filter((g) => g.nombre?.toLowerCase().includes(q) || g.id?.toLowerCase().includes(q));
+    const coinciden = todos.filter(
+      (g) => g.nombre?.toLowerCase().includes(q) || g.id?.toLowerCase().includes(q),
+    );
     const actualId = this.seleccion();
     if (actualId && !coinciden.some((g) => g.id === actualId)) {
       const seleccionado = todos.find((g) => g.id === actualId);

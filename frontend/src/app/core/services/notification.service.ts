@@ -13,7 +13,7 @@ const DURACION: Record<ToastTipo, number> = {
   success: 4000,
   info: 5000,
   warning: 6500,
-  error: 7000
+  error: 7000,
 };
 
 const MAXIMO_VISIBLES = 4;
@@ -24,12 +24,15 @@ const MAXIMO_VISIBLES = 4;
  * el usuario lee (cursor encima o foco) y un mismo mensaje no se apila dos veces.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class NotificationService {
   readonly toasts = signal<Toast[]>([]);
   private contador = 0;
-  private temporizadores = new Map<number, { timer: ReturnType<typeof setTimeout> | null; restante: number; inicio: number }>();
+  private temporizadores = new Map<
+    number,
+    { timer: ReturnType<typeof setTimeout> | null; restante: number; inicio: number }
+  >();
 
   success(mensaje: string) {
     this.mostrar('success', mensaje);
@@ -81,14 +84,19 @@ export class NotificationService {
     const id = ++this.contador;
     this.toasts.update((lista) => {
       const nueva = [...lista, { id, tipo, mensaje }];
-      for (const sobrante of nueva.slice(0, Math.max(0, nueva.length - MAXIMO_VISIBLES))) this.cerrarTemporizador(sobrante.id);
+      for (const sobrante of nueva.slice(0, Math.max(0, nueva.length - MAXIMO_VISIBLES)))
+        this.cerrarTemporizador(sobrante.id);
       return nueva.slice(-MAXIMO_VISIBLES);
     });
     this.programar(id, DURACION[tipo]);
   }
 
   private programar(id: number, duracion: number) {
-    this.temporizadores.set(id, { timer: setTimeout(() => this.cerrar(id), duracion), restante: duracion, inicio: Date.now() });
+    this.temporizadores.set(id, {
+      timer: setTimeout(() => this.cerrar(id), duracion),
+      restante: duracion,
+      inicio: Date.now(),
+    });
   }
 
   private cerrarTemporizador(id: number) {

@@ -13,7 +13,7 @@ import { MultaConfiguradaComponent } from '../../../../../shared/multa-configura
   selector: 'app-minga-form',
   standalone: true,
   imports: [FormsModule, ModalComponent, MultaConfiguradaComponent],
-  templateUrl: './minga-form.component.html'
+  templateUrl: './minga-form.component.html',
 })
 export class MingaFormComponent implements OnInit {
   private admin = inject(AdminService);
@@ -44,7 +44,7 @@ export class MingaFormComponent implements OnInit {
     hora_inicio: '08:00',
     lugar: '',
     sector_id: null,
-    genera_multa_ausencia: true
+    genera_multa_ausencia: true,
   };
 
   ngOnInit(): void {
@@ -60,7 +60,7 @@ export class MingaFormComponent implements OnInit {
         finalize(() => {
           this.cargandoSectores = false;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: (res) => {
@@ -68,14 +68,20 @@ export class MingaFormComponent implements OnInit {
         },
         error: () => {
           // Si no se pueden cargar, se conserva la lista vacía y la opción "Todos"
-        }
+        },
       });
   }
 
   guardar(): void {
     if (this.guardando) return;
     const f = this.formulario;
-    if (!f.titulo.trim() || !f.descripcion.trim() || !f.lugar.trim() || !f.fecha || !f.hora_inicio) {
+    if (
+      !f.titulo.trim() ||
+      !f.descripcion.trim() ||
+      !f.lugar.trim() ||
+      !f.fecha ||
+      !f.hora_inicio
+    ) {
       this.error = 'Complete la actividad, el trabajo a realizar, la fecha, la hora y el lugar.';
       return;
     }
@@ -93,7 +99,7 @@ export class MingaFormComponent implements OnInit {
       descripcion: f.descripcion.trim(),
       lugar: f.lugar.trim(),
       sector_id: f.sector_id ? Number(f.sector_id) : null,
-      requiere_asistencia: true
+      requiere_asistencia: true,
       // El valor de la multa lo toma el servidor de Ajustes → Tarifas.
     };
     this.admin
@@ -103,11 +109,11 @@ export class MingaFormComponent implements OnInit {
         finalize(() => {
           this.guardando = false;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: () => this.creada.emit(),
-        error: (err) => (this.error = err.error?.message || 'No se pudo registrar la minga.')
+        error: (err) => (this.error = err.error?.message || 'No se pudo registrar la minga.'),
       });
   }
 }

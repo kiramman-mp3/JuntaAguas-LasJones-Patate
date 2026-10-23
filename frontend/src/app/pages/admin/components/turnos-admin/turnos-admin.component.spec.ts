@@ -8,8 +8,29 @@ import { TurnosAdminComponent } from './turnos-admin.component';
 import { TurnoAsignarComponent } from './turno-asignar/turno-asignar.component';
 
 const turnosApi = [
-  { id: 1, persona_id: 7, lote_id: 3, dia_semana: 1, hora_inicio: '08:00:00', hora_fin: '10:00:00', usuario_nombre: 'Ana Pérez', lote_codigo: 'LJA-001', sector_nombre: 'La Merced' },
-  { id: 2, persona_id: 8, lote_id: 4, dia_semana: 3, hora_inicio: '14:00:00', hora_fin: '16:00:00', nombres: 'Luis', apellidos: 'Mora', lote_codigo: 'LJA-002', sector_nombre: 'Centro' }
+  {
+    id: 1,
+    persona_id: 7,
+    lote_id: 3,
+    dia_semana: 1,
+    hora_inicio: '08:00:00',
+    hora_fin: '10:00:00',
+    usuario_nombre: 'Ana Pérez',
+    lote_codigo: 'LJA-001',
+    sector_nombre: 'La Merced',
+  },
+  {
+    id: 2,
+    persona_id: 8,
+    lote_id: 4,
+    dia_semana: 3,
+    hora_inicio: '14:00:00',
+    hora_fin: '16:00:00',
+    nombres: 'Luis',
+    apellidos: 'Mora',
+    lote_codigo: 'LJA-002',
+    sector_nombre: 'Centro',
+  },
 ];
 
 describe('Turnos de agua', () => {
@@ -24,7 +45,7 @@ describe('Turnos de agua', () => {
       asignarTurno: vi.fn(() => of({ message: 'Asignado' })),
       getPersonas: vi.fn(() => of({ data: [], pagination: { total: 0 } })),
       getLotes: vi.fn(() => of({ data: [{ id: 3, codigo: 'LJA-001' }] })),
-      getSectores: vi.fn(() => of({ data: [{ id: 1, nombre: 'La Merced' }] }))
+      getSectores: vi.fn(() => of({ data: [{ id: 1, nombre: 'La Merced' }] })),
     };
     dialog = { confirmar: vi.fn(async () => true) };
     notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
@@ -32,8 +53,8 @@ describe('Turnos de agua', () => {
       providers: [
         { provide: AdminService, useValue: admin },
         { provide: DialogService, useValue: dialog },
-        { provide: NotificationService, useValue: notify }
-      ]
+        { provide: NotificationService, useValue: notify },
+      ],
     });
   });
 
@@ -42,7 +63,7 @@ describe('Turnos de agua', () => {
     component.cargar();
     expect(component.turnos().map((t) => [t.usuario, t.dia, t.horaInicio])).toEqual([
       ['Ana Pérez', 'Lunes', '08:00'],
-      ['Luis Mora', 'Miércoles', '14:00']
+      ['Luis Mora', 'Miércoles', '14:00'],
     ]);
     component.busqueda.set('centro');
     expect(component.filtrados().map((t) => t.id)).toEqual([2]);
@@ -72,7 +93,9 @@ describe('Turnos de agua', () => {
     admin.getTurnos.mockReturnValue(of({ data: muchos }));
     const component = TestBed.createComponent(TurnosAdminComponent).componentInstance;
     component.cargar();
-    expect(component.turnosDeLaPagina().map((t) => t.id)).toEqual(Array.from({ length: 25 }, (_, i) => i + 1));
+    expect(component.turnosDeLaPagina().map((t) => t.id)).toEqual(
+      Array.from({ length: 25 }, (_, i) => i + 1),
+    );
 
     component.pagina.set(2);
     expect(component.turnosDeLaPagina().map((t) => t.id)).toEqual([26, 27, 28, 29, 30]);
@@ -99,7 +122,12 @@ describe('Turnos de agua', () => {
 
   it('al seleccionar un usuario propone su primer lote y valida el horario', () => {
     const component = TestBed.createComponent(TurnoAsignarComponent).componentInstance;
-    component.seleccionar({ id: 7, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' } as any);
+    component.seleccionar({
+      id: 7,
+      nombres: 'Ana',
+      apellidos: 'Pérez',
+      cedula: '1800000001',
+    } as any);
     expect(admin.getLotes).toHaveBeenCalledWith(undefined, undefined, 7);
     expect(component.turno.lote_id).toBe(3);
 

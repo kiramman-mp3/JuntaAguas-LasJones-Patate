@@ -3,7 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { DialogService } from '../../../../../core/services/dialog.service';
-import { ResultadoObligacionesAnuales, ResumenAnualAgua } from '../../../../../core/models/finanzas';
+import {
+  ResultadoObligacionesAnuales,
+  ResumenAnualAgua,
+} from '../../../../../core/models/finanzas';
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 
 /**
@@ -15,7 +18,7 @@ import { hoyEnEcuador } from '../../../../../core/utils/fechas';
   selector: 'app-facturacion-anual',
   standalone: true,
   imports: [FormsModule],
-  templateUrl: './facturacion-anual.component.html'
+  templateUrl: './facturacion-anual.component.html',
 })
 export class FacturacionAnualComponent {
   private finanzas = inject(FinanzasService);
@@ -74,7 +77,7 @@ export class FacturacionAnualComponent {
       error: (err) => {
         this.cargando.set(false);
         this.error.set(err.error?.message || 'No se pudo cargar el estado del pago anual.');
-      }
+      },
     });
     this.calcular();
   }
@@ -86,19 +89,23 @@ export class FacturacionAnualComponent {
     this.calculando.set(true);
     this.errorVistaPrevia.set('');
     this.vistaPrevia.set(null);
-    this.finanzas.generarObligacionesAnualesAgua({ anio, valor_total: valor, simular: true }).subscribe({
-      next: (res) => {
-        // Se ignora una respuesta atrasada si el usuario ya cambió el año o el valor.
-        if (this.anio() !== anio || this.valor() !== valor) return;
-        this.vistaPrevia.set(res.data);
-        this.calculando.set(false);
-      },
-      error: (err) => {
-        if (this.anio() !== anio || this.valor() !== valor) return;
-        this.calculando.set(false);
-        this.errorVistaPrevia.set(err.error?.message || 'No se pudo calcular el pago anual de este año.');
-      }
-    });
+    this.finanzas
+      .generarObligacionesAnualesAgua({ anio, valor_total: valor, simular: true })
+      .subscribe({
+        next: (res) => {
+          // Se ignora una respuesta atrasada si el usuario ya cambió el año o el valor.
+          if (this.anio() !== anio || this.valor() !== valor) return;
+          this.vistaPrevia.set(res.data);
+          this.calculando.set(false);
+        },
+        error: (err) => {
+          if (this.anio() !== anio || this.valor() !== valor) return;
+          this.calculando.set(false);
+          this.errorVistaPrevia.set(
+            err.error?.message || 'No se pudo calcular el pago anual de este año.',
+          );
+        },
+      });
   }
 
   async emitir(): Promise<void> {
@@ -108,21 +115,23 @@ export class FacturacionAnualComponent {
       titulo: `Emitir el pago anual de agua ${previa.anio}`,
       mensaje: `Se emitirán ${previa.generadas} obligaciones de $${previa.valor.toFixed(2)} (total $${previa.total.toFixed(2)}). Vencen el 31 de diciembre de ${previa.anio}.`,
       textoConfirmar: `Emitir ${previa.generadas} obligaciones`,
-      tipo: 'WARNING'
+      tipo: 'WARNING',
     });
     if (!confirmado) return;
     this.emitiendo.set(true);
-    this.finanzas.generarObligacionesAnualesAgua({ anio: previa.anio, valor_total: this.valor() }).subscribe({
-      next: (res) => {
-        this.emitiendo.set(false);
-        this.notify.success(res.message || 'Obligaciones emitidas.');
-        this.cargar();
-        this.emitido.emit();
-      },
-      error: (err) => {
-        this.emitiendo.set(false);
-        this.notify.error(err.error?.message || 'No se pudieron emitir las obligaciones.');
-      }
-    });
+    this.finanzas
+      .generarObligacionesAnualesAgua({ anio: previa.anio, valor_total: this.valor() })
+      .subscribe({
+        next: (res) => {
+          this.emitiendo.set(false);
+          this.notify.success(res.message || 'Obligaciones emitidas.');
+          this.cargar();
+          this.emitido.emit();
+        },
+        error: (err) => {
+          this.emitiendo.set(false);
+          this.notify.error(err.error?.message || 'No se pudieron emitir las obligaciones.');
+        },
+      });
   }
 }

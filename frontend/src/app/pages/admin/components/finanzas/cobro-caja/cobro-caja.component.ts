@@ -1,13 +1,44 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  afterNextRender,
+  computed,
+  inject,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Observable, Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap, tap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
-import { ComprobantePdfService, Comprobante, ComprobanteLinea } from '../../../../../core/services/comprobante-pdf.service';
+import {
+  ComprobantePdfService,
+  Comprobante,
+  ComprobanteLinea,
+} from '../../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import {
-  UsuarioBusqueda, MESES, MetodoPagoNuevo, NuevoPago, ObligacionAnualAgua, ObligacionItem, PagoRegistrado,
-  etiquetaPeriodo, numeroRecibo, numeroReciboAgua
+  UsuarioBusqueda,
+  MESES,
+  MetodoPagoNuevo,
+  NuevoPago,
+  ObligacionAnualAgua,
+  ObligacionItem,
+  PagoRegistrado,
+  etiquetaPeriodo,
+  numeroRecibo,
+  numeroReciboAgua,
 } from '../../../../../core/models/finanzas';
 import { formatearFecha } from '../../../../../core/utils/fechas';
 import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
@@ -50,7 +81,7 @@ const sumar = (valores: number[]) => redondear(valores.reduce((s, v) => s + v, 0
   selector: 'app-cobro-caja',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, ComprobanteBancarioComponent],
-  templateUrl: './cobro-caja.component.html'
+  templateUrl: './cobro-caja.component.html',
 })
 export class CobroCajaComponent {
   private finanzas = inject(FinanzasService);
@@ -94,7 +125,7 @@ export class CobroCajaComponent {
 
   readonly metodos: { valor: MetodoPagoNuevo; etiqueta: string }[] = [
     { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
-    { valor: 'DEPOSITO', etiqueta: 'Depósito' }
+    { valor: 'DEPOSITO', etiqueta: 'Depósito' },
   ];
 
   /**
@@ -107,14 +138,26 @@ export class CobroCajaComponent {
       const claveAnio = o.periodo_anio ? String(o.periodo_anio) : SIN_PERIODO;
       let anio = anios.get(claveAnio);
       if (!anio) {
-        anio = { clave: claveAnio, etiqueta: o.periodo_anio ? String(o.periodo_anio) : 'Sin período', meses: [], total: 0, cantidad: 0 };
+        anio = {
+          clave: claveAnio,
+          etiqueta: o.periodo_anio ? String(o.periodo_anio) : 'Sin período',
+          meses: [],
+          total: 0,
+          cantidad: 0,
+        };
         anios.set(claveAnio, anio);
       }
-      const numMes = o.periodo_mes && o.periodo_mes >= 1 && o.periodo_mes <= 12 ? o.periodo_mes : null;
+      const numMes =
+        o.periodo_mes && o.periodo_mes >= 1 && o.periodo_mes <= 12 ? o.periodo_mes : null;
       const claveMes = `${claveAnio}-${numMes ?? SIN_MES}`;
       let mes = anio.meses.find((m) => m.clave === claveMes);
       if (!mes) {
-        mes = { clave: claveMes, etiqueta: numMes ? MESES[numMes - 1] : o.periodo_anio ? 'Sin mes' : 'Otros rubros', obligaciones: [], subtotal: 0 };
+        mes = {
+          clave: claveMes,
+          etiqueta: numMes ? MESES[numMes - 1] : o.periodo_anio ? 'Sin mes' : 'Otros rubros',
+          obligaciones: [],
+          subtotal: 0,
+        };
         anio.meses.push(mes);
       }
       mes.obligaciones.push(o);
@@ -122,7 +165,10 @@ export class CobroCajaComponent {
       anio.total = redondear(anio.total + Number(o.valor));
       anio.cantidad++;
     }
-    const numero = (clave: string) => (clave.endsWith(SIN_MES) || clave === SIN_PERIODO ? Number.MAX_SAFE_INTEGER : Number(clave.split('-').pop()));
+    const numero = (clave: string) =>
+      clave.endsWith(SIN_MES) || clave === SIN_PERIODO
+        ? Number.MAX_SAFE_INTEGER
+        : Number(clave.split('-').pop());
     return [...anios.values()]
       .map((a) => ({ ...a, meses: [...a.meses].sort((x, y) => numero(x.clave) - numero(y.clave)) }))
       .sort((a, b) => numero(a.clave) - numero(b.clave));
@@ -132,18 +178,40 @@ export class CobroCajaComponent {
   readonly plegados = signal<ReadonlySet<string>>(new Set());
 
   readonly totalOtras = computed(() => sumar(this.obligaciones().map((o) => Number(o.valor))));
-  readonly seleccionadasOtras = computed(() => this.obligaciones().filter((o) => this.seleccion().has(o.id)));
-  readonly totalSeleccionadoOtras = computed(() => sumar(this.seleccionadasOtras().map((o) => Number(o.valor))));
-  readonly todasOtrasMarcadas = computed(() => this.obligaciones().length > 0 && this.obligaciones().every((o) => this.seleccion().has(o.id)));
+  readonly seleccionadasOtras = computed(() =>
+    this.obligaciones().filter((o) => this.seleccion().has(o.id)),
+  );
+  readonly totalSeleccionadoOtras = computed(() =>
+    sumar(this.seleccionadasOtras().map((o) => Number(o.valor))),
+  );
+  readonly todasOtrasMarcadas = computed(
+    () =>
+      this.obligaciones().length > 0 &&
+      this.obligaciones().every((o) => this.seleccion().has(o.id)),
+  );
 
-  readonly totalAgua = computed(() => sumar(this.obligacionesAgua().map((o) => Number(o.valor_total))));
-  readonly seleccionadasAgua = computed(() => this.obligacionesAgua().filter((o) => this.seleccionAgua().has(o.id)));
-  readonly totalSeleccionadoAgua = computed(() => sumar(this.seleccionadasAgua().map((o) => Number(o.valor_total))));
-  readonly todasAguaMarcadas = computed(() => this.obligacionesAgua().length > 0 && this.obligacionesAgua().every((o) => this.seleccionAgua().has(o.id)));
+  readonly totalAgua = computed(() =>
+    sumar(this.obligacionesAgua().map((o) => Number(o.valor_total))),
+  );
+  readonly seleccionadasAgua = computed(() =>
+    this.obligacionesAgua().filter((o) => this.seleccionAgua().has(o.id)),
+  );
+  readonly totalSeleccionadoAgua = computed(() =>
+    sumar(this.seleccionadasAgua().map((o) => Number(o.valor_total))),
+  );
+  readonly todasAguaMarcadas = computed(
+    () =>
+      this.obligacionesAgua().length > 0 &&
+      this.obligacionesAgua().every((o) => this.seleccionAgua().has(o.id)),
+  );
 
   /** Cantidad y total de lo que se cobrará en la pestaña activa. */
-  readonly cantidadSeleccionada = computed(() => (this.pestana() === 'AGUA' ? this.seleccionadasAgua() : this.seleccionadasOtras()).length);
-  readonly total = computed(() => (this.pestana() === 'AGUA' ? this.totalSeleccionadoAgua() : this.totalSeleccionadoOtras()));
+  readonly cantidadSeleccionada = computed(
+    () => (this.pestana() === 'AGUA' ? this.seleccionadasAgua() : this.seleccionadasOtras()).length,
+  );
+  readonly total = computed(() =>
+    this.pestana() === 'AGUA' ? this.totalSeleccionadoAgua() : this.totalSeleccionadoOtras(),
+  );
 
   /** Mensaje que impide cobrar, o '' si el cobro es válido. Se muestra junto al botón, no al enviar. */
   readonly bloqueo = computed(() => {
@@ -155,26 +223,30 @@ export class CobroCajaComponent {
   readonly etiquetaPeriodo = etiquetaPeriodo;
 
   constructor() {
-    this.busqueda$.pipe(
-      debounceTime(250),
-      distinctUntilChanged(),
-      tap(() => this.errorBusqueda.set('')),
-      switchMap((texto) => {
-        if (texto.length < 2) {
-          this.buscando.set(false);
-          return of(null);
-        }
-        this.buscando.set(true);
-        return this.finanzas.buscarUsuarios(texto).pipe(catchError(() => {
-          this.errorBusqueda.set('No se pudo buscar. Revise su conexión e intente de nuevo.');
-          return of(null);
-        }));
-      }),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe((res) => {
-      this.buscando.set(false);
-      this.resultados.set(res?.data ?? []);
-    });
+    this.busqueda$
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        tap(() => this.errorBusqueda.set('')),
+        switchMap((texto) => {
+          if (texto.length < 2) {
+            this.buscando.set(false);
+            return of(null);
+          }
+          this.buscando.set(true);
+          return this.finanzas.buscarUsuarios(texto).pipe(
+            catchError(() => {
+              this.errorBusqueda.set('No se pudo buscar. Revise su conexión e intente de nuevo.');
+              return of(null);
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        this.buscando.set(false);
+        this.resultados.set(res?.data ?? []);
+      });
 
     afterNextRender(() => this.campoBusqueda()?.nativeElement.focus());
   }
@@ -219,7 +291,12 @@ export class CobroCajaComponent {
     this.finanzas.getObligaciones({ persona_id: c.id, estado: 'PENDIENTE' }).subscribe({
       next: (res) => {
         const ordenadas = [...res.data]
-          .sort((a, b) => (a.periodo_anio ?? 0) - (b.periodo_anio ?? 0) || (a.periodo_mes ?? 0) - (b.periodo_mes ?? 0) || a.id - b.id)
+          .sort(
+            (a, b) =>
+              (a.periodo_anio ?? 0) - (b.periodo_anio ?? 0) ||
+              (a.periodo_mes ?? 0) - (b.periodo_mes ?? 0) ||
+              a.id - b.id,
+          )
           .map((o) => ({ ...o, valor: Number(o.valor) }));
         this.obligaciones.set(ordenadas);
         this.seleccion.set(new Set(ordenadas.map((o) => o.id)));
@@ -227,8 +304,10 @@ export class CobroCajaComponent {
       },
       error: (err) => {
         this.cargandoObligaciones.set(false);
-        this.errorObligaciones.set(err.error?.message || 'No se pudieron cargar las multas y otros cobros.');
-      }
+        this.errorObligaciones.set(
+          err.error?.message || 'No se pudieron cargar las multas y otros cobros.',
+        );
+      },
     });
   }
 
@@ -249,7 +328,7 @@ export class CobroCajaComponent {
       error: (err) => {
         this.cargandoAgua.set(false);
         this.errorAgua.set(err.error?.message || 'No se pudo cargar el pago anual de agua.');
-      }
+      },
     });
   }
 
@@ -258,7 +337,9 @@ export class CobroCajaComponent {
   }
 
   alternarTodasAgua(): void {
-    this.seleccionAgua.set(this.todasAguaMarcadas() ? new Set() : new Set(this.obligacionesAgua().map((o) => o.id)));
+    this.seleccionAgua.set(
+      this.todasAguaMarcadas() ? new Set() : new Set(this.obligacionesAgua().map((o) => o.id)),
+    );
   }
 
   alternar(id: number): void {
@@ -266,7 +347,9 @@ export class CobroCajaComponent {
   }
 
   alternarTodasOtras(): void {
-    this.seleccion.set(this.todasOtrasMarcadas() ? new Set() : new Set(this.obligaciones().map((o) => o.id)));
+    this.seleccion.set(
+      this.todasOtrasMarcadas() ? new Set() : new Set(this.obligaciones().map((o) => o.id)),
+    );
   }
 
   estaAbierto(clave: string): boolean {
@@ -278,7 +361,9 @@ export class CobroCajaComponent {
   }
 
   idsDe(nodo: NodoAnio | NodoMes): number[] {
-    return 'meses' in nodo ? nodo.meses.flatMap((m) => m.obligaciones.map((o) => o.id)) : nodo.obligaciones.map((o) => o.id);
+    return 'meses' in nodo
+      ? nodo.meses.flatMap((m) => m.obligaciones.map((o) => o.id))
+      : nodo.obligaciones.map((o) => o.id);
   }
 
   estadoSeleccion(ids: number[]): EstadoSeleccion {
@@ -291,7 +376,8 @@ export class CobroCajaComponent {
     const marcar = this.estadoSeleccion(ids) !== 'todas';
     const nueva = new Set(this.seleccion());
     for (const id of ids) {
-      if (marcar) nueva.add(id); else nueva.delete(id);
+      if (marcar) nueva.add(id);
+      else nueva.delete(id);
     }
     this.seleccion.set(nueva);
   }
@@ -302,17 +388,29 @@ export class CobroCajaComponent {
 
     const anual = this.pestana() === 'AGUA';
     const lineas: ComprobanteLinea[] = anual
-      ? this.seleccionadasAgua().map((o) => ({ concepto: 'Pago anual de agua', periodo: `Año ${o.periodo_anio}`, valor: o.valor_total }))
-      : this.seleccionadasOtras().map((o) => ({ concepto: o.concepto_nombre || 'Obligación', periodo: etiquetaPeriodo(o.periodo_anio, o.periodo_mes), valor: o.valor }));
+      ? this.seleccionadasAgua().map((o) => ({
+          concepto: 'Pago anual de agua',
+          periodo: `Año ${o.periodo_anio}`,
+          valor: o.valor_total,
+        }))
+      : this.seleccionadasOtras().map((o) => ({
+          concepto: o.concepto_nombre || 'Obligación',
+          periodo: etiquetaPeriodo(o.periodo_anio, o.periodo_mes),
+          valor: o.valor,
+        }));
     const datos: NuevoPago = {
       persona_id: c.id,
-      obligacionesIds: (anual ? this.seleccionadasAgua() : this.seleccionadasOtras()).map((o) => o.id),
+      obligacionesIds: (anual ? this.seleccionadasAgua() : this.seleccionadasOtras()).map(
+        (o) => o.id,
+      ),
       metodo: this.metodo(),
       referencia: this.referencia().trim(),
-      observacion: this.observacion().trim() || undefined
+      observacion: this.observacion().trim() || undefined,
     };
     const total = this.total();
-    const peticion: Observable<PagoRegistrado> = anual ? this.finanzas.registrarPagoAnualAgua(datos) : this.finanzas.registrarPago(datos);
+    const peticion: Observable<PagoRegistrado> = anual
+      ? this.finanzas.registrarPagoAnualAgua(datos)
+      : this.finanzas.registrarPago(datos);
 
     this.procesando.set(true);
     peticion.subscribe({
@@ -330,9 +428,11 @@ export class CobroCajaComponent {
           total: res.valorTotal ?? total,
           metodo: datos.metodo,
           referencia: datos.referencia ?? null,
-          observacion: datos.observacion ?? null
+          observacion: datos.observacion ?? null,
         });
-        this.notify.success(`Pago ${numero} registrado por $${(res.valorTotal ?? total).toFixed(2)}.`);
+        this.notify.success(
+          `Pago ${numero} registrado por $${(res.valorTotal ?? total).toFixed(2)}.`,
+        );
         this.reiniciarPago(this.pestana());
         this.cargarObligaciones();
         this.cobrado.emit();
@@ -340,7 +440,7 @@ export class CobroCajaComponent {
       error: (err) => {
         this.procesando.set(false);
         this.notify.error(err.error?.message || 'No se pudo registrar el pago.');
-      }
+      },
     });
   }
 
@@ -351,7 +451,9 @@ export class CobroCajaComponent {
     try {
       await (descargar ? this.pdf.descargar(c) : this.pdf.imprimir(c));
     } catch {
-      this.notify.error('El pago quedó registrado, pero no se pudo generar el comprobante. Puede reimprimirlo desde el historial de pagos.');
+      this.notify.error(
+        'El pago quedó registrado, pero no se pudo generar el comprobante. Puede reimprimirlo desde el historial de pagos.',
+      );
     } finally {
       this.imprimiendo.set(false);
     }
@@ -368,6 +470,7 @@ export class CobroCajaComponent {
 /** Copia del conjunto con `valor` agregado o quitado. */
 function conmutar<T>(conjunto: ReadonlySet<T>, valor: T): Set<T> {
   const nuevo = new Set(conjunto);
-  if (nuevo.has(valor)) nuevo.delete(valor); else nuevo.add(valor);
+  if (nuevo.has(valor)) nuevo.delete(valor);
+  else nuevo.add(valor);
   return nuevo;
 }

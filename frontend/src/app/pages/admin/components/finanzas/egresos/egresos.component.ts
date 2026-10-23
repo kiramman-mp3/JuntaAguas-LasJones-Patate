@@ -18,7 +18,13 @@ interface FormEgreso {
 }
 
 const formVacio = (): FormEgreso => ({
-  fecha: hoyEnEcuador(), concepto: '', proveedor: '', ruc_proveedor: '', numero_factura: '', valor: null, descripcion: ''
+  fecha: hoyEnEcuador(),
+  concepto: '',
+  proveedor: '',
+  ruc_proveedor: '',
+  numero_factura: '',
+  valor: null,
+  descripcion: '',
 });
 
 /** Egresos de la Junta: compras, trabajos y pagos a proveedores. */
@@ -26,7 +32,7 @@ const formVacio = (): FormEgreso => ({
   selector: 'app-egresos',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, ModalA11yDirective],
-  templateUrl: './egresos.component.html'
+  templateUrl: './egresos.component.html',
 })
 export class EgresosComponent implements OnInit {
   private finanzas = inject(FinanzasService);
@@ -63,11 +69,24 @@ export class EgresosComponent implements OnInit {
     const t = this.texto().trim().toLowerCase();
     if (!t) return this.egresos();
     return this.egresos().filter((e) =>
-      [e.concepto, e.descripcion, e.proveedor_nombre, e.numero_factura, numeroEgreso(e.id), e.registrado_por_usuario]
-        .some((campo) => String(campo ?? '').toLowerCase().includes(t)));
+      [
+        e.concepto,
+        e.descripcion,
+        e.proveedor_nombre,
+        e.numero_factura,
+        numeroEgreso(e.id),
+        e.registrado_por_usuario,
+      ].some((campo) =>
+        String(campo ?? '')
+          .toLowerCase()
+          .includes(t),
+      ),
+    );
   });
 
-  readonly total = computed(() => Math.round(this.filtrados().reduce((s, e) => s + Number(e.valor), 0) * 100) / 100);
+  readonly total = computed(
+    () => Math.round(this.filtrados().reduce((s, e) => s + Number(e.valor), 0) * 100) / 100,
+  );
 
   ngOnInit(): void {
     this.cargar();
@@ -81,16 +100,18 @@ export class EgresosComponent implements OnInit {
     }
     this.cargando.set(true);
     this.error.set('');
-    this.finanzas.getEgresos({ desde: this.desde() || undefined, hasta: this.hasta() || undefined }).subscribe({
-      next: (res) => {
-        this.egresos.set(res.data.map((e) => ({ ...e, valor: Number(e.valor) })));
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        this.error.set(err.error?.message || 'No se pudo cargar el historial de egresos.');
-      }
-    });
+    this.finanzas
+      .getEgresos({ desde: this.desde() || undefined, hasta: this.hasta() || undefined })
+      .subscribe({
+        next: (res) => {
+          this.egresos.set(res.data.map((e) => ({ ...e, valor: Number(e.valor) })));
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.error.set(err.error?.message || 'No se pudo cargar el historial de egresos.');
+        },
+      });
   }
 
   abrirFormulario(): void {
@@ -110,17 +131,22 @@ export class EgresosComponent implements OnInit {
     const errores: Partial<Record<keyof FormEgreso, string>> = {};
     if (!f.fecha) errores.fecha = 'Indique la fecha.';
     else if (f.fecha > this.hoy) errores.fecha = 'La fecha no puede ser futura.';
-    if (f.concepto.trim().length < 3) errores.concepto = 'Describa el concepto (mínimo 3 caracteres).';
+    if (f.concepto.trim().length < 3)
+      errores.concepto = 'Describa el concepto (mínimo 3 caracteres).';
     const valor = Number(f.valor);
-    if (f.valor === null || !Number.isFinite(valor) || valor <= 0) errores.valor = 'Ingrese un valor mayor a cero.';
-    else if (Math.round(valor * 100) !== valor * 100) errores.valor = 'Use como máximo dos decimales.';
-    if (f.ruc_proveedor.trim() && !/^\d{10}(\d{3})?$/.test(f.ruc_proveedor.trim())) errores.ruc_proveedor = 'El RUC o cédula debe tener 10 o 13 dígitos.';
-    if (f.numero_factura.trim() && !/^[\d-]{1,30}$/.test(f.numero_factura.trim())) errores.numero_factura = 'Use solo dígitos y guiones (ej. 001-001-000012345).';
+    if (f.valor === null || !Number.isFinite(valor) || valor <= 0)
+      errores.valor = 'Ingrese un valor mayor a cero.';
+    else if (Math.round(valor * 100) !== valor * 100)
+      errores.valor = 'Use como máximo dos decimales.';
+    if (f.ruc_proveedor.trim() && !/^\d{10}(\d{3})?$/.test(f.ruc_proveedor.trim()))
+      errores.ruc_proveedor = 'El RUC o cédula debe tener 10 o 13 dígitos.';
+    if (f.numero_factura.trim() && !/^[\d-]{1,30}$/.test(f.numero_factura.trim()))
+      errores.numero_factura = 'Use solo dígitos y guiones (ej. 001-001-000012345).';
     return errores;
   }
 
   errorDe(campo: keyof FormEgreso): string {
-    return this.intentoGuardar() ? this.errores()[campo] ?? '' : '';
+    return this.intentoGuardar() ? (this.errores()[campo] ?? '') : '';
   }
 
   guardar(): void {
@@ -129,26 +155,28 @@ export class EgresosComponent implements OnInit {
     const f = this.form;
     const opcional = (v: string) => v.trim() || undefined;
     this.guardando.set(true);
-    this.finanzas.registrarEgreso({
-      fecha: f.fecha,
-      concepto: f.concepto.trim(),
-      proveedor: opcional(f.proveedor),
-      ruc_proveedor: opcional(f.ruc_proveedor),
-      numero_factura: opcional(f.numero_factura),
-      descripcion: opcional(f.descripcion),
-      valor: Number(f.valor)
-    }).subscribe({
-      next: (res) => {
-        this.guardando.set(false);
-        this.formularioVisible.set(false);
-        this.notify.success(res.message || 'Egreso registrado.');
-        this.cargar();
-        this.registrado.emit();
-      },
-      error: (err) => {
-        this.guardando.set(false);
-        this.notify.error(err.error?.message || 'No se pudo registrar el egreso.');
-      }
-    });
+    this.finanzas
+      .registrarEgreso({
+        fecha: f.fecha,
+        concepto: f.concepto.trim(),
+        proveedor: opcional(f.proveedor),
+        ruc_proveedor: opcional(f.ruc_proveedor),
+        numero_factura: opcional(f.numero_factura),
+        descripcion: opcional(f.descripcion),
+        valor: Number(f.valor),
+      })
+      .subscribe({
+        next: (res) => {
+          this.guardando.set(false);
+          this.formularioVisible.set(false);
+          this.notify.success(res.message || 'Egreso registrado.');
+          this.cargar();
+          this.registrado.emit();
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          this.notify.error(err.error?.message || 'No se pudo registrar el egreso.');
+        },
+      });
   }
 }

@@ -1,4 +1,13 @@
-import { Component, DestroyRef, OnInit, inject, input, signal, effect, untracked } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+  input,
+  signal,
+  effect,
+  untracked,
+} from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,8 +26,18 @@ import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
 @Component({
   selector: 'app-padron-usuarios',
   standalone: true,
-  imports: [NgClass, FormsModule, EmptyStateComponent, SkeletonComponent, PaginadorComponent, UsuarioFormComponent, VincularLoteComponent, LotesUsuarioComponent, LoteDetalleComponent],
-  templateUrl: './padron-usuarios.component.html'
+  imports: [
+    NgClass,
+    FormsModule,
+    EmptyStateComponent,
+    SkeletonComponent,
+    PaginadorComponent,
+    UsuarioFormComponent,
+    VincularLoteComponent,
+    LotesUsuarioComponent,
+    LoteDetalleComponent,
+  ],
+  templateUrl: './padron-usuarios.component.html',
 })
 export class PadronUsuariosComponent implements OnInit {
   private admin = inject(AdminService);
@@ -71,7 +90,7 @@ export class PadronUsuariosComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error cargando sectores:', err);
-        }
+        },
       });
     }
   }
@@ -80,7 +99,13 @@ export class PadronUsuariosComponent implements OnInit {
     this.cargando.set(true);
     this.error.set(false);
     const peticion$ = this.sectorFiltro
-      ? this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro, this.sectorFiltro)
+      ? this.admin.getPersonas(
+          this.pagina(),
+          this.porPagina(),
+          this.busqueda,
+          this.estadoFiltro,
+          this.sectorFiltro,
+        )
       : this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro);
 
     peticion$.subscribe({
@@ -100,7 +125,7 @@ export class PadronUsuariosComponent implements OnInit {
       error: () => {
         this.error.set(true);
         this.cargando.set(false);
-      }
+      },
     });
   }
 

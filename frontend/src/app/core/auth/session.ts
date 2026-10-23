@@ -97,7 +97,8 @@ export const session = {
    * sesión actual (por ejemplo, al renovar el token tras cambiar la contraseña).
    */
   guardar(token: string, usuario: unknown, recordar?: boolean): void {
-    const destino: Almacen = recordar === undefined ? (almacenActual() ?? 'local') : recordar ? 'local' : 'sesion';
+    const destino: Almacen =
+      recordar === undefined ? (almacenActual() ?? 'local') : recordar ? 'local' : 'sesion';
     session.limpiar();
     escribir(destino, TOKEN_KEY, token);
     escribir(destino, USER_KEY, JSON.stringify(usuario));
@@ -110,5 +111,5 @@ export const session = {
       borrar(tipo, TOKEN_KEY);
       borrar(tipo, USER_KEY);
     }
-  }
+  },
 };

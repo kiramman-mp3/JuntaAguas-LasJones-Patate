@@ -11,7 +11,9 @@
       <!-- Buscador de usuarios -->
       <section class="picker" aria-labelledby="picker-titulo">
         <div class="picker__head">
-          <h4 id="picker-titulo" class="inset-panel__title"><i class="ri-user-search-line" aria-hidden="true"></i> Usuario</h4>
+          <h4 id="picker-titulo" class="inset-panel__title">
+            <i class="ri-user-search-line" aria-hidden="true"></i> Usuario
+          </h4>
           <span class="picker__count" aria-live="polite">
             @if (buscando()) {
               Buscando…
@@ -24,13 +26,33 @@
         </div>
         <div class="search-field">
           <i class="ri-search-line" aria-hidden="true"></i>
-          <input type="search" class="input" placeholder="Nombre o cédula…" [(ngModel)]="busqueda" (ngModelChange)="buscar($event)" aria-label="Buscar usuario" />
+          <input
+            type="search"
+            class="input"
+            placeholder="Nombre o cédula…"
+            [(ngModel)]="busqueda"
+            (ngModelChange)="buscar($event)"
+            aria-label="Buscar usuario"
+          />
         </div>
-        <div class="picker__list" role="listbox" aria-label="Usuarios" [class.is-refreshing]="buscando()">
+        <div
+          class="picker__list"
+          role="listbox"
+          aria-label="Usuarios"
+          [class.is-refreshing]="buscando()"
+        >
           @for (u of usuarios(); track u.id) {
-            <button type="button" role="option" class="picker__option" [class.is-selected]="turno.persona_id === u.id"
-              [attr.aria-selected]="turno.persona_id === u.id" (click)="seleccionar(u)">
-              <span class="avatar" aria-hidden="true">{{ (u.nombres || '').charAt(0) }}{{ (u.apellidos || '').charAt(0) }}</span>
+            <button
+              type="button"
+              role="option"
+              class="picker__option"
+              [class.is-selected]="turno.persona_id === u.id"
+              [attr.aria-selected]="turno.persona_id === u.id"
+              (click)="seleccionar(u)"
+            >
+              <span class="avatar" aria-hidden="true"
+                >{{ (u.nombres || '').charAt(0) }}{{ (u.apellidos || '').charAt(0) }}</span
+              >
               <span class="picker__text">
                 <strong>{{ u.nombres }} {{ u.apellidos }}</strong>
                 <span>C.I. {{ u.cedula }}</span>
@@ -64,16 +86,35 @@
 
         <div class="form-group">
           <label for="turno-lote">Lote beneficiario *</label>
-          <select id="turno-lote" class="input" [(ngModel)]="turno.lote_id" [disabled]="!turno.persona_id || cargandoLotes()">
+          <select
+            id="turno-lote"
+            class="input"
+            [(ngModel)]="turno.lote_id"
+            [disabled]="!turno.persona_id || cargandoLotes()"
+          >
             <option [ngValue]="null">
-              {{ !turno.persona_id ? 'Seleccione primero un usuario…' : cargandoLotes() ? 'Cargando lotes…' : lotes().length === 0 ? 'Sin lotes asignados' : 'Seleccionar lote…' }}
+              {{
+                !turno.persona_id
+                  ? 'Seleccione primero un usuario…'
+                  : cargandoLotes()
+                    ? 'Cargando lotes…'
+                    : lotes().length === 0
+                      ? 'Sin lotes asignados'
+                      : 'Seleccionar lote…'
+              }}
             </option>
             @for (l of lotes(); track l.id) {
-              <option [ngValue]="l.id">{{ l.codigo }} · {{ l.sector_nombre || 'General' }}{{ l.superficie_m2 ? ' · ' + l.superficie_m2 + ' m²' : '' }}</option>
+              <option [ngValue]="l.id">
+                {{ l.codigo }} · {{ l.sector_nombre || 'General'
+                }}{{ l.superficie_m2 ? ' · ' + l.superficie_m2 + ' m²' : '' }}
+              </option>
             }
           </select>
           @if (turno.persona_id && !cargandoLotes() && lotes().length === 0) {
-            <small class="field-error"><i class="ri-alert-line" aria-hidden="true"></i> El usuario no posee lotes registrados.</small>
+            <small class="field-error"
+              ><i class="ri-alert-line" aria-hidden="true"></i> El usuario no posee lotes
+              registrados.</small
+            >
           }
         </div>
 
@@ -98,15 +139,28 @@
 
         <div class="form-group">
           <label for="turno-obs">Observaciones <span class="text-muted">(opcional)</span></label>
-          <textarea id="turno-obs" class="input" [(ngModel)]="turno.observacion" rows="2" placeholder="Ej: Riego por la toma norte del canal…"></textarea>
+          <textarea
+            id="turno-obs"
+            class="input"
+            [(ngModel)]="turno.observacion"
+            rows="2"
+            placeholder="Ej: Riego por la toma norte del canal…"
+          ></textarea>
         </div>
       </div>
     </div>
   </div>
 
   <div class="modal__footer">
-    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cancelar</button>
-    <button type="button" class="btn btn--primary" (click)="guardar()" [disabled]="!turno.persona_id || !turno.lote_id || guardando()">
+    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--primary"
+      (click)="guardar()"
+      [disabled]="!turno.persona_id || !turno.lote_id || guardando()"
+    >
       @if (guardando()) {
         <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
       } @else {

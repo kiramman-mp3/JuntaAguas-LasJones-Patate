@@ -11,7 +11,7 @@ import { MultaConfiguradaComponent } from '../../../../../shared/multa-configura
   selector: 'app-asamblea-form',
   standalone: true,
   imports: [FormsModule, ModalComponent, MultaConfiguradaComponent],
-  templateUrl: './asamblea-form.component.html'
+  templateUrl: './asamblea-form.component.html',
 })
 export class AsambleaFormComponent {
   private admin = inject(AdminService);
@@ -38,12 +38,14 @@ export class AsambleaFormComponent {
       '1. Constatación del cuórum reglamentario',
       '2. Lectura y aprobación del acta de la asamblea anterior',
       '3. Informe de presidencia y balance financiero',
-      '4. Asuntos varios y resoluciones'
-    ] as string[]
+      '4. Asuntos varios y resoluciones',
+    ] as string[],
   };
 
   agregarPunto(): void {
-    this.formulario.puntos_orden_dia.push(`${this.formulario.puntos_orden_dia.length + 1}. Nuevo punto del orden del día`);
+    this.formulario.puntos_orden_dia.push(
+      `${this.formulario.puntos_orden_dia.length + 1}. Nuevo punto del orden del día`,
+    );
     // Lleva a la vista el punto recién agregado.
     setTimeout(() => {
       const lista = this.listaPuntos()?.nativeElement;
@@ -52,17 +54,26 @@ export class AsambleaFormComponent {
   }
 
   eliminarPunto(indice: number): void {
-    if (this.formulario.puntos_orden_dia.length > 1) this.formulario.puntos_orden_dia.splice(indice, 1);
+    if (this.formulario.puntos_orden_dia.length > 1)
+      this.formulario.puntos_orden_dia.splice(indice, 1);
   }
 
   guardar(): void {
     const f = this.formulario;
     if (!f.titulo.trim() || !f.fecha || !f.hora_inicio) {
-      this.dialog.aviso({ tipo: 'WARNING', titulo: 'Campos incompletos', mensaje: 'Complete el título o asunto, la fecha de la sesión y la hora de inicio.' });
+      this.dialog.aviso({
+        tipo: 'WARNING',
+        titulo: 'Campos incompletos',
+        mensaje: 'Complete el título o asunto, la fecha de la sesión y la hora de inicio.',
+      });
       return;
     }
     if (f.fecha < this.fechaMinima) {
-      this.dialog.aviso({ tipo: 'WARNING', titulo: 'Fecha no válida', mensaje: `La fecha de la asamblea (${f.fecha}) no puede ser anterior a hoy (${this.fechaMinima}).` });
+      this.dialog.aviso({
+        tipo: 'WARNING',
+        titulo: 'Fecha no válida',
+        mensaje: `La fecha de la asamblea (${f.fecha}) no puede ser anterior a hoy (${this.fechaMinima}).`,
+      });
       return;
     }
 
@@ -77,7 +88,7 @@ export class AsambleaFormComponent {
       lugar: f.lugar.trim(),
       // El valor de la multa lo toma el servidor de Ajustes → Tarifas.
       genera_multa_ausencia: f.genera_multa_ausencia,
-      puntos_orden_dia: f.puntos_orden_dia.filter((p) => p.trim().length > 0)
+      puntos_orden_dia: f.puntos_orden_dia.filter((p) => p.trim().length > 0),
     };
 
     this.guardando.set(true);
@@ -88,8 +99,12 @@ export class AsambleaFormComponent {
       },
       error: (err) => {
         this.guardando.set(false);
-        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo guardar', mensaje: err?.error?.message || 'Error al registrar la asamblea.' });
-      }
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'No se pudo guardar',
+          mensaje: err?.error?.message || 'Error al registrar la asamblea.',
+        });
+      },
     });
   }
 }
