@@ -21,10 +21,13 @@ const TRANSICIONES = {
   CANCELADO: []
 };
 
-/** Carga y bloquea el evento. Si se indica `tipo`, exige que coincida. */
+/** Carga y bloquea el evento, con el nombre de su sector (la hoja de asistencia lo muestra). Si se indica `tipo`, exige que coincida. */
 async function obtenerEvento(conexion, id, { tipo } = {}) {
   if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0) throw badRequest('El identificador del evento no es válido.');
-  const [filas] = await conexion.query('SELECT * FROM eventos WHERE id = ? FOR UPDATE', [id]);
+  const [filas] = await conexion.query(
+    'SELECT e.*, s.nombre AS sector_nombre FROM eventos e LEFT JOIN sectores s ON s.id = e.sector_id WHERE e.id = ? FOR UPDATE OF e',
+    [id]
+  );
   if (!filas.length) throw notFound(tipo === 'MINGA' ? 'Minga no encontrada.' : 'Evento no encontrado.');
   const evento = filas[0];
   if (tipo && evento.tipo !== tipo) {

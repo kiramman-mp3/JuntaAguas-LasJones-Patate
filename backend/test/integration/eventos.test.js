@@ -7,6 +7,8 @@ const app = require('../../src/app');
 const db = require('../../src/config/db');
 const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, crearPersona, auth } = require('../helpers/fixtures');
+const { withTransaction } = require('../../src/shared/transaction');
+const { obtenerEvento } = require('../../src/services/eventosService');
 
 let admin;
 const usuarios = [];
@@ -254,6 +256,13 @@ test('permite crear mingas seleccionando un sector o con la opción Todos (null)
   assert.equal(detSector.status, 200);
   assert.equal(detSector.body.evento.sector_id, sector.id);
   assert.equal(detSector.body.evento.sector_nombre, sector.nombre);
+
+  // La hoja de asistencia en PDF lee el sector del evento cargado: antes siempre decía «Todos los sectores».
+  const cargado = await withTransaction((conexion) => obtenerEvento(conexion, idSector));
+  assert.equal(cargado.sector_nombre, sector.nombre);
+  const pdf = await request(app).get(`/api/eventos/${idSector}/pdf-asistencia`).set(auth(admin));
+  assert.equal(pdf.status, 200);
+  assert.match(pdf.headers['content-type'], /application\/pdf/);
 
   const detTodos = await request(app).get(`/api/eventos/${idTodos}`).set(auth(admin));
   assert.equal(detTodos.status, 200);
