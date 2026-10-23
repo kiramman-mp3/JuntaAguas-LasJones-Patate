@@ -124,9 +124,7 @@ export class InicioComponent implements OnInit {
       .map((d: any) => {
         const turnosFiltrados = (d.turnos || []).filter((t: any) => {
           if (!query) return true;
-          const nombre = (t.usuario_nombre || '').toLowerCase();
-          const lote = (t.lote_codigo || '').toLowerCase();
-          return nombre.includes(query) || lote.includes(query);
+          return (t.lote_codigo || '').toLowerCase().includes(query);
         });
         return {
           ...d,

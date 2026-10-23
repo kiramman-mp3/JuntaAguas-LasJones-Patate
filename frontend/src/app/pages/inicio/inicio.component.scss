@@ -1142,15 +1142,6 @@
       }
     }
 
-    .celda-usuario {
-      .usuario-nombre-tabla {
-        font-size: 1rem;
-        font-weight: 800;
-        color: var(--text-main, #0f172a);
-        text-transform: uppercase;
-        display: block;
-      }
-    }
 
     .celda-lote {
       text-align: center;
@@ -1310,30 +1301,6 @@
     }
   }
 
-  /* 3. USUARIO / PROPIETARIO DESTACADO */
-  .usuario-destacado-box {
-    padding: 1rem 1.15rem 0.5rem;
-
-    .usuario-rotulo {
-      font-size: 0.74rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-primary, #0284c7);
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .usuario-nombre-grande {
-      font-size: 1.22rem;
-      font-weight: 800;
-      color: var(--text-main, #0f172a);
-      margin: 0;
-      line-height: 1.25;
-    }
-  }
 
   /* 4. DATOS DEL TERRENO / LOTE */
   .lote-datos-tabla {
@@ -1608,9 +1575,6 @@
         }
       }
 
-      .celda-usuario .usuario-nombre-tabla {
-        color: #f8fafc;
-      }
 
       .celda-lote .lote-tag-tabla {
         background: rgba(15, 23, 42, 0.6);
@@ -1674,15 +1638,6 @@
       }
     }
 
-    .usuario-destacado-box {
-      .usuario-rotulo {
-        color: #38bdf8;
-      }
-
-      .usuario-nombre-grande {
-        color: #f8fafc;
-      }
-    }
 
     .lote-datos-tabla {
       .lote-dato-item {

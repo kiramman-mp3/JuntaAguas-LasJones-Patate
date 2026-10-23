@@ -84,9 +84,85 @@ async function actualizarTurno(conexion, id, cambios) {
   return { antes: actual, despues: final };
 }
 
+/**
+ * Turnos activos agrupados por sector y día de la semana.
+ * `completo` agrega los datos personales (usuario, cédula, observación): solo para la directiva.
+ * Sin él, cada turno muestra únicamente lote y horario, para publicarse sin exponer a nadie.
+ */
+async function cronograma(conexion, { sectorId, diaSemana, completo = false } = {}) {
+  const condiciones = ["t.estado = 'ACTIVO'", 's.activo = TRUE'];
+  const params = [];
+  if (diaSemana) { condiciones.push('t.dia_semana = ?'); params.push(diaSemana); }
+  if (sectorId) { condiciones.push('l.sector_id = ?'); params.push(sectorId); }
+
+  const [filas] = await conexion.query(
+    `SELECT t.id, t.persona_id, t.lote_id, t.dia_semana, t.hora_inicio, t.hora_fin, t.observacion,
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
+            l.codigo AS lote_codigo, l.superficie_m2,
+            s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
+            TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
+     FROM turnos_riego t
+     JOIN personas p ON p.id = t.persona_id
+     JOIN lotes l ON l.id = t.lote_id
+     JOIN sectores s ON s.id = l.sector_id
+     WHERE ${condiciones.join(' AND ')}
+     ORDER BY s.nombre ASC, t.dia_semana ASC, t.hora_inicio ASC`,
+    params
+  );
+
+  const sectores = new Map();
+  for (const fila of filas) {
+    if (!sectores.has(fila.sector_id)) {
+      sectores.set(fila.sector_id, {
+        sector_id: fila.sector_id,
+        sector_nombre: fila.sector_nombre,
+        sector_descripcion: fila.sector_descripcion,
+        minutos: 0,
+        lotes: new Set(),
+        turnos: 0,
+        dias: DIAS.slice(1).map((nombre, i) => ({ dia_semana: i + 1, dia_nombre: nombre, turnos: [] }))
+      });
+    }
+    const sector = sectores.get(fila.sector_id);
+    const minutos = Math.max(0, Number(fila.duracion_minutos) || 0);
+    sector.turnos++;
+    sector.minutos += minutos;
+    sector.lotes.add(fila.lote_id);
+
+    const turno = {
+      id: fila.id,
+      lote_codigo: fila.lote_codigo,
+      hora_inicio: String(fila.hora_inicio).slice(0, 5),
+      hora_fin: String(fila.hora_fin).slice(0, 5),
+      duracion_minutos: minutos
+    };
+    if (completo) {
+      Object.assign(turno, {
+        persona_id: fila.persona_id,
+        usuario_nombre: fila.usuario_nombre,
+        cedula: fila.cedula,
+        lote_id: fila.lote_id,
+        superficie_m2: fila.superficie_m2,
+        observacion: fila.observacion
+      });
+    }
+    sector.dias[fila.dia_semana - 1]?.turnos.push(turno);
+  }
+
+  return [...sectores.values()].map((s) => ({
+    sector_id: s.sector_id,
+    sector_nombre: s.sector_nombre,
+    sector_descripcion: s.sector_descripcion,
+    total_turnos: s.turnos,
+    total_horas: Number((s.minutos / 60).toFixed(1)),
+    total_lotes: s.lotes.size,
+    dias: s.dias
+  }));
+}
+
 async function desactivarTurno(conexion, id) {
   const [r] = await conexion.query("UPDATE turnos_riego SET estado = 'INACTIVO' WHERE id = ? AND estado = 'ACTIVO'", [id]);
   if (!r.affectedRows) throw notFound('Turno no encontrado.');
 }
 
-module.exports = { DIAS, verificarSolape, crearTurno, actualizarTurno, desactivarTurno };
+module.exports = { DIAS, verificarSolape, crearTurno, actualizarTurno, desactivarTurno, cronograma };
