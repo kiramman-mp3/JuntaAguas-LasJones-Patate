@@ -139,7 +139,7 @@ export class AsambleasAdminComponent implements OnInit {
       const confirmado = await this.dialog.confirmar({
         tipo: 'DANGER',
         titulo: '¿Cancelar asamblea?',
-        mensaje: `La asamblea "${asamblea.titulo}" quedará archivada como cancelada y no generará multas a los comuneros.`,
+        mensaje: `La asamblea "${asamblea.titulo}" quedará archivada como cancelada y no generará multas a los usuarios.`,
         textoConfirmar: 'Sí, cancelar asamblea'
       });
       if (!confirmado) return;
@@ -185,7 +185,7 @@ export class AsambleasAdminComponent implements OnInit {
     const confirmado = await this.dialog.confirmar({
       tipo: 'CONFIRM',
       titulo: 'Finalizar asamblea',
-      mensaje: `Se cerrará la asistencia con ${asamblea.asistentes} comuneros presentes.${multa} Esta acción es irreversible.`,
+      mensaje: `Se cerrará la asistencia con ${asamblea.asistentes} usuarios presentes.${multa} Esta acción es irreversible.`,
       textoConfirmar: 'Dar por realizada'
     });
     if (!confirmado) return;

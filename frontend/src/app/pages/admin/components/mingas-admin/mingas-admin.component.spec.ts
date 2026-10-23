@@ -22,7 +22,7 @@ const minga = {
   genera_multa_ausencia: true,
   valor_multa: 10,
   asistentes: 0,
-  totalComuneros: 2,
+  totalUsuarios: 2,
 };
 
 describe('Gestión de Mingas', () => {
@@ -65,7 +65,7 @@ describe('Gestión de Mingas', () => {
       registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
       cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
       finalizarMinga: vi.fn(() => of({ estado: 'REALIZADO', message: 'Finalizada' })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: { id: 'g@g.us', nombre: 'Comuneros' }, estado: 'CONVOCADO', reenvio: false }, message: 'Publicada' })),
+      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO', reenvio: false }, message: 'Publicada' })),
     };
     consulta = {
       subirDocumentoEvento: vi.fn(),

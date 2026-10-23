@@ -13,7 +13,7 @@ const COSTO_ADICIONAL_POR_DEFECTO = 5;
 
 async function verificarPersonaYLote(conexion, personaId, loteId) {
   const [personas] = await conexion.query("SELECT id FROM personas WHERE id = ? AND estado = 'ACTIVO'", [personaId]);
-  if (!personas.length) throw notFound('El comunero no existe o está inactivo.');
+  if (!personas.length) throw notFound('El usuario no existe o está inactivo.');
   if (!loteId) return null;
   const [lotes] = await conexion.query(
     `SELECT l.id, l.codigo, l.activo, (pl.persona_id IS NOT NULL) AS vinculado
@@ -22,7 +22,7 @@ async function verificarPersonaYLote(conexion, personaId, loteId) {
     [personaId, loteId]
   );
   if (!lotes.length || !lotes[0].activo) throw notFound('El lote no existe o está inactivo.');
-  if (!Number(lotes[0].vinculado)) throw badRequest(`El lote ${lotes[0].codigo} no está vinculado a este comunero.`);
+  if (!Number(lotes[0].vinculado)) throw badRequest(`El lote ${lotes[0].codigo} no está vinculado a este usuario.`);
   return lotes[0];
 }
 
@@ -43,7 +43,7 @@ async function verificarSolape(conexion, { loteId, diaSemana, horaInicio, horaFi
 }
 
 /**
- * Carga el turno adicional a la cuenta del comunero en la obligación del mes (en hora de Ecuador).
+ * Carga el turno adicional a la cuenta del usuario en la obligación del mes (en hora de Ecuador).
  * Si la del mes ya está pendiente se acumula; si ya se pagó o anuló, se crea una nueva sin mes
  * (la clave única persona/concepto/año/mes no admite dos en el mismo mes).
  */

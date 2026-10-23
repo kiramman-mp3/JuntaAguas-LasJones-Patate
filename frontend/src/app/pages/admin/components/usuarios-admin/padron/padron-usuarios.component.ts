@@ -8,26 +8,26 @@ import { PersonaListado } from '../../../../../core/models/api-payloads';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
-import { ComuneroFormComponent } from '../comunero-form/comunero-form.component';
+import { UsuarioFormComponent } from '../usuario-form/usuario-form.component';
 import { VincularLoteComponent } from '../vincular-lote/vincular-lote.component';
-import { LotesComuneroComponent } from '../lotes-comunero/lotes-comunero.component';
+import { LotesUsuarioComponent } from '../lotes-usuario/lotes-usuario.component';
 import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
 
-/** Padrón de comuneros: búsqueda en el servidor, paginación y acciones por comunero. */
+/** Padrón de usuarios: búsqueda en el servidor, paginación y acciones por usuario. */
 @Component({
-  selector: 'app-padron-comuneros',
+  selector: 'app-padron-usuarios',
   standalone: true,
-  imports: [NgClass, FormsModule, EmptyStateComponent, SkeletonComponent, PaginadorComponent, ComuneroFormComponent, VincularLoteComponent, LotesComuneroComponent, LoteDetalleComponent],
-  templateUrl: './padron-comuneros.component.html'
+  imports: [NgClass, FormsModule, EmptyStateComponent, SkeletonComponent, PaginadorComponent, UsuarioFormComponent, VincularLoteComponent, LotesUsuarioComponent, LoteDetalleComponent],
+  templateUrl: './padron-usuarios.component.html'
 })
-export class PadronComunerosComponent implements OnInit {
+export class PadronUsuariosComponent implements OnInit {
   private admin = inject(AdminService);
   private destroyRef = inject(DestroyRef);
 
-  /** ?nuevo=comunero abre el registro de un comunero (atajo del dashboard). */
+  /** ?nuevo=usuario abre el formulario desde el acceso rápido del dashboard. */
   readonly nuevo = input<string | undefined>();
 
-  readonly comuneros = signal<any[]>([]);
+  readonly usuarios = signal<any[]>([]);
   readonly sectores = signal<any[]>([]);
   readonly cargando = signal(true);
   readonly error = signal(false);
@@ -41,14 +41,16 @@ export class PadronComunerosComponent implements OnInit {
   private busqueda$ = new Subject<void>();
 
   // Modales
-  readonly formulario = signal<{ comunero: PersonaListado | null } | null>(null);
+  readonly formulario = signal<{ usuario: PersonaListado | null } | null>(null);
   readonly vincularA = signal<PersonaListado | null>(null);
-  readonly lotesDe = signal<PersonaListado | null>(null);
+  readonly lotesDeUsuario = signal<PersonaListado | null>(null);
   readonly loteDetalle = signal<any | null>(null);
 
   constructor() {
     effect(() => {
-      if (this.nuevo() === 'comunero') untracked(() => this.formulario.set({ comunero: null }));
+      if (this.nuevo() === 'usuario') {
+        untracked(() => this.formulario.set({ usuario: null }));
+      }
     });
   }
 
@@ -91,7 +93,7 @@ export class PadronComunerosComponent implements OnInit {
           this.cargar();
           return;
         }
-        this.comuneros.set(res?.data ?? []);
+        this.usuarios.set(res?.data ?? []);
         this.total.set(total);
         this.cargando.set(false);
       },
@@ -139,14 +141,14 @@ export class PadronComunerosComponent implements OnInit {
     this.cargar();
   }
 
-  verLoteDesdeComunero(lote: any): void {
-    this.lotesDe.set(null);
+  verLoteDesdeUsuario(lote: any): void {
+    this.lotesDeUsuario.set(null);
     this.loteDetalle.set(lote);
   }
 
-  asignarOtroTerreno(comunero: PersonaListado): void {
-    this.lotesDe.set(null);
-    this.vincularA.set(comunero);
+  asignarOtroTerreno(usuario: PersonaListado): void {
+    this.lotesDeUsuario.set(null);
+    this.vincularA.set(usuario);
   }
 
   iniciales(u: PersonaListado): string {

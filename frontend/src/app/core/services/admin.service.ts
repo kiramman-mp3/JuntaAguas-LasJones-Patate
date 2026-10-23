@@ -11,7 +11,7 @@ type RespuestaCredencial = RespuestaMensaje & { passwordTemporal: string };
 type EstadoEvento = 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO';
 
 /**
- * Cliente de la API para el panel administrativo (comuneros, lotes, turnos, eventos y WhatsApp).
+ * Cliente de la API para el panel administrativo (usuarios/personas, lotes, turnos, eventos y WhatsApp).
  * Las operaciones financieras están en FinanzasService.
  * Los formularios de los componentes aún no están tipados, por eso los cuerpos se reciben como `object`.
  */
@@ -25,7 +25,7 @@ export class AdminService {
 
 
 
-  /** Listado paginado de comuneros. El servidor acepta como máximo 100 por página. */
+  /** Listado paginado de personas gestionadas como usuarios. El servidor acepta como máximo 100 por página. */
   getPersonas(page = 1, limit = 25, busqueda = '', estado = '', sector_id?: number): Observable<RespuestaPaginada<PersonaListado>> {
     let params = new HttpParams().set('page', page).set('limit', Math.min(limit, 100));
     if (busqueda) params = params.set('busqueda', busqueda);
@@ -42,7 +42,7 @@ export class AdminService {
     return this.http.put<RespuestaMensaje>(`${this.baseUrl}/personas/${id}`, data);
   }
 
-  /** Crea la cuenta de acceso de un comunero; la respuesta trae la contraseña temporal. */
+  /** Crea la cuenta de acceso de un usuario; la respuesta trae la contraseña temporal. */
   crearCuenta(personaId: number, rol: 'ADMIN' | 'USUARIO'): Observable<RespuestaCredencial> {
     return this.http.post<RespuestaCredencial>(`${this.baseUrl}/personas/${personaId}/cuenta`, { rol });
   }

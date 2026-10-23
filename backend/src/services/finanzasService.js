@@ -50,7 +50,7 @@ async function registrarTarifa(conexion, { conceptoId, valor, vigenciaDesde, vig
 }
 
 /**
- * Genera la cuota mensual de agua para cada comunero activo con al menos un lote activo.
+ * Genera la cuota mensual de agua para cada usuario activo con al menos un lote activo.
  * Es idempotente: las cuotas ya emitidas del período se respetan (clave única persona/concepto/año/mes).
  */
 async function generarFacturacionMensual(conexion, { anio, mes, simular = false }) {
@@ -70,7 +70,7 @@ async function generarFacturacionMensual(conexion, { anio, mes, simular = false 
   );
   const nuevos = candidatos.filter((c) => !Number(c.ya_emitida));
   const resultado = {
-    anio, mes, valor: Number(tarifa.valor), comuneros: candidatos.length,
+    anio, mes, valor: Number(tarifa.valor), usuarios: candidatos.length,
     generadas: nuevos.length, existentes: candidatos.length - nuevos.length,
     total: redondear(nuevos.length * Number(tarifa.valor))
   };
@@ -118,7 +118,7 @@ async function resumenFacturacionAnual(conexion, anio) {
 }
 
 /**
- * Registra el pago completo de una o varias obligaciones pendientes del mismo comunero.
+ * Registra el pago completo de una o varias obligaciones pendientes del mismo usuario.
  * @returns {{ pagoId: number, valorTotal: number }}
  */
 async function registrarPago(conexion, { personaId, obligacionesIds, metodo = 'TRANSFERENCIA', referencia = null, observacion = null, cuentaId, fechaPago = null }) {
@@ -131,7 +131,7 @@ async function registrarPago(conexion, { personaId, obligacionesIds, metodo = 'T
 
   for (const ob of obligaciones) {
     if (Number(ob.persona_id) !== Number(personaId)) {
-      throw badRequest(`La obligación #${ob.id} no pertenece al comunero seleccionado.`);
+      throw badRequest(`La obligación #${ob.id} no pertenece al usuario seleccionado.`);
     }
     if (ob.estado !== 'PENDIENTE') {
       throw conflict(`La obligación #${ob.id} ya se encuentra ${ob.estado} y no se puede cobrar.`);
@@ -176,7 +176,7 @@ async function anularPago(conexion, { pagoId, motivo, cuentaId }) {
 /** Crea una obligación manual (cuota extraordinaria, reposición, etc.). */
 async function crearObligacionManual(conexion, datos) {
   const [personas] = await conexion.query("SELECT id FROM personas WHERE id = ? AND estado = 'ACTIVO'", [datos.persona_id]);
-  if (!personas.length) throw notFound('El comunero no existe o está inactivo.');
+  if (!personas.length) throw notFound('El usuario no existe o está inactivo.');
   const [conceptos] = await conexion.query('SELECT id FROM conceptos_cobro WHERE id = ? AND activo = TRUE', [datos.concepto_id]);
   if (!conceptos.length) throw notFound('Concepto de cobro no encontrado.');
   try {
@@ -188,7 +188,7 @@ async function crearObligacionManual(conexion, datos) {
     );
     return r.insertId;
   } catch (error) {
-    if (error.code === 'ER_DUP_ENTRY') throw conflict('El comunero ya tiene una obligación de ese concepto para el mismo período.');
+    if (error.code === 'ER_DUP_ENTRY') throw conflict('El usuario ya tiene una obligación de ese concepto para el mismo período.');
     throw error;
   }
 }
@@ -217,6 +217,104 @@ async function registrarEgreso(conexion, datos, cuentaId) {
   return r.insertId;
 }
 
+async function registrarPagoMasivoAnual(conexion, datos) {
+  // datos espera recibir: { anio: 2026, valor_total: 10.00 }
+  const [r] = await conexion.query(
+    `INSERT INTO pago_anual_agua (persona_id, periodo_anio, valor_total, estado)
+     SELECT 
+         p.id AS persona_id,
+         ? AS periodo_anio,
+         ? AS valor_total,
+         'PENDIENTE' AS estado
+     FROM personas p`,
+    [datos.anio, datos.valor_total]
+  );
+  
+  return r.affectedRows; // Retorna cuántos registros se insertaron en total
+}
+async function obtenerPagosPendientesPorPersona(conexion, personaId) {
+  const [rows] = await conexion.query(
+    `SELECT id, persona_id, periodo_anio, valor_total, estado 
+     FROM obligacion_anual_agua 
+     WHERE persona_id = ? AND estado = 'PENDIENTE' 
+     ORDER BY periodo_anio ASC`,
+    [personaId]
+  );
+  return rows; // Retorna un array con todos los registros pendientes
+}
+
+async function registrarPagosAnualesAgua(conexion, datosPago) {
+  const { persona_id, obligacionesIds, metodo, referencia, observacion } = datosPago;
+
+  if (!obligacionesIds || obligacionesIds.length === 0) {
+    throw new Error('No se han proporcionado obligaciones para pagar.');
+  }
+
+  await conexion.beginTransaction();
+  try {
+    // 1. Obtener los valores de las obligaciones pendientes seleccionadas para calcular el total
+    const placeholders = obligacionesIds.map(() => '?').join(',');
+    const [obligaciones] = await conexion.query(
+      `SELECT id, valor_total FROM obligacion_anual_agua 
+       WHERE id IN (${placeholders}) AND persona_id = ? AND estado = 'PENDIENTE'`,
+      [...obligacionesIds, persona_id]
+    );
+
+    if (obligaciones.length === 0) {
+      await conexion.rollback();
+      return { success: false, actualizados: 0, pagoId: null };
+    }
+
+    // Calcular el valor total sumando las obligaciones válidas encontradas
+    const valorTotalGeneral = obligaciones.reduce((acc, o) => acc + Number(o.valor_total), 0);
+    const idsValidos = obligaciones.map(o => o.id);
+
+    // 2. Insertar la cabecera en la tabla 'pago_anual_agua'
+    const [resultadoCabecera] = await conexion.query(
+      `INSERT INTO pago_anual_agua (persona_id, valor_total, metodo, referencia, observacion) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        persona_id, 
+        valorTotalGeneral, 
+        metodo || 'TRANSFERENCIA', 
+        referencia || null, 
+        observacion || null
+      ]
+    );
+    const pagoAnualAguaId = resultadoCabecera.insertId;
+
+    // 3. Actualizar el estado de las obligaciones a 'PAGADO'
+    const placeholdersValidos = idsValidos.map(() => '?').join(',');
+    await conexion.query(
+      `UPDATE obligacion_anual_agua 
+       SET estado = 'PAGADO' 
+       WHERE id IN (${placeholdersValidos})`,
+      [...idsValidos]
+    );
+
+    // 4. Insertar los registros en la tabla de detalle 'pago_anual_agua_detalle'
+    for (const obligacionId of idsValidos) {
+      await conexion.query(
+        `INSERT INTO pago_anual_agua_detalle (pago_anual_agua_id, obligacion_anual_agua) 
+         VALUES (?, ?)`,
+        [pagoAnualAguaId, obligacionId]
+      );
+    }
+
+    await conexion.commit();
+    return { 
+      success: true, 
+      actualizados: idsValidos.length, 
+      pagoId: pagoAnualAguaId, 
+      valorTotal: valorTotalGeneral 
+    };
+
+  } catch (error) {
+    await conexion.rollback();
+    throw error;
+  }
+}
 module.exports = {
   crearObligacionManual, anularObligacion, registrarEgreso,
-  redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, generarFacturacionMensual, resumenFacturacionAnual, registrarPago, anularPago };
+  redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, generarFacturacionMensual, resumenFacturacionAnual, registrarPago, anularPago
+  ,registrarPagoMasivoAnual,obtenerPagosPendientesPorPersona,registrarPagosAnualesAgua};

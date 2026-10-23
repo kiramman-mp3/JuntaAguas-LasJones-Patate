@@ -9,23 +9,23 @@ import { CredencialTemporal, PasswordTemporalComponent } from '../../../../../sh
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 
 /**
- * Alta y edición de un comunero, con la gestión de su cuenta de acceso web.
+ * Alta y edición de un usuario, con la gestión de su cuenta de acceso web.
  * Las contraseñas temporales se muestran una sola vez; al crear, el formulario
  * avisa que terminó (`guardado`) cuando el administrador confirma que la anotó.
  */
 @Component({
-  selector: 'app-comunero-form',
+  selector: 'app-usuario-form',
   standalone: true,
   imports: [FormsModule, LowerCasePipe, ModalComponent, PasswordTemporalComponent],
-  templateUrl: './comunero-form.component.html'
+  templateUrl: './usuario-form.component.html'
 })
-export class ComuneroFormComponent implements OnInit {
+export class UsuarioFormComponent implements OnInit {
   private admin = inject(AdminService);
   private dialog = inject(DialogService);
   private notify = inject(NotificationService);
 
-  /** Comunero a editar; sin valor, el formulario registra uno nuevo. */
-  readonly comunero = input<any | null>(null);
+  /** Usuario a editar; sin valor, el formulario registra uno nuevo. */
+  readonly usuario = input<any | null>(null);
   readonly cerrar = output<void>();
   readonly guardado = output<void>();
 
@@ -33,7 +33,7 @@ export class ComuneroFormComponent implements OnInit {
   readonly gestionandoCuenta = signal(false);
 
   modoEdicion = false;
-  /** Cuenta de acceso del comunero en edición (null si no tiene). */
+  /** Cuenta de acceso del usuario en edición (null si no tiene). */
   cuenta: { estado: string; rol: Rol } | null = null;
   /** Contraseña temporal recién generada, mostrada una sola vez. */
   credencialTemporal: CredencialTemporal | null = null;
@@ -55,7 +55,7 @@ export class ComuneroFormComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    const u = this.comunero();
+    const u = this.usuario();
     if (!u) return;
     this.modoEdicion = true;
     this.cuenta = u.cuenta_estado ? { estado: u.cuenta_estado, rol: u.rol } : null;
@@ -86,12 +86,12 @@ export class ComuneroFormComponent implements OnInit {
       this.admin.updatePersona(this.form.id, this.form).subscribe({
         next: () => {
           this.guardando.set(false);
-          this.notify.success('Comunero actualizado.');
+          this.notify.success('Usuario actualizado.');
           this.guardado.emit();
         },
         error: (err) => {
           this.guardando.set(false);
-          this.notify.error(err.error?.message || 'Error al actualizar comunero.');
+          this.notify.error(err.error?.message || 'Error al actualizar usuario.');
         }
       });
       return;
@@ -100,7 +100,7 @@ export class ComuneroFormComponent implements OnInit {
     this.admin.createPersona(this.form).subscribe({
       next: (res) => {
         this.guardando.set(false);
-        this.notify.success('Comunero registrado.');
+        this.notify.success('Usuario registrado.');
         if (res?.passwordTemporal) {
           this.creadoPendienteDeCierre = true;
           this.mostrarCredencial(res.passwordTemporal);
@@ -110,12 +110,12 @@ export class ComuneroFormComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        this.notify.error(err.error?.message || 'Error al registrar comunero.');
+        this.notify.error(err.error?.message || 'Error al registrar usuario.');
       }
     });
   }
 
-  /** Crea la cuenta de acceso del comunero en edición. */
+  /** Crea la cuenta de acceso del usuario en edición. */
   crearCuenta(): void {
     if (!this.form.id || this.gestionandoCuenta()) return;
     this.gestionandoCuenta.set(true);
@@ -132,7 +132,7 @@ export class ComuneroFormComponent implements OnInit {
     });
   }
 
-  /** Genera una contraseña temporal nueva para el comunero en edición. */
+  /** Genera una contraseña temporal nueva para el usuario en edición. */
   async restablecerPassword(): Promise<void> {
     if (!this.form.id || this.gestionandoCuenta()) return;
     const confirmado = await this.dialog.confirmar({
@@ -163,7 +163,7 @@ export class ComuneroFormComponent implements OnInit {
     }
   }
 
-  /** Tras crear un comunero solo queda visible la credencial, no el formulario. */
+  /** Tras crear un usuario solo queda visible la credencial, no el formulario. */
   get ocultarFormulario(): boolean {
     return this.creadoPendienteDeCierre;
   }

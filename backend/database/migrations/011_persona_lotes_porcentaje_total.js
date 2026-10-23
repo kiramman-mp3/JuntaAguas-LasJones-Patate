@@ -1,4 +1,4 @@
-// Titularidad única: un lote pertenece al 100 % a un solo comunero (ya garantizado por
+// Titularidad única: un lote pertenece al 100 % a un solo usuario (ya garantizado por
 // UNIQUE(lote_id)). Se normalizan valores antiguos y la base de datos rechaza cualquier
 // otro porcentaje, para que la regla no dependa solo de la API.
 module.exports.up = async (db) => {

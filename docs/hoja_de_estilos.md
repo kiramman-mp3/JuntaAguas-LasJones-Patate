@@ -373,7 +373,7 @@ frontend/src/
     ├── _ui.scss           # Primitivas de shared/ui: encabezado, navegación por secciones, estados vacíos
     ├── _admin.scss        # Barras de filtros, superficies, tablas apilables, formularios del panel
     ├── _eventos.scss      # Tarjetas de asambleas y mingas, documentos firmados, pase de lista
-    ├── _turnos.scss       # Calendario semanal y selector de comuneros
+    ├── _turnos.scss       # Calendario semanal y selector de usuarios
     └── _finanzas.scss     # Módulo financiero
 ```
 
@@ -391,7 +391,7 @@ frontend/src/
 | Componente | Uso |
 | --- | --- |
 | `<app-page-header>` | Título, descripción, icono y acciones principales de un módulo |
-| `<app-section-nav>` | Control segmentado cuyas opciones son rutas hijas (`/admin/comuneros/padron`) |
+| `<app-section-nav>` | Control segmentado cuyas opciones son rutas hijas (`/admin/usuarios/padron`) |
 | `<app-modal>` | Contenedor de modales: fondo atenuado, cabecera, cierre accesible; el consumidor aporta `.modal__body` y `.modal__footer` |
 | `<app-empty-state>` | Estado vacío o de error con acción (reintentar, limpiar filtros, crear) |
 | `<app-skeleton>` | Esqueleto con la silueta del contenido (filas o tarjetas) para evitar saltos |

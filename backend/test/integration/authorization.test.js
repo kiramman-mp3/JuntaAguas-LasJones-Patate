@@ -7,22 +7,22 @@ const app = require('../../src/app');
 const db = require('../../src/config/db');
 const { crearUsuario, auth, crearObligacion, crearSector, crearLote } = require('../helpers/fixtures');
 
-let admin, comunero, vecino;
+let admin, usuario, vecino;
 
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario({ rol: 'USUARIO' });
+  usuario = await crearUsuario({ rol: 'USUARIO' });
   vecino = await crearUsuario({ rol: 'USUARIO' });
 
   const sector = await crearSector('La Jones Alta');
-  const loteComunero = await crearLote({ sectorId: sector, personaId: comunero.personaId, codigo: 'LJA-001' });
+  const loteUsuario = await crearLote({ sectorId: sector, personaId: usuario.personaId, codigo: 'LJA-001' });
   await crearLote({ sectorId: sector, personaId: vecino.personaId, codigo: 'LJA-002' });
   await db.query(
     "INSERT INTO turnos_riego (persona_id, lote_id, dia_semana, hora_inicio, hora_fin) VALUES (?, ?, 1, '06:00', '07:00')",
-    [comunero.personaId, loteComunero]
+    [usuario.personaId, loteUsuario]
   );
-  await crearObligacion({ personaId: comunero.personaId, mes: 1 });
+  await crearObligacion({ personaId: usuario.personaId, mes: 1 });
   await crearObligacion({ personaId: vecino.personaId, mes: 1 });
 });
 after(closeDatabase);
@@ -39,41 +39,41 @@ test('los endpoints públicos no exponen cédulas', async () => {
   for (const ruta of ['/api/eventos/publicos', '/api/lotes/sectores', '/api/personas/stats', '/api/turnos/cronograma-publico']) {
     const res = await request(app).get(ruta);
     assert.equal(res.status, 200, ruta);
-    assert.ok(!JSON.stringify(res.body).includes(comunero.cedula), `${ruta} expone una cédula`);
+    assert.ok(!JSON.stringify(res.body).includes(usuario.cedula), `${ruta} expone una cédula`);
   }
 });
 
-test('un comunero no accede a las funciones de administración', async () => {
+test('un usuario no accede a las funciones de administración', async () => {
   const prohibidas = ['/api/personas', `/api/personas/${vecino.personaId}`, `/api/personas/consulta/${vecino.cedula}`,
     '/api/financiero/balance', '/api/financiero/egresos', `/api/financiero/obligaciones/multas?cedula=${vecino.cedula}`,
     '/api/eventos', '/api/auditoria', '/api/inventario', '/api/planes', '/api/whatsapp/status'];
   for (const ruta of prohibidas) {
-    const res = await request(app).get(ruta).set(auth(comunero));
-    assert.equal(res.status, 403, `${ruta} debería prohibirse a un comunero`);
+    const res = await request(app).get(ruta).set(auth(usuario));
+    assert.equal(res.status, 403, `${ruta} debería prohibirse a un usuario`);
   }
-  assert.equal((await request(app).post('/api/eventos').set(auth(comunero)).send({})).status, 403);
-  assert.equal((await request(app).post('/api/financiero/pagos').set(auth(comunero)).send({})).status, 403);
+  assert.equal((await request(app).post('/api/eventos').set(auth(usuario)).send({})).status, 403);
+  assert.equal((await request(app).post('/api/financiero/pagos').set(auth(usuario)).send({})).status, 403);
 });
 
-test('un comunero ve solo sus propios datos aunque pida los de otro', async () => {
-  assert.equal((await request(app).get(`/api/personas/${comunero.personaId}`).set(auth(comunero))).status, 200);
-  assert.equal((await request(app).get(`/api/personas/consulta/${comunero.cedula}`).set(auth(comunero))).status, 200);
+test('un usuario ve solo sus propios datos aunque pida los de otro', async () => {
+  assert.equal((await request(app).get(`/api/personas/${usuario.personaId}`).set(auth(usuario))).status, 200);
+  assert.equal((await request(app).get(`/api/personas/consulta/${usuario.cedula}`).set(auth(usuario))).status, 200);
 
-  const obligaciones = await request(app).get(`/api/financiero/obligaciones?persona_id=${vecino.personaId}`).set(auth(comunero));
+  const obligaciones = await request(app).get(`/api/financiero/obligaciones?persona_id=${vecino.personaId}`).set(auth(usuario));
   assert.equal(obligaciones.status, 200);
   assert.ok(obligaciones.body.data.length > 0);
-  assert.ok(obligaciones.body.data.every((o) => o.persona_id === comunero.personaId));
+  assert.ok(obligaciones.body.data.every((o) => o.persona_id === usuario.personaId));
 
-  const lotes = await request(app).get('/api/lotes').set(auth(comunero));
+  const lotes = await request(app).get('/api/lotes').set(auth(usuario));
   assert.deepEqual(lotes.body.data.map((l) => l.codigo), ['LJA-001']);
 
-  const turnos = await request(app).get(`/api/turnos?persona_id=${vecino.personaId}`).set(auth(comunero));
+  const turnos = await request(app).get(`/api/turnos?persona_id=${vecino.personaId}`).set(auth(usuario));
   assert.ok(turnos.body.data.length > 0);
-  assert.ok(turnos.body.data.every((t) => t.persona_id === comunero.personaId));
+  assert.ok(turnos.body.data.every((t) => t.persona_id === usuario.personaId));
 
-  const pagos = await request(app).get(`/api/financiero/pagos?persona_id=${vecino.personaId}`).set(auth(comunero));
+  const pagos = await request(app).get(`/api/financiero/pagos?persona_id=${vecino.personaId}`).set(auth(usuario));
   assert.equal(pagos.status, 200);
-  assert.ok(pagos.body.data.every((p) => p.persona_id === comunero.personaId));
+  assert.ok(pagos.body.data.every((p) => p.persona_id === usuario.personaId));
 });
 
 test('el administrador accede a todas las áreas', async () => {
@@ -109,7 +109,7 @@ test('rechaza cédulas inválidas y datos de contacto mal formados', async () =>
   assert.equal(celular.status, 400);
 });
 
-test('restablecer contraseña revoca las sesiones abiertas del comunero', async () => {
+test('restablecer contraseña revoca las sesiones abiertas del usuario', async () => {
   const objetivo = await crearUsuario();
   const res = await request(app).post(`/api/personas/${objetivo.personaId}/cuenta/restablecer-password`).set(auth(admin));
   assert.equal(res.status, 200);
@@ -125,7 +125,7 @@ test('un administrador no puede modificar su propia cuenta, pero sí la de otro'
   assert.equal((await request(app).get('/api/personas').set(auth(otroAdmin))).status, 403);
 });
 
-test('la paginación de comuneros tiene un máximo de 100', async () => {
+test('la paginación de usuarios tiene un máximo de 100', async () => {
   const res = await request(app).get('/api/personas?limit=5000').set(auth(admin));
   assert.equal(res.status, 400);
 });

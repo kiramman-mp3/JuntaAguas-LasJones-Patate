@@ -101,7 +101,7 @@ if (flags.has('--preparar')) {
 }
 paso(5, `Iniciando el servidor en http://localhost:${env.PORT}`);
 console.log('  Recuerde: en Ajustes → Tarifas registre la cuota de agua y las multas de asamblea y minga,');
-console.log('  y en Comuneros → Catastro cree los sectores antes de registrar lotes.\n');
+console.log('  y en Usuarios → Catastro cree los sectores antes de registrar lotes.\n');
 const whatsapp = conWhatsApp ? spawn(process.execPath, ['src/index.js'], { cwd: whatsappService, stdio: 'inherit' }) : null;
 whatsapp?.on('exit', (codigo) => {
   if (codigo) console.warn(`

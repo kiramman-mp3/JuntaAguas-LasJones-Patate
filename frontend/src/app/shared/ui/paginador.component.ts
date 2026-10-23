@@ -67,7 +67,7 @@ export class PaginadorComponent {
   readonly pagina = input.required<number>();
   readonly porPagina = input.required<number>();
   readonly total = input.required<number>();
-  /** Nombre en plural de lo que se lista: "comuneros", "lotes"… */
+  /** Nombre en plural de lo que se lista: "usuarios", "lotes"… */
   readonly etiqueta = input('registros');
   readonly opciones = input<number[]>([10, 25, 50, 100]);
   readonly cargando = input(false);

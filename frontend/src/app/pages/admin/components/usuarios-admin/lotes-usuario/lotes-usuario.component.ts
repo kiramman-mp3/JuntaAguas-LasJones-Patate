@@ -4,23 +4,23 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 
-/** Lotes vinculados a un comunero, con acceso a la ficha de cada uno. */
+/** Lotes vinculados a un usuario, con acceso a la ficha de cada uno. */
 @Component({
-  selector: 'app-lotes-comunero',
+  selector: 'app-lotes-usuario',
   standalone: true,
   imports: [ModalComponent, SkeletonComponent, EmptyStateComponent],
   template: `
-    @let c = comunero();
+    @let c = usuario();
     <app-modal [titulo]="'Lotes de ' + c.apellidos + ' ' + c.nombres" [subtitulo]="'C.I. ' + c.cedula" icono="ri-map-pin-line" tamano="lg" (cerrar)="cerrar.emit()">
       <div class="modal__body">
         @if (cargando()) {
-          <app-skeleton [filas]="3" mensaje="Cargando lotes del comunero…" />
+          <app-skeleton [filas]="3" mensaje="Cargando lotes del usuario…" />
         } @else if (error()) {
           <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudieron cargar los lotes">
             <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
           </app-empty-state>
         } @else if (!lotes().length) {
-          <app-empty-state icono="ri-map-pin-line" titulo="Sin lotes vinculados" mensaje="Este comunero todavía no tiene terrenos asignados." />
+          <app-empty-state icono="ri-map-pin-line" titulo="Sin lotes vinculados" mensaje="Este usuario todavía no tiene terrenos asignados." />
         } @else {
           <div class="table-container">
             <table class="table-custom table-custom--stack">
@@ -57,10 +57,10 @@ import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.compon
     </app-modal>
   `
 })
-export class LotesComuneroComponent implements OnInit {
+export class LotesUsuarioComponent implements OnInit {
   private admin = inject(AdminService);
 
-  readonly comunero = input.required<any>();
+  readonly usuario = input.required<any>();
   readonly cerrar = output<void>();
   readonly verLote = output<any>();
   readonly asignarOtro = output<void>();
@@ -76,7 +76,7 @@ export class LotesComuneroComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
     this.error.set(false);
-    this.admin.getLotes(undefined, undefined, this.comunero().id).subscribe({
+    this.admin.getLotes(undefined, undefined, this.usuario().id).subscribe({
       next: (res) => {
         this.lotes.set(res?.data ?? []);
         this.cargando.set(false);

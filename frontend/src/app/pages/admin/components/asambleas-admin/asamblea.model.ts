@@ -27,7 +27,7 @@ export interface AsambleaItem {
   genera_multa_ausencia: boolean;
   valor_multa: number;
   asistentes: number;
-  totalComuneros: number;
+  totalUsuarios: number;
   convocatoria_firmada_url?: string;
   convocatoria_firmada_nombre?: string;
   acta_firmada_url?: string;

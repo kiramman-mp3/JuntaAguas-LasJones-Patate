@@ -8,16 +8,16 @@ const db = require('../../src/config/db');
 const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, crearPersona, auth, conceptoId, crearObligacion, crearSector, crearLote } = require('../helpers/fixtures');
 
-let admin, comunero, vecino, aguaId;
+let admin, usuario, vecino, aguaId;
 
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario();
+  usuario = await crearUsuario();
   vecino = await crearUsuario();
   aguaId = await conceptoId('AGUA_MENSUAL');
   const sector = await crearSector('La Jones Baja');
-  await crearLote({ sectorId: sector, personaId: comunero.personaId, codigo: 'LJB-001' });
+  await crearLote({ sectorId: sector, personaId: usuario.personaId, codigo: 'LJB-001' });
   await crearLote({ sectorId: sector, personaId: vecino.personaId, codigo: 'LJB-002' });
   // Persona activa sin lote: no debe recibir cuota de agua.
   await crearPersona({ nombres: 'Sin lote' });
@@ -41,7 +41,7 @@ test('una tarifa nueva cierra la vigencia de la anterior y no se permiten solape
   assert.equal(conceptos.body.data.find((c) => c.codigo === 'AGUA_MENSUAL').tarifa_actual, 4.5);
 });
 
-test('la facturación mensual emite una cuota por comunero con lote, con la tarifa del período, una sola vez', async () => {
+test('la facturación mensual emite una cuota por usuario con lote, con la tarifa del período, una sola vez', async () => {
   const simulacion = await facturar({ anio: 2025, mes: 3, simular: true });
   assert.equal(simulacion.status, 200);
   assert.equal(simulacion.body.data.generadas, 2);
@@ -60,7 +60,7 @@ test('la facturación mensual emite una cuota por comunero con lote, con la tari
 
   const [[cuota]] = await db.query(
     'SELECT valor, fecha_emision, fecha_vencimiento FROM obligaciones WHERE persona_id = ? AND periodo_anio = 2025 AND periodo_mes = 3',
-    [comunero.personaId]
+    [usuario.personaId]
   );
   assert.equal(cuota.valor, 4);
   assert.equal(cuota.fecha_emision, '2025-03-01');
@@ -80,26 +80,26 @@ test('el resumen de facturación muestra los 12 meses con emitidas, cobradas y p
   assert.deepEqual(marzo, { mes: 3, emitidas: 2, pagadas: 0, pendientes: 2, total: 8, recaudado: 0 });
   assert.equal(res.body.data.meses[0].emitidas, 0);
 
-  assert.equal((await request(app).get('/api/financiero/facturacion/mensual').set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get('/api/financiero/facturacion/mensual').set(auth(usuario))).status, 403);
   assert.equal((await request(app).get('/api/financiero/facturacion/mensual?anio=abc').set(auth(admin))).status, 400);
 });
 
 test('el pago valida pertenencia, estado y referencia; ignora ids repetidos', async () => {
-  const propia = await crearObligacion({ personaId: comunero.personaId, anio: 2024, mes: 5, valor: 4 });
+  const propia = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 5, valor: 4 });
   const ajena = await crearObligacion({ personaId: vecino.personaId, anio: 2024, mes: 5, valor: 4 });
 
-  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [ajena] })).status, 400);
-  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia], metodo: 'TRANSFERENCIA', referencia: '' })).status, 400);
+  assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [ajena] })).status, 400);
+  assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [propia], metodo: 'TRANSFERENCIA', referencia: '' })).status, 400);
 
-  const ok = await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia, propia] });
+  const ok = await pagar({ persona_id: usuario.personaId, obligacionesIds: [propia, propia] });
   assert.equal(ok.status, 201, JSON.stringify(ok.body));
   assert.equal(ok.body.valorTotal, 4);
-  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia] })).status, 409);
+  assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [propia] })).status, 409);
 });
 
 test('anular un pago conserva su detalle, devuelve las obligaciones y permite volver a cobrarlas', async () => {
-  const ob = await crearObligacion({ personaId: comunero.personaId, anio: 2024, mes: 6, valor: 4 });
-  const pago = await pagar({ persona_id: comunero.personaId, obligacionesIds: [ob], observacion: 'Incluye [ANULADO: texto del usuario]' });
+  const ob = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 6, valor: 4 });
+  const pago = await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob], observacion: 'Incluye [ANULADO: texto del usuario]' });
   const pagoId = pago.body.pagoId;
 
   assert.equal((await request(app).post(`/api/financiero/pagos/${pagoId}/anular`).set(auth(admin)).send({ motivo: 'x' })).status, 400);
@@ -112,7 +112,7 @@ test('anular un pago conserva su detalle, devuelve las obligaciones y permite vo
   const [detalles] = await db.query('SELECT obligacion_id FROM pago_detalles WHERE pago_id = ?', [pagoId]);
   assert.equal(detalles.length, 1, 'el detalle queda como historial');
 
-  const nuevo = await pagar({ persona_id: comunero.personaId, obligacionesIds: [ob] });
+  const nuevo = await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob] });
   assert.equal(nuevo.status, 201);
 });
 
@@ -168,17 +168,17 @@ test('una obligación manual duplicada en el mismo período devuelve 409', async
 });
 
 test('mensualidades y multas se separan por código de concepto, no por id', async () => {
-  const multa = await crearObligacion({ personaId: comunero.personaId, codigo: 'MULTA_MINGA', anio: 2025, mes: null, valor: 10 });
-  const mensual = await request(app).get(`/api/financiero/obligaciones/mensualidades?cedula=${comunero.cedula}&anio=2025`).set(auth(admin));
-  const multas = await request(app).get(`/api/financiero/obligaciones/multas?cedula=${comunero.cedula}&anio=2025`).set(auth(admin));
+  const multa = await crearObligacion({ personaId: usuario.personaId, codigo: 'MULTA_MINGA', anio: 2025, mes: null, valor: 10 });
+  const mensual = await request(app).get(`/api/financiero/obligaciones/mensualidades?cedula=${usuario.cedula}&anio=2025`).set(auth(admin));
+  const multas = await request(app).get(`/api/financiero/obligaciones/multas?cedula=${usuario.cedula}&anio=2025`).set(auth(admin));
   assert.ok(mensual.body.data.every((o) => o.concepto_codigo === 'AGUA_MENSUAL'));
   assert.deepEqual(multas.body.data.map((o) => o.id), [multa]);
 });
 
 test('el comprobante de un pago solo lo ve su dueño o el administrador', async () => {
-  const ob = await crearObligacion({ personaId: comunero.personaId, anio: 2024, mes: 9, valor: 4 });
-  const { pagoId } = (await pagar({ persona_id: comunero.personaId, obligacionesIds: [ob] })).body;
-  const propio = await request(app).get(`/api/financiero/pagos/${pagoId}`).set(auth(comunero));
+  const ob = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 9, valor: 4 });
+  const { pagoId } = (await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob] })).body;
+  const propio = await request(app).get(`/api/financiero/pagos/${pagoId}`).set(auth(usuario));
   assert.equal(propio.status, 200);
   assert.equal(propio.body.data.detalles.length, 1);
   assert.equal((await request(app).get(`/api/financiero/pagos/${pagoId}`).set(auth(vecino))).status, 404);
@@ -189,9 +189,9 @@ test('el dashboard entrega indicadores reales', async () => {
   assert.equal(res.status, 200);
   assert.equal(res.body.data.fecha, hoy());
   assert.equal(res.body.data.comunidad.lotes, 2);
-  assert.equal(res.body.data.comunidad.comunerosActivos, 4);
+  assert.equal(res.body.data.comunidad.usuariosActivos, 4);
   assert.ok(res.body.data.finanzas.carteraPendiente > 0);
-  assert.equal((await request(app).get('/api/dashboard/resumen').set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get('/api/dashboard/resumen').set(auth(usuario))).status, 403);
 });
 
 test('el historial anual agrupa por año y mes y cuadra con el balance', async () => {
@@ -218,5 +218,5 @@ test('el historial anual agrupa por año y mes y cuadra con el balance', async (
   assert.equal(total.egresos, balance.totalEgresos);
   assert.equal(total.balance, balance.balanceAlDia);
 
-  assert.equal((await request(app).get('/api/financiero/historial').set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get('/api/financiero/historial').set(auth(usuario))).status, 403);
 });

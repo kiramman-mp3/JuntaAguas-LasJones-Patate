@@ -13,7 +13,7 @@ let cliente;
 let sesion;
 
 before(async () => {
-  cliente = new ClienteFalso({ chats: [{ id: GRUPO, nombre: 'Comuneros' }] });
+  cliente = new ClienteFalso({ chats: [{ id: GRUPO, nombre: 'Usuarios' }] });
   sesion = new SesionWhatsApp({ crearCliente: () => cliente, generarQr: async (t) => t, log: logSilencioso });
   servidor = crearApp({ sesion, token: TOKEN, log: logSilencioso }).listen(0, '127.0.0.1');
   await new Promise((resolver) => servidor.once('listening', resolver));
@@ -49,7 +49,7 @@ test('flujo completo: estado, conexión, grupos y envío', async () => {
   cliente.emit('ready');
 
   r = await pedir('/grupos');
-  assert.deepEqual((await r.json()).data, [{ id: GRUPO, nombre: 'Comuneros', participantes: 3 }]);
+  assert.deepEqual((await r.json()).data, [{ id: GRUPO, nombre: 'Usuarios', participantes: 3 }]);
 
   r = await pedir(`/grupos/${encodeURIComponent(GRUPO)}/mensajes`, { metodo: 'POST', cuerpo: { texto: 'Convocatoria' } });
   assert.equal(r.status, 201);

@@ -5,7 +5,7 @@
 
 ## 1. 📌 Introducción y Servidor Base
 
-La API REST del sistema está construida en **Node.js con Express** sobre una base de datos relacional **MySQL**. Proporciona endpoints para la gestión de comuneros, lotes georreferenciados, turnos de agua, asistencias a asambleas/mingas con multas automáticas, recaudación financiera y auditoría.
+La API REST del sistema está construida en **Node.js con Express** sobre una base de datos relacional **MySQL**. Proporciona endpoints para la gestión de usuarios registrados como personas, lotes georreferenciados, turnos de agua, asistencias a asambleas/mingas con multas automáticas, recaudación financiera y auditoría.
 
 - **URL Base de la API:** `http://localhost:3000/api`
 - **Documentación Interactiva Swagger UI:** [`http://localhost:3000/api-docs`](http://localhost:3000/api-docs) (o `http://localhost:3000/api/docs`)
@@ -24,7 +24,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 - **Roles del Sistema:**
   - `ADMIN`: Acceso total a todos los módulos y auditoría.
   - `TESORERO`: Acceso a la recaudación de pagos, egresos, tarifas y reporte de balance al día.
-  - `SECRETARIO`: Acceso a la gestión de comuneros, lotes, turnos, asambleas y control de asistencias.
+  - `SECRETARIO`: Acceso a la gestión de usuarios, lotes, turnos, asambleas y control de asistencias.
   - `USUARIO`: Acceso a la consulta pública y su portal personal.
 
 ---
@@ -41,14 +41,14 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 ---
 
-### 3.2. 👤 Comuneros / Personas (`/api/personas`)
+### 3.2. 👤 Usuarios administrados (personas, `/api/personas`)
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/personas/consulta/:cedula` | **PÚBLICO** | **Endpoint de la Consulta Web:** Busca comunero por cédula y devuelve su lote, sector y todas las obligaciones pendientes y pagadas. |
-| `GET` | `/personas` | Autenticado | Listado y búsqueda administrativa de comuneros con paginación (`?busqueda=...&estado=...`). |
-| `GET` | `/personas/:id` | Autenticado | Detalle completo de un comunero, incluyendo sus lotes vinculados, turnos y deudas. |
-| `POST` | `/personas` | ADMIN / SECRETARIO | Registro de nuevo comunero con opción de creación de cuenta de acceso. |
+| `GET` | `/personas/consulta/:cedula` | **PÚBLICO** | **Endpoint de la Consulta Web:** Busca una persona por cédula y devuelve su lote, sector y todas las obligaciones pendientes y pagadas. |
+| `GET` | `/personas` | Autenticado | Listado y búsqueda administrativa de usuarios con paginación (`?busqueda=...&estado=...`). |
+| `GET` | `/personas/:id` | Autenticado | Detalle completo de una persona, incluyendo sus lotes vinculados, turnos y deudas. |
+| `POST` | `/personas` | ADMIN / SECRETARIO | Registro de un usuario con opción de creación de cuenta de acceso. |
 | `PUT` | `/personas/:id` | ADMIN / SECRETARIO | Actualización de datos personales. |
 
 ---
@@ -59,8 +59,8 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | :--- | :--- | :--- | :--- |
 | `GET` | `/lotes/sectores` | Público / Autenticado | Catálogo de sectores de riego en Patate. |
 | `POST` | `/lotes/sectores` | ADMIN | Crear nuevo sector. |
-| `GET` | `/lotes` | Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios (`?sector_id=...&busqueda=...`). Con `?page=1&limit=25` (máximo 100) devuelve una página y el total en `pagination`; sin `page`, la lista completa. Un comunero solo recibe sus lotes. |
-| `POST` | `/lotes` | ADMIN / SECRETARIO | Crear terreno y asociarlo a un comunero (`persona_lotes`). |
+| `GET` | `/lotes` | Autenticado | Lista de lotes con coordenadas (`latitud_aproximada`, `longitud_aproximada`, `radio_error_m`) y propietarios (`?sector_id=...&busqueda=...`). Con `?page=1&limit=25` (máximo 100) devuelve una página y el total en `pagination`; sin `page`, la lista completa. Un usuario solo recibe sus lotes. |
+| `POST` | `/lotes` | ADMIN / SECRETARIO | Crear terreno y asociarlo a un usuario (`persona_lotes`). |
 | `POST` | `/lotes/:loteId/vincular-persona` | ADMIN / SECRETARIO | Vincular coppropietario o representante a un lote existente. |
 
 ---
@@ -88,7 +88,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `POST` | `/eventos/:id/finalizar` | ADMIN / SECRETARIO | **Generación Automática de Multas:** Cierra el evento y crea obligaciones de multa para todas las personas ausentes. |
 | `POST` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Subir documento firmado del evento o de un punto del acta (`multipart/form-data`). |
 | `GET` | `/eventos/:id/documentos` | ADMIN / SECRETARIO | Listar metadatos de documentos firmados del evento (sin contenido binario). |
-| `GET` | `/eventos/:id/pdf-asistencia` | ADMIN / SECRETARIO | Descargar hoja de asistencia en PDF con padrón de comuneros para firmas físicas. |
+| `GET` | `/eventos/:id/pdf-asistencia` | ADMIN / SECRETARIO | Descargar hoja de asistencia en PDF con padrón de usuarios para firmas físicas. |
 
 ---
 

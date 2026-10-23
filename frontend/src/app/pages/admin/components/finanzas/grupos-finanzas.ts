@@ -26,7 +26,7 @@ export interface GrupoSecciones {
 export const GRUPOS_FINANZAS: GrupoSecciones[] = [
   {
     id: 'cobros', etiqueta: 'Cobros y pagos', icono: 'ri-hand-coin-line', indicadores: true,
-    descripcion: 'Cobro en caja a los comuneros y registro de los egresos de la Junta.',
+    descripcion: 'Cobro en caja a los usuarios y registro de los egresos de la Junta.',
     secciones: [
       { id: 'cobrar', etiqueta: 'Cobrar', icono: 'ri-hand-coin-line' },
       { id: 'egresos', etiqueta: 'Egresos', icono: 'ri-shopping-bag-3-line' }

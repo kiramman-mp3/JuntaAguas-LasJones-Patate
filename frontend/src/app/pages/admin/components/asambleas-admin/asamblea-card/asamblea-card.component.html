@@ -62,10 +62,10 @@
     }
   </div>
 
-  <div class="progress-meter" [attr.aria-label]="a.asistentes + ' de ' + a.totalComuneros + ' comuneros presentes'">
+  <div class="progress-meter" [attr.aria-label]="a.asistentes + ' de ' + a.totalUsuarios + ' usuarios presentes'">
     <div class="progress-meter__labels">
       <span>Asistencia</span>
-      <strong>{{ a.asistentes }} / {{ a.totalComuneros }}</strong>
+      <strong>{{ a.asistentes }} / {{ a.totalUsuarios }}</strong>
     </div>
     <div class="progress-meter__track"><span class="progress-meter__fill" [style.width.%]="porcentajeAsistencia()"></span></div>
   </div>

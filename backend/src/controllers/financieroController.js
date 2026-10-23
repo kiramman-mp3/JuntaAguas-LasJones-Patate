@@ -13,7 +13,7 @@ const { hoy } = require('../shared/dates');
 const s = require('../shared/schemas');
 const {
   obligacionesQuery, porCedulaQuery, tarifaSchema, obligacionSchema, pagoSchema, motivoSchema, rangoFechas,
-  egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery
+  egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery,personaIdParamSchema,registrarMasivoSchema
 } = require('../schemas/finanzas');
 
 /** Catálogo de conceptos con la tarifa vigente hoy. */
@@ -41,7 +41,7 @@ async function createTarifa(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Tarifa registrada correctamente.', tarifaId });
 }
 
-/** Cuentas por cobrar. Un comunero solo recibe las suyas. */
+/** Cuentas por cobrar. Un usuario solo recibe las suyas. */
 async function getObligaciones(req, res) {
   const filtros = obligacionesQuery.parse(req.query);
   const personaId = personaPermitida(req.user, filtros.persona_id);
@@ -86,7 +86,7 @@ async function registrarPago(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Pago registrado exitosamente.', ...resultado });
 }
 
-/** Pagos registrados. Un comunero solo recibe los suyos. */
+/** Pagos registrados. Un usuario solo recibe los suyos. */
 async function getPagos(req, res) {
   const filtros = pagosQuery.parse(req.query);
   const personaId = personaPermitida(req.user, filtros.persona_id);
@@ -150,10 +150,10 @@ const porCedula = (mensualidades) => async (req, res) => {
   return res.json({ status: 'OK', data: await consultas.obligacionesPorCedula(db, { ...filtros, mensualidades }) });
 };
 
-/** Multas y otros cobros (todo lo que no es cuota mensual de agua) de un comunero. */
+/** Multas y otros cobros (todo lo que no es cuota mensual de agua) de un usuario. */
 const getObligacionesMultas = porCedula(false);
 
-/** Cuotas mensuales de agua de un comunero. */
+/** Cuotas mensuales de agua de un usuario. */
 const getObligacionesMensualidad = porCedula(true);
 
 /** Emitir (o simular) las cuotas mensuales de agua de un período. */
@@ -183,6 +183,87 @@ async function getResumenFacturacion(req, res) {
   return res.json({ status: 'OK', data: { anio: anioResumen, meses } });
 }
 
+async function postRegistrarPagoMasivo(req, res) {
+  try {
+    const datos = registrarMasivoSchema.parse(req.body);
+    const registrosInsertados = await finanzas.registrarPagoMasivoAnual(db, datos);
+
+    return res.json({
+      status: 'OK',
+      message: `Se generaron ${registrosInsertados} registros de pago exitosamente.`,
+      data: { registros_afectados: registrosInsertados }
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ status: 'ERROR', message: error.errors });
+    }
+    return res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+}
+
+async function getPagosPendientesPersona(req, res) {
+  try {
+    const { personaId } = personaIdParamSchema.parse(req.params);
+
+    const pagosPendientes = await finanzas.obtenerPagosPendientesPorPersona(db, personaId);
+
+    return res.json({
+      status: 'OK',
+      data: pagosPendientes
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ status: 'ERROR', message: error.errors });
+    }
+    return res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+}
+
+async function patchMarcarPagoPagado(req, res) {
+  const datos = pagoSchema.parse(req.body);
+
+  const resultado = await withTransaction((conexion) => 
+    finanzas.registrarPagosAnualesAgua(conexion, {
+      persona_id: datos.persona_id,
+      obligacionesIds: datos.obligacionesIds,
+      metodo: datos.metodo,
+      referencia: datos.referencia,
+      observacion: datos.observacion ?? datos.observaciones ?? null,
+    })
+  );
+
+  if (resultado.actualizados === 0) {
+    return res.status(404).json({
+      status: 'ERROR',
+      message: 'No se encontraron pagos pendientes válidos para los IDs especificados.'
+    });
+  }
+
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId, 
+    accion: 'PAGO_AGUA', 
+    entidad: 'pago_anual_agua', 
+    entidadId: resultado.pagoId, 
+    ip: req.ip,
+    detalle: { 
+      persona_id: datos.persona_id, 
+      pagoId: resultado.pagoId,
+      valorTotal: resultado.valorTotal,
+      actualizados: resultado.actualizados, 
+      obligacionesIds: datos.obligacionesIds, 
+      metodo: datos.metodo 
+    }
+  });
+
+  return res.status(201).json({
+    status: 'OK',
+    message: 'Pago de agua registrado exitosamente.',
+    pagoId: resultado.pagoId,
+    valorTotal: resultado.valorTotal,
+    actualizados: resultado.actualizados
+  });
+}
+
 module.exports = {
   getConceptos,
   getTarifas,
@@ -202,5 +283,8 @@ module.exports = {
   getObligacionesMultas,
   getObligacionesMensualidad,
   generarFacturacionMensual,
-  getResumenFacturacion
+  getResumenFacturacion,
+  postRegistrarPagoMasivo,
+  getPagosPendientesPersona,
+  patchMarcarPagoPagado
 };

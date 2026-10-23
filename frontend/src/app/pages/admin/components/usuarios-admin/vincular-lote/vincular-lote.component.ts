@@ -4,11 +4,11 @@ import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 
-/** Titularidad única: un lote pertenece al 100 % a un solo comunero (lo valida también el servidor). */
+/** Titularidad única: un lote pertenece al 100 % a un solo usuario (lo valida también el servidor). */
 export const PORCENTAJE_TITULARIDAD = 100;
 
 /**
- * Asigna un lote del catastro a un comunero. Un lote no se comparte: si ya tiene dueño,
+ * Asigna un lote del catastro a un usuario. Un lote no se comparte: si ya tiene dueño,
  * asignarlo transfiere el 100 % de la propiedad (y sus turnos activos) al nuevo titular.
  */
 @Component({
@@ -16,7 +16,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
   standalone: true,
   imports: [FormsModule, ModalComponent],
   template: `
-    @let c = comunero();
+    @let c = usuario();
     <app-modal titulo="Asignar terreno" [subtitulo]="c.apellidos + ' ' + c.nombres + ' · C.I. ' + c.cedula" icono="ri-link" tamano="sm"
       [bloqueado]="guardando()" (cerrar)="cerrar.emit()">
       <form (ngSubmit)="guardar()" #vincularForm="ngForm">
@@ -36,7 +36,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
                 id="vin-lote-busqueda"
                 type="search"
                 class="input"
-                placeholder="Buscar por código, sector o comunero…"
+                placeholder="Buscar por código, sector o usuario…"
                 [ngModel]="busqueda()"
                 (ngModelChange)="busqueda.set($event)"
                 [disabled]="cargando()"
@@ -70,7 +70,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
             <span class="ownership__value">100 %</span>
             <span class="ownership__text">
               <strong>Titularidad única</strong>
-              Un lote pertenece por completo a un solo comunero; no se admite propiedad compartida.
+              Un lote pertenece por completo a un solo usuario; no se admite propiedad compartida.
             </span>
           </div>
 
@@ -101,7 +101,7 @@ export class VincularLoteComponent implements OnInit {
   private admin = inject(AdminService);
   private notify = inject(NotificationService);
 
-  readonly comunero = input.required<any>();
+  readonly usuario = input.required<any>();
   readonly cerrar = output<void>();
   readonly vinculado = output<void>();
 
@@ -136,10 +136,10 @@ export class VincularLoteComponent implements OnInit {
     return coinciden;
   });
 
-  /** Dueño actual del lote elegido, si es otro comunero (el traspaso es total). */
+  /** Dueño actual del lote elegido, si es otro usuario (el traspaso es total). */
   readonly titularActual = computed<string | null>(() => {
     const lote = this.lotes().find((l) => l.id === this.loteId());
-    if (!lote?.propietario_id || Number(lote.propietario_id) === Number(this.comunero().id)) return null;
+    if (!lote?.propietario_id || Number(lote.propietario_id) === Number(this.usuario().id)) return null;
     return lote.propietario_nombre || lote.propietarios;
   });
 
@@ -164,7 +164,7 @@ export class VincularLoteComponent implements OnInit {
     }
     this.guardando.set(true);
     this.admin
-      .vincularPersonaLote(loteId, { persona_id: this.comunero().id, tipo_relacion: this.tipoRelacion, porcentaje: PORCENTAJE_TITULARIDAD })
+      .vincularPersonaLote(loteId, { persona_id: this.usuario().id, tipo_relacion: this.tipoRelacion, porcentaje: PORCENTAJE_TITULARIDAD })
       .subscribe({
         next: (res) => {
           this.guardando.set(false);

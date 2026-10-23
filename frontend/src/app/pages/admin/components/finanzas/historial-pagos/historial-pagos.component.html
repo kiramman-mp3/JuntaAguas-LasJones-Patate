@@ -28,7 +28,7 @@
     </div>
     <div class="field">
       <label for="pagos-texto">Buscar</label>
-      <input id="pagos-texto" name="texto" class="input" type="search" placeholder="Comunero, cédula o REC-…"
+      <input id="pagos-texto" name="texto" class="input" type="search" placeholder="Usuario, cédula o REC-…"
         [ngModel]="texto()" (ngModelChange)="texto.set($event)" />
     </div>
   </form>
@@ -52,7 +52,7 @@
           <tr>
             <th scope="col">Recibo</th>
             <th scope="col">Fecha</th>
-            <th scope="col">Comunero</th>
+            <th scope="col">Usuario</th>
             <th scope="col">Forma</th>
             <th scope="col" class="num">Valor</th>
             <th scope="col">Estado</th>
@@ -65,7 +65,7 @@
               <td class="money"><strong>{{ numeroRecibo(p.id) }}</strong></td>
               <td>{{ p.fecha_pago | fechaLocal:'conHora' }}</td>
               <td>
-                {{ p.comunero_nombre }}<br />
+                {{ p.usuario_nombre }}<br />
                 <span class="fin-table__muted">{{ p.cedula }} · {{ p.obligaciones_pagadas }} {{ p.obligaciones_pagadas === 1 ? 'obligación' : 'obligaciones' }}</span>
               </td>
               <td>

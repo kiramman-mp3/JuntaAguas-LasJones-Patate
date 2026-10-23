@@ -16,7 +16,7 @@ export class TurnosService {
           sector_id: t.sector_id,
           dia_semana: Number(t.dia_semana),
           dia: nombreDia(t.dia_semana),
-          usuario: t.comunero_nombre || `${t.nombres || ''} ${t.apellidos || ''}`.trim(),
+          usuario: t.usuario_nombre || `${t.nombres || ''} ${t.apellidos || ''}`.trim(),
           cedula: t.cedula,
           lote: t.lote_codigo || 'N/A',
           sector: t.sector_nombre || 'N/A',

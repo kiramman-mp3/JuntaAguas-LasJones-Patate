@@ -51,7 +51,7 @@ export class AsambleaCardComponent {
   readonly abierta = computed(() => !['CANCELADO', 'REALIZADO'].includes(this.asamblea().estado));
   readonly porcentajeAsistencia = computed(() => {
     const a = this.asamblea();
-    return a.totalComuneros ? Math.round((a.asistentes / a.totalComuneros) * 100) : 0;
+    return a.totalUsuarios ? Math.round((a.asistentes / a.totalUsuarios) * 100) : 0;
   });
 
   subir(tipo: TipoDocumentoAsamblea, input: HTMLInputElement): void {

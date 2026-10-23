@@ -16,7 +16,7 @@ const obligacionesQuery = z.object({
 });
 
 const porCedulaQuery = z.object({
-  cedula: z.string({ error: 'Debe enviar la cédula del comunero.' }).trim().regex(/^\d{10}$/, 'La cédula debe tener 10 dígitos.'),
+  cedula: z.string({ error: 'Debe enviar la cédula del usuario.' }).trim().regex(/^\d{10}$/, 'La cédula debe tener 10 dígitos.'),
   estado: z.enum(ESTADOS_OBLIGACION).optional(),
   anio: anio.optional(),
   mes: mes.optional()
@@ -80,7 +80,16 @@ const egresoSchema = z.object({
 const facturacionSchema = z.object({ anio, mes, simular: z.boolean().default(false) });
 const resumenFacturacionQuery = z.object({ anio: anio.optional() });
 
+const personaIdParamSchema = z.object({
+  personaId: z.coerce.number().int().positive('ID de persona inválido.')
+});
+const registrarMasivoSchema = z.object({
+  anio: z.coerce.number().int().min(2000).max(2100),
+  valor_total: z.coerce.number().positive('El valor total debe ser mayor a 0.')
+});
+
 module.exports = {
   ESTADOS_OBLIGACION, METODOS, obligacionesQuery, porCedulaQuery, tarifaSchema, obligacionSchema, pagoSchema,
   motivoSchema, rangoFechas, egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery
+  ,personaIdParamSchema,registrarMasivoSchema
 };

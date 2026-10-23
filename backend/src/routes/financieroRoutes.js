@@ -29,7 +29,7 @@ const router = express.Router();
  *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Gestión Financiera]
- *     summary: Emitir (o simular) las cuotas de agua de un mes para los comuneros activos con lote
+ *     summary: Emitir (o simular) las cuotas de agua de un mes para los usuarios activos con lote
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/conceptos', verificarToken, financieroController.getConceptos);
@@ -43,7 +43,7 @@ router.post('/facturacion/mensual', ...soloAdmin, financieroController.generarFa
  * /financiero/obligaciones:
  *   get:
  *     tags: [Gestión Financiera]
- *     summary: Cuentas por cobrar. El administrador ve todas; un comunero solo las suyas.
+ *     summary: Cuentas por cobrar. El administrador ve todas; un usuario solo las suyas.
  *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Gestión Financiera]
@@ -57,12 +57,12 @@ router.post('/facturacion/mensual', ...soloAdmin, financieroController.generarFa
  * /financiero/obligaciones/multas:
  *   get:
  *     tags: [Gestión Financiera]
- *     summary: Multas y otros cobros de un comunero por cédula
+ *     summary: Multas y otros cobros de un usuario por cédula
  *     security: [{ bearerAuth: [] }]
  * /financiero/obligaciones/mensualidades:
  *   get:
  *     tags: [Gestión Financiera]
- *     summary: Cuotas mensuales de agua de un comunero por cédula
+ *     summary: Cuotas mensuales de agua de un usuario por cédula
  *     security: [{ bearerAuth: [] }]
  * /financiero/periodosobligaciones:
  *   get:
@@ -82,7 +82,7 @@ router.get('/periodosobligaciones', ...soloAdmin, financieroController.getPeriod
  * /financiero/pagos:
  *   get:
  *     tags: [Gestión Financiera]
- *     summary: Pagos registrados. El administrador ve todos; un comunero solo los suyos.
+ *     summary: Pagos registrados. El administrador ve todos; un usuario solo los suyos.
  *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Gestión Financiera]
@@ -156,5 +156,8 @@ router.get('/egresos', ...soloAdmin, financieroController.getEgresos);
 router.post('/egresos', ...soloAdmin, financieroController.createEgreso);
 router.get('/balance', ...soloAdmin, financieroController.getBalanceReport);
 router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
-
+/* Regristro de pagos anuales */
+router.get('/pagos_pendientes/:personaId', ...soloAdmin, financieroController.getPagosPendientesPersona);
+router.patch('/marcar_pagado', ...soloAdmin, financieroController.patchMarcarPagoPagado);
+router.post('/crear_pago_masivo', ...soloAdmin, financieroController.postRegistrarPagoMasivo);
 module.exports = router;

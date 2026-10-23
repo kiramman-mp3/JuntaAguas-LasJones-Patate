@@ -4,7 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter, map } from 'rxjs';
 
 export interface SeccionNav {
-  /** Ruta absoluta de la sección (/admin/comuneros/padron). */
+  /** Ruta absoluta de la sección (/admin/usuarios/padron). */
   ruta: string;
   etiqueta: string;
   icono: string;

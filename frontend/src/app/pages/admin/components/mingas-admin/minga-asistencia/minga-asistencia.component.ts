@@ -9,7 +9,7 @@ import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { AsistenciaMinga, EstadoAsistenciaMinga, Minga } from '../minga.model';
 
-/** Registro de asistencia de una minga. Los comuneros sin marcar quedan pendientes. */
+/** Registro de asistencia de una minga. Los usuarios sin marcar quedan pendientes. */
 @Component({
   selector: 'app-minga-asistencia',
   standalone: true,
@@ -75,7 +75,7 @@ export class MingaAsistenciaComponent implements OnInit {
           this.disponible = true;
           this.asistencias = res.data || [];
         },
-        error: () => (this.error = 'No se pudieron cargar los comuneros y sus asistencias. Intente nuevamente.')
+        error: () => (this.error = 'No se pudieron cargar los usuarios y sus asistencias. Intente nuevamente.')
       });
   }
 

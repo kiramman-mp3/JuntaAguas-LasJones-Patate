@@ -133,10 +133,10 @@ test('lista solo los grupos, ordenados por nombre', async () => {
   const { sesion } = await sesionConectada([
     { id: '120363000000000002@g.us', nombre: 'Zanjeros' },
     { id: '593990000000@c.us', nombre: 'Persona', esGrupo: false },
-    { id: GRUPO, nombre: 'Comuneros La Jones', participantes: 120 }
+    { id: GRUPO, nombre: 'Usuarios La Jones', participantes: 120 }
   ]);
   assert.deepEqual(await sesion.listarGrupos(), [
-    { id: GRUPO, nombre: 'Comuneros La Jones', participantes: 120 },
+    { id: GRUPO, nombre: 'Usuarios La Jones', participantes: 120 },
     { id: '120363000000000002@g.us', nombre: 'Zanjeros', participantes: 3 }
   ]);
 });
@@ -149,7 +149,7 @@ test('sin conexión no lista grupos ni envía mensajes', async () => {
 
 test('envía el mensaje al grupo y valida los datos', async () => {
   const { sesion, cliente } = await sesionConectada([
-    { id: GRUPO, nombre: 'Comuneros' },
+    { id: GRUPO, nombre: 'Usuarios' },
     { id: '593990000000@c.us', nombre: 'Persona', esGrupo: false }
   ]);
   assert.deepEqual(await sesion.enviarAGrupo(GRUPO, 'Convocatoria'), { mensajeId: 'msg-1' });
@@ -176,7 +176,7 @@ test('si WhatsApp Web no puede leer los grupos responde 502 con un mensaje claro
 });
 
 test('un envío confirmado sin el objeto del mensaje cuenta como enviado (no se duplica al reintentar)', async () => {
-  const cliente = new ClienteFalso({ chats: [{ id: GRUPO, nombre: 'Comuneros' }], sinConfirmacion: true });
+  const cliente = new ClienteFalso({ chats: [{ id: GRUPO, nombre: 'Usuarios' }], sinConfirmacion: true });
   const { sesion } = crearSesion({ clientes: [cliente] });
   sesion.iniciar();
   cliente.emit('ready');

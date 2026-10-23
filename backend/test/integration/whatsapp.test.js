@@ -10,13 +10,13 @@ const env = require('../../src/config/env');
 const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, auth } = require('../helpers/fixtures');
 
-const GRUPO = { id: '120363000000000001@g.us', nombre: 'Comuneros La Jones', participantes: 120 };
+const GRUPO = { id: '120363000000000001@g.us', nombre: 'Usuarios La Jones', participantes: 120 };
 
 /** Servicio de WhatsApp simulado: responde como whatsapp-service y registra los mensajes. */
 const servicio = { estado: 'CONECTADO', grupos: [GRUPO], enviados: [], falloEnvio: null };
 let servidor;
 let admin;
-let comunero;
+let usuario;
 
 function iniciarServicioFalso() {
   const fake = express();
@@ -65,7 +65,7 @@ const convocar = (eventoId, extra = {}) =>
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario();
+  usuario = await crearUsuario();
 });
 after(async () => {
   await new Promise((resolver) => (servidor ? servidor.close(resolver) : resolver()));
@@ -91,7 +91,7 @@ test('con el servicio apagado el estado lo informa sin fallar', async () => {
 });
 
 test('solo la directiva usa WhatsApp', async () => {
-  const r = await request(app).get('/api/whatsapp/estado').set(auth(comunero));
+  const r = await request(app).get('/api/whatsapp/estado').set(auth(usuario));
   assert.equal(r.status, 403);
 });
 

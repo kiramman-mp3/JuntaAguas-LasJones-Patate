@@ -23,7 +23,7 @@ const asambleaMock: AsambleaItem = {
   genera_multa_ausencia: true,
   valor_multa: 10,
   asistentes: 5,
-  totalComuneros: 20,
+  totalUsuarios: 20,
 };
 
 describe('Módulo de Asambleas', () => {
@@ -38,7 +38,7 @@ describe('Módulo de Asambleas', () => {
       createEvento: vi.fn(() => of({ status: 'OK', eventoId: 10 })),
       cambiarEstadoAsamblea: vi.fn((_id: number, estado: string) => of({ status: 'OK', estado })),
       finalizarAsamblea: vi.fn(() => of({ status: 'OK', multasGeneradas: 3 })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ status: 'OK', message: 'Publicada', data: { grupo: { id: 'g@g.us', nombre: 'Comuneros' }, estado: 'CONVOCADO', reenvio: false } })),
+      enviarConvocatoriaWhatsApp: vi.fn(() => of({ status: 'OK', message: 'Publicada', data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO', reenvio: false } })),
       guardarPuntosAsamblea: vi.fn((_id: number, puntos: any[]) => of({ status: 'OK', data: puntos })),
       getPersonas: vi.fn(() => of({ data: [] })),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
