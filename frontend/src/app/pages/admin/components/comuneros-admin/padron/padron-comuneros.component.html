@@ -19,6 +19,12 @@
           <input type="search" class="input" placeholder="Buscar por cédula o nombre…" [(ngModel)]="busqueda" (ngModelChange)="filtrar()"
             aria-label="Buscar comunero" />
         </div>
+        <select class="input toolbar__select" [(ngModel)]="sectorFiltro" (ngModelChange)="filtrar(true)" aria-label="Sector">
+          <option [ngValue]="null">Todos los sectores</option>
+          @for (s of sectores(); track s.id) {
+            <option [ngValue]="s.id">{{ s.nombre }}</option>
+          }
+        </select>
         <select class="input toolbar__select" [(ngModel)]="estadoFiltro" (ngModelChange)="filtrar(true)" aria-label="Estado">
           <option value="">Todos los estados</option>
           <option value="ACTIVO">Activos</option>
@@ -34,8 +40,8 @@
         <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
       </app-empty-state>
     } @else if (!comuneros().length) {
-      @if (busqueda || estadoFiltro) {
-        <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda.">
+      @if (busqueda || estadoFiltro || sectorFiltro) {
+        <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda o el sector.">
           <button type="button" class="btn btn--outline btn--sm" (click)="limpiarFiltros()">Limpiar filtros</button>
         </app-empty-state>
       } @else {
@@ -50,6 +56,7 @@
             <tr>
               <th>Comunero</th>
               <th>Cédula</th>
+              <th>Sector</th>
               <th>Contacto</th>
               <th>Lotes</th>
               <th>Estado</th>
@@ -69,6 +76,15 @@
                   </div>
                 </td>
                 <td data-label="Cédula" class="money">{{ u.cedula }}</td>
+                <td data-label="Sector">
+                  @if (u.sector_nombre) {
+                    <span class="pill pill--primary" [title]="'Sector: ' + u.sector_nombre">
+                      <i class="ri-map-pin-2-line" aria-hidden="true"></i> {{ u.sector_nombre }}
+                    </span>
+                  } @else {
+                    <span class="text-muted">Sin sector</span>
+                  }
+                </td>
                 <td data-label="Contacto">
                   @if (u.celular || u.telefono) {
                     {{ u.celular }}@if (u.celular && u.telefono) { · }{{ u.telefono }}

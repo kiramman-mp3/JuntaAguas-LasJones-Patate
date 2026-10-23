@@ -1,5 +1,7 @@
 const express = require('express');
 const financieroController = require('../controllers/financieroController');
+const comprobantes = require('../controllers/pagoComprobanteController');
+const { recibirArchivo } = require('../services/documentStorage');
 const { verificarToken, soloAdmin } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -84,7 +86,7 @@ router.get('/periodosobligaciones', ...soloAdmin, financieroController.getPeriod
  *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Gestión Financiera]
- *     summary: Registrar pago completo de una o varias obligaciones
+ *     summary: Registrar pago completo por transferencia o depósito, con referencia bancaria obligatoria
  *     security: [{ bearerAuth: [] }]
  * /financiero/pagos/{id}/anular:
  *   post:
@@ -94,6 +96,37 @@ router.get('/periodosobligaciones', ...soloAdmin, financieroController.getPeriod
  */
 router.get('/pagos', verificarToken, financieroController.getPagos);
 router.get('/pagos/:id', verificarToken, financieroController.getPagoById);
+/**
+ * @openapi
+ * /financiero/pagos/{id}/comprobante:
+ *   post:
+ *     tags: [Gestión Financiera]
+ *     summary: Adjuntar o reemplazar comprobante bancario de un pago vigente (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: integer } }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [archivo]
+ *             properties:
+ *               archivo: { type: string, format: binary, description: 'PDF/JPG/PNG, hasta 10 MB' }
+ *     responses:
+ *       '200': { description: Comprobante guardado }
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Descargar comprobante bancario (ADMIN o titular del pago)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: integer } }
+ *     responses:
+ *       '200': { description: Archivo del comprobante bancario }
+ */
+router.post('/pagos/:id/comprobante', ...soloAdmin, recibirArchivo, comprobantes.subir);
+router.get('/pagos/:id/comprobante', verificarToken, comprobantes.descargar);
 router.post('/pagos', ...soloAdmin, financieroController.registrarPago);
 router.post('/pagos/:id/anular', ...soloAdmin, financieroController.anularPago);
 

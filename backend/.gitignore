@@ -1,3 +1,7 @@
 node_modules/
 .env
 *.log
+
+# WhatsApp Web JS auth & cache
+.wwebjs_auth/
+.wwebjs_cache/

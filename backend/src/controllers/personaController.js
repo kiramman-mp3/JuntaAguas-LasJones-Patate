@@ -21,7 +21,8 @@ const rolCodigo = z.enum([ROLES.ADMIN, ROLES.USUARIO]);
 
 const listarSchema = s.paginacion.extend({
   busqueda: z.string().trim().max(100).optional(),
-  estado: z.enum(['ACTIVO', 'INACTIVO']).optional()
+  estado: z.enum(['ACTIVO', 'INACTIVO']).optional(),
+  sector_id: s.id.optional()
 });
 
 const crearSchema = z.object({
@@ -57,9 +58,9 @@ async function cuentaDePersona(conexion, personaId, { bloquear = false } = {}) {
   return rows[0] || null;
 }
 
-/** Listar y buscar comuneros (directiva). */
+/** Listar y buscar comuneros (directiva) con filtro por sector geográfico. */
 async function getPersonas(req, res) {
-  const { busqueda, estado, page, limit } = listarSchema.parse(req.query);
+  const { busqueda, estado, sector_id, page, limit } = listarSchema.parse(req.query);
   const offset = (page - 1) * limit;
 
   let where = ' WHERE 1=1';
@@ -67,6 +68,10 @@ async function getPersonas(req, res) {
   if (estado) {
     where += ' AND p.estado = ?';
     params.push(estado);
+  }
+  if (sector_id) {
+    where += ' AND p.id IN (SELECT pl.persona_id FROM persona_lotes pl JOIN lotes l ON l.id = pl.lote_id WHERE l.sector_id = ?)';
+    params.push(sector_id);
   }
   if (busqueda) {
     where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ?)';
@@ -78,6 +83,11 @@ async function getPersonas(req, res) {
     `SELECT p.id, p.cedula, p.nombres, p.apellidos, p.direccion, p.telefono, p.celular, p.email, p.fecha_nacimiento,
             p.estado, p.created_at,
             (SELECT COUNT(*) FROM persona_lotes pl WHERE pl.persona_id = p.id) AS lotes_count,
+            (SELECT GROUP_CONCAT(DISTINCT s.nombre ORDER BY s.nombre SEPARATOR ', ')
+             FROM persona_lotes pl
+             JOIN lotes l ON l.id = pl.lote_id
+             JOIN sectores s ON s.id = l.sector_id
+             WHERE pl.persona_id = p.id) AS sector_nombre,
             c.estado AS cuenta_estado, r.codigo AS rol
      FROM personas p
      LEFT JOIN cuentas c ON c.persona_id = p.id
@@ -166,7 +176,12 @@ async function consultaPublicaPorCedula(req, res) {
 
   const [obligaciones] = await db.query(
     `SELECT o.id, o.periodo_anio, o.periodo_mes, o.fecha_emision, o.valor, o.estado, o.observacion,
-            c.nombre AS concepto_nombre, c.codigo AS concepto_codigo
+            c.nombre AS concepto_nombre, c.codigo AS concepto_codigo,
+            (SELECT pd.pago_id
+             FROM pago_detalles pd
+             JOIN pagos p ON p.id = pd.pago_id AND p.estado = 'VIGENTE'
+             WHERE pd.obligacion_id = o.id
+             ORDER BY p.id DESC LIMIT 1) AS pago_id
      FROM obligaciones o
      JOIN conceptos_cobro c ON c.id = o.concepto_id
      WHERE o.persona_id = ? AND o.estado <> 'ANULADA'
@@ -195,7 +210,8 @@ async function consultaPublicaPorCedula(req, res) {
         periodo: o.periodo_mes ? `Mes ${o.periodo_mes}` : (o.observacion || 'Cuota/Multa'),
         valor: Number(o.valor),
         estado: o.estado,
-        fechaEmision: o.fecha_emision
+        fechaEmision: o.fecha_emision,
+        pagoId: o.pago_id || null
       }))
     }
   });

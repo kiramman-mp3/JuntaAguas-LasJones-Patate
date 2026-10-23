@@ -26,10 +26,11 @@ export class AdminService {
 
 
   /** Listado paginado de comuneros. El servidor acepta como máximo 100 por página. */
-  getPersonas(page = 1, limit = 25, busqueda = '', estado = ''): Observable<RespuestaPaginada<PersonaListado>> {
+  getPersonas(page = 1, limit = 25, busqueda = '', estado = '', sector_id?: number): Observable<RespuestaPaginada<PersonaListado>> {
     let params = new HttpParams().set('page', page).set('limit', Math.min(limit, 100));
     if (busqueda) params = params.set('busqueda', busqueda);
     if (estado) params = params.set('estado', estado);
+    if (sector_id) params = params.set('sector_id', sector_id);
     return this.http.get<RespuestaPaginada<PersonaListado>>(`${this.baseUrl}/personas`, { params });
   }
 
@@ -87,8 +88,25 @@ export class AdminService {
     return this.http.get<RespuestaApi<SectorItem[]>>(`${this.baseUrl}/lotes/sectores`);
   }
 
-  getTurnos(): Observable<RespuestaApi<TurnoItem[]>> {
-    return this.http.get<RespuestaApi<TurnoItem[]>>(`${this.baseUrl}/turnos`);
+  getTurnos(dia_semana?: number, sector_id?: number): Observable<RespuestaApi<TurnoItem[]>> {
+    let params = new HttpParams();
+    if (dia_semana) params = params.set('dia_semana', dia_semana);
+    if (sector_id) params = params.set('sector_id', sector_id);
+    return this.http.get<RespuestaApi<TurnoItem[]>>(`${this.baseUrl}/turnos`, { params });
+  }
+
+  getCronograma(sector_id?: number, dia_semana?: number): Observable<RespuestaApi<any[]>> {
+    let params = new HttpParams();
+    if (sector_id) params = params.set('sector_id', sector_id);
+    if (dia_semana) params = params.set('dia_semana', dia_semana);
+    return this.http.get<RespuestaApi<any[]>>(`${this.baseUrl}/turnos/cronograma`, { params });
+  }
+
+  getCronogramaPublico(sector_id?: number, dia_semana?: number): Observable<RespuestaApi<any[]>> {
+    let params = new HttpParams();
+    if (sector_id) params = params.set('sector_id', sector_id);
+    if (dia_semana) params = params.set('dia_semana', dia_semana);
+    return this.http.get<RespuestaApi<any[]>>(`${this.baseUrl}/turnos/cronograma-publico`, { params });
   }
 
   asignarTurno(payload: object): Observable<RespuestaMensaje & { turnoId: number; obligacionId: number | null }> {
@@ -130,10 +148,6 @@ export class AdminService {
 
   guardarPuntosAsamblea(id: number, puntos: object[]): Observable<RespuestaMensaje & { data: unknown[] }> {
     return this.http.post<RespuestaMensaje & { data: unknown[] }>(`${this.baseUrl}/eventos/${id}/puntos`, { puntos });
-  }
-
-  cambiarEstadoActaPunto(id: number, puntoId: number, payload: object): Observable<RespuestaMensaje & { data: unknown }> {
-    return this.http.post<RespuestaMensaje & { data: unknown }>(`${this.baseUrl}/eventos/${id}/puntos/${puntoId}/estado`, payload);
   }
 
   cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<RespuestaMensaje & { estado: string }> {

@@ -36,7 +36,7 @@ test('los endpoints con datos personales exigen autenticación', async () => {
 });
 
 test('los endpoints públicos no exponen cédulas', async () => {
-  for (const ruta of ['/api/eventos/publicos', '/api/lotes/sectores', '/api/personas/stats']) {
+  for (const ruta of ['/api/eventos/publicos', '/api/lotes/sectores', '/api/personas/stats', '/api/turnos/cronograma-publico']) {
     const res = await request(app).get(ruta);
     assert.equal(res.status, 200, ruta);
     assert.ok(!JSON.stringify(res.body).includes(comunero.cedula), `${ruta} expone una cédula`);

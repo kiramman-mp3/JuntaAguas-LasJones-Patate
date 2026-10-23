@@ -23,7 +23,8 @@ describe('Turnos de agua', () => {
       eliminarTurno: vi.fn(() => of({ message: 'Eliminado' })),
       asignarTurno: vi.fn(() => of({ message: 'Asignado' })),
       getPersonas: vi.fn(() => of({ data: [], pagination: { total: 0 } })),
-      getLotes: vi.fn(() => of({ data: [{ id: 3, codigo: 'LJA-001' }] }))
+      getLotes: vi.fn(() => of({ data: [{ id: 3, codigo: 'LJA-001' }] })),
+      getSectores: vi.fn(() => of({ data: [{ id: 1, nombre: 'La Merced' }] }))
     };
     dialog = { confirmar: vi.fn(async () => true) };
     notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };

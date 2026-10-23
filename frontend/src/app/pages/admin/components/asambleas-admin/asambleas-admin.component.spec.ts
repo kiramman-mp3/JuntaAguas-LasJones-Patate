@@ -40,7 +40,6 @@ describe('Módulo de Asambleas', () => {
       finalizarAsamblea: vi.fn(() => of({ status: 'OK', multasGeneradas: 3 })),
       enviarConvocatoriaWhatsApp: vi.fn(() => of({ status: 'OK', message: 'Publicada', data: { grupo: { id: 'g@g.us', nombre: 'Comuneros' }, estado: 'CONVOCADO', reenvio: false } })),
       guardarPuntosAsamblea: vi.fn((_id: number, puntos: any[]) => of({ status: 'OK', data: puntos })),
-      cambiarEstadoActaPunto: vi.fn(() => of({ status: 'OK' })),
       getPersonas: vi.fn(() => of({ data: [] })),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
       getAsistencias: vi.fn(() => of({
@@ -58,14 +57,14 @@ describe('Módulo de Asambleas', () => {
         status: 'OK',
         evento: asambleaMock,
         puntos: [
-          { id: 1, orden: 1, punto_tratar: 'Constatación del cuórum', tratado: 'Verificado', resolucion: 'Instalada', estado_acta: 'APROBADA' },
-          { id: 2, orden: 2, punto_tratar: 'Presupuesto 2026', tratado: 'Debate de cuotas', resolucion: 'Aprobado', estado_acta: 'APROBADA' }
+          { id: 1, orden: 1, punto_tratar: 'Constatación del cuórum', tratado: 'Verificado', resolucion: 'Instalada' },
+          { id: 2, orden: 2, punto_tratar: 'Presupuesto 2026', tratado: 'Debate de cuotas', resolucion: 'Aprobado' }
         ]
       })),
       urlDocumento: vi.fn((url: string) => url)
     };
 
-    actasMock = { generarConvocatoriaPDF: vi.fn(), generarActaPDF: vi.fn(), generarActaPuntoPDF: vi.fn() };
+    actasMock = { generarConvocatoriaPDF: vi.fn(), generarActaPDF: vi.fn() };
     dialogMock = { confirmar: vi.fn(async () => true), aviso: vi.fn(), solicitar: vi.fn() };
 
     await TestBed.configureTestingModule({
@@ -193,7 +192,7 @@ describe('Módulo de Asambleas', () => {
       component.ngOnInit();
     });
 
-    it('soporta registrar múltiples actas por asamblea y agregar temas nuevos (F07)', () => {
+    it('registra los puntos del acta general y permite agregar temas nuevos (F07)', () => {
       expect(consultaMock.getEventoDetalle).toHaveBeenCalledWith(10);
       expect(component.puntos.length).toBe(2);
 
@@ -211,10 +210,9 @@ describe('Módulo de Asambleas', () => {
       expect(adminMock.guardarPuntosAsamblea).toHaveBeenCalledWith(10, component.puntos);
     });
 
-    it('permite generar el PDF individual de un acta por punto tratado (F07)', () => {
-      const punto = { orden: 2, punto_tratar: 'Presupuesto 2026', tratado: 'Debate', resolucion: 'Aprobado' };
-      component.descargarActaPorPunto(punto);
-      expect(actasMock.generarActaPuntoPDF).toHaveBeenCalledWith(asambleaMock, punto);
+    it('genera un único PDF con el acta general de la asamblea (F07)', () => {
+      component.descargarActaGeneral();
+      expect(actasMock.generarActaPDF).toHaveBeenCalledWith(asambleaMock, component.puntos);
     });
   });
 });

@@ -7,6 +7,9 @@ function normalizarCodigo(codigo) {
 
 // Alias de los dos catálogos semilla. No depende de IDs ni del número de lotes.
 const PREFIJOS_SECTOR = Object.freeze({
+  'PATATE VIEJO': 'PTV', 'SECTOR PATATE VIEJO': 'PTV',
+  'LA MERCED': 'LMC', 'SECTOR LA MERCED': 'LMC',
+  'SAN JAVIER': 'SJV', 'SECTOR SAN JAVIER': 'SJV',
   'LA JONES ALTA': 'LJA', 'LA JONES ALTO': 'LJA', 'LAS JONES ALTO': 'LJA',
   'LA JONES BAJA': 'LJB', 'LA JONES BAJO': 'LJB', 'LAS JONES BAJO': 'LJB',
   'LAS JONES CENTRO': 'LJC', 'EL TAMBO': 'ELT', 'LOS CUYES': 'LCU',

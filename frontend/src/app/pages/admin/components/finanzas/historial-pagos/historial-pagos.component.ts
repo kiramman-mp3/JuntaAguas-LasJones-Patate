@@ -7,13 +7,14 @@ import { NotificationService } from '../../../../../core/services/notification.s
 import { DialogService } from '../../../../../core/services/dialog.service';
 import { EstadoPago, Pago, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
 import { formatearFecha, hoyEnEcuador } from '../../../../../core/utils/fechas';
+import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 
 /** Historial de pagos de un rango de fechas: reimprimir comprobantes y anular pagos. */
 @Component({
   selector: 'app-historial-pagos',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, TitleCasePipe],
+  imports: [FormsModule, FechaLocalPipe, TitleCasePipe, ComprobanteBancarioComponent],
   templateUrl: './historial-pagos.component.html'
 })
 export class HistorialPagosComponent {

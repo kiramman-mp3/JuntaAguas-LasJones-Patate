@@ -50,13 +50,27 @@
             <div class="user-avatar">
               <i class="ri-user-3-line" aria-hidden="true"></i>
             </div>
-            <div>
+            <div class="user-info-text">
               <h3>{{ resultado.nombres }}</h3>
               <p class="caption">
                 Cédula: <strong>{{ resultado.cedula }}</strong> | Lote:
                 <span class="badge badge--info">{{ resultado.loteCodigo }}</span>
               </p>
             </div>
+            @if (ultimoPago) {
+              <div class="user-info-actions">
+                <button
+                  type="button"
+                  class="btn btn--primary btn--sm pressable"
+                  (click)="imprimirComprobante(ultimoPago.id)"
+                  [disabled]="imprimiendoId === ultimoPago.id"
+                  [title]="'Imprimir comprobante oficial ' + numeroRecibo(ultimoPago.id)"
+                >
+                  <i [class]="imprimiendoId === ultimoPago.id ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                  {{ imprimiendoId === ultimoPago.id ? 'Imprimiendo…' : 'Imprimir comprobante (' + numeroRecibo(ultimoPago.id) + ')' }}
+                </button>
+              </div>
+            }
           </div>
 
           <div class="user-location-info">
@@ -138,7 +152,88 @@
           </div>
         }
 
-        <!-- HISTORIAL DE PAGOS -->
+        <!-- COMPROBANTES DE PAGO EMITIDOS -->
+        @if (pagos.length > 0) {
+          <div class="card table-card">
+            <div class="card__header card__header--flex">
+              <div>
+                <h4 class="card__title">
+                  <i class="ri-file-text-line" aria-hidden="true"></i> Comprobantes de Pago Realizados
+                </h4>
+                <p class="caption">Recibos oficiales emitidos por recaudación y pagos registrados.</p>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>N° Recibo</th>
+                    <th>Fecha de Pago</th>
+                    <th>Forma de Pago</th>
+                    <th>Total Pagado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of pagos; track p.id) {
+                    <tr>
+                      <td>
+                        <strong class="recibo-numero">{{ numeroRecibo(p.id) }}</strong>
+                      </td>
+                      <td>{{ p.fecha_pago | fechaLocal: 'conHora' }}</td>
+                      <td>
+                        <span class="badge badge--neutral">{{ p.metodo }}</span>
+                        @if (p.referencia) {
+                          <span class="pago-ref">Ref: {{ p.referencia }}</span>
+                        }
+                      </td>
+                      <td>
+                        <strong class="pago-monto">{{ p.valor_total | currency: 'USD' }}</strong>
+                      </td>
+                      <td>
+                        <div class="pago-acciones">
+                          <button
+                            type="button"
+                            class="btn btn--primary btn--sm pressable"
+                            (click)="imprimirComprobante(p.id)"
+                            [disabled]="imprimiendoId === p.id"
+                            [title]="'Imprimir comprobante oficial ' + numeroRecibo(p.id)"
+                          >
+                            <i [class]="imprimiendoId === p.id ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                            {{ imprimiendoId === p.id ? 'Abriendo…' : 'Imprimir comprobante' }}
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn--outline btn--sm pressable"
+                            (click)="imprimirComprobante(p.id, true)"
+                            [disabled]="descargandoId === p.id"
+                            [title]="'Descargar PDF del comprobante ' + numeroRecibo(p.id)"
+                          >
+                            <i [class]="descargandoId === p.id ? 'ri-loader-4-line spin' : 'ri-download-2-line'" aria-hidden="true"></i>
+                            {{ descargandoId === p.id ? 'Descargando…' : 'PDF' }}
+                          </button>
+                          @if (p.comprobante_url) {
+                            <button
+                              type="button"
+                              class="btn btn--outline btn--sm pressable"
+                              (click)="descargarComprobanteBancario(p.id)"
+                              title="Descargar respaldo bancario adjunto"
+                            >
+                              <i class="ri-attachment-line" aria-hidden="true"></i> Respaldo
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- HISTORIAL DE PAGOS / CUENTAS PAGADAS -->
         @if (deudasPagadas.length > 0) {
           <div class="card table-card">
             <div class="card__header">
@@ -156,6 +251,7 @@
                     <th>Período / Referencia</th>
                     <th>Monto</th>
                     <th>Estado</th>
+                    <th>Comprobante</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,6 +267,33 @@
                       </td>
                       <td>
                         <span class="badge badge--success">{{ item.estado }}</span>
+                      </td>
+                      <td>
+                        @if (item.pagoId) {
+                          <button
+                            type="button"
+                            class="btn btn--outline btn--sm pressable"
+                            (click)="imprimirComprobante(item.pagoId)"
+                            [disabled]="imprimiendoId === item.pagoId"
+                            [title]="'Imprimir comprobante ' + numeroRecibo(item.pagoId)"
+                          >
+                            <i [class]="imprimiendoId === item.pagoId ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                            {{ imprimiendoId === item.pagoId ? 'Abriendo…' : 'Imprimir' }}
+                          </button>
+                        } @else if (ultimoPago) {
+                          <button
+                            type="button"
+                            class="btn btn--outline btn--sm pressable"
+                            (click)="imprimirComprobante(ultimoPago.id)"
+                            [disabled]="imprimiendoId === ultimoPago.id"
+                            [title]="'Imprimir comprobante ' + numeroRecibo(ultimoPago.id)"
+                          >
+                            <i [class]="imprimiendoId === ultimoPago.id ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                            {{ imprimiendoId === ultimoPago.id ? 'Abriendo…' : 'Imprimir' }}
+                          </button>
+                        } @else {
+                          <span class="text-muted">—</span>
+                        }
                       </td>
                     </tr>
                   }
@@ -188,6 +311,20 @@
             <p>
               Te encuentras al día con tus cuotas de agua de riego y asistencias a mingas/asambleas.
             </p>
+            @if (ultimoPago) {
+              <div class="mt-4">
+                <button
+                  type="button"
+                  class="btn btn--primary pressable"
+                  (click)="imprimirComprobante(ultimoPago.id)"
+                  [disabled]="imprimiendoId === ultimoPago.id"
+                  [title]="'Imprimir comprobante ' + numeroRecibo(ultimoPago.id)"
+                >
+                  <i [class]="imprimiendoId === ultimoPago.id ? 'ri-loader-4-line spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                  {{ imprimiendoId === ultimoPago.id ? 'Abriendo comprobante…' : 'Imprimir comprobante de pago (' + numeroRecibo(ultimoPago.id) + ')' }}
+                </button>
+              </div>
+            }
           </div>
         }
 

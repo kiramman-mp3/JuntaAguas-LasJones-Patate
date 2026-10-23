@@ -198,8 +198,8 @@ test('guardar actas conserva los ids de los puntos y elimina los quitados', asyn
   assert.equal(puntos[0].resolucion, 'Aprobado por mayoría');
   assert.ok(!puntos.some((p) => p.id === originales[1].id));
 
-  const acta = await request(app).post(`/api/eventos/${id}/puntos/${puntos[0].id}/estado`).set(auth(admin)).send({ estado_acta: 'INVENTADO' });
-  assert.equal(acta.status, 400);
+  const actaPorPunto = await request(app).post(`/api/eventos/${id}/puntos/${puntos[0].id}/estado`).set(auth(admin)).send({ estado_acta: 'APROBADA' });
+  assert.equal(actaPorPunto.status, 404, 'ya no existen actas por punto');
 });
 
 test('el listado calcula asistentes y multas por evento', async () => {
@@ -212,3 +212,61 @@ test('el listado calcula asistentes y multas por evento', async () => {
     assert.equal(e.multas_generadas, 1);
   }
 });
+
+test('permite crear mingas seleccionando un sector o con la opción Todos (null)', async () => {
+  // 1. Obtener un sector existente
+  const [sectores] = await db.query('SELECT id, nombre FROM sectores WHERE activo = TRUE LIMIT 1');
+  const sector = sectores[0];
+
+  // 2. Crear minga con sector específico
+  const mingaSector = await request(app).post('/api/eventos').set(auth(admin)).send({
+    tipo: 'MINGA',
+    titulo: 'Minga de limpieza en sector',
+    descripcion: 'Limpieza de acequias',
+    fecha: enDias(3),
+    hora_inicio: '08:00',
+    lugar: 'Canal matriz',
+    sector_id: sector.id,
+    genera_multa_ausencia: false
+  });
+  assert.equal(mingaSector.status, 201);
+  const idSector = mingaSector.body.eventoId;
+
+  // 3. Crear minga para "Todos" (sector_id null o ausente)
+  const mingaTodos = await request(app).post('/api/eventos').set(auth(admin)).send({
+    tipo: 'MINGA',
+    titulo: 'Minga general comunitaria',
+    descripcion: 'Trabajo general',
+    fecha: enDias(4),
+    hora_inicio: '08:00',
+    lugar: 'Sede central',
+    sector_id: null,
+    genera_multa_ausencia: false
+  });
+  assert.equal(mingaTodos.status, 201);
+  const idTodos = mingaTodos.body.eventoId;
+
+  // 4. Verificar detalle y listado
+  const detSector = await request(app).get(`/api/eventos/${idSector}`).set(auth(admin));
+  assert.equal(detSector.status, 200);
+  assert.equal(detSector.body.evento.sector_id, sector.id);
+  assert.equal(detSector.body.evento.sector_nombre, sector.nombre);
+
+  const detTodos = await request(app).get(`/api/eventos/${idTodos}`).set(auth(admin));
+  assert.equal(detTodos.status, 200);
+  assert.equal(detTodos.body.evento.sector_id, null);
+  assert.equal(detTodos.body.evento.sector_nombre, null);
+
+  // 5. Rechaza sector inexistente
+  const rechazo = await request(app).post('/api/eventos').set(auth(admin)).send({
+    tipo: 'MINGA',
+    titulo: 'Minga inválida',
+    descripcion: 'Trabajo',
+    fecha: enDias(5),
+    hora_inicio: '08:00',
+    sector_id: 999999,
+    genera_multa_ausencia: false
+  });
+  assert.equal(rechazo.status, 400);
+});
+

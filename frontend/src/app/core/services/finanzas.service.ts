@@ -46,6 +46,16 @@ export class FinanzasService {
     return this.http.post<PagoRegistrado>(`${this.url}/pagos`, pago);
   }
 
+  subirComprobante(id: number, archivo: File): Observable<Respuesta<unknown>> {
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    return this.http.post<Respuesta<unknown>>(`${this.url}/pagos/${id}/comprobante`, datos);
+  }
+
+  descargarComprobante(id: number): Observable<Blob> {
+    return this.http.get(`${this.url}/pagos/${id}/comprobante`, { responseType: 'blob' });
+  }
+
   getPagos(filtros: { desde?: string; hasta?: string; estado?: Pago['estado'] } = {}): Observable<Respuesta<Pago[]>> {
     return this.http.get<Respuesta<Pago[]>>(`${this.url}/pagos`, { params: parametros(filtros) });
   }

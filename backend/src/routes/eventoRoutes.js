@@ -20,6 +20,20 @@ const router = express.Router();
  *     tags: [Eventos y Asistencias]
  *     summary: Crear asamblea o minga
  *     security: [{ bearerAuth: [] }]
+ * /eventos/{id}/documentos:
+ *   get:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Listar metadatos de documentos registrados del evento (sin contenido binario)
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Subir archivo firmado de convocatoria o acta (multipart/form-data)
+ *     security: [{ bearerAuth: [] }]
+ * /eventos/{id}/pdf-asistencia:
+ *   get:
+ *     tags: [Eventos y Asistencias]
+ *     summary: Generar y descargar hoja de asistencia en PDF para firmas en territorio
+ *     security: [{ bearerAuth: [] }]
  */
 router.get('/publicos', eventoController.getEventosPublicos);
 router.get('/', ...soloAdmin, eventoController.getEventos);
@@ -29,7 +43,6 @@ router.get('/:id', ...soloAdmin, eventoController.getEventoById);
 router.post('/:id/estado', ...soloAdmin, eventoController.cambiarEstado);
 router.post('/:id/finalizar', ...soloAdmin, eventoController.finalizarEventoYGenerarMultas);
 router.post('/:id/puntos', ...soloAdmin, eventoController.savePuntosAsamblea);
-router.post('/:id/puntos/:puntoId/estado', ...soloAdmin, eventoController.cambiarEstadoActaPunto);
 router.post('/:id/asistencias', ...soloAdmin, eventoController.registrarAsistencias);
 router.get('/:id/asistencias', ...soloAdmin, eventoController.getAsistencias);
 router.get('/:id/pdf-asistencia', ...soloAdmin, eventoController.descargarPDFAsistencia);

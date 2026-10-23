@@ -57,7 +57,8 @@ async function getTurnos(req, res) {
     `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
             t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
             CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula,
-            l.codigo AS lote_codigo, s.nombre AS sector_nombre
+            l.codigo AS lote_codigo, l.superficie_m2,
+            s.id AS sector_id, s.nombre AS sector_nombre
      FROM turnos_riego t
      JOIN personas p ON p.id = t.persona_id
      LEFT JOIN lotes l ON l.id = t.lote_id
@@ -67,6 +68,175 @@ async function getTurnos(req, res) {
     params
   );
   return res.json({ status: 'OK', data: filas });
+}
+
+/** Cronograma completo de riego agrupado por sectores y días de la semana. */
+async function getCronogramaPorSectores(req, res) {
+  const filtros = filtrosQuery.parse(req.query);
+  const condiciones = ["t.estado = 'ACTIVO'", "s.activo = TRUE"];
+  const params = [];
+
+  if (filtros.dia_semana) {
+    condiciones.push('t.dia_semana = ?');
+    params.push(filtros.dia_semana);
+  }
+  if (filtros.sector_id) {
+    condiciones.push('l.sector_id = ?');
+    params.push(filtros.sector_id);
+  }
+
+  const [filas] = await db.query(
+    `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
+            t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
+            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula,
+            l.codigo AS lote_codigo, l.superficie_m2,
+            s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
+            TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
+     FROM turnos_riego t
+     JOIN personas p ON p.id = t.persona_id
+     JOIN lotes l ON l.id = t.lote_id
+     JOIN sectores s ON s.id = l.sector_id
+     WHERE ${condiciones.join(' AND ')}
+     ORDER BY s.nombre ASC, t.dia_semana ASC, t.hora_inicio ASC`,
+    params
+  );
+
+  const DIAS_NOMBRES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const sectoresMap = new Map();
+
+  for (const fila of filas) {
+    if (!sectoresMap.has(fila.sector_id)) {
+      sectoresMap.set(fila.sector_id, {
+        sector_id: fila.sector_id,
+        sector_nombre: fila.sector_nombre,
+        sector_descripcion: fila.sector_descripcion,
+        total_turnos: 0,
+        total_minutos: 0,
+        lotes_distintos: new Set(),
+        dias: Array.from({ length: 7 }, (_, i) => ({
+          dia_semana: i + 1,
+          dia_nombre: DIAS_NOMBRES[i],
+          turnos: []
+        }))
+      });
+    }
+
+    const sec = sectoresMap.get(fila.sector_id);
+    sec.total_turnos++;
+    const minutos = fila.duracion_minutos > 0 ? Number(fila.duracion_minutos) : 0;
+    sec.total_minutos += minutos;
+    sec.lotes_distintos.add(fila.lote_id);
+
+    const diaObj = sec.dias[fila.dia_semana - 1];
+    if (diaObj) {
+      diaObj.turnos.push({
+        id: fila.id,
+        persona_id: fila.persona_id,
+        comunero_nombre: fila.comunero_nombre,
+        cedula: fila.cedula,
+        lote_id: fila.lote_id,
+        lote_codigo: fila.lote_codigo,
+        superficie_m2: fila.superficie_m2,
+        tipo: fila.tipo,
+        hora_inicio: String(fila.hora_inicio).substring(0, 5),
+        hora_fin: String(fila.hora_fin).substring(0, 5),
+        duracion_minutos: minutos,
+        observacion: fila.observacion
+      });
+    }
+  }
+
+  const resultado = Array.from(sectoresMap.values()).map((s) => ({
+    sector_id: s.sector_id,
+    sector_nombre: s.sector_nombre,
+    sector_descripcion: s.sector_descripcion,
+    total_turnos: s.total_turnos,
+    total_horas: Number((s.total_minutos / 60).toFixed(1)),
+    total_lotes: s.lotes_distintos.size,
+    dias: s.dias
+  }));
+
+  return res.json({ status: 'OK', data: resultado });
+}
+
+/** Cronograma público sin cédulas para comuneros y visitantes en la landing page. */
+async function getCronogramaPublico(req, res) {
+  const filtros = filtrosQuery.parse(req.query);
+  const condiciones = ["t.estado = 'ACTIVO'", "s.activo = TRUE"];
+  const params = [];
+
+  if (filtros.dia_semana) {
+    condiciones.push('t.dia_semana = ?');
+    params.push(filtros.dia_semana);
+  }
+  if (filtros.sector_id) {
+    condiciones.push('l.sector_id = ?');
+    params.push(filtros.sector_id);
+  }
+
+  const [filas] = await db.query(
+    `SELECT t.id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
+            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre,
+            l.codigo AS lote_codigo,
+            s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
+            TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
+     FROM turnos_riego t
+     JOIN personas p ON p.id = t.persona_id
+     JOIN lotes l ON l.id = t.lote_id
+     JOIN sectores s ON s.id = l.sector_id
+     WHERE ${condiciones.join(' AND ')}
+     ORDER BY s.nombre ASC, t.dia_semana ASC, t.hora_inicio ASC`,
+    params
+  );
+
+  const DIAS_NOMBRES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const sectoresMap = new Map();
+
+  for (const fila of filas) {
+    if (!sectoresMap.has(fila.sector_id)) {
+      sectoresMap.set(fila.sector_id, {
+        sector_id: fila.sector_id,
+        sector_nombre: fila.sector_nombre,
+        sector_descripcion: fila.sector_descripcion,
+        total_turnos: 0,
+        total_minutos: 0,
+        dias: Array.from({ length: 7 }, (_, i) => ({
+          dia_semana: i + 1,
+          dia_nombre: DIAS_NOMBRES[i],
+          turnos: []
+        }))
+      });
+    }
+
+    const sec = sectoresMap.get(fila.sector_id);
+    sec.total_turnos++;
+    const minutos = fila.duracion_minutos > 0 ? Number(fila.duracion_minutos) : 0;
+    sec.total_minutos += minutos;
+
+    const diaObj = sec.dias[fila.dia_semana - 1];
+    if (diaObj) {
+      diaObj.turnos.push({
+        id: fila.id,
+        comunero_nombre: fila.comunero_nombre,
+        lote_codigo: fila.lote_codigo,
+        tipo: fila.tipo,
+        hora_inicio: String(fila.hora_inicio).substring(0, 5),
+        hora_fin: String(fila.hora_fin).substring(0, 5),
+        duracion_minutos: minutos
+      });
+    }
+  }
+
+  const resultado = Array.from(sectoresMap.values()).map((s) => ({
+    sector_id: s.sector_id,
+    sector_nombre: s.sector_nombre,
+    sector_descripcion: s.sector_descripcion,
+    total_turnos: s.total_turnos,
+    total_horas: Number((s.total_minutos / 60).toFixed(1)),
+    dias: s.dias
+  }));
+
+  return res.json({ status: 'OK', data: resultado });
 }
 
 /** Asignar un turno sin cruces de horario; un turno adicional genera su cobro en la misma transacción. */
@@ -108,4 +278,11 @@ async function deleteTurno(req, res) {
   return res.json({ status: 'OK', message: 'Turno de agua eliminado con éxito.' });
 }
 
-module.exports = { getTurnos, createTurno, updateTurno, deleteTurno };
+module.exports = {
+  getTurnos,
+  getCronogramaPorSectores,
+  getCronogramaPublico,
+  createTurno,
+  updateTurno,
+  deleteTurno
+};

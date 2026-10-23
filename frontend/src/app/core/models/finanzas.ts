@@ -14,9 +14,11 @@ export interface Respuesta<T> {
 }
 
 export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'OTRO';
+export type MetodoPagoNuevo = 'TRANSFERENCIA' | 'DEPOSITO';
 export type EstadoPago = 'VIGENTE' | 'ANULADO';
 
 export interface Pago {
+  comprobante_url?: string | null;
   id: number;
   persona_id: number;
   fecha_pago: string;
@@ -50,7 +52,7 @@ export interface PagoDetalle extends Pago {
 export interface NuevoPago {
   persona_id: number;
   obligacionesIds: number[];
-  metodo: MetodoPago;
+  metodo: MetodoPagoNuevo;
   referencia?: string;
   observacion?: string;
 }

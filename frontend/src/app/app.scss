@@ -40,11 +40,13 @@
     margin: 0;
     padding: 0;
 
-    @media (max-width: 768px) {
+    // Con cuatro enlaces la barra no cabe en tablets: desde 1024px se usa el menú móvil.
+    @media (max-width: 1024px) {
       display: none;
     }
 
     a {
+      white-space: nowrap;
       text-decoration: none;
       color: var(--text-muted);
       font-weight: 600;
@@ -89,7 +91,7 @@
     font-size: 1.35rem;
     cursor: pointer;
 
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
       display: inline-flex;
     }
   }
@@ -97,7 +99,7 @@
   &__mobile {
     display: none;
 
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
       display: block;
       border-top: 1px solid var(--border-color);
       background: var(--bg-surface);

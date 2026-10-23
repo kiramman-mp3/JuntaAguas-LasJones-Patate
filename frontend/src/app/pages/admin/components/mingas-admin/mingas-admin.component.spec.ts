@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MingasAdminComponent } from './mingas-admin.component';
 import { MingaFormComponent } from './minga-form/minga-form.component';
 import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.component';
@@ -8,6 +8,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import { DialogService } from '../../../../core/services/dialog.service';
+import { hoyEnEcuador } from '../../../../core/utils/fechas';
 
 const minga = {
   id: 1,
@@ -40,6 +41,7 @@ describe('Gestión de Mingas', () => {
   beforeEach(async () => {
     admin = {
       getEventos: vi.fn(() => of({ data: [minga] })),
+      getSectores: vi.fn(() => of({ data: [{ id: 1, nombre: 'Patate Viejo' }, { id: 2, nombre: 'La Merced' }] })),
       createEvento: vi.fn(() => of({ eventoId: 1 })),
       getPersonas: vi.fn(() =>
         of({
@@ -98,9 +100,10 @@ describe('Gestión de Mingas', () => {
     form.formulario = {
       titulo: ' Limpieza ',
       descripcion: ' Canal ',
-      fecha: '2026-10-03',
+      fecha: hoyEnEcuador(),
       hora_inicio: '08:00',
       lugar: ' Entrada ',
+      sector_id: null,
       genera_multa_ausencia: false,
     };
     form.guardar();
@@ -109,11 +112,48 @@ describe('Gestión de Mingas', () => {
       tipo: 'MINGA',
       titulo: 'Limpieza',
       lugar: 'Entrada',
+      sector_id: null,
     });
     expect(payload).not.toHaveProperty('valor_multa');
     expect(payload).not.toHaveProperty('subtipo_asamblea');
     expect(payload).not.toHaveProperty('puntos_orden_dia');
     expect(admin.enviarConvocatoriaWhatsApp).not.toHaveBeenCalled();
+  });
+
+  it('permite seleccionar un sector específico para la minga', () => {
+    const form = TestBed.createComponent(MingaFormComponent).componentInstance;
+    form.ngOnInit();
+    expect(admin.getSectores).toHaveBeenCalled();
+    expect(form.sectores).toHaveLength(2);
+
+    form.formulario = {
+      titulo: 'Minga de sector',
+      descripcion: 'Mantenimiento',
+      fecha: hoyEnEcuador(),
+      hora_inicio: '08:00',
+      lugar: 'Reservorio La Merced',
+      sector_id: 2,
+      genera_multa_ausencia: true,
+    };
+    form.guardar();
+    const payload = admin.createEvento.mock.calls[admin.createEvento.mock.calls.length - 1][0];
+    expect(payload.sector_id).toBe(2);
+  });
+
+  it('impide registrar una minga con fecha anterior a la actual', () => {
+    const form = TestBed.createComponent(MingaFormComponent).componentInstance;
+    form.formulario = {
+      titulo: 'Minga atrasada',
+      descripcion: 'Canal',
+      fecha: '2020-01-01',
+      hora_inicio: '08:00',
+      lugar: 'Entrada',
+      sector_id: null,
+      genera_multa_ausencia: false,
+    };
+    form.guardar();
+    expect(form.error).toBe('La fecha de la minga no puede ser anterior a la fecha actual.');
+    expect(admin.createEvento).not.toHaveBeenCalled();
   });
 
   it('conserva justificaciones y deja sin marcar como pendiente', () => {

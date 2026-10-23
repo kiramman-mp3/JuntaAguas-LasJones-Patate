@@ -133,8 +133,487 @@
               <strong>{{ s.superficieHa | number: '1.1-1' }} ha</strong>
             </div>
           </div>
+          <button type="button" class="btn btn--outline btn--sm" style="width: 100%; margin-top: 1.25rem;" (click)="verCronograma(s.id, s.nombre)">
+            <i class="ri-calendar-schedule-line" aria-hidden="true"></i> Ver cronograma de riego
+          </button>
         </div>
       }
     </div>
   </div>
 </section>
+
+<!-- MODAL CRONOGRAMA DE AGUA POR SECTOR (DISEÑADO PARA ADULTOS MAYORES Y COMUNEROS DE PATATE) -->
+@if (modalCronogramaAbierto) {
+  <div
+    class="modal-backdrop cronograma-backdrop"
+    (click)="onBackdropClick($event)"
+    (keyup.escape)="cerrarModalCronograma()"
+    tabindex="0"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Cronograma oficial de riego sector ' + nombreSectorModal"
+  >
+    <div class="modal cronograma-modal">
+      
+      <!-- CABECERA INSTITUCIONAL — CARTA DE PRESENTACIÓN -->
+      <header class="cronograma-modal__header">
+        <div class="header-branding">
+          <div class="water-icon-circle">
+            <i class="ri-drop-fill" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="official-tag">
+              <span class="pulse-dot"></span> JUNTA ADMINISTRADORA DE AGUA POTABLE Y RIEGO "LAS JONES"
+            </div>
+            <h2 class="modal-main-title">Cronograma Oficial de Turnos de Agua</h2>
+            <p class="modal-sub">Distribución y entrega de caudales de riego — Sector <strong>{{ nombreSectorModal }}</strong> (Patate)</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn btn--outline btn-print" (click)="imprimirCronograma()" title="Imprimir este cronograma para cartelera">
+            <i class="ri-printer-line" aria-hidden="true"></i> Imprimir Hoja
+          </button>
+          <button type="button" class="btn-close-modal" (click)="cerrarModalCronograma()" aria-label="Cerrar ventana del cronograma">
+            <i class="ri-close-large-line" aria-hidden="true"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- CARTA DE PRESENTACIÓN Y SELECTOR DE SECTOR -->
+      <div class="carta-presentacion-bar">
+        <div class="carta-presentacion-nota">
+          <div class="nota-icono">
+            <i class="ri-information-fill" aria-hidden="true"></i>
+          </div>
+          <div class="nota-texto">
+            <strong>Carta Informativa para los Comuneros:</strong>
+            <span>Este horario indica los días y horas exactas en los que se abre el canal para cada lote. Busque su nombre en la lista y acuda con 15 minutos de anticipación a la compuerta.</span>
+          </div>
+        </div>
+
+        <div class="sector-switcher-row">
+          <span class="switcher-rotulo">
+            <i class="ri-map-pin-2-fill" aria-hidden="true"></i> Seleccionar Sector:
+          </span>
+          <div class="sector-pills-row">
+            @for (s of sectores; track s.id) {
+              <button
+                type="button"
+                class="sector-pill-btn"
+                [class.active]="s.nombre.toLowerCase() === nombreSectorModal.toLowerCase()"
+                (click)="cambiarSectorModal(s.id, s.nombre)"
+              >
+                @if (s.nombre.toLowerCase() === nombreSectorModal.toLowerCase()) {
+                  <i class="ri-check-line" aria-hidden="true"></i>
+                }
+                Sector {{ s.nombre }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- CUERPO PRINCIPAL DEL CRONOGRAMA -->
+      <div class="cronograma-modal__body">
+        @if (cargandoCronograma) {
+          <div class="cronograma-loading">
+            <i class="ri-loader-4-line ri-spin" aria-hidden="true"></i>
+            <h3>Cargando el horario de turnos...</h3>
+            <p class="text-muted">Obteniendo la lista de beneficiarios del Sector {{ nombreSectorModal }}</p>
+          </div>
+        } @else if (!sectorCronograma || !sectorCronograma.total_turnos) {
+          <div class="cronograma-empty">
+            <div class="empty-icon-wrap">
+              <i class="ri-water-flash-line" aria-hidden="true"></i>
+            </div>
+            <h3>Sin turnos registrados todavía</h3>
+            <p class="text-muted">Aún no se han programado turnos de entrega de agua para el sector {{ nombreSectorModal }}.</p>
+            <p class="empty-hint">Por favor consulte con la directiva de la Junta de Aguas.</p>
+          </div>
+        } @else {
+          <!-- TARJETAS DE RESUMEN CLARAS Y GRANDES -->
+          <div class="cronograma-metrics-grid">
+            <div class="metric-card metric-card--turnos">
+              <div class="metric-icon"><i class="ri-user-star-line" aria-hidden="true"></i></div>
+              <div class="metric-content">
+                <span class="metric-val">{{ sectorCronograma.total_turnos }}</span>
+                <span class="metric-desc">Comuneros con turno</span>
+              </div>
+            </div>
+
+            <div class="metric-card metric-card--horas">
+              <div class="metric-icon"><i class="ri-time-line" aria-hidden="true"></i></div>
+              <div class="metric-content">
+                <span class="metric-val">{{ sectorCronograma.total_horas }}h</span>
+                <span class="metric-desc">Horas de agua semanales</span>
+              </div>
+            </div>
+
+            <div class="metric-card metric-card--lotes">
+              <div class="metric-icon"><i class="ri-landscape-line" aria-hidden="true"></i></div>
+              <div class="metric-content">
+                <span class="metric-val">{{ sectorCronograma.total_lotes }}</span>
+                <span class="metric-desc">Lotes y parcelas en riego</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BARRA DE BÚSQUEDA GRANDE Y FÁCIL PARA PERSONAS ADULTAS -->
+          <div class="search-comunero-container">
+            <div class="search-input-wrapper">
+              <i class="ri-search-2-line search-icon" aria-hidden="true"></i>
+              <input
+                type="text"
+                class="search-input"
+                [(ngModel)]="busquedaModal"
+                placeholder="¿Busca su turno? Escriba aquí su apellido o código de lote (ej: Altamirano, Tamayo, LJB-002)..."
+                aria-label="Buscar comunero o lote en el cronograma"
+              />
+              @if (busquedaModal) {
+                <button type="button" class="btn-clear-search" (click)="busquedaModal = ''" aria-label="Borrar búsqueda">
+                  <i class="ri-close-circle-fill" aria-hidden="true"></i>
+                </button>
+              }
+            </div>
+            <div class="search-helper-text">
+              <i class="ri-information-line" aria-hidden="true"></i>
+              <span>Consejo: Escriba su apellido para encontrar al instante qué día y a qué hora le toca recibir el agua.</span>
+            </div>
+          </div>
+
+          <!-- PESTAÑAS HORIZONTALES GRANDES POR DÍA -->
+          <div class="day-tabs-scroll-wrapper">
+            <div class="day-tabs-list" role="tablist">
+              <button
+                type="button"
+                class="day-tab-btn"
+                [class.active]="diaSeleccionadoModal === 'TODOS'"
+                (click)="seleccionarDia('TODOS')"
+                role="tab"
+              >
+                <i class="ri-calendar-2-line" aria-hidden="true"></i>
+                <span>Toda la semana</span>
+                <span class="tab-badge">{{ sectorCronograma.total_turnos }}</span>
+              </button>
+
+              @for (d of sectorCronograma.dias; track d.dia_semana) {
+                <button
+                  type="button"
+                  class="day-tab-btn"
+                  [class.active]="diaSeleccionadoModal.toLowerCase() === d.dia_nombre.toLowerCase()"
+                  (click)="seleccionarDia(d.dia_nombre)"
+                  role="tab"
+                >
+                  @if (d.turnos.length > 0) {
+                    <i class="ri-sun-line" aria-hidden="true"></i>
+                  }
+                  <span>{{ d.dia_nombre }}</span>
+                  <span class="tab-badge" [class.tab-badge--empty]="d.turnos.length === 0">
+                    {{ d.turnos.length }}
+                  </span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- SELECTOR DE FORMATO DE VISTA (PLANILLA DIRECTA TIPO PDF O TARJETAS) -->
+          <div class="vista-selector-row">
+            <span class="vista-selector-label">
+              <i class="ri-layout-grid-line" aria-hidden="true"></i> Formato de visualización:
+            </span>
+            <div class="vista-selector-btns">
+              <button
+                type="button"
+                class="btn-vista-pill"
+                [class.active]="vistaCronograma === 'tabla'"
+                (click)="vistaCronograma = 'tabla'"
+                title="Ver en formato Planilla directa tipo lista oficial (igual que el PDF)"
+              >
+                <i class="ri-table-line" aria-hidden="true"></i> Planilla Oficial (Formato PDF)
+              </button>
+              <button
+                type="button"
+                class="btn-vista-pill"
+                [class.active]="vistaCronograma === 'tarjetas'"
+                (click)="vistaCronograma = 'tarjetas'"
+                title="Ver en formato tarjetas individuales"
+              >
+                <i class="ri-grid-fill" aria-hidden="true"></i> Tarjetas
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTENIDO DE TURNOS AGRUPADOS POR DÍA -->
+          @if (diasVisibles().length === 0) {
+            <div class="no-matches-box">
+              <i class="ri-user-search-line" aria-hidden="true"></i>
+              <h4>No se encontraron turnos con "{{ busquedaModal }}"</h4>
+              <p class="text-muted">Pruebe escribir solo el apellido o seleccione "Toda la semana" para ver todos los turnos.</p>
+              <button type="button" class="btn btn--outline btn--sm mt-2" (click)="busquedaModal = ''; diaSeleccionadoModal = 'TODOS'">
+                Mostrar todos los turnos
+              </button>
+            </div>
+          } @else {
+            <div class="days-schedule-container">
+              @for (d of diasVisibles(); track d.dia_semana) {
+                <section class="day-card-group">
+                  <!-- Título del día destacado -->
+                  <div class="day-group-header">
+                    <div class="day-title-left">
+                      <div class="day-icon-circle">
+                        <i class="ri-calendar-event-fill" aria-hidden="true"></i>
+                      </div>
+                      <div>
+                        <h3 class="day-title-text">{{ d.dia_nombre | uppercase }}</h3>
+                        <span class="day-subtitle">Horario y turnos programados para entrega de agua</span>
+                      </div>
+                    </div>
+                    <div class="day-turnos-badge">
+                      <i class="ri-water-percent-line" aria-hidden="true"></i>
+                      {{ d.turnosFiltrados.length }} {{ d.turnosFiltrados.length === 1 ? 'Turno' : 'Turnos' }}
+                    </div>
+                  </div>
+
+                  <!-- 1. VISTA PLANILLA OFICIAL (TABLA DIRECTA Y SENCILLA, IDÉNTICA AL PDF) -->
+                  @if (vistaCronograma === 'tabla') {
+                    <div class="tabla-cronograma-card">
+                      <div class="tabla-responsive-scroll">
+                        <table class="tabla-comunitaria">
+                          <thead>
+                            <tr>
+                              <th style="width: 5%; text-align: center;">Nº</th>
+                              <th style="width: 22%;">HORARIO (24h y 12h)</th>
+                              <th style="width: 14%; text-align: center;">DURACIÓN</th>
+                              <th style="width: 12%; text-align: center;">JORNADA</th>
+                              <th style="width: 33%;">COMUNERO / BENEFICIARIO</th>
+                              <th style="width: 7%; text-align: center;">LOTE</th>
+                              <th style="width: 7%; text-align: center;">TIPO</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (t of d.turnosFiltrados; track t.id; let idx = $index) {
+                              <tr class="fila-turno">
+                                <td class="celda-num">{{ idx + 1 }}</td>
+                                <td class="celda-horario">
+                                  <div class="horario-box-celda">
+                                    <strong class="hora-24-txt">{{ t.hora_inicio }} – {{ t.hora_fin }}</strong>
+                                    <span class="hora-12-txt">({{ convertirA12h(t.hora_inicio) }} a {{ convertirA12h(t.hora_fin) }})</span>
+                                  </div>
+                                </td>
+                                <td class="celda-duracion">
+                                  <span class="duracion-pill-tabla">{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</span>
+                                </td>
+                                <td class="celda-jornada">
+                                  <span class="jornada-pill-tabla" [ngClass]="obtenerFranjaHoraria(t.hora_inicio).clase">
+                                    {{ obtenerFranjaHoraria(t.hora_inicio).texto }}
+                                  </span>
+                                </td>
+                                <td class="celda-comunero">
+                                  <strong class="comunero-nombre-tabla">{{ t.comunero_nombre }}</strong>
+                                </td>
+                                <td class="celda-lote">
+                                  <span class="lote-tag-tabla">{{ t.lote_codigo }}</span>
+                                </td>
+                                <td class="celda-tipo">
+                                  <span class="tipo-tag-tabla" [class.tipo-adicional]="t.tipo === 'ADICIONAL'">
+                                    {{ t.tipo === 'ADICIONAL' ? 'Adicional' : 'Ordinario' }}
+                                  </span>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  } @else {
+                    <!-- 2. VISTA TARJETAS (FORMATO ALTERNATIVO CON HORARIO COINCIDENTE 24h Y 12h) -->
+                    <div class="turnos-visual-grid">
+                      @for (t of d.turnosFiltrados; track t.id) {
+                        <article class="turno-card-box">
+                          
+                          <!-- Banda superior: Jornada del día clara en texto grande -->
+                          <div class="turno-card-top-bar" [ngClass]="obtenerFranjaHoraria(t.hora_inicio).clase">
+                            <div class="jornada-text-tag">
+                              <i [class]="obtenerFranjaHoraria(t.hora_inicio).icono" aria-hidden="true"></i>
+                              <span>{{ obtenerFranjaHoraria(t.hora_inicio).textoLargo | uppercase }}</span>
+                            </div>
+                            <div class="duracion-tag">
+                              <i class="ri-timer-line" aria-hidden="true"></i>
+                              <span>DURACIÓN: <strong>{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</strong></span>
+                            </div>
+                          </div>
+
+                          <!-- Horario con formato 24 horas y 12 horas coincidente -->
+                          <div class="horario-destacado-box">
+                            <div class="hora-bloque">
+                              <span class="hora-etiqueta">Empieza a las:</span>
+                              <span class="hora-valor">{{ t.hora_inicio }}</span>
+                              <span class="hora-sub">({{ convertirA12h(t.hora_inicio) }})</span>
+                            </div>
+
+                            <div class="hora-separador-flecha" aria-hidden="true">
+                              <i class="ri-arrow-right-line"></i>
+                              <span>hasta las</span>
+                            </div>
+
+                            <div class="hora-bloque">
+                              <span class="hora-etiqueta">Termina a las:</span>
+                              <span class="hora-valor">{{ t.hora_fin }}</span>
+                              <span class="hora-sub">({{ convertirA12h(t.hora_fin) }})</span>
+                            </div>
+                          </div>
+
+                          <!-- Comunero Beneficiario en grande y con alto contraste -->
+                          <div class="comunero-destacado-box">
+                            <span class="comunero-rotulo">
+                              <i class="ri-user-star-fill" aria-hidden="true"></i> BENEFICIARIO / COMUNERO:
+                            </span>
+                            <h4 class="comunero-nombre-grande">{{ t.comunero_nombre }}</h4>
+                          </div>
+
+                          <!-- Ficha de Datos del Terreno -->
+                          <div class="lote-datos-tabla">
+                            <div class="lote-dato-item">
+                              <span class="lote-etiqueta">Terreno / Lote:</span>
+                              <span class="lote-valor">
+                                <i class="ri-map-pin-2-line" aria-hidden="true"></i>
+                                <strong>Lote Nº {{ t.lote_codigo }}</strong>
+                              </span>
+                            </div>
+
+                            <div class="lote-dato-item">
+                              <span class="lote-etiqueta">Tipo de Turno:</span>
+                              <span class="lote-valor" [class.turno-adicional-text]="t.tipo === 'ADICIONAL'">
+                                @if (t.tipo !== 'ADICIONAL') {
+                                  <i class="ri-drop-fill" aria-hidden="true"></i>
+                                } @else {
+                                  <i class="ri-flashlight-fill" aria-hidden="true"></i>
+                                }
+                                {{ t.tipo === 'ADICIONAL' ? 'Turno Extra / Adicional' : 'Turno Normal Semanal' }}
+                              </span>
+                            </div>
+
+                            @if (t.superficie_m2) {
+                              <div class="lote-dato-item">
+                                <span class="lote-etiqueta">Superficie:</span>
+                                <span class="lote-valor">{{ t.superficie_m2 | number }} m²</span>
+                              </div>
+                            }
+                          </div>
+
+                          <!-- Recomendación y aviso para el comunero -->
+                          <div class="turno-card-aviso">
+                            <i class="ri-alarm-warning-line" aria-hidden="true"></i>
+                            <span><strong>Aviso:</strong> Por favor acudir 15 minutos antes a la compuerta para recibir el agua a tiempo.</span>
+                          </div>
+
+                        </article>
+                      }
+                    </div>
+                  }
+                </section>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <!-- PLANILLA OFICIAL DE IMPRESIÓN (DISEÑADA PARA CARTELERA Y PUERTA DE LA SEDE) -->
+      @if (sectorCronograma) {
+        <section class="cronograma-documento-impresion" aria-label="Nómina oficial de turnos de riego para cartelera">
+          <header class="impresion-encabezado">
+            <h1 class="impresion-entidad">JUNTA ADMINISTRADORA DE AGUA POTABLE Y RIEGO "LAS JONES"</h1>
+            <p class="impresion-subentidad">Parroquia Patate — Cantón Patate — Provincia de Tungurahua — Ecuador</p>
+            <div class="impresion-separador"></div>
+            <h2 class="impresion-titulo-doc">CRONOGRAMA OFICIAL Y NÓMINA DE TURNOS DE RIEGO</h2>
+            <div class="impresion-meta-grid">
+              <div class="meta-item"><strong>SECTOR:</strong> {{ nombreSectorModal | uppercase }}</div>
+              <div class="meta-item"><strong>TOTAL BENEFICIARIOS:</strong> {{ sectorCronograma.total_turnos }} comuneros</div>
+              <div class="meta-item"><strong>HORAS TOTALES:</strong> {{ sectorCronograma.total_horas }}h semanales</div>
+              <div class="meta-item"><strong>LOTES EN RIEGO:</strong> {{ sectorCronograma.total_lotes }} lotes</div>
+            </div>
+          </header>
+
+          <div class="impresion-disposicion">
+            <strong>DISPOSICIÓN COMUNITARIA:</strong> Los comuneros deben presentarse con 15 minutos de anticipación en la compuerta o toma correspondiente. El agua se entrega en estricto orden de turno. Se prohíbe desviar caudales o manipular compuertas sin autorización del operador.
+          </div>
+
+          <div class="impresion-listado-dias">
+            @for (d of sectorCronograma.dias; track d.dia_semana) {
+              @if (d.turnos.length > 0) {
+                <div class="impresion-dia-bloque">
+                  <div class="impresion-dia-cabecera">
+                    <span class="impresion-dia-nombre">DÍA {{ d.dia_nombre | uppercase }}</span>
+                    <span class="impresion-dia-total">{{ d.turnos.length }} {{ d.turnos.length === 1 ? 'turno' : 'turnos' }} programados</span>
+                  </div>
+
+                  <table class="impresion-tabla-turnos">
+                    <thead>
+                      <tr>
+                        <th style="width: 5%; text-align: center;">Nº</th>
+                        <th style="width: 17%; text-align: center;">HORARIO</th>
+                        <th style="width: 13%; text-align: center;">DURACIÓN</th>
+                        <th style="width: 12%; text-align: center;">JORNADA</th>
+                        <th style="width: 35%;">COMUNERO / BENEFICIARIO</th>
+                        <th style="width: 9%; text-align: center;">LOTE</th>
+                        <th style="width: 9%; text-align: center;">TIPO</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (t of d.turnos; track t.id; let idx = $index) {
+                        <tr>
+                          <td style="text-align: center; font-weight: bold;">{{ idx + 1 }}</td>
+                          <td style="text-align: center; font-weight: bold;">{{ t.hora_inicio }} – {{ t.hora_fin }}</td>
+                          <td style="text-align: center;">{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</td>
+                          <td style="text-align: center;">{{ obtenerFranjaHoraria(t.hora_inicio).texto }}</td>
+                          <td style="font-weight: bold; text-transform: uppercase;">{{ t.comunero_nombre }}</td>
+                          <td style="text-align: center; font-weight: bold;">{{ t.lote_codigo }}</td>
+                          <td style="text-align: center; font-size: 8pt;">{{ t.tipo === 'ADICIONAL' ? 'Adicional' : 'Ordinario' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            }
+          </div>
+
+          <footer class="impresion-firmas">
+            <div class="firma-col">
+              <div class="firma-linea"></div>
+              <strong>PRESIDENTE DE LA JUNTA</strong>
+              <span>Junta de Agua Las Jones</span>
+            </div>
+            <div class="firma-col">
+              <div class="firma-linea"></div>
+              <strong>OPERADOR / TOMERO</strong>
+              <span>Control de Compuertas</span>
+            </div>
+            <div class="firma-col">
+              <div class="firma-linea"></div>
+              <strong>SECRETARÍA / ACTAS</strong>
+              <span>Certificación</span>
+            </div>
+          </footer>
+        </section>
+      }
+
+      <!-- PIE DEL MODAL -->
+      <footer class="cronograma-modal__footer">
+        <div class="footer-note">
+          <i class="ri-shield-check-fill" aria-hidden="true"></i>
+          <span><strong>Regla de la Junta:</strong> El agua de riego se entrega por orden de lista sin excepción. Cuide el canal y no desperdicie agua.</span>
+        </div>
+        <div class="footer-buttons">
+          <button type="button" class="btn btn--outline" (click)="imprimirCronograma()">
+            <i class="ri-printer-line" aria-hidden="true"></i> Imprimir Hoja
+          </button>
+          <button type="button" class="btn btn--primary" (click)="cerrarModalCronograma()">
+            Entendido, Cerrar
+          </button>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+}

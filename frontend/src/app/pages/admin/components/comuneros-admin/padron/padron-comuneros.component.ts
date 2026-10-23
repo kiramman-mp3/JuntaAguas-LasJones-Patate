@@ -28,6 +28,7 @@ export class PadronComunerosComponent implements OnInit {
   readonly nuevo = input<string | undefined>();
 
   readonly comuneros = signal<any[]>([]);
+  readonly sectores = signal<any[]>([]);
   readonly cargando = signal(true);
   readonly error = signal(false);
   readonly pagina = signal(1);
@@ -36,6 +37,7 @@ export class PadronComunerosComponent implements OnInit {
 
   busqueda = '';
   estadoFiltro = '';
+  sectorFiltro: number | null = null;
   private busqueda$ = new Subject<void>();
 
   // Modales
@@ -55,13 +57,31 @@ export class PadronComunerosComponent implements OnInit {
       this.pagina.set(1);
       this.cargar();
     });
+    this.cargarSectores();
     this.cargar();
+  }
+
+  cargarSectores(): void {
+    if (typeof this.admin?.getSectores === 'function') {
+      this.admin.getSectores().subscribe({
+        next: (res) => {
+          if (res?.data) this.sectores.set(res.data);
+        },
+        error: (err) => {
+          console.error('Error cargando sectores:', err);
+        }
+      });
+    }
   }
 
   cargar(): void {
     this.cargando.set(true);
     this.error.set(false);
-    this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro).subscribe({
+    const peticion$ = this.sectorFiltro
+      ? this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro, this.sectorFiltro)
+      : this.admin.getPersonas(this.pagina(), this.porPagina(), this.busqueda, this.estadoFiltro);
+
+    peticion$.subscribe({
       next: (res) => {
         const total = res?.pagination?.total ?? 0;
         // Si la página quedó vacía (por ejemplo, al filtrar), se vuelve a la última que tiene datos.
@@ -94,6 +114,7 @@ export class PadronComunerosComponent implements OnInit {
   limpiarFiltros(): void {
     this.busqueda = '';
     this.estadoFiltro = '';
+    this.sectorFiltro = null;
     this.filtrar(true);
   }
 

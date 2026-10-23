@@ -25,7 +25,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 |---|---|
 | `/admin/dashboard` | Indicadores reales: recaudado, cartera pendiente y vencida, morosos, egresos, saldo de caja, porcentaje de cobro, asistencia y próximos eventos. |
 | `/admin/comuneros` | Comuneros, cuentas de acceso con contraseña temporal, lotes georreferenciados (mapa) y transferencia de titularidad con auditoría. |
-| `/admin/asistencias` | Asambleas y mingas: convocatoria, padrón de asistencia, finalización con multas automáticas por ausencia, actas por punto, documentos firmados, hoja de asistencia en PDF y convocatoria publicada en el grupo de WhatsApp de la Junta. |
+| `/admin/asistencias` | Asambleas y mingas: convocatoria, padrón de asistencia, finalización con multas automáticas por ausencia, acta general de la asamblea, documentos firmados, hoja de asistencia en PDF y convocatoria publicada en el grupo de WhatsApp de la Junta. |
 | `/admin/turnos` | Turnos de riego semanales sin cruces de horario; un turno adicional genera su cobro. |
 | `/admin/finanzas/cobrar` | Cobro en caja: búsqueda del comunero, obligaciones pendientes (cuotas, multas y otros rubros), efectivo o transferencia, comprobante en PDF. |
 | `/admin/finanzas/pagos` | Historial de pagos por fechas, reimpresión del comprobante y anulación con motivo. |
@@ -85,6 +85,7 @@ JuntaAguas-LasJones-Patate/
 - Toda entrada se valida con zod; un error de validación responde 400 con el mensaje del campo.
 - Autorización por ruta: `soloAdmin` para la gestión; un comunero solo ve sus propios datos.
 - Fechas: la Junta opera en hora de Ecuador (UTC-5). Las fechas de calendario viajan como `AAAA-MM-DD`; los instantes (por ejemplo, la fecha de un pago) se guardan en UTC y se filtran por día de Ecuador.
+- Gestión Documental y Asistencias: Las asambleas y mingas permiten generar la lista de asistencia en PDF con el padrón activo para firmas físicas en territorio (`GET /api/eventos/:id/pdf-asistencia`). Posteriormente, se respalda el acta escaneada o convocatoria firmada en almacenamiento seguro validado por firma binaria (`POST /api/eventos/:id/documentos`).
 - El frontend usa un único interceptor para el token y clientes de API tipados (`AdminService`, `FinanzasService`, `ConsultaService`).
 
 ---

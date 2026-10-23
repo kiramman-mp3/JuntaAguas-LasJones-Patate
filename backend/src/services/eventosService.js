@@ -44,15 +44,26 @@ function exigirAbierto(evento) {
  * (por si fue desactivado después). Incluye el resumen por estado.
  */
 async function obtenerPadron(conexion, evento) {
+  let wherePersona = "p.estado = 'ACTIVO'";
+  const params = [evento.id];
+  if (evento.sector_id) {
+    wherePersona = `(p.estado = 'ACTIVO' AND p.id IN (
+      SELECT pl.persona_id FROM persona_lotes pl
+      JOIN lotes l ON l.id = pl.lote_id
+      WHERE l.sector_id = ? AND l.activo = TRUE
+    ))`;
+    params.push(evento.sector_id);
+  }
+
   const [personas] = await conexion.query(
     `SELECT p.id AS persona_id, CONCAT(p.apellidos, ' ', p.nombres) AS nombre, p.cedula,
             COALESCE(a.estado, 'PENDIENTE') AS estado, COALESCE(a.motivo_justificacion, '') AS motivo_justificacion,
             a.hora_registro
      FROM personas p
      LEFT JOIN asistencias a ON a.persona_id = p.id AND a.evento_id = ?
-     WHERE p.estado = 'ACTIVO' OR a.id IS NOT NULL
+     WHERE ${wherePersona} OR a.id IS NOT NULL
      ORDER BY p.apellidos, p.nombres`,
-    [evento.id]
+    params
   );
   const resumen = { total: personas.length, presentes: 0, ausentes: 0, justificados: 0, pendientes: 0 };
   for (const persona of personas) {
@@ -197,14 +208,26 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
   if (hasta) { filtros.push('e.fecha <= ?'); params.push(hasta); }
 
   const [[{ totalComuneros }]] = await conexion.query("SELECT COUNT(*) AS totalComuneros FROM personas WHERE estado = 'ACTIVO'");
+  const [comunerosPorSector] = await conexion.query(
+    `SELECT l.sector_id, COUNT(DISTINCT pl.persona_id) AS total
+     FROM persona_lotes pl
+     JOIN lotes l ON l.id = pl.lote_id
+     JOIN personas p ON p.id = pl.persona_id
+     WHERE p.estado = 'ACTIVO' AND l.activo = TRUE
+     GROUP BY l.sector_id`
+  );
+  const mapaSectorTotal = Object.fromEntries(comunerosPorSector.map((s) => [s.sector_id, Number(s.total)]));
+
   const [filas] = await conexion.query(
     `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
+            e.sector_id, s.nombre AS sector_nombre,
             e.requiere_asistencia, e.genera_multa_ausencia, e.valor_multa, e.created_by_cuenta_id, e.created_at,
             CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
             COALESCE(a.presentes, 0) AS asistentes, COALESCE(a.registrados, 0) AS registrados,
             COALESCE(m.multas, 0) AS multas_generadas,
             ${COLUMNAS_DOCUMENTOS}
      FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
      LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
      LEFT JOIN personas p ON p.id = c.persona_id
      LEFT JOIN (SELECT evento_id, SUM(estado = 'PRESENTE') AS presentes, COUNT(*) AS registrados
@@ -217,13 +240,17 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
   );
 
   // Eventos cerrados reportan su padrón real; los abiertos, los comuneros activos actuales.
-  const data = filas.map((e) => ({
-    ...e,
-    asistentes: Number(e.asistentes),
-    registrados: Number(e.registrados),
-    multas_generadas: Number(e.multas_generadas),
-    totalComuneros: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalComuneros
-  }));
+  const data = filas.map((e) => {
+    const totalSector = e.sector_id ? (mapaSectorTotal[e.sector_id] || 0) : totalComuneros;
+    return {
+      ...e,
+      sector_id: e.sector_id ? Number(e.sector_id) : null,
+      asistentes: Number(e.asistentes),
+      registrados: Number(e.registrados),
+      multas_generadas: Number(e.multas_generadas),
+      totalComuneros: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalSector
+    };
+  });
   return data;
 }
 
@@ -231,10 +258,12 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
 async function listarEventosPublicos(conexion, limite) {
   const [filas] = await conexion.query(
     `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
+            e.sector_id, s.nombre AS sector_nombre,
             e.genera_multa_ausencia, e.valor_multa,
             (SELECT d.ruta_archivo_firmado FROM documentos_evento d
               WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS convocatoria_firmada_url
      FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
      WHERE e.estado IN ('PROGRAMADO', 'CONVOCADO') AND e.fecha >= ?
      ORDER BY e.fecha ASC, e.hora_inicio ASC
      LIMIT ?`,
@@ -245,7 +274,13 @@ async function listarEventosPublicos(conexion, limite) {
 
 /** Detalle de un evento con sus puntos y el resumen de asistencia por estado. */
 async function detalleEvento(conexion, id) {
-  const [filas] = await conexion.query(`SELECT e.*, ${COLUMNAS_DOCUMENTOS} FROM eventos e WHERE e.id = ?`, [id]);
+  const [filas] = await conexion.query(
+    `SELECT e.*, s.nombre AS sector_nombre, ${COLUMNAS_DOCUMENTOS}
+     FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
+     WHERE e.id = ?`,
+    [id]
+  );
   if (!filas.length) throw notFound('Evento no encontrado.');
   const [puntos] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden ASC', [id]);
   const [asistenciaStats] = await conexion.query(
@@ -269,8 +304,8 @@ async function multaConfigurada(conexion, tipo, fecha) {
 
 /** Crea una asamblea o minga con sus puntos del orden del día. La multa se toma de las tarifas. */
 async function crearEvento(conexion, datos, cuentaId) {
-  if (datos.tipo === 'ASAMBLEA' && datos.fecha < hoy()) {
-    throw badRequest('La fecha de la asamblea no puede ser anterior a la fecha actual.');
+  if (datos.fecha < hoy()) {
+    throw badRequest(`La fecha de la ${datos.tipo === 'MINGA' ? 'minga' : 'asamblea'} no puede ser anterior a la fecha actual.`);
   }
   const valorMulta = datos.genera_multa_ausencia ? await multaConfigurada(conexion, datos.tipo, datos.fecha) : null;
   const puntos = datos.tipo === 'ASAMBLEA'
@@ -280,12 +315,18 @@ async function crearEvento(conexion, datos, cuentaId) {
       .filter((p) => p.punto_tratar)
     : [];
 
+  const sectorId = datos.tipo === 'MINGA' && datos.sector_id ? datos.sector_id : null;
+  if (sectorId) {
+    const [sectores] = await conexion.query('SELECT id FROM sectores WHERE id = ? AND activo = TRUE', [sectorId]);
+    if (!sectores.length) throw badRequest('El sector seleccionado no existe o está inactivo.');
+  }
+
   const [r] = await conexion.query(
-    `INSERT INTO eventos (tipo, titulo, descripcion, fecha, hora_inicio, hora_fin, lugar, requiere_asistencia,
+    `INSERT INTO eventos (tipo, titulo, descripcion, fecha, hora_inicio, hora_fin, lugar, sector_id, requiere_asistencia,
                           genera_multa_ausencia, valor_multa, created_by_cuenta_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [datos.tipo, datos.titulo, datos.descripcion, datos.fecha, datos.hora_inicio, datos.hora_fin,
-      datos.lugar || 'Casa Comunal Junta La Jones', datos.requiere_asistencia, datos.genera_multa_ausencia, valorMulta,
+      datos.lugar || 'Casa Comunal Junta La Jones', sectorId, datos.requiere_asistencia, datos.genera_multa_ausencia, valorMulta,
       cuentaId]
   );
   if (puntos.length) {
@@ -344,16 +385,7 @@ async function guardarPuntos(conexion, id, puntos) {
   return { data: actualizados, archivosEliminados: eliminados.map((p) => p.acta_firmada_url).filter(Boolean) };
 }
 
-/** Actualiza los datos del acta de un punto. */
-async function actualizarActaPunto(conexion, eventoId, puntoId, cambios) {
-  if (!Object.keys(cambios).length) throw badRequest('No se enviaron cambios para el acta.');
-  const [r] = await conexion.query('UPDATE puntos_asamblea SET ? WHERE id = ? AND evento_id = ?', [cambios, puntoId, eventoId]);
-  if (!r.affectedRows) throw notFound('Punto de asamblea no encontrado.');
-  const [[actualizado]] = await conexion.query('SELECT * FROM puntos_asamblea WHERE id = ?', [puntoId]);
-  return actualizado;
-}
-
 module.exports = {
-  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos, actualizarActaPunto,
+  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos,
   ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto
 };

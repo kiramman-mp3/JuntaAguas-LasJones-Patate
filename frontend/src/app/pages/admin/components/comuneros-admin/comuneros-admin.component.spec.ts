@@ -160,6 +160,33 @@ describe('Titularidad única (VincularLoteComponent)', () => {
     c.loteId.set(12);
     expect(c.titularActual()).toBeNull();
   });
+
+  it('filtra los lotes reactivamente por codigo, sector o nombre de comunero', () => {
+    const c = crear();
+    expect(c.lotesFiltrados().length).toBe(3);
+
+    c.busqueda.set('010');
+    expect(c.lotesFiltrados().length).toBe(1);
+    expect(c.lotesFiltrados()[0].id).toBe(10);
+
+    c.busqueda.set('Luis Mora');
+    expect(c.lotesFiltrados().length).toBe(1);
+    expect(c.lotesFiltrados()[0].id).toBe(10);
+
+    c.busqueda.set('no-existe');
+    expect(c.lotesFiltrados().length).toBe(0);
+
+    c.busqueda.set('');
+    expect(c.lotesFiltrados().length).toBe(3);
+  });
+
+  it('mantiene el lote actualmente seleccionado en la lista si no coincide con el filtro', () => {
+    const c = crear();
+    c.loteId.set(11);
+    c.busqueda.set('010');
+    expect(c.lotesFiltrados().some((l) => l.id === 11)).toBe(true);
+    expect(c.lotesFiltrados().some((l) => l.id === 10)).toBe(true);
+  });
 });
 
 describe('Sectores (SectorFormComponent)', () => {
