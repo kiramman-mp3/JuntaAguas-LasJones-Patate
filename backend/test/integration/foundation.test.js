@@ -44,8 +44,8 @@ test('el esquema incluye las columnas que usa el código', async () => {
   const [columnas] = await db.query(`SELECT TABLE_NAME AS t, COLUMN_NAME AS c FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()`);
   const existe = (t, c) => columnas.some((x) => x.t === t && x.c === c);
-  for (const c of ['titulo_acta', 'estado_acta', 'acta_firmada_url', 'responsables', 'fecha_acta']) {
-    assert.ok(existe('puntos_asamblea', c), `falta puntos_asamblea.${c}`);
+  for (const c of ['titulo_acta', 'estado_acta', 'acta_firmada_url', 'acta_firmada_nombre', 'responsables', 'fecha_acta']) {
+    assert.ok(!existe('puntos_asamblea', c), `sobra puntos_asamblea.${c}: solo existe el acta general`);
   }
   for (const c of ['estado', 'anulado_por_cuenta_id', 'fecha_anulacion', 'motivo_anulacion']) {
     assert.ok(existe('pagos', c), `falta pagos.${c}`);
