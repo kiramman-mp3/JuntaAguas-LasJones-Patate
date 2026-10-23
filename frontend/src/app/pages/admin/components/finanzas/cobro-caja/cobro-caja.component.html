@@ -3,7 +3,7 @@
     <div class="fin-panel__head">
       <div>
         <h3 class="fin-panel__title" id="cobro-buscar-titulo"><i class="ri-hand-coin-line" aria-hidden="true"></i> Cobrar a un usuario</h3>
-        <p class="fin-panel__desc">Busque por apellido, nombre o cédula. Se muestran todas sus obligaciones pendientes: cuotas de agua, multas y otros rubros.</p>
+        <p class="fin-panel__desc">Busque por apellido, nombre o cédula. Se muestran todas sus obligaciones pendientes: el pago anual de agua, multas y otros rubros.</p>
       </div>
     </div>
 
@@ -51,71 +51,67 @@
         </button>
       </div>
 
-      <!-- PESTAÑA: CUOTAS DE AGUA -->
-      @if (filtro() === 'AGUA') {
-        <div class="fin-panel__head">
-          <div class="chips" role="group" aria-label="Filtrar obligaciones">
-            <button type="button" class="chip" [class.chip--active]="filtro() === 'AGUA'" [attr.aria-pressed]="filtro() === 'AGUA'" (click)="filtro.set('AGUA')">Cuotas de agua</button>
-            <button type="button" class="chip" [class.chip--active]="filtro() === 'OTRAS'" [attr.aria-pressed]="filtro() === 'OTRAS'" (click)="filtro.set('OTRAS')">Multas y otros</button>
-          </div>
-          @if (obligacionesPagoAnualAgua().length) {
-            <button type="button" class="btn btn--outline btn--sm" (click)="alternarTodasAgua()">
-              {{ todasAguaMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
-            </button>
-          }
+      <div class="fin-panel__head">
+        <div class="chips" role="tablist" aria-label="Tipo de obligaciones">
+          <button type="button" class="chip" role="tab" [class.chip--active]="pestana() === 'AGUA'" [attr.aria-selected]="pestana() === 'AGUA'" (click)="pestana.set('AGUA')">
+            Agua anual @if (obligacionesAgua().length) { <span class="badge badge--info">{{ obligacionesAgua().length }}</span> }
+          </button>
+          <button type="button" class="chip" role="tab" [class.chip--active]="pestana() === 'OTRAS'" [attr.aria-selected]="pestana() === 'OTRAS'" (click)="pestana.set('OTRAS')">
+            Multas y otros @if (obligaciones().length) { <span class="badge badge--info">{{ obligaciones().length }}</span> }
+          </button>
         </div>
+        @if (pestana() === 'AGUA' && obligacionesAgua().length) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="alternarTodasAgua()">
+            {{ todasAguaMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
+          </button>
+        } @else if (pestana() === 'OTRAS' && obligaciones().length) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="alternarTodasOtras()">
+            {{ todasOtrasMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
+          </button>
+        }
+      </div>
 
-        @if (cargandoObligacionesPagoAnualAgua()) {
+      <!-- PESTAÑA: PAGO ANUAL DE AGUA -->
+      @if (pestana() === 'AGUA') {
+        @if (cargandoAgua()) {
           <div aria-live="polite">
             <div class="skeleton skeleton--text"></div>
             <div class="skeleton skeleton--text"></div>
           </div>
-        } @else if (!obligacionesPagoAnualAgua().length) {
+        } @else if (errorAgua()) {
+          <div class="alert alert--danger" role="alert">
+            {{ errorAgua() }}
+            <button type="button" class="btn btn--outline btn--sm" (click)="cargarAgua()">Reintentar</button>
+          </div>
+        } @else if (!obligacionesAgua().length) {
           <div class="empty-state">
             <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
             <strong>Al día</strong>
-            <p>Este usuario no tiene cuotas de agua pendientes.</p>
+            <p>Este usuario no tiene pagos anuales de agua pendientes.</p>
           </div>
         } @else {
-          <ul class="check-list" aria-label="Cuotas de agua pendientes por año">
-            @for (pago of obligacionesPagoAnualAgua(); track pago.id) {
+          <ul class="check-list" aria-label="Pago anual de agua pendiente por año">
+            @for (o of obligacionesAgua(); track o.id) {
               <li>
-                <label class="check-row" [class.check-row--checked]="seleccionAgua().has(pago.id)">
-                  <input type="checkbox" [checked]="seleccionAgua().has(pago.id)" (change)="alternarSeleccionAgua(pago.id)" />
+                <label class="check-row" [class.check-row--checked]="seleccionAgua().has(o.id)">
+                  <input type="checkbox" [checked]="seleccionAgua().has(o.id)" (change)="alternarAgua(o.id)" />
                   <span>
-                    <span class="check-row__title">Cuota de Agua - Año {{ pago.periodo_anio }}</span>
-                    <span class="check-row__meta">Estado: {{ pago.estado }}</span>
-                  </span><span class="check-row__value money">${{ pago.valor_total.toFixed(2) }}</span>
+                    <span class="check-row__title">Pago anual de agua · {{ o.periodo_anio }}</span>
+                  </span>
+                  <span class="check-row__value money">${{ o.valor_total.toFixed(2) }}</span>
                 </label>
               </li>
             }
           </ul>
-
           <div class="cobro-tree__resumen" aria-live="polite">
-            <span class="text-muted">Agua seleccionada</span>
-            <span>
-              <strong class="money">${{ totalSeleccionadoAgua().toFixed(2) }}</strong>
-              <span class="text-muted">de</span>
-              <span class="money">${{ totalAguaGeneral().toFixed(2) }}</span>
-            </span>
+            <span class="text-muted">Seleccionado</span>
+            <span><strong class="money">${{ totalSeleccionadoAgua().toFixed(2) }}</strong> <span class="text-muted">de</span> <span class="money">${{ totalAgua().toFixed(2) }}</span></span>
           </div>
         }
       }
 
-      <!-- PESTAÑA: MULTAS Y OTROS (CON ÁRBOL) -->
-      @if (filtro() === 'OTRAS') {
-        <div class="fin-panel__head">
-          <div class="chips" role="group" aria-label="Filtrar obligaciones">
-            <button type="button" class="chip" [class.chip--active]="filtro() === 'AGUA'" [attr.aria-pressed]="filtro() === 'AGUA'" (click)="filtro.set('AGUA')">Cuotas de agua</button>
-            <button type="button" class="chip" [class.chip--active]="filtro() === 'OTRAS'" [attr.aria-pressed]="filtro() === 'OTRAS'" (click)="filtro.set('OTRAS')">Multas y otros</button>
-          </div>
-          @if (visibles().length) {
-            <button type="button" class="btn btn--outline btn--sm" (click)="alternarVisibles()">
-              {{ todasVisiblesMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
-            </button>
-          }
-        </div>
-
+      <!-- PESTAÑA: MULTAS Y OTROS (ÁRBOL AÑO → MES → CONCEPTO) -->
+      @if (pestana() === 'OTRAS') {
         @if (cargandoObligaciones()) {
           <div aria-live="polite">
             <div class="skeleton skeleton--text"></div>
@@ -125,17 +121,15 @@
         } @else if (errorObligaciones()) {
           <div class="alert alert--danger" role="alert">
             {{ errorObligaciones() }}
-            <button type="button" class="btn btn--outline btn--sm" (click)="cargarObligaciones()">Reintentar</button>
+            <button type="button" class="btn btn--outline btn--sm" (click)="cargarOtras()">Reintentar</button>
           </div>
-        } @else if (!visibles().length) {
+        } @else if (!obligaciones().length) {
           <div class="empty-state">
             <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
             <strong>Al día</strong>
             <p>Este usuario no tiene multas ni otros rubros pendientes.</p>
           </div>
         } @else {
-          <!-- ÁRBOL MANTENIDO PARA MULTAS Y OTROS -->
-          @if (arbol().length) {
             <ul class="fin-tree cobro-tree" aria-label="Obligaciones pendientes por año y mes">
               @for (a of arbol(); track a.clave) {
                 @let idsAnio = idsDe(a);
@@ -210,11 +204,8 @@
             </ul>
             <div class="cobro-tree__resumen" aria-live="polite">
               <span class="text-muted">Seleccionado</span>
-              <span><strong class="money">${{ seleccionadoVisible().toFixed(2) }}</strong> <span class="text-muted">de</span> <span class="money">${{ totalVisible().toFixed(2) }}</span></span>
+              <span><strong class="money">${{ totalSeleccionadoOtras().toFixed(2) }}</strong> <span class="text-muted">de</span> <span class="money">${{ totalOtras().toFixed(2) }}</span></span>
             </div>
-          } @else {
-            <p class="text-muted">No hay obligaciones de este tipo.</p>
-          }
         }
       }
     </section>
@@ -251,7 +242,7 @@
         <h3 class="fin-panel__title" id="cobro-caja-titulo"><i class="ri-safe-2-line" aria-hidden="true"></i> Caja</h3>
         <div class="summary" style="margin-top: 1rem">
           <div class="summary__row">
-            <span class="text-muted">{{ seleccionadas().length }} {{ seleccionadas().length === 1 ? 'obligación' : 'obligaciones' }}</span>
+            <span class="text-muted">{{ cantidadSeleccionada() }} {{ cantidadSeleccionada() === 1 ? 'obligación' : 'obligaciones' }} · {{ pestana() === 'AGUA' ? 'agua anual' : 'multas y otros' }}</span>
           </div>
           <div class="summary__total money" aria-live="polite">${{ total().toFixed(2) }}</div>
           <hr class="summary__divider" />
@@ -280,7 +271,7 @@
           <button type="button" class="btn btn--primary btn--lg btn--block pressable" [disabled]="!!bloqueo() || procesando()" (click)="cobrar()">
             <i class="ri-check-line" aria-hidden="true"></i> {{ procesando() ? 'Registrando…' : 'Registrar pago' }}
           </button>
-          @if (bloqueo() && seleccionadas().length) {
+          @if (bloqueo() && cantidadSeleccionada()) {
             <p class="field__hint" aria-live="polite">{{ bloqueo() }}</p>
           }
         </div>
