@@ -199,10 +199,12 @@ async function consultaPublicaPorCedula(req, res) {
   // El agua se cobra una vez al año: sus obligaciones se muestran junto a multas y otros cobros.
   const [anuales] = await db.query(
     `SELECT o.id, o.periodo_anio, o.valor_total, o.estado, o.fecha_emision,
-            (SELECT d.pago_anual_agua_id FROM pago_anual_agua_detalle d WHERE d.obligacion_anual_agua = o.id
+            (SELECT d.pago_anual_agua_id FROM pago_anual_agua_detalle d
+             JOIN pago_anual_agua p ON p.id = d.pago_anual_agua_id AND p.estado = 'VIGENTE'
+             WHERE d.obligacion_anual_agua = o.id
              ORDER BY d.pago_anual_agua_id DESC LIMIT 1) AS pago_anual_id
      FROM obligacion_anual_agua o
-     WHERE o.persona_id = ?
+     WHERE o.persona_id = ? AND o.estado <> 'ANULADA'
      ORDER BY o.periodo_anio DESC`,
     [persona.id]
   );
@@ -217,7 +219,7 @@ async function consultaPublicaPorCedula(req, res) {
       mes: null,
       periodo: `Año ${o.periodo_anio}`,
       valor: Number(o.valor_total),
-      estado: o.estado === 'PAGADO' ? 'PAGADA' : o.estado,
+      estado: o.estado,
       fechaEmision: o.fecha_emision,
       pagoId: null,
       pagoAnualId: o.pago_anual_id || null

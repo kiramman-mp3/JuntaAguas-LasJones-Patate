@@ -84,7 +84,7 @@ test('el pago anual de agua tiene una obligación por usuario activo y año, y s
   const huerfanas = await uno(
     `SELECT COUNT(*) AS c FROM obligacion_anual_agua o
      LEFT JOIN pago_anual_agua_detalle d ON d.obligacion_anual_agua = o.id
-     WHERE (o.estado = 'PAGADO') <> (d.id IS NOT NULL)`
+     WHERE (o.estado = 'PAGADA') <> (d.id IS NOT NULL)`
   );
   assert.equal(huerfanas.c, 0, 'toda obligación pagada tiene su detalle y viceversa');
 

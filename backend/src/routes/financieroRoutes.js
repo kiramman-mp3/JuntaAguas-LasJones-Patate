@@ -176,10 +176,33 @@ router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
  *     tags: [Gestión Financiera]
  *     summary: Registrar el pago de obligaciones anuales de agua por transferencia o depósito (ADMIN)
  *     security: [{ bearerAuth: [] }]
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Pagos anuales de agua (filtros desde, hasta, estado, persona_id). Un usuario solo ve los suyos.
+ *     security: [{ bearerAuth: [] }]
+ * /financiero/agua-anual/pagos/{id}:
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Detalle de un pago anual de agua para reimprimir su comprobante (ADMIN o titular)
+ *     security: [{ bearerAuth: [] }]
+ * /financiero/agua-anual/pagos/{id}/anular:
+ *   post:
+ *     tags: [Gestión Financiera]
+ *     summary: Anular un pago anual de agua y devolver sus obligaciones a PENDIENTE (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ * /financiero/agua-anual/obligaciones/{id}/anular:
+ *   post:
+ *     tags: [Gestión Financiera]
+ *     summary: Anular una obligación anual de agua pendiente (ADMIN)
+ *     security: [{ bearerAuth: [] }]
  */
 router.get('/agua-anual/resumen', ...soloAdmin, financieroController.getResumenAnualAgua);
 router.post('/agua-anual/obligaciones', ...soloAdmin, financieroController.generarObligacionesAnualesAgua);
 router.get('/agua-anual/obligaciones/:personaId', ...soloAdmin, financieroController.getObligacionesAnualesAgua);
+router.post('/agua-anual/obligaciones/:id/anular', ...soloAdmin, financieroController.anularObligacionAnualAgua);
+router.get('/agua-anual/pagos', verificarToken, financieroController.getPagosAnualesAgua);
+router.get('/agua-anual/pagos/:id', verificarToken, financieroController.getPagoAnualAguaById);
 router.post('/agua-anual/pagos', ...soloAdmin, financieroController.registrarPagoAnualAgua);
+router.post('/agua-anual/pagos/:id/anular', ...soloAdmin, financieroController.anularPagoAnualAgua);
 
 module.exports = router;

@@ -210,11 +210,11 @@ async function generarObligacionesAnualesAgua(conexion, { anio, valorTotal = nul
 async function resumenAnualAgua(conexion, anio) {
   const [[fila]] = await conexion.query(
     `SELECT COUNT(*) AS emitidas,
-            COALESCE(SUM(estado = 'PAGADO'), 0) AS pagadas,
+            COALESCE(SUM(estado = 'PAGADA'), 0) AS pagadas,
             COALESCE(SUM(estado = 'PENDIENTE'), 0) AS pendientes,
             COALESCE(SUM(valor_total), 0) AS total,
-            COALESCE(SUM(CASE WHEN estado = 'PAGADO' THEN valor_total END), 0) AS recaudado
-     FROM obligacion_anual_agua WHERE periodo_anio = ?`,
+            COALESCE(SUM(CASE WHEN estado = 'PAGADA' THEN valor_total END), 0) AS recaudado
+     FROM obligacion_anual_agua WHERE periodo_anio = ? AND estado <> 'ANULADA'`,
     [anio]
   );
   return {
@@ -266,16 +266,52 @@ async function registrarPagoAnualAgua(conexion, { personaId, obligacionesIds, me
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [personaId, valorTotal, metodo, referencia, observacion, fechaPago || new Date(), cuentaId]
   );
-  await conexion.query("UPDATE obligacion_anual_agua SET estado = 'PAGADO' WHERE id IN (?)", [ids]);
+  await conexion.query("UPDATE obligacion_anual_agua SET estado = 'PAGADA' WHERE id IN (?)", [ids]);
   await conexion.query(
-    'INSERT INTO pago_anual_agua_detalle (pago_anual_agua_id, obligacion_anual_agua) VALUES ?',
-    [ids.map((obligacionId) => [pago.insertId, obligacionId])]
+    'INSERT INTO pago_anual_agua_detalle (pago_anual_agua_id, obligacion_anual_agua, valor_pagado) VALUES ?',
+    [obligaciones.map((ob) => [pago.insertId, ob.id, ob.valor_total])]
   );
   return { pagoId: pago.insertId, valorTotal, actualizados: ids.length };
+}
+
+/** Anula un pago anual de agua vigente y devuelve sus obligaciones a PENDIENTE; conserva el detalle como historial. */
+async function anularPagoAnualAgua(conexion, { pagoId, motivo, cuentaId }) {
+  const [pagos] = await conexion.query('SELECT * FROM pago_anual_agua WHERE id = ? FOR UPDATE', [pagoId]);
+  if (!pagos.length) throw notFound('Pago anual de agua no encontrado.');
+  if (pagos[0].estado === 'ANULADO') throw conflict('Este pago ya fue anulado.');
+
+  const [detalles] = await conexion.query('SELECT obligacion_anual_agua AS id FROM pago_anual_agua_detalle WHERE pago_anual_agua_id = ?', [pagoId]);
+  if (detalles.length) {
+    await conexion.query(
+      "UPDATE obligacion_anual_agua SET estado = 'PENDIENTE' WHERE id IN (?) AND estado = 'PAGADA'",
+      [detalles.map((d) => d.id)]
+    );
+  }
+  await conexion.query(
+    `UPDATE pago_anual_agua SET estado = 'ANULADO', motivo_anulacion = ?, fecha_anulacion = UTC_TIMESTAMP(), anulado_por_cuenta_id = ?
+     WHERE id = ?`,
+    [motivo, cuentaId, pagoId]
+  );
+  return { pago: pagos[0], obligaciones: detalles.length };
+}
+
+/** Anula una obligación anual pendiente (por ejemplo, una exoneración aprobada en asamblea). */
+async function anularObligacionAnualAgua(conexion, { obligacionId, motivo, cuentaId }) {
+  const [filas] = await conexion.query('SELECT estado FROM obligacion_anual_agua WHERE id = ? FOR UPDATE', [obligacionId]);
+  if (!filas.length) throw notFound('Obligación anual no encontrada.');
+  if (filas[0].estado !== 'PENDIENTE') {
+    throw conflict(`Solo se pueden anular obligaciones pendientes; esta se encuentra ${filas[0].estado}.`);
+  }
+  await conexion.query(
+    `UPDATE obligacion_anual_agua SET estado = 'ANULADA', anulada_por_cuenta_id = ?, fecha_anulacion = UTC_TIMESTAMP(), motivo_anulacion = ?
+     WHERE id = ?`,
+    [cuentaId, motivo, obligacionId]
+  );
 }
 
 module.exports = {
   crearObligacionManual, anularObligacion, registrarEgreso, DIAS_PARA_VENCER, vencimientoPorDefecto,
   redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, registrarPago, anularPago,
-  generarObligacionesAnualesAgua, resumenAnualAgua, obligacionesAnualesPendientes, registrarPagoAnualAgua
+  generarObligacionesAnualesAgua, resumenAnualAgua, obligacionesAnualesPendientes, registrarPagoAnualAgua,
+  anularPagoAnualAgua, anularObligacionAnualAgua
 };

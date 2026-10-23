@@ -122,7 +122,7 @@ test('registra el pago, marca las obligaciones y deja la auditoría', async () =
   const [detalles] = await db.query('SELECT obligacion_anual_agua FROM pago_anual_agua_detalle WHERE pago_anual_agua_id = ?', [pago.id]);
   assert.equal(detalles.length, 2);
   const [estados] = await db.query('SELECT estado FROM obligacion_anual_agua WHERE id IN (?)', [ids]);
-  assert.ok(estados.every((e) => e.estado === 'PAGADO'));
+  assert.ok(estados.every((e) => e.estado === 'PAGADA'));
   assert.deepEqual((await pendientes(usuario.personaId)).body.data, []);
 
   const [auditoria] = await db.query("SELECT 1 FROM auditoria WHERE entidad = 'pago_anual_agua' AND accion = 'PAGO' AND entidad_id = ?", [pago.id]);
@@ -188,6 +188,57 @@ test('una obligación anual de un año ya cerrado cuenta como cartera vencida', 
   const panel = (await request(app).get('/api/dashboard/resumen').set(auth(admin))).body.data.finanzas;
   assert.ok(panel.carteraVencida >= vencido);
   assert.ok(panel.usuariosEnMora >= 2);
+});
+
+test('lista los pagos anuales: la directiva todos, el usuario solo los suyos, y el detalle sirve para reimprimir', async () => {
+  const todos = await request(app).get('/api/financiero/agua-anual/pagos').set(auth(admin));
+  assert.equal(todos.status, 200);
+  assert.ok(todos.body.data.some((p) => p.persona_id === usuario.personaId));
+  assert.ok(todos.body.data.some((p) => p.persona_id === otro.personaId));
+  const pagoUsuario = todos.body.data.find((p) => p.persona_id === usuario.personaId);
+  assert.equal(pagoUsuario.anios, '2025, 2026');
+  assert.equal(pagoUsuario.estado, 'VIGENTE');
+
+  const propios = await request(app).get(`/api/financiero/agua-anual/pagos?persona_id=${otro.personaId}`).set(auth(usuario));
+  assert.ok(propios.body.data.every((p) => p.persona_id === usuario.personaId), 'un usuario no ve pagos ajenos');
+
+  const detalle = await request(app).get(`/api/financiero/agua-anual/pagos/${pagoUsuario.id}`).set(auth(usuario));
+  assert.equal(detalle.status, 200);
+  assert.deepEqual(detalle.body.data.detalles.map((d) => [d.periodo_anio, d.valor_pagado]), [[2025, 8], [2026, 10]]);
+  assert.equal((await request(app).get(`/api/financiero/agua-anual/pagos/${pagoUsuario.id}`).set(auth(otro))).status, 404);
+});
+
+test('anular un pago anual devuelve sus obligaciones a pendiente, sale del balance y permite volver a cobrarlas', async () => {
+  const [[pago]] = await db.query("SELECT id, valor_total FROM pago_anual_agua WHERE persona_id = ? AND estado = 'VIGENTE'", [usuario.personaId]);
+  const ingresosAntes = (await balance()).body.balance.totalIngresos;
+  const anular = (motivo, quien = admin) => request(app).post(`/api/financiero/agua-anual/pagos/${pago.id}/anular`).set(auth(quien)).send({ motivo });
+
+  assert.equal((await anular('Error de digitación', usuario)).status, 403);
+  assert.equal((await anular('x')).status, 400, 'motivo muy corto');
+  assert.equal((await anular('Error de digitación')).status, 200);
+  assert.equal((await anular('Otra vez')).status, 409);
+
+  const [[anulado]] = await db.query('SELECT estado, motivo_anulacion, anulado_por_cuenta_id FROM pago_anual_agua WHERE id = ?', [pago.id]);
+  assert.deepEqual({ ...anulado, anulado_por_cuenta_id: Number(anulado.anulado_por_cuenta_id) },
+    { estado: 'ANULADO', motivo_anulacion: 'Error de digitación', anulado_por_cuenta_id: admin.cuentaId });
+  assert.deepEqual((await pendientes(usuario.personaId)).body.data.map((o) => o.periodo_anio), [2024, 2025, 2026]);
+  assert.equal((await balance()).body.balance.totalIngresos, Math.round((ingresosAntes - Number(pago.valor_total)) * 100) / 100);
+
+  const ids = (await pendientes(usuario.personaId)).body.data.filter((o) => o.periodo_anio >= 2025).map((o) => o.id);
+  const nuevo = await pagar({ persona_id: usuario.personaId, obligacionesIds: ids, metodo: 'DEPOSITO', referencia: 'DEP-55' });
+  assert.equal(nuevo.status, 201, JSON.stringify(nuevo.body));
+  const [detalles] = await db.query('SELECT pago_anual_agua_id FROM pago_anual_agua_detalle WHERE obligacion_anual_agua IN (?)', [ids]);
+  assert.equal(detalles.length, 4, 'el detalle del pago anulado queda como historial');
+});
+
+test('una obligación anual pendiente se puede anular y ya no se cobra ni cuenta como deuda', async () => {
+  const [[obligacion]] = await db.query("SELECT id FROM obligacion_anual_agua WHERE persona_id = ? AND periodo_anio = 2024", [usuario.personaId]);
+  const anular = () => request(app).post(`/api/financiero/agua-anual/obligaciones/${obligacion.id}/anular`).set(auth(admin)).send({ motivo: 'Exonerado por asamblea' });
+  assert.equal((await anular()).status, 200);
+  assert.equal((await anular()).status, 409);
+  assert.ok(!(await pendientes(usuario.personaId)).body.data.some((o) => o.id === obligacion.id));
+  const consulta = await request(app).get(`/api/personas/consulta/${usuario.cedula}`).set(auth(usuario));
+  assert.ok(!consulta.body.resultado.deudas.some((d) => d.tipo === 'AGUA_ANUAL' && d.id === obligacion.id));
 });
 
 test('el balance respeta el rango de fechas para los pagos anuales', async () => {
