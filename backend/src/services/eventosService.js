@@ -5,7 +5,7 @@
  */
 const { badRequest, notFound, conflict } = require('../shared/errors');
 const { hoy, yaOcurrio } = require('../shared/dates');
-const { conceptoPorCodigo, tarifaVigente } = require('./finanzasService');
+const { conceptoPorCodigo, tarifaVigente, vencimientoPorDefecto } = require('./finanzasService');
 
 const ESTADOS_ABIERTOS = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO'];
 const ESTADOS_ASISTENCIA = ['PENDIENTE', 'PRESENTE', 'AUSENTE', 'JUSTIFICADO'];
@@ -170,12 +170,12 @@ async function finalizar(conexion, evento, ahora = new Date()) {
 
     const filas = personas
       .filter((p) => p.estado === 'AUSENTE' && !yaMultadas.has(Number(p.persona_id)))
-      .map((p) => [p.persona_id, conceptoId, evento.id, Number(evento.fecha.slice(0, 4)), null, emision, valor, 'AUTOMATICA', 'PENDIENTE', observacion]);
+      .map((p) => [p.persona_id, conceptoId, evento.id, Number(evento.fecha.slice(0, 4)), null, emision, vencimientoPorDefecto(emision), valor, 'AUTOMATICA', 'PENDIENTE', observacion]);
 
     if (filas.length) {
       // periodo_mes NULL: la multa se identifica por el evento, así dos eventos del mismo mes generan sus propias multas.
       await conexion.query(
-        `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado, observacion)
+        `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, fecha_vencimiento, valor, origen, estado, observacion)
          VALUES ?`,
         [filas]
       );

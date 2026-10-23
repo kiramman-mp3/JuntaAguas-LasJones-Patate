@@ -32,19 +32,24 @@ test('los usuarios tienen cédulas ecuatorianas válidas y únicas', async () =>
   assert.ok(personas.every((p) => esCedulaValida(p.cedula)));
 });
 
-test('la facturación usa la tarifa vigente de cada mes', async () => {
+test('el pago anual de cada año usa la tarifa AGUA_ANUAL vigente al 1 de enero y no hay cuotas mensuales', async () => {
   const [tarifas] = await db.query(
-    "SELECT t.valor, t.vigencia_desde, t.vigencia_hasta FROM tarifas t JOIN conceptos_cobro c ON c.id = t.concepto_id AND c.codigo = 'AGUA_MENSUAL' ORDER BY t.vigencia_desde"
+    "SELECT t.valor, t.vigencia_desde, t.vigencia_hasta FROM tarifas t JOIN conceptos_cobro c ON c.id = t.concepto_id AND c.codigo = 'AGUA_ANUAL' ORDER BY t.vigencia_desde"
   );
   assert.equal(tarifas.length, 2);
   assert.equal(tarifas[0].vigencia_hasta, '2025-05-31');
   const fueraDeTarifa = await uno(
-    `SELECT COUNT(*) AS n FROM obligaciones o JOIN conceptos_cobro c ON c.id = o.concepto_id AND c.codigo = 'AGUA_MENSUAL'
-     JOIN tarifas t ON t.concepto_id = c.id AND o.fecha_emision BETWEEN t.vigencia_desde AND COALESCE(t.vigencia_hasta, '9999-12-31')
-     WHERE o.valor <> t.valor`
+    `SELECT COUNT(*) AS n FROM obligacion_anual_agua o
+     JOIN conceptos_cobro c ON c.codigo = 'AGUA_ANUAL'
+     JOIN tarifas t ON t.concepto_id = c.id AND MAKEDATE(o.periodo_anio, 1) BETWEEN t.vigencia_desde AND COALESCE(t.vigencia_hasta, '9999-12-31')
+     WHERE o.valor_total <> t.valor`
   );
   assert.equal(fueraDeTarifa.n, 0);
-  assert.ok(resultado.facturas > 0);
+  assert.ok(resultado.obligacionesAnuales > 0);
+  const mensuales = await uno(
+    "SELECT COUNT(*) AS n FROM obligaciones o JOIN conceptos_cobro c ON c.id = o.concepto_id AND c.codigo = 'AGUA_MENSUAL'"
+  );
+  assert.equal(mensuales.n, 0);
 });
 
 test('los pagos son coherentes con sus obligaciones y nunca están en el futuro', async () => {
@@ -66,9 +71,15 @@ test('los pagos son coherentes con sus obligaciones y nunca están en el futuro'
 
 test('el pago anual de agua tiene una obligación por usuario activo y año, y sus pagos son coherentes', async () => {
   const [anios] = await db.query('SELECT periodo_anio AS anio, COUNT(*) AS total FROM obligacion_anual_agua GROUP BY periodo_anio ORDER BY anio');
-  assert.deepEqual(anios.map((a) => a.anio), [2025, 2026, 2027]);
-  const { c: activos } = await uno("SELECT COUNT(*) AS c FROM personas WHERE estado = 'ACTIVO'");
-  assert.ok(anios.every((a) => a.total === activos));
+  assert.deepEqual(anios.map((a) => a.anio), [2025, 2026], 'no se emiten años futuros');
+  const sinLote = await uno(
+    'SELECT COUNT(*) AS c FROM obligacion_anual_agua o WHERE NOT EXISTS (SELECT 1 FROM persona_lotes pl WHERE pl.persona_id = o.persona_id)'
+  );
+  assert.equal(sinLote.c, 0, 'solo pagan agua los usuarios con lote');
+  const { c: conLote } = await uno(
+    "SELECT COUNT(DISTINCT p.id) AS c FROM personas p JOIN persona_lotes pl ON pl.persona_id = p.id WHERE p.estado = 'ACTIVO'"
+  );
+  assert.ok(anios.at(-1).total >= conLote, 'cada usuario activo con lote tiene su obligación del año');
 
   const huerfanas = await uno(
     `SELECT COUNT(*) AS c FROM obligacion_anual_agua o
@@ -77,8 +88,11 @@ test('el pago anual de agua tiene una obligación por usuario activo y año, y s
   );
   assert.equal(huerfanas.c, 0, 'toda obligación pagada tiene su detalle y viceversa');
 
-  const futuras = await uno("SELECT COUNT(*) AS c FROM obligacion_anual_agua WHERE periodo_anio > 2026 AND estado = 'PAGADO'");
-  assert.equal(futuras.c, 0, 'el año siguiente queda pendiente');
+  const antesDeEmitir = await uno(
+    `SELECT COUNT(*) AS c FROM pago_anual_agua_detalle d JOIN pago_anual_agua p ON p.id = d.pago_anual_agua_id
+     JOIN obligacion_anual_agua o ON o.id = d.obligacion_anual_agua WHERE p.fecha_pago < o.fecha_emision`
+  );
+  assert.equal(antesDeEmitir.c, 0, 'ningún pago es anterior a la emisión');
   // fecha_pago está en UTC: el día de hoy en Ecuador termina a las 05:00 UTC del día siguiente.
   const enElFuturo = await uno('SELECT COUNT(*) AS c FROM pago_anual_agua WHERE fecha_pago >= ?', ['2026-03-16 05:00:00']);
   assert.equal(enElFuturo.c, 0);

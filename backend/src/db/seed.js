@@ -24,9 +24,10 @@ const SECTORES = [
 ];
 const REFERENCIAS = ['Junto a la acequia principal', 'Frente a la casa comunal', 'Bajo el reservorio', 'Junto al camino vecinal', 'Cerca de la escuela', 'Al filo de la quebrada', 'Tras la capilla', 'Junto al tanque rompepresión'];
 
+// Pago anual de agua: el valor de cada año es la tarifa AGUA_ANUAL vigente al 1 de enero.
 const TARIFAS_AGUA = [
-  { mesesAtras: 24, valor: 3.00, observacion: 'Tarifa aprobada en asamblea general ordinaria' },
-  { mesesAtras: 9, valor: 3.50, observacion: 'Incremento aprobado en asamblea por mantenimiento del canal' }
+  { mesesAtras: 24, valor: 36.00, observacion: 'Tarifa anual aprobada en asamblea general ordinaria' },
+  { mesesAtras: 9, valor: 42.00, observacion: 'Incremento aprobado en asamblea por mantenimiento del canal' }
 ];
 const MULTA_ASAMBLEA = 10;
 const MULTA_MINGA = 15;
@@ -260,7 +261,7 @@ function calendarioEventos(azar, meses, mesExtraordinaria) {
       lista.push({ tipo: 'ASAMBLEA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 0, 1)), hora: '08:00:00', horaFin: '12:00:00', titulo: `Asamblea General Ordinaria ${['enero', 'abril', 'julio', 'octubre'][[1, 4, 7, 10].indexOf(mes)]} ${anio}` });
     }
     if (i === mesExtraordinaria) {
-      lista.push({ tipo: 'ASAMBLEA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 0, 3)), hora: '14:00:00', horaFin: '17:00:00', titulo: `Asamblea Extraordinaria: incremento de la tarifa de agua ${anio}`, extraordinaria: true });
+      lista.push({ tipo: 'ASAMBLEA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 0, 3)), hora: '14:00:00', horaFin: '17:00:00', titulo: `Asamblea Extraordinaria: incremento del pago anual de agua ${anio}`, extraordinaria: true });
     }
     lista.push({ tipo: 'MINGA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 6, 2)), hora: '07:00:00', horaFin: '13:00:00', titulo: azar.elegir(TRABAJOS_MINGA) });
   });
@@ -281,7 +282,7 @@ async function crearEvento(conexion, e, { cuentaId, estado }) {
     [e.tipo, e.titulo, descripcion, e.fecha, e.hora, e.horaFin, lugar, estado, valorMulta, cuentaId]
   );
   if (e.tipo === 'ASAMBLEA') {
-    const puntos = e.extraordinaria ? ['Constatación del quórum', 'Propuesta de incremento de la tarifa mensual de agua', 'Votación y resolución'] : ORDEN_DEL_DIA;
+    const puntos = e.extraordinaria ? ['Constatación del quórum', 'Propuesta de incremento del pago anual de agua', 'Votación y resolución'] : ORDEN_DEL_DIA;
     await conexion.query(
       'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar) VALUES ?',
       [puntos.map((p, i) => [r.insertId, i + 1, p])]
@@ -338,7 +339,6 @@ async function pagarPendientes(conexion, azar, persona, fecha, cuentaId) {
 
 const PROBABILIDAD_PAGO = { PUNTUAL: 0.95, REGULAR: 0.45, MOROSO: 0.12 };
 
-const VALOR_PAGO_ANUAL_AGUA = 10;
 const PROBABILIDAD_PAGO_ANUAL = {
   PUNTUAL: { anterior: 0.9, actual: 0.85 },
   REGULAR: { anterior: 0.7, actual: 0.4 },
@@ -346,19 +346,14 @@ const PROBABILIDAD_PAGO_ANUAL = {
 };
 
 /**
- * Pago único anual de agua: una obligación por usuario activo para el año anterior, el actual y el siguiente.
- * Los años ya iniciados se pagan según el perfil del usuario; el año siguiente queda pendiente.
+ * Pagos del agua anual: cada obligación emitida (en enero de su año, ver sembrar) se paga dentro de
+ * su año según el perfil del usuario, nunca después de ayer. Lo que no se paga queda en cartera.
  */
 async function crearPagosAnualesAgua(conexion, azar, personasPorId, hoy, cuentaId) {
   const anioActual = Number(hoy.slice(0, 4));
-  let obligaciones = 0;
-  for (const anio of [anioActual - 1, anioActual, anioActual + 1]) {
-    const { generadas } = await finanzas.generarObligacionesAnualesAgua(conexion, { anio, valorTotal: VALOR_PAGO_ANUAL_AGUA });
-    obligaciones += generadas;
-  }
 
   const [iniciadas] = await conexion.query(
-    'SELECT id, persona_id, periodo_anio FROM obligacion_anual_agua WHERE periodo_anio <= ? ORDER BY id',
+    'SELECT id, persona_id, periodo_anio, fecha_emision FROM obligacion_anual_agua WHERE periodo_anio <= ? ORDER BY id',
     [anioActual]
   );
   let pagos = 0;
@@ -367,8 +362,8 @@ async function crearPagosAnualesAgua(conexion, azar, personasPorId, hoy, cuentaI
     const probabilidad = PROBABILIDAD_PAGO_ANUAL[persona.perfil][obligacion.periodo_anio < anioActual ? 'anterior' : 'actual'];
     if (!azar.probabilidad(probabilidad)) continue;
 
-    // El pago ocurre dentro del año de la obligación y nunca después de ayer.
-    const inicio = fechaIso(obligacion.periodo_anio, 1, 1);
+    // El pago ocurre entre la emisión y el fin del año de la obligación, y nunca después de ayer.
+    const inicio = obligacion.fecha_emision;
     const fin = [fechaIso(obligacion.periodo_anio, 12, 31), sumarDias(hoy, -1)].sort()[0];
     const dias = Math.round((Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`)) / 86400000);
     if (dias < 0) continue;
@@ -382,7 +377,7 @@ async function crearPagosAnualesAgua(conexion, azar, personasPorId, hoy, cuentaI
     });
     pagos++;
   }
-  return { obligaciones, pagos };
+  return { pagos };
 }
 
 async function crearEgresos(conexion, azar, meses, hoy, cuentaId) {
@@ -473,7 +468,7 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsua
     const turnos = await crearTurnos(conexion, lotes, fechaInicio);
 
     log('[seed] Tarifas...');
-    const agua = await finanzas.conceptoPorCodigo(conexion, 'AGUA_MENSUAL');
+    const agua = await finanzas.conceptoPorCodigo(conexion, 'AGUA_ANUAL');
     for (const t of TARIFAS_AGUA) {
       const { anio, mes } = sumarMeses(actual, -t.mesesAtras);
       await finanzas.registrarTarifa(conexion, { conceptoId: agua.id, valor: t.valor, vigenciaDesde: fechaIso(anio, mes, 1), observacion: t.observacion });
@@ -492,15 +487,20 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsua
       retiros.set(p.id, azar.entero(Math.floor(totalMeses / 3), totalMeses - 2));
     }
 
-    log(`[seed] Simulando ${totalMeses} meses de facturación, eventos y pagos...`);
+    log(`[seed] Simulando ${totalMeses} meses de pago anual de agua, eventos y pagos...`);
     const calendario = calendarioEventos(azar, meses, totalMeses - TARIFAS_AGUA[1].mesesAtras - 2);
-    const resumen = { facturas: 0, eventosRealizados: 0, multas: 0, pagos: 0 };
+    const resumen = { obligacionesAnuales: 0, eventosRealizados: 0, multas: 0, pagos: 0 };
     for (const [i, periodo] of meses.entries()) {
       const retirados = [...retiros].filter(([, mes]) => mes === i).map(([id]) => id);
       if (retirados.length) await conexion.query("UPDATE personas SET estado = 'INACTIVO' WHERE id IN (?)", [retirados]);
 
-      const factura = await finanzas.generarFacturacionMensual(conexion, periodo);
-      resumen.facturas += factura.generadas;
+      // El pago anual se emite al empezar cada año (o al inicio de la historia simulada).
+      if (i === 0 || periodo.mes === 1) {
+        const anual = await finanzas.generarObligacionesAnualesAgua(conexion, {
+          anio: periodo.anio, fechaEmision: fechaIso(periodo.anio, periodo.mes, 1)
+        });
+        resumen.obligacionesAnuales += anual.generadas;
+      }
 
       const prefijo = `${periodo.anio}-${dosDigitos(periodo.mes)}`;
       for (const e of calendario.filter((x) => x.fecha.startsWith(prefijo) && x.fecha < hoy)) {
