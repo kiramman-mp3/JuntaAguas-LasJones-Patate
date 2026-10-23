@@ -157,7 +157,7 @@ Primeros pasos en el panel, con la base vacía:
 - **Gestión de Usuarios → Padrón:** registre usuarios y sus cuentas de acceso.
 - **WhatsApp** (menú lateral): pulse *Conectar WhatsApp*, escanee el código QR con el teléfono de la Junta (*Dispositivos vinculados*) y elija el grupo donde se publicarán las convocatorias.
 
-Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1`; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador en el servidor.
+Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1` (con `0` detrás de un proxy, todas las peticiones parecen venir de la misma IP: la auditoría registra la IP del proxy y el backend lo advierte en el log). El inicio de sesión limita los intentos por IP y cédula (10 cada 15 min) y por IP (100 cada 15 min), y cada cuenta se bloquea 15 minutos tras 5 contraseñas incorrectas; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador en el servidor.
 
 ### Convocatorias por WhatsApp
 
