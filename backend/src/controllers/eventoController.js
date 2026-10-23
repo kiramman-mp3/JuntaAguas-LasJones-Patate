@@ -4,7 +4,6 @@
  */
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
-const { eliminarDocumento } = require('../services/documentStorage');
 const eventos = require('../services/eventosService');
 const documentos = require('../services/documentosEventoService');
 const { escribirListaAsistencia } = require('../services/listaAsistenciaPdf');
@@ -46,12 +45,11 @@ async function createEvento(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Evento registrado exitosamente.', eventoId });
 }
 
-/** Guardar los puntos del orden del día y sus actas; borra los archivos de los puntos eliminados. */
+/** Guardar los puntos del orden del día y su desarrollo en el acta general. */
 async function savePuntosAsamblea(req, res) {
   const { id } = idParam.parse(req.params);
   const { puntos } = puntosSchema.parse(req.body);
-  const { data, archivosEliminados } = await withTransaction((conexion) => eventos.guardarPuntos(conexion, id, puntos));
-  for (const url of archivosEliminados) await eliminarDocumento(url);
+  const { data } = await withTransaction((conexion) => eventos.guardarPuntos(conexion, id, puntos));
   await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'puntos_asamblea', entidadId: id, ip: req.ip, detalle: { puntos: data.length } });
   return res.json({ status: 'OK', message: 'Puntos del orden del día y actas guardados correctamente.', data, puntos: data });
 }

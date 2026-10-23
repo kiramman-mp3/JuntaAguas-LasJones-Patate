@@ -98,16 +98,6 @@
             ></textarea>
           </div>
         </div>
-        <div class="form-group">
-          <label for="tema-responsables">Responsables de la ejecución</label>
-          <input
-            id="tema-responsables"
-            type="text"
-            class="input input--sm"
-            [(ngModel)]="nuevoTema.responsables"
-            placeholder="Ej: Comisión de Riego sector La Merced"
-          />
-        </div>
         <div class="inset-panel__actions">
           <button type="button" class="btn btn--outline btn--sm" (click)="mostrarNuevoTema = false">
             Cancelar
@@ -165,19 +155,6 @@
                 ></textarea>
               </div>
             </div>
-
-            <footer class="acta-card__foot">
-              <div class="form-group acta-card__responsables">
-                <label class="label-sm" [for]="'responsables-' + $index">Responsables</label>
-                <input
-                  [id]="'responsables-' + $index"
-                  type="text"
-                  class="input input--sm"
-                  [(ngModel)]="punto.responsables"
-                  placeholder="Persona o comisión encargada…"
-                />
-              </div>
-            </footer>
           </article>
         }
       </div>

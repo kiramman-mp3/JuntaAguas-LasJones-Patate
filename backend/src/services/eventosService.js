@@ -334,17 +334,17 @@ async function crearEvento(conexion, datos, cuentaId) {
   );
   if (puntos.length) {
     await conexion.query(
-      'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion, titulo_acta) VALUES ?',
-      [puntos.map((p, i) => [r.insertId, i + 1, p.punto_tratar, p.tratado || null, p.resolucion || null, p.punto_tratar.slice(0, 255)])]
+      'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion) VALUES ?',
+      [puntos.map((p, i) => [r.insertId, i + 1, p.punto_tratar, p.tratado || null, p.resolucion || null])]
     );
   }
   return { eventoId: r.insertId, valorMulta, puntos: puntos.length };
 }
 
 /**
- * Guarda los puntos del orden del día y sus actas: actualiza los existentes por id,
- * crea los nuevos y elimina los que ya no se envían.
- * @returns {{ data: object[], archivosEliminados: string[] }} archivos firmados que quedaron huérfanos
+ * Guarda los puntos del orden del día y su desarrollo en el acta general: actualiza los
+ * existentes por id, crea los nuevos y elimina los que ya no se envían.
+ * @returns {{ data: object[] }} puntos resultantes, ordenados
  */
 async function guardarPuntos(conexion, id, puntos) {
   const evento = await obtenerEvento(conexion, id, { tipo: 'ASAMBLEA' });
@@ -353,7 +353,7 @@ async function guardarPuntos(conexion, id, puntos) {
   const [existentes] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? FOR UPDATE', [id]);
   const porId = new Map(existentes.map((p) => [p.id, p]));
   const validos = puntos
-    .map((p) => ({ ...p, texto: (p.punto_tratar || p.titulo_acta || '').trim() }))
+    .map((p) => ({ ...p, texto: (p.punto_tratar || '').trim() }))
     .filter((p) => p.texto)
     .map((p, i) => ({ ...p, orden: i + 1 }));
   if (validos.some((p) => p.id && !porId.has(p.id))) throw badRequest('Uno de los puntos no pertenece a esta asamblea.');
@@ -371,11 +371,8 @@ async function guardarPuntos(conexion, id, puntos) {
     const valores = {
       orden: p.orden,
       punto_tratar: p.texto,
-      titulo_acta: (p.titulo_acta || p.texto).slice(0, 255),
       tratado: p.tratado !== undefined ? p.tratado : previo?.tratado ?? null,
-      resolucion: p.resolucion !== undefined ? p.resolucion : previo?.resolucion ?? null,
-      responsables: p.responsables !== undefined ? p.responsables : previo?.responsables ?? null,
-      estado_acta: p.estado_acta || previo?.estado_acta || 'BORRADOR'
+      resolucion: p.resolucion !== undefined ? p.resolucion : previo?.resolucion ?? null
     };
     if (previo) {
       await conexion.query('UPDATE puntos_asamblea SET ? WHERE id = ?', [valores, previo.id]);
@@ -385,7 +382,7 @@ async function guardarPuntos(conexion, id, puntos) {
   }
 
   const [actualizados] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden ASC', [id]);
-  return { data: actualizados, archivosEliminados: eliminados.map((p) => p.acta_firmada_url).filter(Boolean) };
+  return { data: actualizados };
 }
 
 module.exports = {

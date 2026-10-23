@@ -236,7 +236,6 @@ describe('Módulo de Asambleas', () => {
         punto_tratar: 'Reparación compuerta lateral',
         tratado: 'Se revisa daño por lluvia',
         resolucion: 'Aprobar partida de $150',
-        responsables: 'Comisión técnica',
       };
       component.agregarTemaNuevo();
       expect(component.puntos.length).toBe(3);

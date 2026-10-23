@@ -309,10 +309,9 @@ async function realizarEvento(conexion, azar, eventoId, personasPorId, cuentaId)
   if (evento.tipo === 'ASAMBLEA') {
     await conexion.query(
       `UPDATE puntos_asamblea SET tratado = 'Se trató el punto con la participación de los asistentes.',
-         resolucion = CASE WHEN orden = 1 THEN 'Se constató el quórum reglamentario.' ELSE 'Aprobado por mayoría de los asistentes.' END,
-         estado_acta = 'APROBADA', fecha_acta = ?
+         resolucion = CASE WHEN orden = 1 THEN 'Se constató el quórum reglamentario.' ELSE 'Aprobado por mayoría de los asistentes.' END
        WHERE evento_id = ?`,
-      [instante(evento.fecha, evento.hora_fin || '12:00:00'), eventoId]
+      [eventoId]
     );
   }
   const { multasGeneradas } = await eventos.finalizar(conexion, evento, instante(evento.fecha, '18:00:00'));

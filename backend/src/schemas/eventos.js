@@ -37,12 +37,8 @@ const puntoSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   orden: z.coerce.number().int().min(1).max(200).optional(),
   punto_tratar: z.string().trim().max(5000).optional(),
-  titulo_acta: z.string().trim().max(255).nullish(),
   tratado: z.string().max(20000).nullish(),
-  resolucion: z.string().max(20000).nullish(),
-  responsables: z.string().trim().max(255).nullish(),
-  estado_acta: z.enum(['BORRADOR', 'APROBADA', 'FIRMADA']).optional(),
-  fecha_acta: z.string().nullish()
+  resolucion: z.string().max(20000).nullish()
 });
 const puntosSchema = z.object({ puntos: z.array(puntoSchema).max(100) });
 
