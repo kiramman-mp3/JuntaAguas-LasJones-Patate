@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
-import { aFecha, aFechaIso } from '../../../../core/utils/fechas';
+import { diaEnEcuador } from '../../../../core/utils/fechas';
 import { AsambleaItem, AsistentePadron, PuntoAsamblea } from './asamblea.model';
 
 const LUGAR_POR_DEFECTO = 'Casa Comunal Junta La Jones';
@@ -70,7 +70,7 @@ export class AsambleasService {
       subtipo_asamblea: subtipo,
       titulo: e.titulo,
       descripcion: e.descripcion || '',
-      fecha: e.fecha ? (typeof e.fecha === 'string' ? e.fecha.split('T')[0] : aFechaIso(aFecha(e.fecha) ?? new Date())) : '',
+      fecha: e.fecha ? diaEnEcuador(e.fecha) : '',
       hora_inicio: e.hora_inicio ? e.hora_inicio.substring(0, 5) : '18:00',
       hora_fin: e.hora_fin ? e.hora_fin.substring(0, 5) : '',
       lugar: e.lugar || LUGAR_POR_DEFECTO,

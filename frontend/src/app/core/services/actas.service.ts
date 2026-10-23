@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
-import { aFecha } from '../utils/fechas';
+import { diaEnEcuador } from '../utils/fechas';
 
 interface PdfMake { createPdf(documento: unknown): { download(nombre: string): void } }
 
@@ -51,12 +51,9 @@ export class ActasService {
    * @param asistenciaStats Opcional: Estadísticas de asistencia
    */
   generarActaPDF(evento: any, puntos: any[] = [], asistenciaStats?: any[]): Promise<void> {
-    const fechaObj = aFecha(evento.fecha) ?? new Date();
-    // Prevenir desfasaje UTC
-    const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
-    const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
-    const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();
-    const anio = dateParts.length === 3 ? parseInt(dateParts[0], 10) : fechaObj.getFullYear();
+    // Día del evento en el calendario de Ecuador, sin desfase por la zona del navegador.
+    const [anio, mes, dia] = diaEnEcuador(evento.fecha || new Date()).split('-').map(Number);
+    const mesIdx = mes - 1;
 
     const meses = [
       'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -298,11 +295,9 @@ export class ActasService {
    * Generar y descargar el PDF de Convocatoria a una Asamblea o Minga
    */
   generarConvocatoriaPDF(evento: any): Promise<void> {
-    const fechaObj = aFecha(evento.fecha) ?? new Date();
-    const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
-    const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
-    const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();
-    const anio = dateParts.length === 3 ? parseInt(dateParts[0], 10) : fechaObj.getFullYear();
+    // Día del evento en el calendario de Ecuador, sin desfase por la zona del navegador.
+    const [anio, mes, dia] = diaEnEcuador(evento.fecha || new Date()).split('-').map(Number);
+    const mesIdx = mes - 1;
 
     const meses = [
       'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
