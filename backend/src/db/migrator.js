@@ -41,7 +41,15 @@ async function addIndexIfMissing(db, tabla, indice, columnas) {
   if (!rows.length) await db.query(`ALTER TABLE \`${tabla}\` ADD INDEX \`${indice}\` ${columnas}`);
 }
 
-const helpers = { columnExists, addColumnIfMissing, dropColumnIfExists, addIndexIfMissing };
+async function addUniqueIfMissing(db, tabla, indice, columnas) {
+  const [rows] = await db.query(
+    'SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?',
+    [tabla, indice]
+  );
+  if (!rows.length) await db.query(`ALTER TABLE \`${tabla}\` ADD UNIQUE KEY \`${indice}\` ${columnas}`);
+}
+
+const helpers = { columnExists, addColumnIfMissing, dropColumnIfExists, addIndexIfMissing, addUniqueIfMissing };
 
 /** Divide un script SQL en sentencias, ignorando comentarios de línea. */
 function sentenciasSql(script) {
