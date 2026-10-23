@@ -1,6 +1,6 @@
 <app-modal
   titulo="Asistencia a minga"
-  [subtitulo]="minga().titulo + ' · ' + (minga().fecha | fechaLocal)"
+  [subtitulo]="minga().titulo + ' · ' + (minga().fecha | fechaLocal) + ' · ' + (minga().sector_nombre || 'Todos los sectores')"
   icono="ri-checkbox-circle-line"
   tono="success"
   tamano="lg"

@@ -59,7 +59,7 @@ export class MingasAdminComponent implements OnInit {
     const hoy = hoyEnEcuador();
     return this.mingas.filter(
       (m) =>
-        (!texto || `${m.titulo} ${m.lugar}`.toLocaleLowerCase('es').includes(texto)) &&
+        (!texto || `${m.titulo} ${m.lugar} ${m.sector_nombre || ''}`.toLocaleLowerCase('es').includes(texto)) &&
         (this.periodo === 'TODAS' || (this.periodo === 'PROXIMAS' ? m.fecha >= hoy : m.fecha < hoy))
     );
   }
