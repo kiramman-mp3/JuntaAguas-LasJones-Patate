@@ -207,7 +207,7 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
   if (desde) { filtros.push('e.fecha >= ?'); params.push(desde); }
   if (hasta) { filtros.push('e.fecha <= ?'); params.push(hasta); }
 
-  const [[{ totalComuneros }]] = await conexion.query("SELECT COUNT(*) AS totalComuneros FROM personas WHERE estado = 'ACTIVO'");
+  const [[{ totalUsuarios }]] = await conexion.query("SELECT COUNT(*) AS totalUsuarios FROM personas WHERE estado = 'ACTIVO'");
   const [comunerosPorSector] = await conexion.query(
     `SELECT l.sector_id, COUNT(DISTINCT pl.persona_id) AS total
      FROM persona_lotes pl
@@ -241,14 +241,14 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
 
   // Eventos cerrados reportan su padrón real; los abiertos, los comuneros activos actuales.
   const data = filas.map((e) => {
-    const totalSector = e.sector_id ? (mapaSectorTotal[e.sector_id] || 0) : totalComuneros;
+    const totalSector = e.sector_id ? (mapaSectorTotal[e.sector_id] || 0) : totalUsuarios;
     return {
       ...e,
       sector_id: e.sector_id ? Number(e.sector_id) : null,
       asistentes: Number(e.asistentes),
       registrados: Number(e.registrados),
       multas_generadas: Number(e.multas_generadas),
-      totalComuneros: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalSector
+      totalUsuarios: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalSector
     };
   });
   return data;

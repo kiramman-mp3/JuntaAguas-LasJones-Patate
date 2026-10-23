@@ -80,16 +80,14 @@ const egresoSchema = z.object({
 const facturacionSchema = z.object({ anio, mes, simular: z.boolean().default(false) });
 const resumenFacturacionQuery = z.object({ anio: anio.optional() });
 
-const personaIdParamSchema = z.object({
-  personaId: z.coerce.number().int().positive('ID de persona inválido.')
-});
-const registrarMasivoSchema = z.object({
-  anio: z.coerce.number().int().min(2000).max(2100),
-  valor_total: z.coerce.number().positive('El valor total debe ser mayor a 0.')
+const personaIdParam = z.object({ personaId: s.id });
+const generarAnualAguaSchema = z.object({
+  anio,
+  valor_total: s.montoPositivo
 });
 
 module.exports = {
   ESTADOS_OBLIGACION, METODOS, obligacionesQuery, porCedulaQuery, tarifaSchema, obligacionSchema, pagoSchema,
-  motivoSchema, rangoFechas, egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery
-  ,personaIdParamSchema,registrarMasivoSchema
+  motivoSchema, rangoFechas, egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery,
+  personaIdParam, generarAnualAguaSchema
 };

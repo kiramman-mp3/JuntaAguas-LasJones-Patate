@@ -13,7 +13,8 @@ const { hoy } = require('../shared/dates');
 const s = require('../shared/schemas');
 const {
   obligacionesQuery, porCedulaQuery, tarifaSchema, obligacionSchema, pagoSchema, motivoSchema, rangoFechas,
-  egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery,personaIdParamSchema,registrarMasivoSchema
+  egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery,
+  personaIdParam, generarAnualAguaSchema
 } = require('../schemas/finanzas');
 
 /** Catálogo de conceptos con la tarifa vigente hoy. */
@@ -183,85 +184,45 @@ async function getResumenFacturacion(req, res) {
   return res.json({ status: 'OK', data: { anio: anioResumen, meses } });
 }
 
-async function postRegistrarPagoMasivo(req, res) {
-  try {
-    const datos = registrarMasivoSchema.parse(req.body);
-    const registrosInsertados = await finanzas.registrarPagoMasivoAnual(db, datos);
-
-    return res.json({
-      status: 'OK',
-      message: `Se generaron ${registrosInsertados} registros de pago exitosamente.`,
-      data: { registros_afectados: registrosInsertados }
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ status: 'ERROR', message: error.errors });
-    }
-    return res.status(500).json({ status: 'ERROR', message: error.message });
-  }
-}
-
-async function getPagosPendientesPersona(req, res) {
-  try {
-    const { personaId } = personaIdParamSchema.parse(req.params);
-
-    const pagosPendientes = await finanzas.obtenerPagosPendientesPorPersona(db, personaId);
-
-    return res.json({
-      status: 'OK',
-      data: pagosPendientes
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ status: 'ERROR', message: error.errors });
-    }
-    return res.status(500).json({ status: 'ERROR', message: error.message });
-  }
-}
-
-async function patchMarcarPagoPagado(req, res) {
-  const datos = pagoSchema.parse(req.body);
-
-  const resultado = await withTransaction((conexion) => 
-    finanzas.registrarPagosAnualesAgua(conexion, {
-      persona_id: datos.persona_id,
-      obligacionesIds: datos.obligacionesIds,
-      metodo: datos.metodo,
-      referencia: datos.referencia,
-      observacion: datos.observacion ?? datos.observaciones ?? null,
-    })
-  );
-
-  if (resultado.actualizados === 0) {
-    return res.status(404).json({
-      status: 'ERROR',
-      message: 'No se encontraron pagos pendientes válidos para los IDs especificados.'
+/** Generar la obligación del pago anual de agua del año para todos los usuarios activos. */
+async function generarObligacionesAnualesAgua(req, res) {
+  const { anio, valor_total: valorTotal } = generarAnualAguaSchema.parse(req.body);
+  const resultado = await withTransaction((conexion) => finanzas.generarObligacionesAnualesAgua(conexion, { anio, valorTotal }));
+  if (resultado.generadas) {
+    await registrarAuditoria({
+      cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'obligacion_anual_agua', ip: req.ip,
+      detalle: { anio, valorTotal, generadas: resultado.generadas, existentes: resultado.existentes }
     });
   }
-
-  await registrarAuditoria({
-    cuentaId: req.user.cuentaId, 
-    accion: 'PAGO_AGUA', 
-    entidad: 'pago_anual_agua', 
-    entidadId: resultado.pagoId, 
-    ip: req.ip,
-    detalle: { 
-      persona_id: datos.persona_id, 
-      pagoId: resultado.pagoId,
-      valorTotal: resultado.valorTotal,
-      actualizados: resultado.actualizados, 
-      obligacionesIds: datos.obligacionesIds, 
-      metodo: datos.metodo 
-    }
-  });
-
   return res.status(201).json({
     status: 'OK',
-    message: 'Pago de agua registrado exitosamente.',
-    pagoId: resultado.pagoId,
-    valorTotal: resultado.valorTotal,
-    actualizados: resultado.actualizados
+    message: `Se generaron ${resultado.generadas} obligaciones del ${anio}; ${resultado.existentes} ya existían.`,
+    data: resultado
   });
+}
+
+/** Obligaciones anuales de agua pendientes de un usuario. */
+async function getObligacionesAnualesAgua(req, res) {
+  const { personaId } = personaIdParam.parse(req.params);
+  return res.json({ status: 'OK', data: await finanzas.obligacionesAnualesPendientes(db, personaId) });
+}
+
+/** Registrar el pago de obligaciones anuales de agua pendientes. */
+async function registrarPagoAnualAgua(req, res) {
+  const datos = pagoSchema.parse(req.body);
+  const resultado = await withTransaction((conexion) => finanzas.registrarPagoAnualAgua(conexion, {
+    personaId: datos.persona_id,
+    obligacionesIds: datos.obligacionesIds,
+    metodo: datos.metodo,
+    referencia: datos.referencia,
+    observacion: datos.observacion ?? datos.observaciones ?? null,
+    cuentaId: req.user.cuentaId
+  }));
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId, accion: 'PAGO', entidad: 'pago_anual_agua', entidadId: resultado.pagoId, ip: req.ip,
+    detalle: { persona_id: datos.persona_id, valorTotal: resultado.valorTotal, obligacionesIds: datos.obligacionesIds, metodo: datos.metodo }
+  });
+  return res.status(201).json({ status: 'OK', message: 'Pago anual de agua registrado exitosamente.', ...resultado });
 }
 
 module.exports = {
@@ -284,7 +245,7 @@ module.exports = {
   getObligacionesMensualidad,
   generarFacturacionMensual,
   getResumenFacturacion,
-  postRegistrarPagoMasivo,
-  getPagosPendientesPersona,
-  patchMarcarPagoPagado
+  generarObligacionesAnualesAgua,
+  getObligacionesAnualesAgua,
+  registrarPagoAnualAgua
 };

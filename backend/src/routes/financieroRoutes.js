@@ -156,8 +156,40 @@ router.get('/egresos', ...soloAdmin, financieroController.getEgresos);
 router.post('/egresos', ...soloAdmin, financieroController.createEgreso);
 router.get('/balance', ...soloAdmin, financieroController.getBalanceReport);
 router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
-/* Regristro de pagos anuales */
-router.get('/pagos_pendientes/:personaId', ...soloAdmin, financieroController.getPagosPendientesPersona);
-router.patch('/marcar_pagado', ...soloAdmin, financieroController.patchMarcarPagoPagado);
-router.post('/crear_pago_masivo', ...soloAdmin, financieroController.postRegistrarPagoMasivo);
+/**
+ * @openapi
+ * /financiero/agua-anual/obligaciones:
+ *   post:
+ *     tags: [Gestión Financiera]
+ *     summary: Generar la obligación del pago anual de agua del año para todos los usuarios activos (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [anio, valor_total]
+ *             properties:
+ *               anio: { type: integer, example: 2026 }
+ *               valor_total: { type: number, example: 10 }
+ *     responses:
+ *       '201': { description: Obligaciones generadas; las ya existentes del año se respetan }
+ * /financiero/agua-anual/obligaciones/{personaId}:
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Obligaciones anuales de agua pendientes de un usuario (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: personaId, required: true, schema: { type: integer } }
+ * /financiero/agua-anual/pagos:
+ *   post:
+ *     tags: [Gestión Financiera]
+ *     summary: Registrar el pago de obligaciones anuales de agua por transferencia o depósito (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/agua-anual/obligaciones', ...soloAdmin, financieroController.generarObligacionesAnualesAgua);
+router.get('/agua-anual/obligaciones/:personaId', ...soloAdmin, financieroController.getObligacionesAnualesAgua);
+router.post('/agua-anual/pagos', ...soloAdmin, financieroController.registrarPagoAnualAgua);
+
 module.exports = router;
