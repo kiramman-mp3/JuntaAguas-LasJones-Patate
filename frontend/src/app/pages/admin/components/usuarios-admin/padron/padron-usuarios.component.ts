@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
-import { PersonaListado } from '../../../../../core/models/api-payloads';
+import { LoteItem, PersonaListado, SectorItem } from '../../../../../core/models/api-payloads';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
@@ -27,8 +27,8 @@ export class PadronUsuariosComponent implements OnInit {
   /** ?nuevo=usuario abre el formulario desde el acceso rápido del dashboard. */
   readonly nuevo = input<string | undefined>();
 
-  readonly usuarios = signal<any[]>([]);
-  readonly sectores = signal<any[]>([]);
+  readonly usuarios = signal<PersonaListado[]>([]);
+  readonly sectores = signal<SectorItem[]>([]);
   readonly cargando = signal(true);
   readonly error = signal(false);
   readonly pagina = signal(1);
@@ -44,7 +44,7 @@ export class PadronUsuariosComponent implements OnInit {
   readonly formulario = signal<{ usuario: PersonaListado | null } | null>(null);
   readonly vincularA = signal<PersonaListado | null>(null);
   readonly lotesDeUsuario = signal<PersonaListado | null>(null);
-  readonly loteDetalle = signal<any | null>(null);
+  readonly loteDetalle = signal<LoteItem | null>(null);
 
   constructor() {
     effect(() => {
@@ -141,7 +141,7 @@ export class PadronUsuariosComponent implements OnInit {
     this.cargar();
   }
 
-  verLoteDesdeUsuario(lote: any): void {
+  verLoteDesdeUsuario(lote: LoteItem): void {
     this.lotesDeUsuario.set(null);
     this.loteDetalle.set(lote);
   }

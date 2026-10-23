@@ -5,7 +5,10 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
-import { ApiResponse, EventoItem, SectorItem } from '../../core/models/api-payloads';
+import { ApiResponse, CronogramaSectorPublico, EventoItem, SectorItem, TurnoCronogramaPublico } from '../../core/models/api-payloads';
+
+type DiaCronograma = CronogramaSectorPublico['dias'][number];
+type DiaVisible = DiaCronograma & { turnosFiltrados: TurnoCronogramaPublico[] };
 
 interface StatsPublicos {
   totalUsuarios: number;
@@ -29,7 +32,7 @@ export class InicioComponent implements OnInit {
   sectores: SectorItem[] = [];
 
   modalCronogramaAbierto = false;
-  sectorCronograma: any = null;
+  sectorCronograma: CronogramaSectorPublico | null = null;
   cargandoCronograma = false;
   nombreSectorModal = '';
   sectorIdModal = 0;
@@ -86,7 +89,7 @@ export class InicioComponent implements OnInit {
     this.diaSeleccionadoModal = 'TODOS';
     this.busquedaModal = '';
 
-    this.http.get<ApiResponse<any[]>>(`${environment.apiUrl}/turnos/cronograma-publico?sector_id=${sectorId}`).subscribe({
+    this.http.get<ApiResponse<CronogramaSectorPublico[]>>(`${environment.apiUrl}/turnos/cronograma-publico?sector_id=${sectorId}`).subscribe({
       next: (res) => {
         this.cargandoCronograma = false;
         if (res?.data && res.data.length > 0) {
@@ -110,19 +113,19 @@ export class InicioComponent implements OnInit {
     this.verCronograma(sectorId, nombre);
   }
 
-  diasVisibles(): any[] {
+  diasVisibles(): DiaVisible[] {
     if (!this.sectorCronograma?.dias) return [];
     const query = this.busquedaModal.trim().toLowerCase();
 
     return this.sectorCronograma.dias
-      .filter((d: any) => {
+      .filter((d) => {
         if (this.diaSeleccionadoModal !== 'TODOS' && d.dia_nombre.toLowerCase() !== this.diaSeleccionadoModal.toLowerCase()) {
           return false;
         }
         return true;
       })
-      .map((d: any) => {
-        const turnosFiltrados = (d.turnos || []).filter((t: any) => {
+      .map((d): DiaVisible => {
+        const turnosFiltrados = (d.turnos || []).filter((t) => {
           if (!query) return true;
           return (t.lote_codigo || '').toLowerCase().includes(query);
         });
@@ -131,7 +134,7 @@ export class InicioComponent implements OnInit {
           turnosFiltrados
         };
       })
-      .filter((d: any) => d.turnosFiltrados.length > 0);
+      .filter((d) => d.turnosFiltrados.length > 0);
   }
 
   totalTurnosVisibles(): number {

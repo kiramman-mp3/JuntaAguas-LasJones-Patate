@@ -3,6 +3,7 @@ import { AdminService } from '../../../../../core/services/admin.service';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
+import { LoteItem, PersonaListado } from '../../../../../core/models/api-payloads';
 
 /** Lotes vinculados a un usuario, con acceso a la ficha de cada uno. */
 @Component({
@@ -60,12 +61,12 @@ import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.compon
 export class LotesUsuarioComponent implements OnInit {
   private admin = inject(AdminService);
 
-  readonly usuario = input.required<any>();
+  readonly usuario = input.required<PersonaListado>();
   readonly cerrar = output<void>();
-  readonly verLote = output<any>();
+  readonly verLote = output<LoteItem>();
   readonly asignarOtro = output<void>();
 
-  readonly lotes = signal<any[]>([]);
+  readonly lotes = signal<LoteItem[]>([]);
   readonly cargando = signal(true);
   readonly error = signal(false);
 

@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { LotesMapComponent } from '../../lotes-map/lotes-map.component';
+import { LoteItem } from '../../../../../core/models/api-payloads';
 
 /** Ficha de un lote: datos del catastro, propietarios vinculados y georreferenciación. */
 @Component({
@@ -63,12 +64,12 @@ import { LotesMapComponent } from '../../lotes-map/lotes-map.component';
   `
 })
 export class LoteDetalleComponent {
-  readonly lote = input.required<any>();
+  readonly lote = input.required<LoteItem>();
   readonly cerrar = output<void>();
 
   readonly propietarios = computed<string[]>(() => (this.lote().propietarios ? String(this.lote().propietarios).split(', ') : []));
-  readonly lat = computed(() => parseFloat(this.lote().latitud_aproximada));
-  readonly lng = computed(() => parseFloat(this.lote().longitud_aproximada));
+  readonly lat = computed(() => parseFloat(String(this.lote().latitud_aproximada ?? '')));
+  readonly lng = computed(() => parseFloat(String(this.lote().longitud_aproximada ?? '')));
   readonly tieneUbicacion = computed(() => !Number.isNaN(this.lat()) && !Number.isNaN(this.lng()));
 
   abrirGoogleMaps(): void {

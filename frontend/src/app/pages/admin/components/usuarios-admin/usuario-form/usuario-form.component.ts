@@ -7,6 +7,7 @@ import { NotificationService } from '../../../../../core/services/notification.s
 import { ROLES, Rol } from '../../../../../core/auth/session';
 import { CredencialTemporal, PasswordTemporalComponent } from '../../../../../shared/password-temporal/password-temporal.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { PersonaListado } from '../../../../../core/models/api-payloads';
 
 /**
  * Alta y edición de un usuario, con la gestión de su cuenta de acceso web.
@@ -25,7 +26,7 @@ export class UsuarioFormComponent implements OnInit {
   private notify = inject(NotificationService);
 
   /** Usuario a editar; sin valor, el formulario registra uno nuevo. */
-  readonly usuario = input<any | null>(null);
+  readonly usuario = input<PersonaListado | null>(null);
   readonly cerrar = output<void>();
   readonly guardado = output<void>();
 
@@ -58,17 +59,17 @@ export class UsuarioFormComponent implements OnInit {
     const u = this.usuario();
     if (!u) return;
     this.modoEdicion = true;
-    this.cuenta = u.cuenta_estado ? { estado: u.cuenta_estado, rol: u.rol } : null;
+    this.cuenta = u.cuenta_estado ? { estado: u.cuenta_estado, rol: u.rol ?? ROLES.USUARIO } : null;
     this.form = {
       id: u.id,
       nombres: u.nombres || '',
       apellidos: u.apellidos || '',
       cedula: u.cedula,
       direccion: u.direccion || '',
-      telefono: u.telefono,
-      celular: u.celular,
-      email: u.email,
-      fecha_nacimiento: u.fecha_nacimiento,
+      telefono: u.telefono || '',
+      celular: u.celular || '',
+      email: u.email || '',
+      fecha_nacimiento: u.fecha_nacimiento || '',
       estado: u.estado,
       crearCuenta: false,
       rol: ROLES.USUARIO

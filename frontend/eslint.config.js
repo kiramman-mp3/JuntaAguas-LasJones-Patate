@@ -5,8 +5,8 @@ const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 
 /*
- * Reglas en 'warn': deuda conocida que se migra por etapas (código anterior a las reglas).
- * Un 'error' rompe el CI; un 'warn' solo se informa.
+ * Todas las reglas son 'error': la deuda que se migraba por etapas ya está saldada y un error rompe el CI,
+ * así no vuelve a acumularse (any explícitos, inyección por constructor, *ngIf, etiquetas sin control).
  */
 module.exports = defineConfig([
   { ignores: ['dist/**', '.angular/**', 'coverage/**'] },
@@ -36,8 +36,8 @@ module.exports = defineConfig([
           style: 'kebab-case',
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@angular-eslint/prefer-inject': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@angular-eslint/prefer-inject': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
     },
   },
@@ -50,8 +50,8 @@ module.exports = defineConfig([
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
     rules: {
-      '@angular-eslint/template/prefer-control-flow': 'warn',
-      '@angular-eslint/template/label-has-associated-control': 'warn',
+      '@angular-eslint/template/prefer-control-flow': 'error',
+      '@angular-eslint/template/label-has-associated-control': 'error',
     },
   },
 ]);

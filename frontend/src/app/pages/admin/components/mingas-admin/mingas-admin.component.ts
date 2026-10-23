@@ -17,6 +17,7 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
 import { Minga } from './minga.model';
 import { MingaFormComponent } from './minga-form/minga-form.component';
 import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.component';
+import { mensajeError } from '../../../../core/utils/errores';
 
 /**
  * Listado de mingas y su flujo (borrador → programada → convocada → realizada).
@@ -208,7 +209,7 @@ export class MingasAdminComponent implements OnInit {
       this.notify.success(res.message);
       this.cargar();
     } catch (err) {
-      this.notify.error((err as any)?.error?.message || 'No se pudo finalizar la minga.');
+      this.notify.error(mensajeError(err, 'No se pudo finalizar la minga.'));
     } finally {
       this.actualizandoId = null;
       this.cdr.markForCheck();

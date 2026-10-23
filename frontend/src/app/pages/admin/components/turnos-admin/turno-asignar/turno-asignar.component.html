@@ -69,7 +69,7 @@
               {{ !turno.persona_id ? 'Seleccione primero un usuario…' : cargandoLotes() ? 'Cargando lotes…' : lotes().length === 0 ? 'Sin lotes asignados' : 'Seleccionar lote…' }}
             </option>
             @for (l of lotes(); track l.id) {
-              <option [ngValue]="l.id">{{ l.codigo }} · {{ l.sector_nombre || l.sector || 'General' }}{{ l.superficie_m2 ? ' · ' + l.superficie_m2 + ' m²' : '' }}</option>
+              <option [ngValue]="l.id">{{ l.codigo }} · {{ l.sector_nombre || 'General' }}{{ l.superficie_m2 ? ' · ' + l.superficie_m2 + ' m²' : '' }}</option>
             }
           </select>
           @if (turno.persona_id && !cargandoLotes() && lotes().length === 0) {

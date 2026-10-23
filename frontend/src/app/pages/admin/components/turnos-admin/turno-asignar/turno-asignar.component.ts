@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
-import { PersonaListado, TurnoItem } from '../../../../../core/models/api-payloads';
+import { LoteItem, PersonaListado, TurnoItem } from '../../../../../core/models/api-payloads';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA } from '../turno.model';
 
@@ -27,11 +27,11 @@ export class TurnoAsignarComponent implements OnInit {
   readonly asignado = output<void>();
 
   readonly dias = DIAS_SEMANA;
-  readonly usuarios = signal<any[]>([]);
+  readonly usuarios = signal<PersonaListado[]>([]);
   /** Total de usuarios activos que coinciden con la búsqueda (el servidor devuelve como máximo 20). */
   readonly totalUsuarios = signal(0);
   readonly buscando = signal(false);
-  readonly lotes = signal<any[]>([]);
+  readonly lotes = signal<LoteItem[]>([]);
   readonly cargandoLotes = signal(false);
   readonly guardando = signal(false);
 

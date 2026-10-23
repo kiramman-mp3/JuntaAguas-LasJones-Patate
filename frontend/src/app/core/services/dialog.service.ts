@@ -23,7 +23,7 @@ interface DialogState {
   placeholder: string;
   valor: string;
   esPrompt: boolean;
-  resolver?: (valor: any) => void;
+  resolver?: (valor: string | boolean | null) => void;
 }
 
 /**

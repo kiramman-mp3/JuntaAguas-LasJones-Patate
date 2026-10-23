@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
+import { LoteItem, SectorItem } from '../../../../../core/models/api-payloads';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
@@ -21,12 +22,12 @@ export class CatastroLotesComponent implements OnInit {
   private admin = inject(AdminService);
   private destroyRef = inject(DestroyRef);
 
-  readonly lotes = signal<any[]>([]);
-  readonly sectores = signal<any[]>([]);
+  readonly lotes = signal<LoteItem[]>([]);
+  readonly sectores = signal<SectorItem[]>([]);
   readonly cargando = signal(true);
   readonly error = signal(false);
   readonly formularioAbierto = signal(false);
-  readonly detalle = signal<any | null>(null);
+  readonly detalle = signal<LoteItem | null>(null);
   readonly sectorAbierto = signal(false);
   readonly pagina = signal(1);
   readonly porPagina = signal(25);
