@@ -8,7 +8,7 @@ La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INST
 
 ## Tecnologías
 
-- **Frontend:** Angular 22 (componentes standalone, signals, rutas con carga diferida), TypeScript estricto, SCSS, RxJS, Leaflet, pdfmake y jsPDF (cargados bajo demanda), Vitest.
+- **Frontend:** Angular 22 (componentes standalone, signals, rutas con carga diferida), TypeScript estricto, SCSS, RxJS, Leaflet, jsPDF con autotable para todos los PDF del navegador (cargado bajo demanda), Vitest.
 - **Backend:** Node.js 26, Express 5, mysql2 (SQL parametrizado), zod para validar la entrada, JWT, bcryptjs, helmet, multer, pdfkit y Swagger (solo fuera de producción).
 - **Servicio de WhatsApp** (`whatsapp-service/`): proceso aparte con Express 5 y whatsapp-web.js (Edge o Chromium sin interfaz). Publica las convocatorias en el grupo de WhatsApp de la Junta; si se detiene, el resto del sistema sigue funcionando.
 - **Base de datos:** MySQL 8 (InnoDB, utf8mb4) en Docker, con migraciones versionadas.
