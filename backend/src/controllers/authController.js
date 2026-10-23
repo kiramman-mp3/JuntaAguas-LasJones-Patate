@@ -33,8 +33,8 @@ function usuarioPublico(fila) {
   };
 }
 
-async function buscarCuentaPorCedula(identificador) {
-  const idLimpio = String(identificador || '').trim();
+/** Cuenta de la persona con esa cédula. No hay alias: cada cuenta se identifica solo por su cédula. */
+async function buscarCuentaPorCedula(cedula) {
   const [rows] = await db.query(
     `SELECT c.id AS cuenta_id, c.password_hash, c.estado AS estado_cuenta, c.debe_cambiar_password,
             c.intentos_fallidos, c.bloqueada_hasta, c.bloqueada_hasta > UTC_TIMESTAMP() AS bloqueada,
@@ -43,12 +43,8 @@ async function buscarCuentaPorCedula(identificador) {
      FROM personas p
      JOIN cuentas c ON c.persona_id = p.id
      JOIN roles r ON r.id = c.rol_id
-     WHERE p.cedula = ?
-        OR (LOWER(?) = 'admin' AND r.codigo = 'ADMIN' AND c.estado = 'ACTIVA')
-        OR (? = '1800000001' AND r.codigo = 'ADMIN' AND c.estado = 'ACTIVA')
-     ORDER BY c.id ASC
-     LIMIT 1`,
-    [idLimpio, idLimpio, idLimpio]
+     WHERE p.cedula = ?`,
+    [String(cedula || '').trim()]
   );
   return rows[0] || null;
 }
