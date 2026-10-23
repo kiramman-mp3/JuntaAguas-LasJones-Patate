@@ -125,7 +125,6 @@ test('publica la convocatoria de una minga en el grupo y la marca convocada', as
   const r = await convocar(eventoId);
   assert.equal(r.status, 201);
   assert.equal(r.body.data.estado, 'CONVOCADO');
-  assert.equal(r.body.data.reenvio, false);
 
   assert.equal(servicio.enviados.length, 1);
   const { grupoId, texto } = servicio.enviados[0];
@@ -144,19 +143,26 @@ test('publica la convocatoria de una minga en el grupo y la marca convocada', as
   assert.equal(auditoria.length, 1);
 });
 
-test('no reenvía una convocatoria ya publicada salvo que se pida', async () => {
+test('una convocatoria se publica una sola vez, aunque se pida dos veces a la vez', async () => {
   const eventoId = await crearEvento();
-  assert.equal((await convocar(eventoId)).status, 201);
+  const respuestas = await Promise.all([convocar(eventoId), convocar(eventoId)]);
+  assert.deepEqual(respuestas.map((r) => r.status).sort(), [201, 409]);
+  assert.equal(servicio.enviados.length, 1, 'WhatsApp recibe un solo mensaje');
 
-  const repetida = await convocar(eventoId);
-  assert.equal(repetida.status, 409);
+  const repetida = await convocar(eventoId, { reenviar: true });
+  assert.equal(repetida.status, 409, 'ya no existe la opción de reenviar');
   assert.equal(repetida.body.codigo, 'CONVOCATORIA_YA_ENVIADA');
   assert.ok(repetida.body.enviadaEn);
+  assert.equal(servicio.enviados.length, 1);
+});
 
-  const reenvio = await convocar(eventoId, { reenviar: true });
-  assert.equal(reenvio.status, 201);
-  assert.equal(reenvio.body.data.reenvio, true);
-  assert.equal(servicio.enviados.length, 2);
+test('si WhatsApp falla, la convocatoria queda libre para intentarlo de nuevo', async () => {
+  const eventoId = await crearEvento();
+  servicio.falloEnvio = 'WhatsApp no aceptó el mensaje';
+  assert.equal((await convocar(eventoId)).status, 502);
+  servicio.falloEnvio = null;
+  assert.equal((await convocar(eventoId)).status, 201);
+  assert.equal(servicio.enviados.length, 1);
 });
 
 test('la convocatoria de una asamblea incluye el orden del día', async () => {

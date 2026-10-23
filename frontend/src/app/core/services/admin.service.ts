@@ -184,8 +184,8 @@ export class AdminService {
     return this.http.put<RespuestaApi<GrupoWhatsApp>>(`${this.baseUrl}/whatsapp/grupo`, { grupoId });
   }
 
-  /** Publica la convocatoria en el grupo. Con `reenviar` repite una convocatoria ya publicada. */
-  enviarConvocatoriaWhatsApp(eventoId: number, reenviar = false): Observable<RespuestaApi<ConvocatoriaWhatsApp>> {
-    return this.http.post<RespuestaApi<ConvocatoriaWhatsApp>>(`${this.baseUrl}/whatsapp/convocatorias`, { eventoId, reenviar });
+  /** Publica la convocatoria en el grupo. Cada convocatoria se publica una sola vez (409 si ya se publicó). */
+  enviarConvocatoriaWhatsApp(eventoId: number): Observable<RespuestaApi<ConvocatoriaWhatsApp>> {
+    return this.http.post<RespuestaApi<ConvocatoriaWhatsApp>>(`${this.baseUrl}/whatsapp/convocatorias`, { eventoId });
   }
 }
