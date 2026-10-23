@@ -187,7 +187,7 @@
           </div>
           <div class="nota-texto">
             <strong>Carta Informativa para los Usuarios:</strong>
-            <span>Este horario indica los días y horas exactas en los que se abre el canal para cada lote. Busque su nombre en la lista y acuda con 15 minutos de anticipación a la compuerta.</span>
+            <span>Este horario indica los días y horas exactas en los que se abre el canal para cada lote. Busque el código de su lote y acuda con 15 minutos de anticipación a la compuerta.</span>
           </div>
         </div>
 
@@ -219,7 +219,7 @@
           <div class="cronograma-loading">
             <i class="ri-loader-4-line ri-spin" aria-hidden="true"></i>
             <h3>Cargando el horario de turnos...</h3>
-            <p class="text-muted">Obteniendo la lista de beneficiarios del Sector {{ nombreSectorModal }}</p>
+            <p class="text-muted">Obteniendo los turnos del Sector {{ nombreSectorModal }}</p>
           </div>
         } @else if (!sectorCronograma || !sectorCronograma.total_turnos) {
           <div class="cronograma-empty">
@@ -237,7 +237,7 @@
               <div class="metric-icon"><i class="ri-user-star-line" aria-hidden="true"></i></div>
               <div class="metric-content">
                 <span class="metric-val">{{ sectorCronograma.total_turnos }}</span>
-                <span class="metric-desc">Usuarios con turno</span>
+                <span class="metric-desc">Turnos semanales</span>
               </div>
             </div>
 
@@ -266,8 +266,8 @@
                 type="text"
                 class="search-input"
                 [(ngModel)]="busquedaModal"
-                placeholder="¿Busca su turno? Escriba aquí su apellido o código de lote (ej: Altamirano, Tamayo, LJB-002)..."
-                aria-label="Buscar usuario o lote en el cronograma"
+                placeholder="¿Busca su turno? Escriba el código de su lote (ej: LJB-002)..."
+                aria-label="Buscar lote en el cronograma"
               />
               @if (busquedaModal) {
                 <button type="button" class="btn-clear-search" (click)="busquedaModal = ''" aria-label="Borrar búsqueda">
@@ -277,7 +277,7 @@
             </div>
             <div class="search-helper-text">
               <i class="ri-information-line" aria-hidden="true"></i>
-              <span>Consejo: Escriba su apellido para encontrar al instante qué día y a qué hora le toca recibir el agua.</span>
+              <span>Consejo: Escriba el código de su lote para encontrar al instante qué día y a qué hora le toca recibir el agua.</span>
             </div>
           </div>
 
@@ -348,7 +348,7 @@
             <div class="no-matches-box">
               <i class="ri-user-search-line" aria-hidden="true"></i>
               <h4>No se encontraron turnos con "{{ busquedaModal }}"</h4>
-              <p class="text-muted">Pruebe escribir solo el apellido o seleccione "Toda la semana" para ver todos los turnos.</p>
+              <p class="text-muted">Revise el código del lote o seleccione "Toda la semana" para ver todos los turnos.</p>
               <button type="button" class="btn btn--outline btn--sm mt-2" (click)="busquedaModal = ''; diaSeleccionadoModal = 'TODOS'">
                 Mostrar todos los turnos
               </button>
@@ -385,8 +385,7 @@
                               <th style="width: 22%;">HORARIO (24h y 12h)</th>
                               <th style="width: 14%; text-align: center;">DURACIÓN</th>
                               <th style="width: 12%; text-align: center;">JORNADA</th>
-                              <th style="width: 33%;">USUARIO / BENEFICIARIO</th>
-                              <th style="width: 7%; text-align: center;">LOTE</th>
+                              <th style="width: 40%; text-align: center;">LOTE</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -406,9 +405,6 @@
                                   <span class="jornada-pill-tabla" [ngClass]="obtenerFranjaHoraria(t.hora_inicio).clase">
                                     {{ obtenerFranjaHoraria(t.hora_inicio).texto }}
                                   </span>
-                                </td>
-                                <td class="celda-usuario">
-                                  <strong class="usuario-nombre-tabla">{{ t.usuario_nombre }}</strong>
                                 </td>
                                 <td class="celda-lote">
                                   <span class="lote-tag-tabla">{{ t.lote_codigo }}</span>
@@ -457,14 +453,6 @@
                             </div>
                           </div>
 
-                          <!-- Usuario beneficiario en grande y con alto contraste -->
-                          <div class="usuario-destacado-box">
-                            <span class="usuario-rotulo">
-                              <i class="ri-user-star-fill" aria-hidden="true"></i> USUARIO BENEFICIARIO:
-                            </span>
-                            <h4 class="usuario-nombre-grande">{{ t.usuario_nombre }}</h4>
-                          </div>
-
                           <!-- Ficha de Datos del Terreno -->
                           <div class="lote-datos-tabla">
                             <div class="lote-dato-item">
@@ -474,13 +462,6 @@
                                 <strong>Lote Nº {{ t.lote_codigo }}</strong>
                               </span>
                             </div>
-
-                            @if (t.superficie_m2) {
-                              <div class="lote-dato-item">
-                                <span class="lote-etiqueta">Superficie:</span>
-                                <span class="lote-valor">{{ t.superficie_m2 | number }} m²</span>
-                              </div>
-                            }
                           </div>
 
                           <!-- Recomendación y aviso para el usuario -->
@@ -510,7 +491,7 @@
             <h2 class="impresion-titulo-doc">CRONOGRAMA OFICIAL Y NÓMINA DE TURNOS DE RIEGO</h2>
             <div class="impresion-meta-grid">
               <div class="meta-item"><strong>SECTOR:</strong> {{ nombreSectorModal | uppercase }}</div>
-              <div class="meta-item"><strong>TOTAL BENEFICIARIOS:</strong> {{ sectorCronograma.total_turnos }} usuarios</div>
+              <div class="meta-item"><strong>TURNOS SEMANALES:</strong> {{ sectorCronograma.total_turnos }}</div>
               <div class="meta-item"><strong>HORAS TOTALES:</strong> {{ sectorCronograma.total_horas }}h semanales</div>
               <div class="meta-item"><strong>LOTES EN RIEGO:</strong> {{ sectorCronograma.total_lotes }} lotes</div>
             </div>
@@ -536,8 +517,7 @@
                         <th style="width: 17%; text-align: center;">HORARIO</th>
                         <th style="width: 13%; text-align: center;">DURACIÓN</th>
                         <th style="width: 12%; text-align: center;">JORNADA</th>
-                        <th style="width: 35%;">USUARIO / BENEFICIARIO</th>
-                        <th style="width: 9%; text-align: center;">LOTE</th>
+                        <th style="width: 53%; text-align: center;">LOTE</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -547,7 +527,6 @@
                           <td style="text-align: center; font-weight: bold;">{{ t.hora_inicio }} – {{ t.hora_fin }}</td>
                           <td style="text-align: center;">{{ calcularDuracion(t.hora_inicio, t.hora_fin) }}</td>
                           <td style="text-align: center;">{{ obtenerFranjaHoraria(t.hora_inicio).texto }}</td>
-                          <td style="font-weight: bold; text-transform: uppercase;">{{ t.usuario_nombre }}</td>
                           <td style="text-align: center; font-weight: bold;">{{ t.lote_codigo }}</td>
                         </tr>
                       }

@@ -102,13 +102,6 @@ export class AdminService {
     return this.http.get<RespuestaApi<any[]>>(`${this.baseUrl}/turnos/cronograma`, { params });
   }
 
-  getCronogramaPublico(sector_id?: number, dia_semana?: number): Observable<RespuestaApi<any[]>> {
-    let params = new HttpParams();
-    if (sector_id) params = params.set('sector_id', sector_id);
-    if (dia_semana) params = params.set('dia_semana', dia_semana);
-    return this.http.get<RespuestaApi<any[]>>(`${this.baseUrl}/turnos/cronograma-publico`, { params });
-  }
-
   asignarTurno(payload: object): Observable<RespuestaMensaje & { turnoId: number; obligacionId: number | null }> {
     return this.http.post<RespuestaMensaje & { turnoId: number; obligacionId: number | null }>(`${this.baseUrl}/turnos`, payload);
   }
