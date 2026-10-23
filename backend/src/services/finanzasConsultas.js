@@ -158,8 +158,8 @@ async function listarEgresos(conexion, { proveedor, desde, hasta }) {
 }
 
 /**
- * Balance: ingresos (pagos vigentes) y egresos del período, cartera pendiente a la fecha,
- * resumen mensual del período (o de los últimos 12 meses) y cartera por concepto.
+ * Balance: ingresos (pagos vigentes y pagos anuales de agua) y egresos del período, cartera pendiente
+ * a la fecha, resumen mensual del período (o de los últimos 12 meses) y cartera por concepto.
  */
 async function balance(conexion, { desde, hasta }) {
   const fin = hasta || hoy();
@@ -168,23 +168,40 @@ async function balance(conexion, { desde, hasta }) {
   const filtroPagos = ["estado = 'VIGENTE'"];
   const pIngresos = [];
   filtroFechaPago('fecha_pago', { desde, hasta }, filtroPagos, pIngresos);
+  const filtroPagosAnuales = [];
+  const pIngresosAnuales = [];
+  filtroFechaPago('fecha_pago', { desde, hasta }, filtroPagosAnuales, pIngresosAnuales);
   const filtroEgresos = [];
   const pEgresos = [];
   if (desde) { filtroEgresos.push('fecha >= ?'); pEgresos.push(desde); }
   if (hasta) { filtroEgresos.push('fecha <= ?'); pEgresos.push(hasta); }
 
-  const [[{ totalIngresos }]] = await conexion.query(
-    `SELECT COALESCE(SUM(valor_total), 0) AS totalIngresos FROM pagos ${where(filtroPagos)}`, pIngresos
+  const [[{ ingresosPagos }]] = await conexion.query(
+    `SELECT COALESCE(SUM(valor_total), 0) AS ingresosPagos FROM pagos ${where(filtroPagos)}`, pIngresos
   );
+  const [[{ ingresosAnuales }]] = await conexion.query(
+    `SELECT COALESCE(SUM(valor_total), 0) AS ingresosAnuales FROM pago_anual_agua ${where(filtroPagosAnuales)}`, pIngresosAnuales
+  );
+  const totalIngresos = sumarMontos(ingresosPagos, ingresosAnuales);
   const [[{ totalEgresos }]] = await conexion.query(
     `SELECT COALESCE(SUM(valor), 0) AS totalEgresos FROM egresos ${where(filtroEgresos)}`, pEgresos
   );
   const [[cartera]] = await conexion.query(
     `SELECT COALESCE(SUM(valor), 0) AS totalPendientes,
-            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < ? THEN valor END), 0) AS totalVencido,
-            COUNT(DISTINCT persona_id) AS usuariosConDeuda
+            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < ? THEN valor END), 0) AS totalVencido
      FROM obligaciones WHERE estado = 'PENDIENTE'`,
     [hoy()]
+  );
+  const [[carteraAnual]] = await conexion.query(
+    `SELECT COALESCE(SUM(valor_total), 0) AS total, COUNT(*) AS obligaciones
+     FROM obligacion_anual_agua WHERE estado = 'PENDIENTE'`
+  );
+  const [[{ usuariosConDeuda }]] = await conexion.query(
+    `SELECT COUNT(*) AS usuariosConDeuda FROM (
+       SELECT persona_id FROM obligaciones WHERE estado = 'PENDIENTE'
+       UNION
+       SELECT persona_id FROM obligacion_anual_agua WHERE estado = 'PENDIENTE'
+     ) t`
   );
   // El mes de un pago es el de Ecuador, no el de UTC.
   const [resumenMensual] = await conexion.query(
@@ -192,9 +209,13 @@ async function balance(conexion, { desde, hasta }) {
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m') AS mes, valor_total AS ingresos, 0 AS egresos
        FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ? AND fecha_pago < ?
        UNION ALL
+       SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0
+       FROM pago_anual_agua WHERE fecha_pago >= ? AND fecha_pago < ?
+       UNION ALL
        SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes, 0, valor FROM egresos WHERE fecha >= ? AND fecha <= ?
      ) t GROUP BY mes ORDER BY mes DESC`,
-    [ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin), inicioResumen, fin]
+    [ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin),
+      ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin), inicioResumen, fin]
   );
   const [carteraPorConcepto] = await conexion.query(
     `SELECT c.codigo, c.nombre, COUNT(*) AS obligaciones, SUM(o.valor) AS total
@@ -206,18 +227,26 @@ async function balance(conexion, { desde, hasta }) {
     balance: {
       totalIngresos: Number(totalIngresos),
       totalEgresos: Number(totalEgresos),
-      totalPendientes: Number(cartera.totalPendientes),
+      totalPendientes: sumarMontos(cartera.totalPendientes, carteraAnual.total),
       totalVencido: Number(cartera.totalVencido),
-      usuariosConDeuda: Number(cartera.usuariosConDeuda),
+      usuariosConDeuda: Number(usuariosConDeuda),
       balanceAlDia: restarMontos(totalIngresos, totalEgresos),
       desde: desde ?? null,
       hasta: hasta ?? null,
       fechaReporte: new Date().toISOString()
     },
     resumenMensual: resumenMensual.map((m) => ({ mes: m.mes, ingresos: Number(m.ingresos), egresos: Number(m.egresos) })),
-    carteraPorConcepto: carteraPorConcepto.map((c) => ({ ...c, total: Number(c.total) }))
+    carteraPorConcepto: [
+      ...carteraPorConcepto.map((c) => ({ ...c, total: Number(c.total) })),
+      ...(Number(carteraAnual.obligaciones)
+        ? [{ codigo: 'AGUA_ANUAL', nombre: 'Pago anual de agua', obligaciones: Number(carteraAnual.obligaciones), total: Number(carteraAnual.total) }]
+        : [])
+    ].sort((a, b) => b.total - a.total)
   };
 }
+
+/** Suma importes en centavos y devuelve dólares. */
+const sumarMontos = (...montos) => aDolares(montos.reduce((suma, m) => suma + aCentavos(m), 0));
 
 /** Suma ingresos y egresos de un nodo (mes, año o total) en centavos y devuelve dólares con su balance. */
 function totales(nodos) {
@@ -227,7 +256,7 @@ function totales(nodos) {
 }
 
 /**
- * Historial financiero anual: años → meses con ingresos (pagos vigentes, por mes de Ecuador),
+ * Historial financiero anual: años → meses con ingresos (pagos vigentes y pagos anuales de agua, por mes de Ecuador),
  * egresos y balance. Los totales y balances se calculan aquí, en centavos, para que el
  * frontend solo los muestre. Años y meses van del más reciente al más antiguo.
  */
@@ -239,9 +268,11 @@ async function historialAnual(conexion) {
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m') AS mes, valor_total AS ingresos, 0 AS egresos, 1 AS es_pago
        FROM pagos WHERE estado = 'VIGENTE'
        UNION ALL
+       SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0, 1 FROM pago_anual_agua
+       UNION ALL
        SELECT DATE_FORMAT(fecha, '%Y-%m'), 0, valor, 0 FROM egresos
      ) t GROUP BY mes ORDER BY mes DESC`,
-    [ZONA_MYSQL]
+    [ZONA_MYSQL, ZONA_MYSQL]
   );
 
   const anios = new Map();

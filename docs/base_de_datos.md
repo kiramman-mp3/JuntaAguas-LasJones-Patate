@@ -29,7 +29,7 @@ El modelo relacional está compuesto por **22 tablas** normalizadas y distribuid
 | **Identidad y Acceso** | `personas`, `roles`, `cuentas` | Gestión de usuarios, credenciales de acceso y perfiles (`ADMIN`, `USUARIO`). |
 | **Lotes y Riego** | `sectores`, `lotes`, `persona_lotes`, `turnos_riego` | Terrenos por sector, ubicación aproximada (lat/lng/radio de error), titularidad y horarios de agua. |
 | **Asambleas, Mingas, Asistencia y Comunicación** | `eventos`, `puntos_asamblea`, `asistencias`, `documentos_evento`, `envios_convocatoria` | Eventos, orden del día/resoluciones, control de asistencia, documentos PDF y convocatorias publicadas en el grupo de WhatsApp. |
-| **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos y gastos operativos. |
+| **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `obligacion_anual_agua`, `pago_anual_agua`, `pago_anual_agua_detalle`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos, pago único anual de agua y gastos operativos. |
 | **Inventario** | `bienes_inventario` | Registro y control físico de bienes y herramientas de la Junta. |
 | **Planificación Anual** | `planes_anuales`, `actividades_plan` | Plan operativo anual de trabajo y seguimiento de cumplimiento de actividades. |
 | **Auditoría** | `auditoria` | Bitácora imborrable de operaciones realizadas por los administradores. |
@@ -198,7 +198,9 @@ erDiagram
 - **`conceptos_cobro`**: Catálogo (`AGUA_MENSUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`).
 - **`tarifas`**: Valores con vigencia desde/hasta.
 - **`obligaciones`**: Deudas pendientes. **No se permiten pagos parciales**. Origen `MANUAL` o `AUTOMATICA`.
-- **`pagos` & `pago_detalles`**: Un pago liquida una o varias obligaciones completas (`obligacion_id` es `UNIQUE` en `pago_detalles`).
+- **`pagos` & `pago_detalles`**: Un pago liquida una o varias obligaciones completas. La regla "una obligación se paga una sola vez" la garantiza su estado `PENDIENTE`/`PAGADA` bajo bloqueo, no un índice único (el historial de pagos anulados se conserva).
+- **`obligacion_anual_agua`**: Una obligación por usuario y año (`UNIQUE persona_id, periodo_anio`) con estado `PENDIENTE`/`PAGADO`.
+- **`pago_anual_agua` & `pago_anual_agua_detalle`**: Cabecera y detalle del pago anual (solo `TRANSFERENCIA` o `DEPOSITO`, con `registrado_por_cuenta_id`). Una obligación anual solo puede figurar en un detalle (`UNIQUE`). Sus importes se suman al balance, al historial y al panel junto con `pagos`.
 - **`proveedores` & `egresos`**: Registro de compras y gastos de la Junta.
 
 ### 4.5. Dominio de Inventario, Planificación y Auditoría

@@ -198,6 +198,12 @@ export interface PagoAnualAgua {
   estado: 'PENDIENTE' | 'PAGADO';
 }
 
+export interface ResultadoObligacionesAnuales {
+  usuarios: number;
+  generadas: number;
+  existentes: number;
+}
+
 export const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'

@@ -43,8 +43,8 @@
     <section class="fin-panel" aria-labelledby="cobro-obligaciones-titulo">
       <div class="fin-panel__head">
         <div>
-          <h3 class="fin-panel__title" id="cobro-obligaciones-titulo">{{ comunero()!.apellidos }} {{ comunero()!.nombres }}</h3>
-          <p class="fin-panel__desc">Cédula {{ comunero()!.cedula }}</p>
+          <h3 class="fin-panel__title" id="cobro-obligaciones-titulo">{{ usuario()!.apellidos }} {{ usuario()!.nombres }}</h3>
+          <p class="fin-panel__desc">Cédula {{ usuario()!.cedula }}</p>
         </div>
         <button type="button" class="btn btn--outline btn--sm pressable" (click)="cambiarUsuario()">
           <i class="ri-user-search-line" aria-hidden="true"></i> Cambiar usuario
@@ -74,7 +74,7 @@
           <div class="empty-state">
             <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
             <strong>Al día</strong>
-            <p>Este comunero no tiene cuotas de agua pendientes.</p>
+            <p>Este usuario no tiene cuotas de agua pendientes.</p>
           </div>
         } @else {
           <ul class="check-list" aria-label="Cuotas de agua pendientes por año">
@@ -131,7 +131,7 @@
           <div class="empty-state">
             <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
             <strong>Al día</strong>
-            <p>Este comunero no tiene multas ni otros rubros pendientes.</p>
+            <p>Este usuario no tiene multas ni otros rubros pendientes.</p>
           </div>
         } @else {
           <!-- ÁRBOL MANTENIDO PARA MULTAS Y OTROS -->

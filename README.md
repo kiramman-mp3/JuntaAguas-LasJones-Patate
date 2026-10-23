@@ -53,7 +53,7 @@ JuntaAguas-LasJones-Patate/
 ├── .github/workflows/ci.yml   # Lint, pruebas y build en cada PR a develop o main
 ├── bd/docker-compose.yml      # MySQL 8 para desarrollo
 ├── backend/
-│   ├── database/migrations/   # Migraciones versionadas (001_baseline.sql, 002…012 .js)
+│   ├── database/migrations/   # Migraciones versionadas (001_baseline.sql, 002…017 .js; cada número es único)
 │   ├── src/
 │   │   ├── app.js             # App Express (sin listen; la usan las pruebas)
 │   │   ├── index.js           # Arranque del servidor

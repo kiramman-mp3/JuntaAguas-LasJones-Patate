@@ -20,17 +20,22 @@ async function getResumen(req, res) {
 
   const [[finanzas]] = await db.query(
     `SELECT
-       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoMes,
-       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoAnio,
+       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE fecha_pago >= ?) AS recaudadoMes,
+       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE fecha_pago >= ?) AS recaudadoAnio,
        (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE fecha >= ?) AS egresosMes,
        (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE fecha >= ?) AS egresosAnio,
-       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE') -
+       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE') +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua) -
          (SELECT COALESCE(SUM(valor), 0) FROM egresos) AS saldoCaja,
-       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') AS carteraPendiente,
+       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM obligacion_anual_agua WHERE estado = 'PENDIENTE') AS carteraPendiente,
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS carteraVencida,
        (SELECT COUNT(DISTINCT persona_id) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS usuariosEnMora`,
     // fecha_pago está en UTC: el mes de Ecuador empieza a las 05:00 UTC del día 1.
-    [inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioAnio), inicioMes, inicioAnio, fecha, fecha]
+    [inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioAnio), inicioDelDiaUtc(inicioAnio),
+      inicioMes, inicioAnio, fecha, fecha]
   );
 
   // Eficiencia de cobro de las cuotas de agua emitidas este año.
