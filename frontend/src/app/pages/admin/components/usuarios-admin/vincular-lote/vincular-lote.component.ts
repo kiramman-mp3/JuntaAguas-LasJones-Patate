@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { LoteItem, PersonaListado } from '../../../../../core/models/api-payloads';
 
 /** Titularidad única: un lote pertenece al 100 % a un solo usuario (lo valida también el servidor). */
 export const PORCENTAJE_TITULARIDAD = 100;
@@ -101,11 +102,11 @@ export class VincularLoteComponent implements OnInit {
   private admin = inject(AdminService);
   private notify = inject(NotificationService);
 
-  readonly usuario = input.required<any>();
+  readonly usuario = input.required<PersonaListado>();
   readonly cerrar = output<void>();
   readonly vinculado = output<void>();
 
-  readonly lotes = signal<any[]>([]);
+  readonly lotes = signal<LoteItem[]>([]);
   readonly cargando = signal(true);
   readonly guardando = signal(false);
   readonly loteId = signal<number | null>(null);
@@ -140,7 +141,7 @@ export class VincularLoteComponent implements OnInit {
   readonly titularActual = computed<string | null>(() => {
     const lote = this.lotes().find((l) => l.id === this.loteId());
     if (!lote?.propietario_id || Number(lote.propietario_id) === Number(this.usuario().id)) return null;
-    return lote.propietario_nombre || lote.propietarios;
+    return lote.propietario_nombre || lote.propietarios || null;
   });
 
   ngOnInit(): void {

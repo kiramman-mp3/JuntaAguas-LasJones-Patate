@@ -80,7 +80,7 @@ export const session = {
     }
     return token;
   },
-  usuario: <T = any>(): T | null => {
+  usuario: <T = unknown>(): T | null => {
     const tipo = almacenActual();
     const datos = tipo ? leer(tipo, USER_KEY) : null;
     if (!datos) return null;

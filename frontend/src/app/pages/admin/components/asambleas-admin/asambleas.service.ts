@@ -3,6 +3,7 @@ import { Observable, map } from 'rxjs';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import { diaEnEcuador } from '../../../../core/utils/fechas';
+import { EventoItem } from '../../../../core/models/api-payloads';
 import { AsambleaItem, AsistentePadron, PuntoAsamblea } from './asamblea.model';
 
 const LUGAR_POR_DEFECTO = 'Casa Comunal Junta La Jones';
@@ -28,12 +29,11 @@ export class AsambleasService {
 
   padron(asambleaId: number): Observable<AsistentePadron[]> {
     return this.admin.getAsistencias(asambleaId).pipe(
-      map((res: any) =>
-        (Array.isArray(res?.data) ? res.data : []).map((p: any) => ({
+      map((res) =>
+        (Array.isArray(res?.data) ? res.data : []).map((p): AsistentePadron => ({
           persona_id: Number(p.persona_id),
           cedula: p.cedula,
           nombre: p.nombre,
-          sector: p.sector,
           estado: p.estado || 'PENDIENTE',
           motivo_justificacion: p.motivo_justificacion || ''
         }))
@@ -44,8 +44,8 @@ export class AsambleasService {
   /** Puntos del orden del día con su acta; si no hay ninguno, propone los puntos iniciales. */
   puntos(asambleaId: number): Observable<PuntoAsamblea[]> {
     return this.consulta.getEventoDetalle(asambleaId).pipe(
-      map((res: any) => {
-        const puntos: any[] = res?.puntos ?? [];
+      map((res) => {
+        const puntos = res?.puntos ?? [];
         if (!puntos.length) return PUNTOS_INICIALES.map((p) => ({ ...p }));
         return puntos.map((p) => ({
           id: p.id,
@@ -55,15 +55,16 @@ export class AsambleasService {
           tratado: p.tratado || '',
           resolucion: p.resolucion || '',
           titulo_acta: p.titulo_acta || p.punto_tratar || '',
-          responsables: p.responsables || '',
-          fecha_acta: p.fecha_acta || undefined
+          responsables: String(p['responsables'] ?? ''),
+          fecha_acta: p['fecha_acta'] ? String(p['fecha_acta']) : undefined
         }));
       })
     );
   }
 
-  private aAsamblea(e: any): AsambleaItem {
-    const subtipo = e.subtipo_asamblea || (e.titulo?.toUpperCase().includes('EXTRAORDINARIA') ? 'EXTRAORDINARIA' : 'ORDINARIA');
+  private aAsamblea(e: EventoItem): AsambleaItem {
+    const extraordinaria = e.subtipo_asamblea ? e.subtipo_asamblea === 'EXTRAORDINARIA' : e.titulo?.toUpperCase().includes('EXTRAORDINARIA');
+    const subtipo: AsambleaItem['subtipo_asamblea'] = extraordinaria ? 'EXTRAORDINARIA' : 'ORDINARIA';
     return {
       id: e.id,
       tipo: 'ASAMBLEA',

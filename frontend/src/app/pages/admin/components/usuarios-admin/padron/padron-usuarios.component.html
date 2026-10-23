@@ -93,7 +93,7 @@
                   }
                 </td>
                 <td data-label="Lotes">
-                  @if (u.lotes_count > 0) {
+                  @if ((u.lotes_count ?? 0) > 0) {
                     <button type="button" class="pill pill--primary pill--button" (click)="lotesDeUsuario.set(u)" title="Ver lotes del usuario">
                       <i class="ri-map-pin-line" aria-hidden="true"></i> {{ u.lotes_count }} {{ u.lotes_count === 1 ? 'lote' : 'lotes' }}
                     </button>

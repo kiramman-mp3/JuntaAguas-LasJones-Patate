@@ -4,6 +4,7 @@ import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { LotesMapComponent } from '../../lotes-map/lotes-map.component';
+import { SectorItem } from '../../../../../core/models/api-payloads';
 
 const PATRON_CODIGO = /^[A-Z]{3}-\d{3,8}$/;
 
@@ -19,7 +20,7 @@ export class LoteFormComponent implements OnDestroy {
   private notify = inject(NotificationService);
   private cdr = inject(ChangeDetectorRef);
 
-  readonly sectores = input<any[]>([]);
+  readonly sectores = input<SectorItem[]>([]);
   readonly cerrar = output<void>();
   readonly creado = output<void>();
 
