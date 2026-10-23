@@ -18,7 +18,7 @@ function leerToken(req) {
 /**
  * Verifica el JWT y el estado actual de la cuenta en la base de datos:
  * - la cuenta y la persona deben seguir activas,
- * - el token debe ser posterior al último cambio de contraseña (revocación),
+ * - el token debe ser posterior al último cambio de contraseña y al último cierre de sesión (revocación),
  * - el rol se toma de la base, así un cambio de rol aplica de inmediato.
  */
 function crearVerificador({ permitirCambioPassword }) {
@@ -34,7 +34,7 @@ function crearVerificador({ permitirCambioPassword }) {
     }
 
     const [rows] = await db.query(
-      `SELECT c.id, c.estado, c.password_updated_at, c.debe_cambiar_password, p.id AS persona_id, p.estado AS persona_estado,
+      `SELECT c.id, c.estado, c.password_updated_at, c.sesiones_validas_desde, c.debe_cambiar_password, p.id AS persona_id, p.estado AS persona_estado,
               p.cedula, p.nombres, p.apellidos, r.codigo AS rol
        FROM cuentas c
        JOIN personas p ON p.id = c.persona_id
@@ -47,11 +47,12 @@ function crearVerificador({ permitirCambioPassword }) {
       return rechazar(res, 401, 'La cuenta no está habilitada.');
     }
 
-    if (cuenta.password_updated_at) {
-      const emitido = Number(payload.ts) || payload.iat * 1000;
-      if (emitido < new Date(cuenta.password_updated_at).getTime()) {
-        return rechazar(res, 401, 'La contraseña cambió. Inicie sesión nuevamente.');
-      }
+    const emitido = Number(payload.ts) || payload.iat * 1000;
+    if (cuenta.password_updated_at && emitido < new Date(cuenta.password_updated_at).getTime()) {
+      return rechazar(res, 401, 'La contraseña cambió. Inicie sesión nuevamente.');
+    }
+    if (cuenta.sesiones_validas_desde && emitido < new Date(cuenta.sesiones_validas_desde).getTime()) {
+      return rechazar(res, 401, 'La sesión fue cerrada. Inicie sesión nuevamente.');
     }
 
     const alcance = payload.alcance || ALCANCE_COMPLETO;

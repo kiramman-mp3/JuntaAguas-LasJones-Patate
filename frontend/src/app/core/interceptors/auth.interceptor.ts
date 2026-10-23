@@ -14,7 +14,7 @@ const esDelBackend = (url: string) => url.startsWith(environment.apiUrl) || url.
  * - Agrega `Authorization: Bearer <token>` a toda petición al backend si hay sesión.
  * - Ante un 401 (sesión expirada o token inválido) limpia la sesión y redirige al
  *   login conservando la URL actual como returnUrl. Un 401 del propio login
- *   (credenciales incorrectas) se deja al formulario.
+ *   (credenciales incorrectas) o del cierre de sesión se deja pasar sin redirigir.
  * - Ante un 403 CAMBIO_PASSWORD_REQUERIDO lleva al login, que muestra el cambio de contraseña.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -27,7 +27,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(peticion).pipe(
     catchError((error) => {
-      if (error?.status === 401 && !req.url.endsWith('/auth/login')) {
+      if (error?.status === 401 && !req.url.endsWith('/auth/login') && !req.url.endsWith('/auth/logout')) {
         session.limpiar();
         const urlActual = router.url;
         if (!urlActual.startsWith('/login')) {

@@ -47,6 +47,23 @@ test('no existen alias de inicio de sesión: un administrador solo entra con su 
   assert.equal((await login(admin.cedula, admin.password)).status, 200);
 });
 
+test('cerrar sesión invalida en el servidor el token usado y permite volver a entrar', async () => {
+  const u = await crearUsuario();
+  const inicio = await login(u.cedula, u.password);
+  const token = { Authorization: `Bearer ${inicio.body.token}` };
+  assert.equal((await request(app).get('/api/auth/me').set(token)).status, 200);
+
+  assert.equal((await request(app).post('/api/auth/logout').set(token)).status, 200);
+  const despues = await request(app).get('/api/auth/me').set(token);
+  assert.equal(despues.status, 401, 'un token copiado deja de servir al cerrar sesión');
+  assert.match(despues.body.message, /cerrada/);
+  assert.equal((await request(app).post('/api/auth/logout')).status, 401);
+
+  await new Promise((r) => setTimeout(r, 5));
+  const nuevo = await login(u.cedula, u.password);
+  assert.equal((await request(app).get('/api/auth/me').set({ Authorization: `Bearer ${nuevo.body.token}` })).status, 200);
+});
+
 test('el token por query string ya no se acepta', async () => {
   const u = await crearUsuario();
   const res = await request(app).get(`/api/auth/me?token=${u.token}`);
