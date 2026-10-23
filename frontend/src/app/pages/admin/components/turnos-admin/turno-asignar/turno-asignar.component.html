@@ -1,6 +1,6 @@
 <app-modal
   titulo="Asignar turno de riego"
-  subtitulo="Elija el comunero, uno de sus lotes y el horario semanal."
+  subtitulo="Elija el usuario, uno de sus lotes y el horario semanal."
   icono="ri-drop-line"
   tamano="xl"
   [bloqueado]="guardando()"
@@ -8,26 +8,26 @@
 >
   <div class="modal__body">
     <div class="split">
-      <!-- Buscador de comuneros -->
+      <!-- Buscador de usuarios -->
       <section class="picker" aria-labelledby="picker-titulo">
         <div class="picker__head">
-          <h4 id="picker-titulo" class="inset-panel__title"><i class="ri-user-search-line" aria-hidden="true"></i> Comunero</h4>
+          <h4 id="picker-titulo" class="inset-panel__title"><i class="ri-user-search-line" aria-hidden="true"></i> Usuario</h4>
           <span class="picker__count" aria-live="polite">
             @if (buscando()) {
               Buscando…
-            } @else if (comuneros().length < totalComuneros()) {
-              {{ comuneros().length }} de {{ totalComuneros() }}
+            } @else if (usuarios().length < totalUsuarios()) {
+              {{ usuarios().length }} de {{ totalUsuarios() }}
             } @else {
-              {{ totalComuneros() }} disponibles
+              {{ totalUsuarios() }} disponibles
             }
           </span>
         </div>
         <div class="search-field">
           <i class="ri-search-line" aria-hidden="true"></i>
-          <input type="search" class="input" placeholder="Nombre o cédula…" [(ngModel)]="busqueda" (ngModelChange)="buscar($event)" aria-label="Buscar comunero" />
+          <input type="search" class="input" placeholder="Nombre o cédula…" [(ngModel)]="busqueda" (ngModelChange)="buscar($event)" aria-label="Buscar usuario" />
         </div>
-        <div class="picker__list" role="listbox" aria-label="Comuneros" [class.is-refreshing]="buscando()">
-          @for (u of comuneros(); track u.id) {
+        <div class="picker__list" role="listbox" aria-label="Usuarios" [class.is-refreshing]="buscando()">
+          @for (u of usuarios(); track u.id) {
             <button type="button" role="option" class="picker__option" [class.is-selected]="turno.persona_id === u.id"
               [attr.aria-selected]="turno.persona_id === u.id" (click)="seleccionar(u)">
               <span class="avatar" aria-hidden="true">{{ (u.nombres || '').charAt(0) }}{{ (u.apellidos || '').charAt(0) }}</span>
@@ -41,7 +41,7 @@
             </button>
           } @empty {
             @if (!buscando()) {
-              <p class="picker__empty">No se encontraron comuneros que coincidan.</p>
+              <p class="picker__empty">No se encontraron usuarios que coincidan.</p>
             }
           }
         </div>
@@ -58,7 +58,7 @@
             </div>
           } @else {
             <i class="ri-cursor-line" aria-hidden="true"></i>
-            <span>Seleccione un comunero de la lista.</span>
+            <span>Seleccione un usuario de la lista.</span>
           }
         </div>
 
@@ -66,14 +66,14 @@
           <label for="turno-lote">Lote beneficiario *</label>
           <select id="turno-lote" class="input" [(ngModel)]="turno.lote_id" [disabled]="!turno.persona_id || cargandoLotes()">
             <option [ngValue]="null">
-              {{ !turno.persona_id ? 'Seleccione primero un comunero…' : cargandoLotes() ? 'Cargando lotes…' : lotes().length === 0 ? 'Sin lotes asignados' : 'Seleccionar lote…' }}
+              {{ !turno.persona_id ? 'Seleccione primero un usuario…' : cargandoLotes() ? 'Cargando lotes…' : lotes().length === 0 ? 'Sin lotes asignados' : 'Seleccionar lote…' }}
             </option>
             @for (l of lotes(); track l.id) {
               <option [ngValue]="l.id">{{ l.codigo }} · {{ l.sector_nombre || l.sector || 'General' }}{{ l.superficie_m2 ? ' · ' + l.superficie_m2 + ' m²' : '' }}</option>
             }
           </select>
           @if (turno.persona_id && !cargandoLotes() && lotes().length === 0) {
-            <small class="field-error"><i class="ri-alert-line" aria-hidden="true"></i> El comunero no posee lotes registrados.</small>
+            <small class="field-error"><i class="ri-alert-line" aria-hidden="true"></i> El usuario no posee lotes registrados.</small>
           }
         </div>
 
@@ -113,7 +113,7 @@
         @if (generaCobro) {
           <div class="alert alert--info" role="note" animate.enter="reveal-enter">
             <strong><i class="ri-information-line" aria-hidden="true"></i> Cobro automático</strong>
-            Se generará un cobro pendiente por <strong>${{ turno.costo || 5 | number: '1.2-2' }}</strong> en la cuenta del comunero.
+            Se generará un cobro pendiente por <strong>${{ turno.costo || 5 | number: '1.2-2' }}</strong> en la cuenta del usuario.
           </div>
         }
 

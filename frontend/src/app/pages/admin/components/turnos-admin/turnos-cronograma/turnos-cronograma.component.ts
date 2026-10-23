@@ -18,7 +18,7 @@ interface SectorAgrupado {
  * Cronograma de agua organizado por sectores:
  * Muestra la distribución semanal del agua dividida por cada sector de riego
  * (Patate Viejo, La Merced, San Javier). Permite ver el flujo de entrega,
- * horarios, comuneros beneficiarios y lotes asignados.
+ * horarios, usuarios beneficiarios y lotes asignados.
  */
 @Component({
   selector: 'app-turnos-cronograma',

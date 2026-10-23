@@ -6,7 +6,7 @@ import { AdminService } from './admin.service';
 import { DialogService } from './dialog.service';
 import { NotificationService } from './notification.service';
 
-const GRUPO = { id: '120363000000000001@g.us', nombre: 'Comuneros La Jones' };
+const GRUPO = { id: '120363000000000001@g.us', nombre: 'Usuarios La Jones' };
 const conectado = { estado: 'CONECTADO', conectado: true, mensaje: 'Conectado', qr: null, grupo: GRUPO };
 const iniciando = { estado: 'INICIANDO', conectado: false, mensaje: 'Iniciando', qr: null, grupo: null };
 const errorHttp = (codigo: string, message: string) => throwError(() => ({ status: 409, error: { status: 'ERROR', message, codigo } }));

@@ -17,7 +17,7 @@ before(async () => {
   await resetDatabase();
   const conexion = await conectarBase(process.env.DB_NAME);
   try {
-    resultado = await sembrar(conexion, { hoy: HOY, totalComuneros: 25, meses: 14, password: PASSWORD, log: () => {} });
+    resultado = await sembrar(conexion, { hoy: HOY, totalUsuarios: 25, meses: 14, password: PASSWORD, log: () => {} });
   } finally {
     await conexion.end();
   }
@@ -26,9 +26,9 @@ after(closeDatabase);
 
 const uno = async (sql, params) => (await db.query(sql, params))[0][0];
 
-test('los comuneros tienen cédulas ecuatorianas válidas y únicas', async () => {
+test('los usuarios tienen cédulas ecuatorianas válidas y únicas', async () => {
   const [personas] = await db.query('SELECT cedula FROM personas');
-  assert.equal(personas.length, resultado.comuneros);
+  assert.equal(personas.length, resultado.usuarios);
   assert.ok(personas.every((p) => esCedulaValida(p.cedula)));
 });
 
@@ -96,7 +96,7 @@ test('las credenciales sembradas permiten usar la API', async () => {
   assert.equal(demo.status, 200);
 });
 
-test('no siembra sobre una base con comuneros', async () => {
+test('no siembra sobre una base con usuarios', async () => {
   const conexion = await conectarBase(process.env.DB_NAME);
   try {
     await assert.rejects(sembrar(conexion, { hoy: HOY, password: PASSWORD, log: () => {} }), /Use --reset/);

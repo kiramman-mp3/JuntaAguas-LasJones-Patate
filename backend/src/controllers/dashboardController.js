@@ -11,7 +11,7 @@ async function getResumen(req, res) {
   const inicioAnio = `${fecha.slice(0, 4)}-01-01`;
 
   const [[comunidad]] = await db.query(
-    `SELECT (SELECT COUNT(*) FROM personas WHERE estado = 'ACTIVO') AS comunerosActivos,
+    `SELECT (SELECT COUNT(*) FROM personas WHERE estado = 'ACTIVO') AS usuariosActivos,
             (SELECT COUNT(*) FROM lotes WHERE activo = TRUE) AS lotes,
             (SELECT COUNT(*) FROM sectores WHERE activo = TRUE) AS sectores,
             (SELECT COUNT(*) FROM turnos_riego WHERE estado = 'ACTIVO') AS turnosActivos,
@@ -28,7 +28,7 @@ async function getResumen(req, res) {
          (SELECT COALESCE(SUM(valor), 0) FROM egresos) AS saldoCaja,
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') AS carteraPendiente,
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS carteraVencida,
-       (SELECT COUNT(DISTINCT persona_id) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS comunerosEnMora`,
+       (SELECT COUNT(DISTINCT persona_id) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS usuariosEnMora`,
     // fecha_pago está en UTC: el mes de Ecuador empieza a las 05:00 UTC del día 1.
     [inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioAnio), inicioMes, inicioAnio, fecha, fecha]
   );

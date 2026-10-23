@@ -1,6 +1,6 @@
 /**
  * Convocatorias de asambleas y mingas publicadas en el grupo de WhatsApp de la Junta:
- * un solo mensaje al grupo elegido en el panel, en lugar de uno por comunero.
+ * un solo mensaje al grupo elegido en el panel, en lugar de uno por usuario.
  */
 const db = require('../config/db');
 const whatsapp = require('./whatsappClient');
@@ -24,7 +24,7 @@ function textoConvocatoria(evento, puntos = []) {
     esMinga ? '📢 *CONVOCATORIA A MINGA COMUNITARIA*' : '📢 *CONVOCATORIA A ASAMBLEA GENERAL*',
     'Junta de Agua y Riego La Jones',
     '',
-    esMinga ? `📌 *Trabajo:* ${evento.titulo}` : `Se convoca a todos los comuneros a la asamblea: *${evento.titulo}*`,
+    esMinga ? `📌 *Trabajo:* ${evento.titulo}` : `Se convoca a todos los usuarios a la asamblea: *${evento.titulo}*`,
     `📅 *Fecha:* ${fechaLarga(evento.fecha)}`,
     `⏰ *Hora:* ${horario}`,
     `📍 *Lugar:* ${evento.lugar || LUGAR_POR_DEFECTO}`

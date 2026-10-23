@@ -9,13 +9,13 @@
 >
   <div class="modal__body form-stack">
     @if (cargando) {
-      <app-skeleton [filas]="6" mensaje="Cargando comuneros y asistencias registradas…" />
+      <app-skeleton [filas]="6" mensaje="Cargando usuarios y asistencias registradas…" />
     } @else if (!asistencias.length && error) {
       <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudo cargar la asistencia" [mensaje]="error">
         <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
       </app-empty-state>
     } @else if (!asistencias.length) {
-      <app-empty-state icono="ri-team-line" titulo="Sin comuneros activos" mensaje="No hay comuneros activos para registrar asistencia." />
+      <app-empty-state icono="ri-team-line" titulo="Sin usuarios activos" mensaje="No hay usuarios activos para registrar asistencia." />
     } @else {
       <div class="summary-chips" aria-live="polite">
         <div class="summary-chip"><span>Padrón</span><strong>{{ asistencias.length }}</strong></div>
@@ -26,7 +26,7 @@
       <div class="toolbar">
         <div class="search-field toolbar__grow">
           <i class="ri-search-line" aria-hidden="true"></i>
-          <input class="input input--sm" type="search" [(ngModel)]="buscar" placeholder="Nombre o cédula" aria-label="Buscar comunero" />
+          <input class="input input--sm" type="search" [(ngModel)]="buscar" placeholder="Nombre o cédula" aria-label="Buscar usuario" />
         </div>
         @if (!cerrada) {
           <div class="toolbar__group">
@@ -36,14 +36,14 @@
           </div>
         }
       </div>
-      <p class="text-muted small">Pulse un estado activo para devolver al comunero a pendiente.</p>
+      <p class="text-muted small">Pulse un estado activo para devolver al usuario a pendiente.</p>
 
       @if (error) {
         <div class="alert alert--danger" role="alert">{{ error }}</div>
       }
 
       @if (filtradas.length === 0) {
-        <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda." />
+        <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún usuario coincide con la búsqueda." />
       } @else {
         <ul class="roster">
           @for (a of filtradas; track a.persona_id; let i = $index) {

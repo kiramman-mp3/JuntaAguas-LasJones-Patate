@@ -2,7 +2,7 @@
   <div class="section-head">
     <div>
       <h3 id="mingas-titulo" class="section-head__title">Mingas comunitarias</h3>
-      <p class="section-head__subtitle">Organice el trabajo, convoque a los comuneros y registre su asistencia.</p>
+      <p class="section-head__subtitle">Organice el trabajo, convoque a los usuarios y registre su asistencia.</p>
     </div>
     <div class="section-head__actions">
       <button type="button" class="btn btn--whatsapp" (click)="whatsapp.abrir()">
@@ -41,7 +41,7 @@
         <button type="button" class="btn btn--outline btn--sm" (click)="limpiarFiltros()">Limpiar filtros</button>
       </app-empty-state>
     } @else {
-      <app-empty-state icono="ri-tools-line" titulo="Todavía no hay mingas" mensaje="Cree la primera minga para convocar a los comuneros.">
+      <app-empty-state icono="ri-tools-line" titulo="Todavía no hay mingas" mensaje="Cree la primera minga para convocar a los usuarios.">
         <button type="button" class="btn btn--primary btn--sm" (click)="formularioAbierto = true"><i class="ri-add-line" aria-hidden="true"></i> Nueva minga</button>
       </app-empty-state>
     }
@@ -114,10 +114,10 @@
                 }
               </div>
 
-              <div class="progress-meter" [attr.aria-label]="m.asistentes + ' de ' + m.totalComuneros + ' presentes'">
+              <div class="progress-meter" [attr.aria-label]="m.asistentes + ' de ' + m.totalUsuarios + ' presentes'">
                 <div class="progress-meter__labels">
                   <span>Asistencia</span>
-                  <strong>{{ m.asistentes }} / {{ m.totalComuneros }} presentes</strong>
+                  <strong>{{ m.asistentes }} / {{ m.totalUsuarios }} presentes</strong>
                 </div>
                 <div class="progress-meter__track"><span class="progress-meter__fill" [style.width.%]="porcentaje(m)"></span></div>
               </div>

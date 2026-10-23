@@ -60,14 +60,14 @@ El proyecto incluye un contenedor de Docker con MySQL 8. Las tablas no las crea 
 
 ## 4. Ejecutar el Seed (Datos de Prueba)
 
-El seed simula unos dos años de operación de la Junta con las mismas reglas de negocio que usa la API: ~120 comuneros con cédulas ecuatorianas válidas, 4 sectores, lotes y turnos de riego sin solapes, historial de tarifas, facturación mensual de agua, asambleas y mingas con asistencia y multas, pagos (algunos anulados), egresos, inventario y plan anual. Desde la carpeta `backend`:
+El seed simula unos dos años de operación de la Junta con las mismas reglas de negocio que usa la API: ~120 usuarios con cédulas ecuatorianas válidas, 4 sectores, lotes y turnos de riego sin solapes, historial de tarifas, facturación mensual de agua, asambleas y mingas con asistencia y multas, pagos (algunos anulados), egresos, inventario y plan anual. Desde la carpeta `backend`:
 
 ```bash
 npm run db:seed              # siembra una base vacía (aplica las migraciones pendientes)
 npm run db:seed -- --reset   # elimina y recrea la base antes de sembrar
 ```
 
-- Se niega a ejecutarse en producción o sobre una base que ya tiene comuneros.
+- Se niega a ejecutarse en producción o sobre una base que ya tiene usuarios.
 - Las fechas se calculan a partir del día actual: los eventos pasados quedan realizados y hay próximos eventos convocados.
 
 ---
@@ -107,7 +107,7 @@ Las convocatorias se publican en un grupo de WhatsApp desde un servicio aparte (
    cp .env.example .env   # y pega el token
    npm run dev            # escucha en http://127.0.0.1:3100
    ```
-3. En el panel, menú **WhatsApp**: *Conectar WhatsApp*, escanea el QR con el teléfono de la Junta (*Dispositivos vinculados*) y elige el grupo de las convocatorias. Para pruebas, usa un grupo propio, no el de los comuneros.
+3. En el panel, menú **WhatsApp**: *Conectar WhatsApp*, escanea el QR con el teléfono de la Junta (*Dispositivos vinculados*) y elige el grupo de las convocatorias. Para pruebas, usa un grupo propio, no el de los usuarios.
 
 En Windows el servicio usa Microsoft Edge. Si prefieres otro navegador, indica su ruta en `CHROME_BIN`.
 
@@ -115,10 +115,10 @@ En Windows el servicio usa Microsoft Edge. Si prefieres otro navegador, indica s
 
 ## 6. Credenciales de Acceso
 
-Al terminar, `npm run db:seed` imprime las credenciales: la cédula del **administrador** (Carlos Eduardo Moreta Salazar, presidente), la de un **comunero de demostración** y la contraseña común de todas las cuentas sembradas.
+Al terminar, `npm run db:seed` imprime las credenciales: la cédula del **administrador** (Carlos Eduardo Moreta Salazar, presidente), la de un **usuario de demostración** y la contraseña común de todas las cuentas sembradas.
 
 - La contraseña es aleatoria en cada ejecución. Para fijarla, define `SEED_PASSWORD` (mínimo 8 caracteres, con letras y números) antes de ejecutar el seed, por ejemplo `SEED_PASSWORD=Junta2026 npm run db:seed -- --reset`.
-- El administrador y el comunero de demostración entran directamente. El resto de comuneros con cuenta debe cambiar la contraseña en su primer inicio de sesión, igual que una cuenta creada desde el sistema.
+- El administrador y el usuario de demostración entran directamente. El resto de usuarios con cuenta debe cambiar la contraseña en su primer inicio de sesión, igual que una cuenta creada desde el sistema.
 
 ---
 

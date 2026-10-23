@@ -108,7 +108,7 @@ export class HistorialFinancieroComponent {
         const movimientos: Movimiento[] = [
           ...pagos.data.map((p): Movimiento => ({
             tipo: 'INGRESO', id: p.id, numero: numeroRecibo(p.id), fecha: p.fecha_pago,
-            detalle: p.observacion || 'Pago de obligaciones', tercero: p.comunero_nombre,
+            detalle: p.observacion || 'Pago de obligaciones', tercero: p.usuario_nombre,
             valor: Number(p.valor_total), anulado: p.estado === 'ANULADO'
           })),
           ...egresos.data.map((e): Movimiento => ({

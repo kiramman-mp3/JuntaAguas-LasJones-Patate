@@ -5,11 +5,11 @@ import { AdminService } from '../../../../core/services/admin.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { LoteFormComponent } from './lote-form/lote-form.component';
-import { ComuneroFormComponent } from './comunero-form/comunero-form.component';
-import { LotesComuneroComponent } from './lotes-comunero/lotes-comunero.component';
+import { UsuarioFormComponent } from './usuario-form/usuario-form.component';
+import { LotesUsuarioComponent } from './lotes-usuario/lotes-usuario.component';
 import { VincularLoteComponent } from './vincular-lote/vincular-lote.component';
 import { SectorFormComponent } from './sector-form/sector-form.component';
-import { PadronComunerosComponent } from './padron/padron-comuneros.component';
+import { PadronUsuariosComponent } from './padron/padron-usuarios.component';
 import { CatastroLotesComponent } from './catastro/catastro-lotes.component';
 
 let admin: any;
@@ -81,15 +81,15 @@ describe('Código de nuevo lote (LoteFormComponent)', () => {
   });
 });
 
-describe('Contraseña temporal de cuentas (ComuneroFormComponent)', () => {
-  const crear = (comunero: any = null) => {
-    const fixture = TestBed.createComponent(ComuneroFormComponent);
-    fixture.componentRef.setInput('comunero', comunero);
+describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
+  const crear = (usuario: any = null) => {
+    const fixture = TestBed.createComponent(UsuarioFormComponent);
+    fixture.componentRef.setInput('usuario', usuario);
     fixture.componentInstance.ngOnInit();
     return fixture.componentInstance;
   };
 
-  it('envía el rol como código y muestra la contraseña temporal al crear el comunero', () => {
+  it('envía el rol como código y muestra la contraseña temporal al crear el usuario', () => {
     configurar({ createPersona: vi.fn(() => of({ status: 'OK', passwordTemporal: 'Kx7pQ2mR9a' })) });
     const component = crear();
     const guardado = vi.fn();
@@ -115,7 +115,7 @@ describe('Contraseña temporal de cuentas (ComuneroFormComponent)', () => {
     expect(component.credencialTemporal?.password).toBe('Nueva7Temp');
   });
 
-  it('crea la cuenta de un comunero que no la tenía', () => {
+  it('crea la cuenta de un usuario que no la tenía', () => {
     configurar({ crearCuenta: vi.fn(() => of({ status: 'OK', message: '', passwordTemporal: 'Cuenta9New' })) });
     const component = crear({ id: 4, cedula: '1803456789', nombres: 'Luis', apellidos: 'Aldaz' });
     expect(component.cuenta).toBeNull();
@@ -127,10 +127,10 @@ describe('Contraseña temporal de cuentas (ComuneroFormComponent)', () => {
 });
 
 describe('Titularidad única (VincularLoteComponent)', () => {
-  const comunero = { id: 3, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' };
+  const usuario = { id: 3, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' };
   const crear = () => {
     const fixture = TestBed.createComponent(VincularLoteComponent);
-    fixture.componentRef.setInput('comunero', comunero);
+    fixture.componentRef.setInput('usuario', usuario);
     fixture.componentInstance.ngOnInit();
     return fixture.componentInstance;
   };
@@ -161,7 +161,7 @@ describe('Titularidad única (VincularLoteComponent)', () => {
     expect(c.titularActual()).toBeNull();
   });
 
-  it('filtra los lotes reactivamente por codigo, sector o nombre de comunero', () => {
+  it('filtra los lotes reactivamente por codigo, sector o nombre de usuario', () => {
     const c = crear();
     expect(c.lotesFiltrados().length).toBe(3);
 
@@ -211,12 +211,12 @@ describe('Sectores (SectorFormComponent)', () => {
   });
 });
 
-describe('Lotes de un comunero (LotesComuneroComponent)', () => {
+describe('Lotes de un usuario (LotesUsuarioComponent)', () => {
   beforeEach(() => configurar({ getLotes: vi.fn(() => of({ data: [] })) }));
 
-  it('muestra el estado vacío cuando el comunero no tiene lotes en lugar de quedarse cargando', () => {
-    const fixture = TestBed.createComponent(LotesComuneroComponent);
-    fixture.componentRef.setInput('comunero', { id: 3, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' });
+  it('muestra el estado vacío cuando el usuario no tiene lotes en lugar de quedarse cargando', () => {
+    const fixture = TestBed.createComponent(LotesUsuarioComponent);
+    fixture.componentRef.setInput('usuario', { id: 3, nombres: 'Ana', apellidos: 'Pérez', cedula: '1800000001' });
     fixture.componentInstance.ngOnInit();
     expect(admin.getLotes).toHaveBeenCalledWith(undefined, undefined, 3);
     expect(fixture.componentInstance.cargando()).toBe(false);
@@ -224,12 +224,12 @@ describe('Lotes de un comunero (LotesComuneroComponent)', () => {
   });
 });
 
-describe('Paginación del padrón (PadronComunerosComponent)', () => {
+describe('Paginación del padrón (PadronUsuariosComponent)', () => {
   const pagina = (total: number, n = 2) => of({ data: Array.from({ length: n }, (_, i) => ({ id: i + 1, nombres: 'A', apellidos: 'B' })), pagination: { total, page: 1, limit: 25 } });
 
   it('pide la página y la cantidad elegidas al servidor', () => {
     configurar({ getPersonas: vi.fn(() => pagina(60)) });
-    const fixture = TestBed.createComponent(PadronComunerosComponent);
+    const fixture = TestBed.createComponent(PadronUsuariosComponent);
     fixture.detectChanges();
     expect(admin.getPersonas).toHaveBeenLastCalledWith(1, 25, '', '');
 
@@ -243,18 +243,18 @@ describe('Paginación del padrón (PadronComunerosComponent)', () => {
 
   it('si la página pedida quedó vacía vuelve a la última con datos', () => {
     configurar({ getPersonas: vi.fn(() => pagina(30)) });
-    const fixture = TestBed.createComponent(PadronComunerosComponent);
+    const fixture = TestBed.createComponent(PadronUsuariosComponent);
     fixture.detectChanges();
     fixture.componentInstance.cambiarPagina(5);
     expect(fixture.componentInstance.pagina()).toBe(2);
     expect(admin.getPersonas).toHaveBeenLastCalledWith(2, 25, '', '');
   });
 
-  it('muestra el paginador con el rango de comuneros', () => {
+  it('muestra el paginador con el rango de usuarios', () => {
     configurar({ getPersonas: vi.fn(() => pagina(60)) });
-    const fixture = TestBed.createComponent(PadronComunerosComponent);
+    const fixture = TestBed.createComponent(PadronUsuariosComponent);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Mostrando 1–25 de 60 comuneros');
+    expect(fixture.nativeElement.textContent).toContain('Mostrando 1–25 de 60 usuarios');
   });
 });
 

@@ -42,7 +42,7 @@ const actualizarSchema = z.object({
   observacion: z.preprocess((v) => (typeof v === 'string' && !v.trim() ? null : v), z.string().trim().max(255).nullish())
 }).refine(horarioValido, errorHorario);
 
-/** Turnos activos. Un comunero solo recibe los suyos. */
+/** Turnos activos. Un usuario solo recibe los suyos. */
 async function getTurnos(req, res) {
   const filtros = filtrosQuery.parse(req.query);
   const personaId = personaPermitida(req.user, filtros.persona_id);
@@ -56,7 +56,7 @@ async function getTurnos(req, res) {
   const [filas] = await db.query(
     `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
             t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula,
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
             l.codigo AS lote_codigo, l.superficie_m2,
             s.id AS sector_id, s.nombre AS sector_nombre
      FROM turnos_riego t
@@ -88,7 +88,7 @@ async function getCronogramaPorSectores(req, res) {
   const [filas] = await db.query(
     `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
             t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula,
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
             l.codigo AS lote_codigo, l.superficie_m2,
             s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
             TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
@@ -132,7 +132,7 @@ async function getCronogramaPorSectores(req, res) {
       diaObj.turnos.push({
         id: fila.id,
         persona_id: fila.persona_id,
-        comunero_nombre: fila.comunero_nombre,
+        usuario_nombre: fila.usuario_nombre,
         cedula: fila.cedula,
         lote_id: fila.lote_id,
         lote_codigo: fila.lote_codigo,
@@ -159,7 +159,7 @@ async function getCronogramaPorSectores(req, res) {
   return res.json({ status: 'OK', data: resultado });
 }
 
-/** Cronograma público sin cédulas para comuneros y visitantes en la landing page. */
+/** Cronograma público sin cédulas para usuarios y visitantes en la landing page. */
 async function getCronogramaPublico(req, res) {
   const filtros = filtrosQuery.parse(req.query);
   const condiciones = ["t.estado = 'ACTIVO'", "s.activo = TRUE"];
@@ -176,7 +176,7 @@ async function getCronogramaPublico(req, res) {
 
   const [filas] = await db.query(
     `SELECT t.id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre,
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre,
             l.codigo AS lote_codigo,
             s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
             TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
@@ -217,7 +217,7 @@ async function getCronogramaPublico(req, res) {
     if (diaObj) {
       diaObj.turnos.push({
         id: fila.id,
-        comunero_nombre: fila.comunero_nombre,
+        usuario_nombre: fila.usuario_nombre,
         lote_codigo: fila.lote_codigo,
         tipo: fila.tipo,
         hora_inicio: String(fila.hora_inicio).substring(0, 5),
@@ -249,7 +249,7 @@ async function createTurno(req, res) {
     detalle: { ...datos, montoTurno: resultado.monto, obligacionId: resultado.obligacionId }
   });
   const message = resultado.obligacionId
-    ? `Turno de agua asignado con éxito. Se generó un cobro automático de $${resultado.monto.toFixed(2)} a la cuenta del comunero.`
+    ? `Turno de agua asignado con éxito. Se generó un cobro automático de $${resultado.monto.toFixed(2)} a la cuenta del usuario.`
     : 'Turno de agua asignado correctamente.';
   return res.status(201).json({ status: 'OK', message, turnoId: resultado.turnoId, obligacionId: resultado.obligacionId });
 }

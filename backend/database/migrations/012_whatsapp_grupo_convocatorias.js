@@ -1,4 +1,4 @@
-// Las convocatorias se publican en un grupo de WhatsApp en lugar de enviarse a cada comunero:
+// Las convocatorias se publican en un grupo de WhatsApp en lugar de enviarse a cada usuario:
 // - configuracion guarda el grupo elegido desde el panel (y futuros ajustes clave/valor),
 // - envios_convocatoria registra envíos a un grupo (sin persona) y quién los hizo.
 // Es reejecutable: cada cambio comprueba antes si ya está aplicado.

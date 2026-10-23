@@ -20,7 +20,7 @@ describe('authGuard', () => {
     expect(navegar).toHaveBeenCalledWith(['/login'], { queryParams: { returnUrl: '/admin' } });
   });
 
-  it('un comunero no entra al panel de administración', () => {
+  it('un usuario no entra al panel de administración', () => {
     const { resultado, navegar } = evaluar(
       { isLoggedIn: () => true, debeCambiarPassword: () => false, getUser: () => ({ rol: 'USUARIO' }) as any }, ['ADMIN']
     );

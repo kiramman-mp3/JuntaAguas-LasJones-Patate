@@ -44,7 +44,7 @@ export interface CredencialTemporal {
             </dl>
             <p class="alert alert--warning" role="note">
               <i aria-hidden="true" class="ri-error-warning-line"></i>
-              Si se pierde, deberá restablecerla desde la ficha del comunero.
+              Si se pierde, deberá restablecerla desde la ficha del usuario.
             </p>
           </div>
           <div class="modal__footer">

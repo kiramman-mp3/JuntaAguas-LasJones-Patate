@@ -18,7 +18,7 @@ Durante la auditoría de contratos JSON y consultas SQL, se detectaron las sigui
 
 ## 2. ⚡ Optimizaciones Técnicas Implementadas
 
-### A. Módulo de Comuneros y Personas (`personaController.js`)
+### A. Gestión de usuarios y personas (`personaController.js`)
 - **Proyecciones Específicas:** Se reemplazó la lectura indiscriminada en consultas individuales y listados por proyecciones selectivas de los atributos requeridos (`id`, `cedula`, `nombres`, `apellidos`, `telefono`, `celular`, `email`, `direccion`, `estado`, `lotes_count`).
 - **Seguridad en Respuestas:** Se garantizó que en ninguna consulta se incluya accidentalmente atributos sensibles de autenticación (`password_hash`).
 - **Paginación Ligera:** Estructuración estandarizada del bloque de metadatos `{ total, page, limit }` sin campos huérfanos.
@@ -28,11 +28,11 @@ Durante la auditoría de contratos JSON y consultas SQL, se detectaron las sigui
 - **Payload Unificado:** La respuesta ahora incluye directamente `{ propietario_id, propietario_cedula, propietario_nombre, propietario }`, reduciendo el tiempo de ejecución en base de datos y el tamaño del paquete JSON enviado al cliente Leaflet.
 
 ### C. Módulo de Turnos de Riego (`turnoController.js`)
-- **Proyección de Horarios Limpia:** En lugar de `SELECT t.*`, se seleccionan estrictamente los campos del calendario (`id`, `persona_id`, `lote_id`, `dia_semana`, `hora_inicio`, `hora_fin`, `tipo`, `estado`, `observacion`), combinados con los nombres del comunero y lote.
+- **Proyección de Horarios Limpia:** En lugar de `SELECT t.*`, se seleccionan estrictamente los campos del calendario (`id`, `persona_id`, `lote_id`, `dia_semana`, `hora_inicio`, `hora_fin`, `tipo`, `estado`, `observacion`), combinados con los nombres del usuario y lote.
 
 ### D. Módulo de Eventos y Asambleas (`eventoController.js`)
 - **Memorización en Memoria:** Se implementó una bandera booleana para asegurar la tabla de documentos una sola vez durante el ciclo de vida del proceso Node.js, eliminando la ejecución de 7 consultas DDL por cada petición a `/eventos`.
-- **Métricas Compactas:** Cálculo agregado y directo de asistentes y comuneros totales dentro del mismo dataset de respuesta.
+- **Métricas Compactas:** Cálculo agregado y directo de asistentes y usuarios totales dentro del mismo dataset de respuesta.
 
 ---
 
@@ -41,7 +41,7 @@ Durante la auditoría de contratos JSON y consultas SQL, se detectaron las sigui
 Se definió el archivo centralizado `frontend/src/app/core/models/api-payloads.ts` con las siguientes interfaces estándar:
 
 - **`ApiResponse<T>`**: Envoltorio genérico estándar con estado, mensaje y paginación.
-- **`PersonaItem`**: Modelo optimizado para listados y padrón de comuneros.
+- **`PersonaItem`**: Modelo optimizado para listados y padrón de usuarios.
 - **`LoteItem`**: Contrato para el mapa interactivo de terrenos y georreferenciación.
 - **`TurnoItem`**: Estructura de turnos de distribución del caudal semanal.
 - **`EventoItem`**: Contrato de asambleas y mingas con indicadores de participación.
@@ -52,7 +52,7 @@ Se definió el archivo centralizado `frontend/src/app/core/models/api-payloads.t
 ## 4. 🧪 Validación y Pruebas Automatizadas
 
 Se implementó la suite de pruebas unitarias `backend/test/payloads.test.js` validando:
-1. Contrato limpio en listado de comuneros con paginación y sin hashes.
+1. Contrato limpio en listado de usuarios con paginación y sin hashes.
 2. Proyección de lotes con sector y propietario sin subqueries redundantes.
 3. Entrega precisa de horarios de agua de riego.
 4. Correcto cálculo de estadísticas en la lista de eventos.

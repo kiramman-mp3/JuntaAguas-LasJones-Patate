@@ -29,7 +29,7 @@ export interface Pago {
   observacion: string | null;
   motivo_anulacion: string | null;
   fecha_anulacion: string | null;
-  comunero_nombre: string;
+  usuario_nombre: string;
   cedula: string;
   registrado_por_usuario: string | null;
   obligaciones_pagadas: number;
@@ -91,7 +91,7 @@ export interface Balance {
   totalEgresos: number;
   totalPendientes: number;
   totalVencido: number;
-  comunerosConDeuda: number;
+  usuariosConDeuda: number;
   balanceAlDia: number;
   desde: string | null;
   hasta: string | null;
@@ -160,7 +160,7 @@ export interface ResultadoFacturacion {
   anio: number;
   mes: number;
   valor: number;
-  comuneros: number;
+  usuarios: number;
   generadas: number;
   existentes: number;
   total: number;
@@ -180,8 +180,8 @@ export interface ResumenFacturacion {
   meses: FacturacionMes[];
 }
 
-/** Persona tal como la devuelve GET /personas (búsqueda de comuneros para cobrar). */
-export interface ComuneroBusqueda {
+/** Persona tal como la devuelve GET /personas (búsqueda de usuarios para cobrar). */
+export interface UsuarioBusqueda {
   id: number;
   cedula: string;
   nombres: string;

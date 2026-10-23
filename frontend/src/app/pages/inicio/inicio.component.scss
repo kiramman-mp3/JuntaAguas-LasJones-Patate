@@ -736,8 +736,8 @@
   }
 }
 
-/* BUSCADOR DE COMUNERO O LOTE */
-.search-comunero-container {
+/* BUSCADOR DE USUARIO O LOTE */
+.search-usuario-container {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -1142,8 +1142,8 @@
       }
     }
 
-    .celda-comunero {
-      .comunero-nombre-tabla {
+    .celda-usuario {
+      .usuario-nombre-tabla {
         font-size: 1rem;
         font-weight: 800;
         color: var(--text-main, #0f172a);
@@ -1328,11 +1328,11 @@
     }
   }
 
-  /* 3. COMUNERO / PROPIETARIO DESTACADO */
-  .comunero-destacado-box {
+  /* 3. USUARIO / PROPIETARIO DESTACADO */
+  .usuario-destacado-box {
     padding: 1rem 1.15rem 0.5rem;
 
-    .comunero-rotulo {
+    .usuario-rotulo {
       font-size: 0.74rem;
       font-weight: 800;
       text-transform: uppercase;
@@ -1344,7 +1344,7 @@
       margin-bottom: 0.25rem;
     }
 
-    .comunero-nombre-grande {
+    .usuario-nombre-grande {
       font-size: 1.22rem;
       font-weight: 800;
       color: var(--text-main, #0f172a);
@@ -1630,7 +1630,7 @@
         }
       }
 
-      .celda-comunero .comunero-nombre-tabla {
+      .celda-usuario .usuario-nombre-tabla {
         color: #f8fafc;
       }
 
@@ -1696,12 +1696,12 @@
       }
     }
 
-    .comunero-destacado-box {
-      .comunero-rotulo {
+    .usuario-destacado-box {
+      .usuario-rotulo {
         color: #38bdf8;
       }
 
-      .comunero-nombre-grande {
+      .usuario-nombre-grande {
         color: #f8fafc;
       }
     }
@@ -1959,7 +1959,7 @@
           print-color-adjust: exact;
         }
 
-        .comunero-col {
+        .usuario-col {
           font-weight: 800;
           letter-spacing: 0.01em;
         }

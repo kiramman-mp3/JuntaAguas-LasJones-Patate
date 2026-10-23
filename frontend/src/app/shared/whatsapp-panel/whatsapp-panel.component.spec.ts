@@ -11,7 +11,7 @@ describe('WhatsAppPanelComponent (Filtro de Grupos)', () => {
   let sesionMock: any;
 
   const gruposMock: GrupoWhatsApp[] = [
-    { id: '120363000000000001@g.us', nombre: 'Comuneros La Jones', participantes: 120 },
+    { id: '120363000000000001@g.us', nombre: 'Usuarios La Jones', participantes: 120 },
     { id: '120363000000000002@g.us', nombre: 'Directiva Junta General', participantes: 8 },
     { id: '120363000000000003@g.us', nombre: 'Riego Sector Alto', participantes: 45 },
     { id: '120363000000000004@g.us', nombre: 'Familia Perez', participantes: 15 }

@@ -40,7 +40,7 @@ export class HistorialPagosComponent {
     const t = this.texto().trim().toLowerCase();
     if (!t) return this.pagos();
     return this.pagos().filter((p) =>
-      [p.comunero_nombre, p.cedula, numeroRecibo(p.id), p.referencia, p.registrado_por_usuario]
+      [p.usuario_nombre, p.cedula, numeroRecibo(p.id), p.referencia, p.registrado_por_usuario]
         .some((campo) => String(campo ?? '').toLowerCase().includes(t)));
   });
 
@@ -80,8 +80,8 @@ export class HistorialPagosComponent {
           await this.pdf.imprimir({
             numero: numeroRecibo(p.id),
             fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
-            comuneroNombre: p.comunero_nombre,
-            comuneroCedula: p.cedula,
+            usuarioNombre: p.usuario_nombre,
+            usuarioCedula: p.cedula,
             lineas: p.detalles.map((d) => ({
               concepto: d.concepto_nombre,
               periodo: etiquetaPeriodo(d.periodo_anio, d.periodo_mes),
@@ -110,7 +110,7 @@ export class HistorialPagosComponent {
     if (pago.estado === 'ANULADO' || this.procesandoId()) return;
     const motivo = await this.dialog.solicitar({
       titulo: `Anular ${numeroRecibo(pago.id)}`,
-      mensaje: `El pago de ${pago.comunero_nombre} por $${Number(pago.valor_total).toFixed(2)} quedará anulado y sus obligaciones volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
+      mensaje: `El pago de ${pago.usuario_nombre} por $${Number(pago.valor_total).toFixed(2)} quedará anulado y las obligaciones del usuario volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
       placeholder: 'Motivo de la anulación',
       textoConfirmar: 'Anular pago',
       tipo: 'DANGER'

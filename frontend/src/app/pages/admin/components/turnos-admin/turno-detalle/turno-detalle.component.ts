@@ -15,7 +15,7 @@ import { Turno } from '../turno.model';
           <span class="avatar" aria-hidden="true"><i class="ri-user-fill"></i></span>
           <div>
             <strong>{{ t.usuario }}</strong>
-            <span>Comunero beneficiario</span>
+            <span>Usuario beneficiario</span>
           </div>
           <span class="badge" [class.badge--success]="t.tipo === 'REGULAR'" [class.badge--warning]="t.tipo !== 'REGULAR'">
             {{ t.tipo === 'REGULAR' ? 'Regular' : 'Adicional' }}
