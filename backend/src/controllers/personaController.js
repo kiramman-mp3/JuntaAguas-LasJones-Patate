@@ -51,6 +51,23 @@ async function idRol(conexion, codigo) {
   return rows[0].id;
 }
 
+/**
+ * Exige que quede al menos otro administrador efectivo (cuenta ACTIVA, rol ADMIN y persona ACTIVA)
+ * además de `personaId`. Bloquea esas filas, así dos cambios simultáneos no pueden dejar a la Junta
+ * sin administrador.
+ */
+async function exigirOtroAdministrador(conexion, personaId, mensaje) {
+  const [otros] = await conexion.query(
+    `SELECT c.id FROM cuentas c
+     JOIN roles r ON r.id = c.rol_id
+     JOIN personas p ON p.id = c.persona_id
+     WHERE r.codigo = 'ADMIN' AND c.estado = 'ACTIVA' AND p.estado = 'ACTIVO' AND c.persona_id <> ?
+     FOR UPDATE`,
+    [personaId]
+  );
+  if (!otros.length) throw conflict(mensaje);
+}
+
 async function cuentaDePersona(conexion, personaId, { bloquear = false } = {}) {
   const [rows] = await conexion.query(
     `SELECT c.id, c.estado, r.codigo AS rol FROM cuentas c JOIN roles r ON r.id = c.rol_id
@@ -314,13 +331,9 @@ async function updatePersona(req, res) {
       if (id === req.user.personaId) {
         throw forbidden('No puede desactivar su propio registro de persona.');
       }
-      const cuenta = await cuentaDePersona(conexion, id);
-      if (cuenta && cuenta.rol === 'ADMIN' && cuenta.estado === 'ACTIVA') {
-        const [[{ admins }]] = await conexion.query(
-          `SELECT COUNT(*) AS admins FROM cuentas c JOIN roles r ON r.id = c.rol_id
-           WHERE r.codigo = 'ADMIN' AND c.estado = 'ACTIVA'`
-        );
-        if (admins <= 1) throw conflict('No se puede desactivar a la persona porque es el último administrador activo.');
+      const cuenta = await cuentaDePersona(conexion, id, { bloquear: true });
+      if (cuenta && cuenta.rol === ROLES.ADMIN && cuenta.estado === 'ACTIVA') {
+        await exigirOtroAdministrador(conexion, id, 'No se puede desactivar a la persona porque es el último administrador activo.');
       }
     }
 
@@ -367,13 +380,7 @@ async function actualizarCuenta(req, res) {
 
     const dejaDeSerAdmin = cuenta.rol === ROLES.ADMIN && cuenta.estado === 'ACTIVA' &&
       ((cambios.rol && cambios.rol !== ROLES.ADMIN) || (cambios.estado && cambios.estado !== 'ACTIVA'));
-    if (dejaDeSerAdmin) {
-      const [[{ admins }]] = await conexion.query(
-        `SELECT COUNT(*) AS admins FROM cuentas c JOIN roles r ON r.id = c.rol_id
-         WHERE r.codigo = 'ADMIN' AND c.estado = 'ACTIVA' FOR UPDATE`
-      );
-      if (admins <= 1) throw conflict('Debe existir al menos un administrador activo.');
-    }
+    if (dejaDeSerAdmin) await exigirOtroAdministrador(conexion, id, 'Debe existir al menos un administrador activo.');
 
     if (cambios.rol) await conexion.query('UPDATE cuentas SET rol_id = ? WHERE id = ?', [await idRol(conexion, cambios.rol), cuenta.id]);
     if (cambios.estado) {
