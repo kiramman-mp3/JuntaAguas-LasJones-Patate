@@ -22,17 +22,28 @@
       <div class="grid-2">
         <div class="form-group">
           <label for="minga-fecha">Fecha *</label>
-          <input id="minga-fecha" class="input" type="date" name="fecha" [(ngModel)]="formulario.fecha" required />
+          <input id="minga-fecha" class="input" type="date" name="fecha" [(ngModel)]="formulario.fecha" [min]="fechaMinima" required />
         </div>
         <div class="form-group">
           <label for="minga-hora">Hora de inicio *</label>
           <input id="minga-hora" class="input" type="time" name="hora" [(ngModel)]="formulario.hora_inicio" required />
         </div>
       </div>
-      <div class="form-group">
-        <label for="minga-lugar">Lugar de encuentro *</label>
-        <input id="minga-lugar" class="input" name="lugar" [(ngModel)]="formulario.lugar" required maxlength="255"
-          placeholder="Punto de encuentro de los usuarios" />
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="minga-lugar">Lugar de encuentro *</label>
+          <input id="minga-lugar" class="input" name="lugar" [(ngModel)]="formulario.lugar" required maxlength="255"
+            placeholder="Punto de encuentro de los comuneros" />
+        </div>
+        <div class="form-group">
+          <label for="minga-sector">Sector convocado</label>
+          <select id="minga-sector" class="input" name="sector_id" [(ngModel)]="formulario.sector_id">
+            <option [ngValue]="null">Todos (todos los sectores)</option>
+            @for (s of sectores; track s.id) {
+              <option [ngValue]="s.id">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
       </div>
       <section class="inset-panel">
         <label class="switch-row">

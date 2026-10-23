@@ -41,7 +41,7 @@ async function createEvento(req, res) {
   const { eventoId, valorMulta, puntos } = await withTransaction((conexion) => eventos.crearEvento(conexion, datos, req.user.cuentaId));
   await registrarAuditoria({
     cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'eventos', entidadId: eventoId, ip: req.ip,
-    detalle: { tipo: datos.tipo, titulo: datos.titulo, fecha: datos.fecha, valorMulta, puntos }
+    detalle: { tipo: datos.tipo, titulo: datos.titulo, fecha: datos.fecha, valorMulta, puntos, sectorId: datos.sector_id ?? null }
   });
   return res.status(201).json({ status: 'OK', message: 'Evento registrado exitosamente.', eventoId });
 }

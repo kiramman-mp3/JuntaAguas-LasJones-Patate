@@ -7,6 +7,8 @@ export interface Minga {
   hora_inicio: string;
   lugar: string;
   estado: string;
+  sector_id?: number | null;
+  sector_nombre?: string | null;
   genera_multa_ausencia: boolean;
   valor_multa: number;
   asistentes: number;
