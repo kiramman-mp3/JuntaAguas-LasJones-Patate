@@ -133,6 +133,16 @@ test('los filtros por día usan el calendario de Ecuador aunque fecha_pago esté
   await db.query('DELETE FROM pagos WHERE id = ?', [r.insertId]);
 });
 
+test('la auditoría también se filtra por días de Ecuador', async () => {
+  // 02:00 UTC del 10 de marzo son las 21:00 del 9 de marzo en Ecuador.
+  await db.query(
+    "INSERT INTO auditoria (cuenta_id, accion, entidad, fecha) VALUES (?, 'PRUEBA_ZONA', 'pruebas', '2025-03-10 02:00:00')", [admin.cuentaId]
+  );
+  const dia = async (fecha) => (await request(app).get(`/api/auditoria?accion=PRUEBA_ZONA&desde=${fecha}&hasta=${fecha}`).set(auth(admin))).body.data;
+  assert.equal((await dia('2025-03-09')).length, 1, 'aparece el 9 de marzo');
+  assert.equal((await dia('2025-03-10')).length, 0, 'no aparece el 10 de marzo');
+});
+
 test('solo se anulan obligaciones pendientes', async () => {
   const ob = await crearObligacion({ personaId: vecino.personaId, anio: 2024, mes: 8 });
   const anular = () => request(app).post(`/api/financiero/obligaciones/${ob}/anular`).set(auth(admin)).send({ motivo: 'Exonerado por asamblea' });

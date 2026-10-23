@@ -1,6 +1,7 @@
 const db = require('../config/db');
 
 const { z, fechaOpcional } = require('../shared/schemas');
+const { inicioDelDiaUtc, finDelDiaUtc } = require('../shared/dates');
 
 const querySchema = z.object({
   entidad: z.string().trim().max(50).optional(),
@@ -29,13 +30,14 @@ async function getAuditoria(req, res, next) {
       sql += ` AND a.accion = ?`;
       params.push(accion);
     }
+    // a.fecha se guarda en UTC; los filtros son días de Ecuador.
     if (desde) {
       sql += ` AND a.fecha >= ?`;
-      params.push(desde);
+      params.push(inicioDelDiaUtc(desde));
     }
     if (hasta) {
-      sql += ` AND a.fecha <= ?`;
-      params.push(`${hasta} 23:59:59.999`);
+      sql += ` AND a.fecha < ?`;
+      params.push(finDelDiaUtc(hasta));
     }
 
     sql += ` ORDER BY a.fecha DESC LIMIT ?`;
