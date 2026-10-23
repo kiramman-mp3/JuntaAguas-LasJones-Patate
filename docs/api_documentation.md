@@ -97,6 +97,10 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/financiero/conceptos` | Público / Autenticado | Catálogo de cobros activos (`AGUA_ANUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`, `CUOTA_EXTRAORDINARIA`) y tarifa vigente. El agua se cobra una vez al año (`/financiero/agua-anual/*`). |
+| `GET` | `/financiero/agua-anual/pagos` | Autenticado | Pagos anuales de agua (un usuario solo ve los suyos). Filtros `desde`, `hasta`, `estado`. |
+| `GET` | `/financiero/agua-anual/pagos/:id` | ADMIN / titular | Detalle de un pago anual para reimprimir su comprobante (`REC-AGUA-…`). |
+| `POST` | `/financiero/agua-anual/pagos/:id/anular` | ADMIN | Anula un pago anual (motivo obligatorio) y devuelve sus obligaciones a `PENDIENTE`. |
+| `POST` | `/financiero/agua-anual/obligaciones/:id/anular` | ADMIN | Anula una obligación anual pendiente (exoneración). |
 | `POST` | `/financiero/tarifas` | ADMIN | Registrar o actualizar tarifa para un concepto por rango de vigencia. |
 | `GET` | `/financiero/obligaciones` | Autenticado | Cuentas por cobrar pendientes (`?persona_id=...&estado=PENDIENTE`). |
 | `POST` | `/financiero/obligaciones` | ADMIN / TESORERO | Emisión de obligación de cobro manual. |

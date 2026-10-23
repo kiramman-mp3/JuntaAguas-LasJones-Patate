@@ -1,11 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   BalanceRespuesta, UsuarioBusqueda, ConceptoCobro, Egreso, HistorialAnual, NuevaTarifa, NuevoEgreso, NuevoPago,
-  ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoObligacionesAnuales, ResumenAnualAgua, Tarifa, ObligacionAnualAgua
+  ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoObligacionesAnuales, ResumenAnualAgua, Tarifa, ObligacionAnualAgua,
+  PagoAnual, PagoAnualDetalle, Recibo, TipoRecibo, ordenarRecibos, reciboDePago, reciboDePagoAnual
 } from '../models/finanzas';
+import { Comprobante, comprobanteDePago, comprobanteDePagoAnual } from './comprobante-pdf.service';
 
 /** Parámetros de consulta sin valores vacíos. */
 function parametros(valores: Record<string, string | number | null | undefined>): HttpParams {
@@ -96,6 +98,42 @@ export class FinanzasService {
   /** Obligaciones anuales de agua pendientes de un usuario, de la más antigua a la más reciente. */
   getObligacionesAnualesAgua(personaId: number): Observable<Respuesta<ObligacionAnualAgua[]>> {
     return this.http.get<Respuesta<ObligacionAnualAgua[]>>(`${this.url}/agua-anual/obligaciones/${personaId}`);
+  }
+
+  /** Pagos anuales de agua; un usuario recibe solo los suyos. */
+  getPagosAnualesAgua(filtros: { desde?: string; hasta?: string; estado?: Pago['estado'] } = {}): Observable<Respuesta<PagoAnual[]>> {
+    return this.http.get<Respuesta<PagoAnual[]>>(`${this.url}/agua-anual/pagos`, { params: parametros(filtros) });
+  }
+
+  getPagoAnualAgua(id: number): Observable<Respuesta<PagoAnualDetalle>> {
+    return this.http.get<Respuesta<PagoAnualDetalle>>(`${this.url}/agua-anual/pagos/${id}`);
+  }
+
+  anularPagoAnualAgua(id: number, motivo: string): Observable<Respuesta<unknown>> {
+    return this.http.post<Respuesta<unknown>>(`${this.url}/agua-anual/pagos/${id}/anular`, { motivo });
+  }
+
+  anularObligacionAnualAgua(id: number, motivo: string): Observable<Respuesta<unknown>> {
+    return this.http.post<Respuesta<unknown>>(`${this.url}/agua-anual/obligaciones/${id}/anular`, { motivo });
+  }
+
+  /** Pagos generales y pagos anuales de agua juntos, del más reciente al más antiguo. */
+  getRecibos(filtros: { desde?: string; hasta?: string; estado?: Pago['estado'] } = {}): Observable<Recibo[]> {
+    return forkJoin([this.getPagos(filtros), this.getPagosAnualesAgua(filtros)]).pipe(
+      map(([generales, anuales]) => ordenarRecibos([...generales.data.map(reciboDePago), ...anuales.data.map(reciboDePagoAnual)]))
+    );
+  }
+
+  /** Comprobante listo para imprimir de un recibo de cualquier tipo. */
+  getComprobante(tipo: TipoRecibo, id: number): Observable<Comprobante> {
+    return tipo === 'AGUA'
+      ? this.getPagoAnualAgua(id).pipe(map((res) => comprobanteDePagoAnual(res.data)))
+      : this.getPago(id).pipe(map((res) => comprobanteDePago(res.data)));
+  }
+
+  /** Anula un recibo de cualquier tipo; sus obligaciones vuelven a estar pendientes. */
+  anularRecibo(tipo: TipoRecibo, id: number, motivo: string): Observable<Respuesta<unknown>> {
+    return tipo === 'AGUA' ? this.anularPagoAnualAgua(id, motivo) : this.anularPago(id, motivo);
   }
 
   /** Registra el pago de obligaciones anuales de agua (solo transferencia o depósito). */

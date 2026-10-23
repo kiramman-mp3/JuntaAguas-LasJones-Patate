@@ -138,6 +138,49 @@ async function detallePago(conexion, id) {
   return { ...filas[0], detalles };
 }
 
+/** Pagos anuales de agua (vigentes y anulados) con el usuario, quién los registró y los años cubiertos. */
+async function listarPagosAnuales(conexion, { personaId, estado, desde, hasta }) {
+  const condiciones = [];
+  const params = [];
+  if (personaId) { condiciones.push('p.persona_id = ?'); params.push(personaId); }
+  if (estado) { condiciones.push('p.estado = ?'); params.push(estado); }
+  filtroFechaPago('p.fecha_pago', { desde, hasta }, condiciones, params);
+  const [filas] = await conexion.query(
+    `SELECT p.id, p.persona_id, p.valor_total, p.metodo, p.referencia, p.observacion, p.fecha_pago, p.estado,
+            p.motivo_anulacion, p.fecha_anulacion,
+            CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula,
+            CONCAT(reg.nombres, ' ', reg.apellidos) AS registrado_por_usuario,
+            (SELECT GROUP_CONCAT(o.periodo_anio ORDER BY o.periodo_anio SEPARATOR ', ')
+             FROM pago_anual_agua_detalle d JOIN obligacion_anual_agua o ON o.id = d.obligacion_anual_agua
+             WHERE d.pago_anual_agua_id = p.id) AS anios
+     FROM pago_anual_agua p
+     JOIN personas per ON per.id = p.persona_id
+     LEFT JOIN cuentas c ON c.id = p.registrado_por_cuenta_id
+     LEFT JOIN personas reg ON reg.id = c.persona_id
+     ${where(condiciones)}
+     ORDER BY p.fecha_pago DESC, p.id DESC`,
+    params
+  );
+  return filas;
+}
+
+/** Pago anual de agua con sus años (para reimprimir el comprobante). Devuelve null si no existe. */
+async function detallePagoAnual(conexion, id) {
+  const [filas] = await conexion.query(
+    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula
+     FROM pago_anual_agua p JOIN personas per ON per.id = p.persona_id WHERE p.id = ?`,
+    [id]
+  );
+  if (!filas.length) return null;
+  const [detalles] = await conexion.query(
+    `SELECT d.obligacion_anual_agua AS obligacion_id, d.valor_pagado, o.periodo_anio
+     FROM pago_anual_agua_detalle d JOIN obligacion_anual_agua o ON o.id = d.obligacion_anual_agua
+     WHERE d.pago_anual_agua_id = ? ORDER BY o.periodo_anio`,
+    [id]
+  );
+  return { ...filas[0], detalles };
+}
+
 async function listarEgresos(conexion, { proveedor, desde, hasta }) {
   const condiciones = [];
   const params = [];
@@ -168,7 +211,7 @@ async function balance(conexion, { desde, hasta }) {
   const filtroPagos = ["estado = 'VIGENTE'"];
   const pIngresos = [];
   filtroFechaPago('fecha_pago', { desde, hasta }, filtroPagos, pIngresos);
-  const filtroPagosAnuales = [];
+  const filtroPagosAnuales = ["estado = 'VIGENTE'"];
   const pIngresosAnuales = [];
   filtroFechaPago('fecha_pago', { desde, hasta }, filtroPagosAnuales, pIngresosAnuales);
   const filtroEgresos = [];
@@ -212,7 +255,7 @@ async function balance(conexion, { desde, hasta }) {
        FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ? AND fecha_pago < ?
        UNION ALL
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0
-       FROM pago_anual_agua WHERE fecha_pago >= ? AND fecha_pago < ?
+       FROM pago_anual_agua WHERE estado = 'VIGENTE' AND fecha_pago >= ? AND fecha_pago < ?
        UNION ALL
        SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes, 0, valor FROM egresos WHERE fecha >= ? AND fecha <= ?
      ) t GROUP BY mes ORDER BY mes DESC`,
@@ -270,7 +313,7 @@ async function historialAnual(conexion) {
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m') AS mes, valor_total AS ingresos, 0 AS egresos, 1 AS es_pago
        FROM pagos WHERE estado = 'VIGENTE'
        UNION ALL
-       SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0, 1 FROM pago_anual_agua
+       SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0, 1 FROM pago_anual_agua WHERE estado = 'VIGENTE'
        UNION ALL
        SELECT DATE_FORMAT(fecha, '%Y-%m'), 0, valor, 0 FROM egresos
      ) t GROUP BY mes ORDER BY mes DESC`,
@@ -294,5 +337,5 @@ async function historialAnual(conexion) {
 
 module.exports = {
   filtroFechaPago, listarConceptos, listarTarifas, listarObligaciones, obligacionesPorCedula, periodosObligaciones,
-  listarPagos, detallePago, listarEgresos, balance, historialAnual
+  listarPagos, detallePago, listarPagosAnuales, detallePagoAnual, listarEgresos, balance, historialAnual
 };

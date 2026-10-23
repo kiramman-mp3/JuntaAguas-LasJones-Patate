@@ -50,6 +50,76 @@ export interface PagoDetalle extends Pago {
   detalles: PagoDetalleLinea[];
 }
 
+/** Pago anual de agua tal como lo lista GET /financiero/agua-anual/pagos. */
+export interface PagoAnual {
+  id: number;
+  persona_id: number;
+  fecha_pago: string;
+  valor_total: number;
+  metodo: MetodoPago;
+  referencia: string | null;
+  estado: EstadoPago;
+  observacion: string | null;
+  motivo_anulacion: string | null;
+  fecha_anulacion: string | null;
+  usuario_nombre: string;
+  cedula: string;
+  registrado_por_usuario: string | null;
+  /** Años cubiertos, separados por coma ('2025, 2026'). */
+  anios: string | null;
+}
+
+export interface PagoAnualDetalle extends PagoAnual {
+  detalles: { obligacion_id: number; valor_pagado: number; periodo_anio: number }[];
+}
+
+/** GENERAL: pago de multas y otros cobros. AGUA: pago anual de agua. Cada uno tiene su numeración. */
+export type TipoRecibo = 'GENERAL' | 'AGUA';
+
+/** Fila común para listar juntos los dos tipos de pago (historial y portal del usuario). */
+export interface Recibo {
+  tipo: TipoRecibo;
+  id: number;
+  numero: string;
+  fecha_pago: string;
+  usuario_nombre: string;
+  cedula: string;
+  /** Qué cubre el pago: cantidad de obligaciones o años del agua. */
+  detalle: string;
+  metodo: MetodoPago;
+  referencia: string | null;
+  valor_total: number;
+  estado: EstadoPago;
+  motivo_anulacion: string | null;
+  comprobante_url: string | null;
+  registrado_por_usuario: string | null;
+}
+
+export function reciboDePago(p: Pago): Recibo {
+  return {
+    tipo: 'GENERAL', id: p.id, numero: numeroRecibo(p.id), fecha_pago: p.fecha_pago,
+    usuario_nombre: p.usuario_nombre, cedula: p.cedula,
+    detalle: `${p.obligaciones_pagadas} ${p.obligaciones_pagadas === 1 ? 'obligación' : 'obligaciones'}`,
+    metodo: p.metodo, referencia: p.referencia, valor_total: Number(p.valor_total), estado: p.estado,
+    motivo_anulacion: p.motivo_anulacion, comprobante_url: p.comprobante_url ?? null, registrado_por_usuario: p.registrado_por_usuario
+  };
+}
+
+export function reciboDePagoAnual(p: PagoAnual): Recibo {
+  return {
+    tipo: 'AGUA', id: p.id, numero: numeroReciboAgua(p.id), fecha_pago: p.fecha_pago,
+    usuario_nombre: p.usuario_nombre, cedula: p.cedula,
+    detalle: p.anios ? `Agua ${p.anios}` : 'Pago anual de agua',
+    metodo: p.metodo, referencia: p.referencia, valor_total: Number(p.valor_total), estado: p.estado,
+    motivo_anulacion: p.motivo_anulacion, comprobante_url: null, registrado_por_usuario: p.registrado_por_usuario
+  };
+}
+
+/** Del pago más reciente al más antiguo. */
+export function ordenarRecibos(recibos: Recibo[]): Recibo[] {
+  return [...recibos].sort((a, b) => b.fecha_pago.localeCompare(a.fecha_pago) || b.id - a.id);
+}
+
 export interface NuevoPago {
   persona_id: number;
   obligacionesIds: number[];
@@ -173,7 +243,7 @@ export interface ObligacionAnualAgua {
   persona_id: number;
   periodo_anio: number;
   valor_total: number;
-  estado: 'PENDIENTE' | 'PAGADO';
+  estado: 'PENDIENTE' | 'PAGADA' | 'ANULADA';
 }
 
 /** Resultado de emitir (o simular) el pago anual de agua de un año. */

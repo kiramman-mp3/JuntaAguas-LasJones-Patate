@@ -186,6 +186,44 @@ async function getObligacionesAnualesAgua(req, res) {
   return res.json({ status: 'OK', data: await finanzas.obligacionesAnualesPendientes(db, personaId) });
 }
 
+/** Pagos anuales de agua. Un usuario solo recibe los suyos. */
+async function getPagosAnualesAgua(req, res) {
+  const filtros = pagosQuery.parse(req.query);
+  const personaId = personaPermitida(req.user, filtros.persona_id);
+  return res.json({ status: 'OK', data: await consultas.listarPagosAnuales(db, { ...filtros, personaId }) });
+}
+
+/** Detalle de un pago anual de agua (para reimprimir el comprobante): su dueño o la directiva. */
+async function getPagoAnualAguaById(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  const pago = await consultas.detallePagoAnual(db, id);
+  if (!pago || personaPermitida(req.user, pago.persona_id) !== pago.persona_id) throw notFound('Pago anual de agua no encontrado.');
+  return res.json({ status: 'OK', data: pago });
+}
+
+/** Anular un pago anual de agua y devolver sus obligaciones a PENDIENTE. */
+async function anularPagoAnualAgua(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  const { motivo } = motivoSchema.parse(req.body);
+  const { pago, obligaciones } = await withTransaction((conexion) =>
+    finanzas.anularPagoAnualAgua(conexion, { pagoId: id, motivo, cuentaId: req.user.cuentaId })
+  );
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId, accion: 'ANULAR', entidad: 'pago_anual_agua', entidadId: id, ip: req.ip,
+    detalle: { motivo, valorTotal: pago.valor_total, obligaciones }
+  });
+  return res.json({ status: 'OK', message: 'Pago anual anulado y obligaciones devueltas a estado PENDIENTE.' });
+}
+
+/** Anular una obligación anual de agua pendiente (exoneración). */
+async function anularObligacionAnualAgua(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  const { motivo } = motivoSchema.parse(req.body);
+  await withTransaction((conexion) => finanzas.anularObligacionAnualAgua(conexion, { obligacionId: id, motivo, cuentaId: req.user.cuentaId }));
+  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'ANULAR', entidad: 'obligacion_anual_agua', entidadId: id, ip: req.ip, detalle: { motivo } });
+  return res.json({ status: 'OK', message: 'Obligación anual anulada correctamente.' });
+}
+
 /** Registrar el pago de obligaciones anuales de agua pendientes. */
 async function registrarPagoAnualAgua(req, res) {
   const datos = pagoSchema.parse(req.body);
@@ -224,5 +262,9 @@ module.exports = {
   generarObligacionesAnualesAgua,
   getResumenAnualAgua,
   getObligacionesAnualesAgua,
-  registrarPagoAnualAgua
+  registrarPagoAnualAgua,
+  getPagosAnualesAgua,
+  getPagoAnualAguaById,
+  anularPagoAnualAgua,
+  anularObligacionAnualAgua
 };

@@ -12,6 +12,7 @@ import { FacturacionAnualComponent } from './facturacion-anual/facturacion-anual
 import { TarifasComponent } from './tarifas/tarifas.component';
 import { EgresosComponent } from './egresos/egresos.component';
 import { HistorialFinancieroComponent } from './historial-financiero/historial-financiero.component';
+import { HistorialPagosComponent } from './historial-pagos/historial-pagos.component';
 import { FinanzasComponent } from './finanzas.component';
 import { GRUPOS_FINANZAS, grupoDeSeccion } from './grupos-finanzas';
 
@@ -269,6 +270,28 @@ describe('Egresos', () => {
   });
 });
 
+describe('Historial de recibos', () => {
+  const recibo = (tipo: 'GENERAL' | 'AGUA', id: number) => ({
+    tipo, id, numero: tipo === 'AGUA' ? `REC-AGUA-${id}` : `REC-${id}`, fecha_pago: '2026-02-10T15:00:00.000Z',
+    usuario_nombre: 'Rosa Caiza', cedula: '1804567890', detalle: tipo === 'AGUA' ? 'Agua 2026' : '1 obligación',
+    metodo: 'DEPOSITO' as const, referencia: 'D-1', valor_total: 42, estado: 'VIGENTE' as const,
+    motivo_anulacion: null, comprobante_url: null, registrado_por_usuario: null
+  });
+
+  it('lista juntos los dos tipos de pago, filtra por tipo y anula cada uno con su propio servicio', async () => {
+    const anularRecibo = vi.fn(() => of({ status: 'OK' as const, message: 'Anulado' }));
+    const solicitar = vi.fn(async () => 'Error de digitación');
+    configurar({ getRecibos: () => of([recibo('AGUA', 3), recibo('GENERAL', 4)]), anularRecibo }, { solicitar });
+    const c = TestBed.createComponent(HistorialPagosComponent).componentInstance;
+    expect(c.filtrados().map((r) => r.numero)).toEqual(['REC-AGUA-3', 'REC-4']);
+    c.tipo.set('AGUA');
+    expect(c.filtrados().map((r) => r.numero)).toEqual(['REC-AGUA-3']);
+
+    await c.anular(c.filtrados()[0]);
+    expect(anularRecibo).toHaveBeenCalledWith('AGUA', 3, 'Error de digitación');
+  });
+});
+
 describe('Historial financiero', () => {
   const historial = {
     anios: [
@@ -293,18 +316,22 @@ describe('Historial financiero', () => {
   });
 
   it('al abrir un mes consulta sus movimientos una sola vez, con el rango del mes', () => {
-    const getPagos = vi.fn(() => of({ status: 'OK' as const, data: [
-      { id: 3, fecha_pago: '2026-02-10T15:00:00.000Z', valor_total: 30, estado: 'VIGENTE', usuario_nombre: 'Rosa Caiza', observacion: null },
-      { id: 4, fecha_pago: '2026-02-11T15:00:00.000Z', valor_total: 8, estado: 'ANULADO', usuario_nombre: 'Luis Toapanta', observacion: null }
-    ] }));
+    const recibo = (tipo: 'GENERAL' | 'AGUA', id: number, numero: string, fecha_pago: string, estado: 'VIGENTE' | 'ANULADO') => ({
+      tipo, id, numero, fecha_pago, usuario_nombre: 'Rosa Caiza', cedula: '', detalle: '1 obligación', metodo: 'DEPOSITO' as const,
+      referencia: null, valor_total: 8, estado, motivo_anulacion: null, comprobante_url: null, registrado_por_usuario: null
+    });
+    const getPagos = vi.fn(() => of([
+      recibo('GENERAL', 4, 'REC-000004', '2026-02-11T15:00:00.000Z', 'ANULADO'),
+      recibo('AGUA', 3, 'REC-AGUA-000003', '2026-02-10T15:00:00.000Z', 'VIGENTE')
+    ]));
     const getEgresos = vi.fn(() => of({ status: 'OK' as const, data: [] }));
-    configurar({ getHistorialAnual: () => of({ status: 'OK', data: historial }), getPagos, getEgresos });
+    configurar({ getHistorialAnual: () => of({ status: 'OK', data: historial }), getRecibos: getPagos, getEgresos });
     const c = TestBed.createComponent(HistorialFinancieroComponent).componentInstance;
 
     c.alternarMes('2026-02');
     expect(getPagos).toHaveBeenCalledWith({ desde: '2026-02-01', hasta: '2026-02-28' });
     const movimientos = c.estadoMes('2026-02')?.movimientos ?? [];
-    expect(movimientos.map((m) => m.numero)).toEqual(['REC-000004', 'REC-000003']);
+    expect(movimientos.map((m) => m.numero), 'incluye el pago anual de agua').toEqual(['REC-000004', 'REC-AGUA-000003']);
     expect(movimientos[0].anulado).toBe(true);
 
     c.alternarMes('2026-02');
