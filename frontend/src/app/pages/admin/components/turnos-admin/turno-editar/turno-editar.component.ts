@@ -5,7 +5,7 @@ import { NotificationService } from '../../../../../core/services/notification.s
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA, Turno } from '../turno.model';
 
-/** Edición del horario, tipo y observaciones de un turno existente. */
+/** Edición del horario y observaciones de un turno existente. */
 @Component({
   selector: 'app-turno-editar',
   standalone: true,
@@ -16,13 +16,6 @@ import { DIAS_SEMANA, Turno } from '../turno.model';
       <form (ngSubmit)="guardar()">
         <div class="modal__body form-stack">
           <div class="grid-2">
-            <div class="form-group">
-              <label for="edit-tipo">Tipo de turno *</label>
-              <select id="edit-tipo" class="input" name="tipo" [(ngModel)]="form.tipo">
-                <option value="REGULAR">Regular (semanal fijo)</option>
-                <option value="ADICIONAL">Adicional (comprado extra)</option>
-              </select>
-            </div>
             <div class="form-group">
               <label for="edit-dia">Día *</label>
               <select id="edit-dia" class="input" name="dia" [(ngModel)]="form.dia_semana">
@@ -69,7 +62,7 @@ export class TurnoEditarComponent implements OnInit {
 
   readonly dias = DIAS_SEMANA;
   readonly guardando = signal(false);
-  form = { dia_semana: 1, hora_inicio: '08:00', hora_fin: '10:00', tipo: 'REGULAR', observacion: '' };
+  form = { dia_semana: 1, hora_inicio: '08:00', hora_fin: '10:00', observacion: '' };
 
   ngOnInit(): void {
     const t = this.turno();
@@ -77,7 +70,6 @@ export class TurnoEditarComponent implements OnInit {
       dia_semana: t.dia_semana || 1,
       hora_inicio: t.horaInicio || '08:00',
       hora_fin: t.horaFin || '10:00',
-      tipo: t.tipo || 'REGULAR',
       observacion: t.observacion || ''
     };
   }

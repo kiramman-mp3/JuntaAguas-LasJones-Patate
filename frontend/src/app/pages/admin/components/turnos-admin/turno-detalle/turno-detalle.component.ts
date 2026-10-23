@@ -17,9 +17,6 @@ import { Turno } from '../turno.model';
             <strong>{{ t.usuario }}</strong>
             <span>Usuario beneficiario</span>
           </div>
-          <span class="badge" [class.badge--success]="t.tipo === 'REGULAR'" [class.badge--warning]="t.tipo !== 'REGULAR'">
-            {{ t.tipo === 'REGULAR' ? 'Regular' : 'Adicional' }}
-          </span>
         </div>
         <dl class="fact-grid">
           <div><dt>Lote</dt><dd>{{ t.lote }}</dd></div>

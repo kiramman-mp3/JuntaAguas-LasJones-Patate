@@ -1,5 +1,4 @@
 import { Component, DestroyRef, OnInit, inject, output, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
@@ -11,12 +10,12 @@ import { DIAS_SEMANA } from '../turno.model';
 
 /**
  * Asignación de un turno de riego: se busca el usuario en el servidor (máximo 20 resultados),
- * se elige uno de sus lotes y el horario semanal. Un turno adicional genera un cobro.
+ * se elige uno de sus lotes y el horario semanal (sin cruces dentro del sector).
  */
 @Component({
   selector: 'app-turno-asignar',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, ModalComponent],
+  imports: [FormsModule, ModalComponent],
   templateUrl: './turno-asignar.component.html'
 })
 export class TurnoAsignarComponent implements OnInit {
@@ -38,14 +37,12 @@ export class TurnoAsignarComponent implements OnInit {
 
   busqueda = '';
   seleccionado: PersonaListado | null = null;
-  turno: Partial<TurnoItem> & { costo?: number | null } = {
+  turno: Partial<TurnoItem> = {
     persona_id: undefined,
     lote_id: undefined,
     dia_semana: 1,
     hora_inicio: '08:00',
     hora_fin: '10:00',
-    tipo: 'REGULAR',
-    costo: null,
     observacion: ''
   };
 
@@ -91,10 +88,6 @@ export class TurnoAsignarComponent implements OnInit {
         this.notify.error('No se pudieron cargar los lotes del usuario.');
       }
     });
-  }
-
-  get generaCobro(): boolean {
-    return this.turno.tipo === 'ADICIONAL' || Number(this.turno.costo) > 0;
   }
 
   guardar(): void {

@@ -19,7 +19,7 @@ import { DIAS_SEMANA, DiaSemana, Turno } from '../turno.model';
           </header>
           <div class="week__list">
             @for (t of d.turnos; track t.id) {
-              <article class="shift" [class.shift--extra]="t.tipo !== 'REGULAR'">
+              <article class="shift">
                 <button type="button" class="shift__main" (click)="ver.emit(t)" [attr.aria-label]="'Ver turno de ' + t.usuario">
                   <span class="shift__time">{{ t.horaInicio }} – {{ t.horaFin }}</span>
                   <strong class="shift__who" [title]="t.usuario">{{ t.usuario }}</strong>

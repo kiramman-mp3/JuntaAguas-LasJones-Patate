@@ -55,7 +55,6 @@ export interface TurnoItem {
   id: number;
   persona_id: number;
   lote_id: number;
-  tipo: 'REGULAR' | 'ADICIONAL';
   dia_semana: number;
   hora_inicio: string;
   hora_fin: string;

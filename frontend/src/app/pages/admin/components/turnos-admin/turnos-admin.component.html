@@ -44,11 +44,6 @@
             <option [value]="d.label">{{ d.label }}</option>
           }
         </select>
-        <select class="input toolbar__select" [ngModel]="tipoFiltro()" (ngModelChange)="tipoFiltro.set($event)" aria-label="Tipo">
-          <option value="">Todos los tipos</option>
-          <option value="REGULAR">Regular</option>
-          <option value="ADICIONAL">Adicional</option>
-        </select>
         <span class="pill pill--primary" aria-live="polite">{{ filtrados().length }} de {{ turnos().length }} turnos</span>
       </div>
     </div>

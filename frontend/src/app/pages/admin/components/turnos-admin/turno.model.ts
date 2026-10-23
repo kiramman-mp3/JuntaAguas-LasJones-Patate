@@ -1,5 +1,3 @@
-export type TipoTurno = 'REGULAR' | 'ADICIONAL';
-
 export interface DiaSemana {
   valor: number;
   label: string;
@@ -31,14 +29,12 @@ export interface Turno {
   superficie_m2?: number;
   horaInicio: string;
   horaFin: string;
-  tipo: TipoTurno;
   observacion?: string;
 }
 
 export interface FiltrosTurno {
   busqueda: string;
   dia: string;
-  tipo: string;
   sector?: string;
 }
 
@@ -66,7 +62,6 @@ export function filtrarTurnos(turnos: Turno[], f: FiltrosTurno): Turno[] {
     (t) =>
       (!q || t.usuario.toLowerCase().includes(q) || t.lote.toLowerCase().includes(q) || t.sector.toLowerCase().includes(q)) &&
       (!f.dia || t.dia === f.dia) &&
-      (!f.tipo || t.tipo === f.tipo) &&
       (!f.sector || t.sector === f.sector)
   );
 }
