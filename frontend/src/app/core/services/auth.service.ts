@@ -29,8 +29,6 @@ export class AuthService {
 
   private readonly http = inject(HttpClient);
 
-
-
   /** Con `recordar` la sesión sobrevive al cierre del navegador; sin él dura lo que la pestaña. */
   login(cedula: string, password: string, recordar = true): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { cedula, password }).pipe(
@@ -40,8 +38,15 @@ export class AuthService {
     );
   }
 
-  logout() {
+  /**
+   * Cierra la sesión en este navegador y en el servidor: el token deja de valer aunque alguien lo
+   * haya copiado. El aviso al servidor no bloquea la salida si no hay conexión.
+   */
+  logout(): void {
+    const token = session.token();
     session.limpiar();
+    if (!token) return;
+    this.http.post(`${this.apiUrl}/logout`, {}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({ error: () => undefined });
   }
 
   /**
