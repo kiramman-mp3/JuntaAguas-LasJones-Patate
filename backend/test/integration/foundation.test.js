@@ -5,7 +5,7 @@ const request = require('supertest');
 
 const app = require('../../src/app');
 const db = require('../../src/config/db');
-const { migrate, listarMigraciones } = require('../../src/db/migrator');
+const { migrate, listarMigraciones, MIGRACIONES_RENOMBRADAS } = require('../../src/db/migrator');
 
 before(resetDatabase);
 after(closeDatabase);
@@ -21,6 +21,28 @@ test('todas las migraciones quedan registradas y una segunda ejecución no hace 
   } finally {
     conexion.release();
   }
+});
+
+test('cada migración tiene un número único', () => {
+  const numeros = listarMigraciones().map((archivo) => archivo.slice(0, 3));
+  const repetidos = numeros.filter((numero, i) => numeros.indexOf(numero) !== i);
+  assert.deepEqual([...new Set(repetidos)], []);
+});
+
+test('una base con los nombres anteriores de las migraciones renombradas no las vuelve a ejecutar', async () => {
+  for (const [anterior, actual] of Object.entries(MIGRACIONES_RENOMBRADAS)) {
+    assert.ok(listarMigraciones().includes(actual), `falta el archivo ${actual}`);
+    await db.query('UPDATE schema_migrations SET id = ? WHERE id = ?', [anterior, actual]);
+  }
+
+  const conexion = await db.getConnection();
+  try {
+    assert.deepEqual(await migrate(conexion, { log: () => {} }), []);
+  } finally {
+    conexion.release();
+  }
+  const [registradas] = await db.query('SELECT id FROM schema_migrations ORDER BY id');
+  assert.deepEqual(registradas.map((r) => r.id), listarMigraciones());
 });
 
 test('la migración del grupo de WhatsApp se puede repetir y admite envíos sin persona', async () => {
