@@ -103,9 +103,12 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `POST` | `/financiero/obligaciones/:id/anular` | ADMIN / TESORERO | Anulación de obligación con motivo y registro de auditoría. |
 | `POST` | `/financiero/pagos` | ADMIN / TESORERO | **REGISTRO DE PAGO COMPLETO (Transacción sin pagos parciales):** Recibe array de `obligacionesIds`, valida propiedad y cancela las obligaciones en una transacción atómica. |
 | `GET` | `/financiero/pagos` | Autenticado | Historial de pagos y recaudación realizada. |
+| `POST` | `/financiero/agua-anual/obligaciones` | ADMIN | **Pago anual de agua:** genera la obligación del año (`anio`, `valor_total`) para cada usuario activo. Es idempotente: las obligaciones ya emitidas del año se respetan. |
+| `GET` | `/financiero/agua-anual/obligaciones/:personaId` | ADMIN | Obligaciones anuales de agua pendientes de un usuario, de la más antigua a la más reciente. |
+| `POST` | `/financiero/agua-anual/pagos` | ADMIN | Registra el pago (solo `TRANSFERENCIA` o `DEPOSITO`, con referencia) de una o varias obligaciones anuales de agua en una transacción atómica. |
 | `GET` | `/financiero/egresos` | Autenticado | Gastos y compras realizadas por la Junta. |
 | `POST` | `/financiero/egresos` | ADMIN / TESORERO | Registrar gasto o compra con número de factura. |
-| `GET` | `/financiero/balance` | Autenticado | **Reporte de Balance General Al Día:** Suma de Total Ingresos - Total Egresos. |
+| `GET` | `/financiero/balance` | Autenticado | **Reporte de Balance General Al Día:** Suma de Total Ingresos (pagos y pagos anuales de agua) - Total Egresos, con la cartera pendiente de ambos. |
 
 ---
 
