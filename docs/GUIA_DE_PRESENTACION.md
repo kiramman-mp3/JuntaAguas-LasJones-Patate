@@ -76,14 +76,14 @@ Siga este orden cronológico para una demostración fluida, impactante y coheren
    - Explicar la validación algorítmica: el sistema impide que dos comuneros compartan el mismo canal en el mismo horario.
    - Mostrar la opción de asignar *Turno Adicional*, el cual genera automáticamente una obligación financiera para cobro en caja.
 
-### Etapa 6: Finanzas, Facturación Masiva y Cobro en Caja (2 min)
+### Etapa 6: Finanzas, Pago Anual de Agua y Cobro en Caja (2 min)
 1. Navegar a **Cobro en Caja** (`/admin/finanzas/cobrar`):
    - Buscar un comunero (ej. escribir `Beatriz` o cédula `1809198243`).
-   - El sistema lista instantáneamente sus deudas consolidadas: cuotas mensuales de agua, multas de mingas, multas de asambleas.
-   - Seleccionar rubros a cancelar, elegir método (Efectivo / Transferencia con número de comprobante) y pulsar *Registrar Cobro*.
+   - El sistema lista sus deudas en dos pestañas: el pago anual de agua, y las multas de mingas y asambleas u otros cobros.
+   - Seleccionar rubros a cancelar, elegir método (Transferencia o Depósito, con número de referencia) y pulsar *Registrar pago*.
    - Se genera el **Comprobante de Pago en PDF** con numeración consecutiva, desglose de ítems y sellos.
-2. Mostrar **Facturación Mensual** (`/admin/finanzas/facturacion`):
-   - Matriz mes a mes del año. Con un solo clic se emite la cuota a todos los comuneros activos con lote, garantizando idempotencia (no se duplica si ya fue emitida).
+2. Mostrar **Pago anual** (`/admin/finanzas/facturacion`):
+   - Estado del año y vista previa. Con un solo clic se emite la obligación anual a todos los comuneros activos con lote, garantizando idempotencia (no se duplica si ya fue emitida).
 3. Mostrar **Historial y Anulación** (`/admin/finanzas/pagos`):
    - Si un pago fue registrado por error, se puede anular con un motivo justificado; las obligaciones asociadas vuelven al estado pendiente de forma atómica.
 

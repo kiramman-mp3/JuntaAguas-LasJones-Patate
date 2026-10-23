@@ -60,7 +60,7 @@ El proyecto incluye un contenedor de Docker con MySQL 8. Las tablas no las crea 
 
 ## 4. Ejecutar el Seed (Datos de Prueba)
 
-El seed simula unos dos años de operación de la Junta con las mismas reglas de negocio que usa la API: ~120 usuarios con cédulas ecuatorianas válidas, 4 sectores, lotes y turnos de riego sin solapes, historial de tarifas, facturación mensual de agua, asambleas y mingas con asistencia y multas, pagos (algunos anulados), egresos, inventario y plan anual. Desde la carpeta `backend`:
+El seed simula unos dos años de operación de la Junta con las mismas reglas de negocio que usa la API: ~120 usuarios con cédulas ecuatorianas válidas, 4 sectores, lotes y turnos de riego sin solapes, historial de tarifas, pago anual de agua emitido cada enero, asambleas y mingas con asistencia y multas, pagos (algunos anulados), egresos, inventario y plan anual. Desde la carpeta `backend`:
 
 ```bash
 npm run db:seed              # siembra una base vacía (aplica las migraciones pendientes)

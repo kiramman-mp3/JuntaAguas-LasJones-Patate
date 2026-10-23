@@ -1,6 +1,6 @@
 # Sistema de Gestión - Junta de Agua y Riego "La Jones"
 
-Sistema web para administrar la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador): usuarios y lotes, turnos de riego, asambleas y mingas con asistencia y multas, cobros, facturación mensual del agua, egresos y un portal donde cada usuario consulta su cuenta.
+Sistema web para administrar la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador): usuarios y lotes, turnos de riego, asambleas y mingas con asistencia y multas, cobros, pago anual del agua, egresos y un portal donde cada usuario consulta su cuenta.
 
 La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INSTRUCCIONES.md). Para la defensa y demostración del sistema, consulte la [**Guía Maestra de Presentación**](docs/GUIA_DE_PRESENTACION.md).
 
@@ -30,7 +30,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 | `/admin/finanzas/cobrar` | Cobro en caja: búsqueda del usuario, obligaciones pendientes (cuotas, multas y otros rubros), efectivo o transferencia, comprobante en PDF. |
 | `/admin/finanzas/pagos` | Historial de pagos por fechas, reimpresión del comprobante y anulación con motivo. |
 | `/admin/finanzas/egresos` | Registro y consulta de egresos (proveedor, RUC, factura). |
-| `/admin/finanzas/facturacion` | Facturación mensual del agua: estado del año mes a mes, vista previa y emisión de las cuotas. |
+| `/admin/finanzas/facturacion` | Pago anual del agua: estado del año (emitidas, cobradas, pendientes), vista previa y emisión de la obligación anual a los usuarios con lote. |
 | `/admin/finanzas/tarifas` | Tarifas por concepto con su historial de vigencias. |
 
 ### Usuario (rol USUARIO)
@@ -76,7 +76,7 @@ JuntaAguas-LasJones-Patate/
     ├── pages/                 # inicio, eventos, login, mi-cuenta, no-encontrado
     │   └── admin/             # Contenedor del panel + admin.routes.ts (rutas hijas)
     │       ├── dashboard/
-    │       └── components/    # usuarios, asistencias (asambleas y mingas), turnos, finanzas/{cobro-caja, historial-pagos, egresos, facturacion-mensual, tarifas}
+    │       └── components/    # usuarios, asistencias (asambleas y mingas), turnos, finanzas/{cobro-caja, historial-pagos, egresos, facturacion-anual, tarifas}
     └── testing/               # Utilidades para las pruebas
 ```
 
