@@ -9,8 +9,8 @@ const LUGAR_POR_DEFECTO = 'Casa Comunal Junta La Jones';
 
 /** Puntos con los que arranca el acta de una asamblea que aún no tiene ninguno guardado. */
 const PUNTOS_INICIALES: PuntoAsamblea[] = [
-  { orden: 1, punto_tratar: '1. Constatación del cuórum reglamentario', tratado: 'Se procede con el llamado a lista.', resolucion: 'Se declara formalmente instalada la asamblea.', titulo_acta: 'Constatación del cuórum reglamentario' },
-  { orden: 2, punto_tratar: '2. Lectura y aprobación del acta anterior', tratado: 'Se da lectura al acta previa.', resolucion: 'Aprobada por unanimidad sin objeciones.', titulo_acta: 'Lectura y aprobación del acta anterior' }
+  { orden: 1, punto_tratar: '1. Constatación del cuórum reglamentario', tratado: 'Se procede con el llamado a lista.', resolucion: 'Se declara formalmente instalada la asamblea.' },
+  { orden: 2, punto_tratar: '2. Lectura y aprobación del acta anterior', tratado: 'Se da lectura al acta previa.', resolucion: 'Aprobada por unanimidad sin objeciones.' }
 ];
 
 /**
@@ -41,7 +41,7 @@ export class AsambleasService {
     );
   }
 
-  /** Puntos del orden del día con su acta; si no hay ninguno, propone los puntos iniciales. */
+  /** Puntos del orden del día con su desarrollo en el acta general; si no hay ninguno, propone los puntos iniciales. */
   puntos(asambleaId: number): Observable<PuntoAsamblea[]> {
     return this.consulta.getEventoDetalle(asambleaId).pipe(
       map((res: any) => {
@@ -53,10 +53,7 @@ export class AsambleasService {
           orden: p.orden,
           punto_tratar: p.punto_tratar || '',
           tratado: p.tratado || '',
-          resolucion: p.resolucion || '',
-          titulo_acta: p.titulo_acta || p.punto_tratar || '',
-          responsables: p.responsables || '',
-          fecha_acta: p.fecha_acta || undefined
+          resolucion: p.resolucion || ''
         }));
       })
     );

@@ -8,9 +8,6 @@ export interface PuntoAsamblea {
   punto_tratar: string;
   tratado?: string;
   resolucion?: string;
-  titulo_acta?: string;
-  responsables?: string;
-  fecha_acta?: string;
 }
 
 export interface AsambleaItem {

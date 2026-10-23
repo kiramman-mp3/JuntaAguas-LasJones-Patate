@@ -50,8 +50,6 @@ export interface PuntoAsamblea {
   punto_tratar: string;
   tratado: string | null;
   resolucion: string | null;
-  titulo_acta: string | null;
-  estado_acta: string | null;
   [campo: string]: unknown;
 }
 

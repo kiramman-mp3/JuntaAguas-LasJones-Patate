@@ -38,7 +38,7 @@ export class AsambleaActasComponent implements OnInit {
 
   puntos: PuntoAsamblea[] = [];
   mostrarNuevoTema = false;
-  nuevoTema = { punto_tratar: '', tratado: '', resolucion: '', responsables: '' };
+  nuevoTema = { punto_tratar: '', tratado: '', resolucion: '' };
 
   ngOnInit(): void {
     this.actaFirmadaUrl.set(this.asamblea().acta_firmada_url);
@@ -70,12 +70,10 @@ export class AsambleaActasComponent implements OnInit {
     this.puntos.push({
       orden,
       punto_tratar: `${orden}. ${tema}`,
-      titulo_acta: tema,
       tratado: this.nuevoTema.tratado.trim(),
-      resolucion: this.nuevoTema.resolucion.trim(),
-      responsables: this.nuevoTema.responsables.trim()
+      resolucion: this.nuevoTema.resolucion.trim()
     });
-    this.nuevoTema = { punto_tratar: '', tratado: '', resolucion: '', responsables: '' };
+    this.nuevoTema = { punto_tratar: '', tratado: '', resolucion: '' };
     this.mostrarNuevoTema = false;
   }
 
