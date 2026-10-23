@@ -92,25 +92,29 @@ test('eliminar desactiva el turno una sola vez', async () => {
   assert.equal((await request(app).get('/api/turnos?dia_semana=x').set(auth(admin))).status, 400);
 });
 
-test('el cronograma de agua devuelve los turnos agrupados por sectores y días', async () => {
+test('el cronograma completo, con usuarios y cédulas, es solo para la directiva', async () => {
+  assert.equal((await request(app).get('/api/turnos/cronograma')).status, 401);
+  assert.equal((await request(app).get('/api/turnos/cronograma').set(auth(usuario))).status, 403);
+
   const res = await request(app).get('/api/turnos/cronograma').set(auth(admin));
   assert.equal(res.status, 200);
-  assert.equal(res.body.status, 'OK');
-  assert.ok(Array.isArray(res.body.data));
-  if (res.body.data.length > 0) {
-    const sec = res.body.data[0];
-    assert.ok(sec.sector_id);
-    assert.ok(sec.sector_nombre);
-    assert.ok(Array.isArray(sec.dias));
-    assert.equal(sec.dias.length, 7);
-  }
+  const sector = res.body.data.find((s) => s.sector_nombre === 'La Jones Alta');
+  assert.equal(sector.dias.length, 7);
+  const turno = sector.dias.flatMap((d) => d.turnos)[0];
+  assert.ok(turno.usuario_nombre);
+  assert.ok(turno.cedula);
 });
 
-test('el cronograma público no expone cédulas de los usuarios', async () => {
+test('el cronograma público muestra solo horarios por sector y lote, sin datos personales', async () => {
   const res = await request(app).get('/api/turnos/cronograma-publico');
   assert.equal(res.status, 200);
-  assert.equal(res.body.status, 'OK');
-  assert.ok(Array.isArray(res.body.data));
-  const json = JSON.stringify(res.body.data);
-  assert.ok(!json.includes('cedula'));
+  const sector = res.body.data.find((s) => s.sector_nombre === 'La Jones Alta');
+  assert.ok(sector.total_turnos > 0);
+  const turnosPublicos = sector.dias.flatMap((d) => d.turnos);
+  for (const t of turnosPublicos) {
+    assert.deepEqual(Object.keys(t).sort(), ['duracion_minutos', 'hora_fin', 'hora_inicio', 'id', 'lote_codigo']);
+  }
+  const json = JSON.stringify(res.body);
+  for (const dato of [usuario.cedula, vecino.cedula, 'De Prueba']) assert.ok(!json.includes(dato), `expone ${dato}`);
+  assert.equal((await request(app).get('/api/turnos/publicos/cronograma')).status, 404, 'sin rutas duplicadas');
 });
