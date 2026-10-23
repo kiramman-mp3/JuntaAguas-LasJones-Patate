@@ -64,8 +64,12 @@ export function sumarDias(fecha: string, dias: number): string {
   return new Date(Date.UTC(anio, mes - 1, dia + dias)).toISOString().slice(0, 10);
 }
 
-/** Convierte un Date en 'AAAA-MM-DD' según su día local (sin pasar por UTC como toISOString). */
-export function aFechaIso(fecha: Date): string {
-  const dos = (n: number) => String(n).padStart(2, '0');
-  return `${fecha.getFullYear()}-${dos(fecha.getMonth() + 1)}-${dos(fecha.getDate())}`;
+/**
+ * Día de calendario en Ecuador ('AAAA-MM-DD') de una fecha o un instante, sin importar la zona del navegador.
+ * Una fecha sin hora ('2026-10-05') se respeta tal cual; un instante se convierte a la hora de Ecuador.
+ */
+export function diaEnEcuador(valor: string | Date): string {
+  if (esSoloFecha(valor)) return valor;
+  const fecha = valor instanceof Date ? valor : new Date(valor);
+  return Number.isNaN(fecha.getTime()) ? String(valor).slice(0, 10) : hoyEnEcuador(fecha);
 }

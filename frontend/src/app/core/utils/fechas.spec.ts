@@ -1,4 +1,4 @@
-import { aFecha, aFechaIso, formatearFecha, hoyEnEcuador, sumarDias } from './fechas';
+import { aFecha, diaEnEcuador, formatearFecha, hoyEnEcuador, sumarDias } from './fechas';
 
 describe('fechas de la Junta', () => {
   it('una fecha AAAA-MM-DD se muestra el mismo día, sin restar un día por la zona horaria', () => {
@@ -10,7 +10,10 @@ describe('fechas de la Junta', () => {
   it('aFecha conserva el día de calendario', () => {
     const fecha = aFecha('2026-03-01')!;
     expect([fecha.getFullYear(), fecha.getMonth(), fecha.getDate()]).toEqual([2026, 2, 1]);
-    expect(aFechaIso(fecha)).toBe('2026-03-01');
+    expect(diaEnEcuador('2026-03-01')).toBe('2026-03-01');
+    // 02:00 UTC del 2 de marzo son las 21:00 del 1 de marzo en Ecuador.
+    expect(diaEnEcuador('2026-03-02T02:00:00.000Z')).toBe('2026-03-01');
+    expect(diaEnEcuador(new Date('2026-03-02T02:00:00.000Z'))).toBe('2026-03-01');
     expect(aFecha('')).toBeNull();
     expect(aFecha('no es fecha')).toBeNull();
   });
