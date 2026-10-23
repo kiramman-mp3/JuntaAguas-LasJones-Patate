@@ -228,7 +228,7 @@ async function generarObligacionesAnualesAgua(conexion, { anio, valorTotal }) {
   await conexion.query(
     `INSERT INTO obligacion_anual_agua (persona_id, periodo_anio, valor_total, estado)
      SELECT p.id, ?, ?, 'PENDIENTE' FROM personas p WHERE p.estado = 'ACTIVO'
-     ON DUPLICATE KEY UPDATE id = id`,
+     ON DUPLICATE KEY UPDATE obligacion_anual_agua.id = obligacion_anual_agua.id`,
     [anio, redondear(valorTotal)]
   );
   const [[{ despues }]] = await conexion.query('SELECT COUNT(*) AS despues FROM obligacion_anual_agua WHERE periodo_anio = ?', [anio]);
@@ -251,7 +251,7 @@ async function obligacionesAnualesPendientes(conexion, personaId) {
  * Registra el pago de una o varias obligaciones anuales de agua pendientes del mismo usuario.
  * @returns {{ pagoId: number, valorTotal: number, actualizados: number }}
  */
-async function registrarPagoAnualAgua(conexion, { personaId, obligacionesIds, metodo = 'TRANSFERENCIA', referencia = null, observacion = null, cuentaId }) {
+async function registrarPagoAnualAgua(conexion, { personaId, obligacionesIds, metodo = 'TRANSFERENCIA', referencia = null, observacion = null, cuentaId, fechaPago = null }) {
   const ids = [...new Set(obligacionesIds.map(Number))];
   const [obligaciones] = await conexion.query(
     'SELECT id, persona_id, valor_total, estado FROM obligacion_anual_agua WHERE id IN (?) FOR UPDATE',
@@ -272,7 +272,7 @@ async function registrarPagoAnualAgua(conexion, { personaId, obligacionesIds, me
   const [pago] = await conexion.query(
     `INSERT INTO pago_anual_agua (persona_id, valor_total, metodo, referencia, observacion, fecha_pago, registrado_por_cuenta_id)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [personaId, valorTotal, metodo, referencia, observacion, new Date(), cuentaId]
+    [personaId, valorTotal, metodo, referencia, observacion, fechaPago || new Date(), cuentaId]
   );
   await conexion.query("UPDATE obligacion_anual_agua SET estado = 'PAGADO' WHERE id IN (?)", [ids]);
   await conexion.query(

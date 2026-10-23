@@ -338,6 +338,53 @@ async function pagarPendientes(conexion, azar, persona, fecha, cuentaId) {
 
 const PROBABILIDAD_PAGO = { PUNTUAL: 0.95, REGULAR: 0.45, MOROSO: 0.12 };
 
+const VALOR_PAGO_ANUAL_AGUA = 10;
+const PROBABILIDAD_PAGO_ANUAL = {
+  PUNTUAL: { anterior: 0.9, actual: 0.85 },
+  REGULAR: { anterior: 0.7, actual: 0.4 },
+  MOROSO: { anterior: 0.2, actual: 0.05 }
+};
+
+/**
+ * Pago único anual de agua: una obligación por usuario activo para el año anterior, el actual y el siguiente.
+ * Los años ya iniciados se pagan según el perfil del usuario; el año siguiente queda pendiente.
+ */
+async function crearPagosAnualesAgua(conexion, azar, personasPorId, hoy, cuentaId) {
+  const anioActual = Number(hoy.slice(0, 4));
+  let obligaciones = 0;
+  for (const anio of [anioActual - 1, anioActual, anioActual + 1]) {
+    const { generadas } = await finanzas.generarObligacionesAnualesAgua(conexion, { anio, valorTotal: VALOR_PAGO_ANUAL_AGUA });
+    obligaciones += generadas;
+  }
+
+  const [iniciadas] = await conexion.query(
+    'SELECT id, persona_id, periodo_anio FROM obligacion_anual_agua WHERE periodo_anio <= ? ORDER BY id',
+    [anioActual]
+  );
+  let pagos = 0;
+  for (const obligacion of iniciadas) {
+    const persona = personasPorId.get(Number(obligacion.persona_id));
+    const probabilidad = PROBABILIDAD_PAGO_ANUAL[persona.perfil][obligacion.periodo_anio < anioActual ? 'anterior' : 'actual'];
+    if (!azar.probabilidad(probabilidad)) continue;
+
+    // El pago ocurre dentro del año de la obligación y nunca después de ayer.
+    const inicio = fechaIso(obligacion.periodo_anio, 1, 1);
+    const fin = [fechaIso(obligacion.periodo_anio, 12, 31), sumarDias(hoy, -1)].sort()[0];
+    const dias = Math.round((Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`)) / 86400000);
+    if (dias < 0) continue;
+    const fecha = sumarDias(inicio, azar.entero(0, dias));
+
+    const metodo = azar.probabilidad(0.75) ? 'TRANSFERENCIA' : 'DEPOSITO';
+    await finanzas.registrarPagoAnualAgua(conexion, {
+      personaId: persona.id, obligacionesIds: [obligacion.id], metodo, cuentaId,
+      referencia: `${metodo === 'TRANSFERENCIA' ? 'TRF' : 'DEP'}-${azar.entero(100000, 999999)}`,
+      fechaPago: instante(fecha, `${dosDigitos(azar.entero(8, 16))}:${dosDigitos(azar.entero(0, 59))}:00`)
+    });
+    pagos++;
+  }
+  return { obligaciones, pagos };
+}
+
 async function crearEgresos(conexion, azar, meses, hoy, cuentaId) {
   const filas = [];
   for (const { anio, mes } of meses) {
@@ -484,6 +531,9 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsua
       if (i > 0) await pagarPendientes(conexion, azar, personasPorId.get(Number(pago.persona_id)), hoy, admin.cuentaId);
     }
 
+    log('[seed] Pago anual de agua...');
+    const anualAgua = await crearPagosAnualesAgua(conexion, azar, personasPorId, hoy, admin.cuentaId);
+
     log('[seed] Próximos eventos, egresos, inventario y plan anual...');
     const proximos = [
       // 4 próximas asambleas
@@ -506,7 +556,7 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsua
 
     await conexion.commit();
     return {
-      ...resumen, usuarios: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades,
+      ...resumen, anualAgua, usuarios: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades,
       anulaciones: recientes.length, retirados: retiros.size,
       admin: { cedula: admin.cedula, nombre: `${admin.nombres} ${admin.apellidos}` },
       demo: { cedula: demo.cedula, nombre: `${demo.nombres} ${demo.apellidos}` }

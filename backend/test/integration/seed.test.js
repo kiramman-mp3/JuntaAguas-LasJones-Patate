@@ -64,6 +64,27 @@ test('los pagos son coherentes con sus obligaciones y nunca están en el futuro'
   assert.ok((await uno("SELECT COUNT(*) AS n FROM obligaciones WHERE estado = 'PENDIENTE'")).n > 0, 'debe quedar cartera pendiente');
 });
 
+test('el pago anual de agua tiene una obligación por usuario activo y año, y sus pagos son coherentes', async () => {
+  const [anios] = await db.query('SELECT periodo_anio AS anio, COUNT(*) AS total FROM obligacion_anual_agua GROUP BY periodo_anio ORDER BY anio');
+  assert.deepEqual(anios.map((a) => a.anio), [2025, 2026, 2027]);
+  const { c: activos } = await uno("SELECT COUNT(*) AS c FROM personas WHERE estado = 'ACTIVO'");
+  assert.ok(anios.every((a) => a.total === activos));
+
+  const huerfanas = await uno(
+    `SELECT COUNT(*) AS c FROM obligacion_anual_agua o
+     LEFT JOIN pago_anual_agua_detalle d ON d.obligacion_anual_agua = o.id
+     WHERE (o.estado = 'PAGADO') <> (d.id IS NOT NULL)`
+  );
+  assert.equal(huerfanas.c, 0, 'toda obligación pagada tiene su detalle y viceversa');
+
+  const futuras = await uno("SELECT COUNT(*) AS c FROM obligacion_anual_agua WHERE periodo_anio > 2026 AND estado = 'PAGADO'");
+  assert.equal(futuras.c, 0, 'el año siguiente queda pendiente');
+  // fecha_pago está en UTC: el día de hoy en Ecuador termina a las 05:00 UTC del día siguiente.
+  const enElFuturo = await uno('SELECT COUNT(*) AS c FROM pago_anual_agua WHERE fecha_pago >= ?', ['2026-03-16 05:00:00']);
+  assert.equal(enElFuturo.c, 0);
+  assert.ok(resultado.anualAgua.pagos > 0);
+});
+
 test('los eventos pasados están finalizados con su asistencia completa y sus multas', async () => {
   assert.equal((await uno("SELECT COUNT(*) AS n FROM eventos WHERE fecha < ? AND estado NOT IN ('REALIZADO', 'CANCELADO')", [HOY])).n, 0);
   assert.equal((await uno("SELECT COUNT(*) AS n FROM eventos WHERE fecha >= ? AND estado IN ('REALIZADO', 'CANCELADO')", [HOY])).n, 0);
