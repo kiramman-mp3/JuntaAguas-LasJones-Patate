@@ -4,6 +4,7 @@ const { withTransaction } = require('../shared/transaction');
 const { generarPasswordTemporal, hashPassword } = require('../shared/passwords');
 const { ROLES, esAdmin } = require('../shared/roles');
 const { badRequest, forbidden, notFound, conflict } = require('../shared/errors');
+const { aCentavos, aDolares } = require('../shared/money');
 const s = require('../shared/schemas');
 const { z } = s;
 
@@ -150,7 +151,13 @@ async function getPersonaById(req, res) {
     [id]
   );
 
-  return res.json({ status: 'OK', persona: rows[0], lotes, turnos, obligaciones });
+  const [obligacionesAnuales] = await db.query(
+    `SELECT id, periodo_anio, valor_total, estado, fecha_emision, fecha_vencimiento
+     FROM obligacion_anual_agua WHERE persona_id = ? AND estado = 'PENDIENTE' ORDER BY periodo_anio`,
+    [id]
+  );
+
+  return res.json({ status: 'OK', persona: rows[0], lotes, turnos, obligaciones, obligacionesAnuales });
 }
 
 /** Estado de cuenta (deudas y pagos) por cédula: la directiva o el propio usuario. */
@@ -189,9 +196,48 @@ async function consultaPublicaPorCedula(req, res) {
     [persona.id]
   );
 
-  const totalPendiente = obligaciones
-    .filter((o) => o.estado === 'PENDIENTE')
-    .reduce((suma, o) => suma + Number(o.valor), 0);
+  // El agua se cobra una vez al año: sus obligaciones se muestran junto a multas y otros cobros.
+  const [anuales] = await db.query(
+    `SELECT o.id, o.periodo_anio, o.valor_total, o.estado, o.fecha_emision,
+            (SELECT d.pago_anual_agua_id FROM pago_anual_agua_detalle d WHERE d.obligacion_anual_agua = o.id
+             ORDER BY d.pago_anual_agua_id DESC LIMIT 1) AS pago_anual_id
+     FROM obligacion_anual_agua o
+     WHERE o.persona_id = ?
+     ORDER BY o.periodo_anio DESC`,
+    [persona.id]
+  );
+
+  const deudas = [
+    ...anuales.map((o) => ({
+      id: o.id,
+      tipo: 'AGUA_ANUAL',
+      concepto: 'Pago anual de agua',
+      conceptoCodigo: 'AGUA_ANUAL',
+      anio: o.periodo_anio,
+      mes: null,
+      periodo: `Año ${o.periodo_anio}`,
+      valor: Number(o.valor_total),
+      estado: o.estado === 'PAGADO' ? 'PAGADA' : o.estado,
+      fechaEmision: o.fecha_emision,
+      pagoId: null,
+      pagoAnualId: o.pago_anual_id || null
+    })),
+    ...obligaciones.map((o) => ({
+      id: o.id,
+      tipo: 'OBLIGACION',
+      concepto: o.concepto_nombre,
+      conceptoCodigo: o.concepto_codigo,
+      anio: o.periodo_anio || Number(String(o.fecha_emision).slice(0, 4)),
+      mes: o.periodo_mes,
+      periodo: o.periodo_mes ? `Mes ${o.periodo_mes}` : (o.observacion || 'Cuota/Multa'),
+      valor: Number(o.valor),
+      estado: o.estado,
+      fechaEmision: o.fecha_emision,
+      pagoId: o.pago_id || null,
+      pagoAnualId: null
+    }))
+  ];
+  const totalPendiente = aDolares(deudas.filter((d) => d.estado === 'PENDIENTE').reduce((suma, d) => suma + aCentavos(d.valor), 0));
 
   return res.json({
     status: 'OK',
@@ -200,19 +246,8 @@ async function consultaPublicaPorCedula(req, res) {
       nombres: `${persona.nombres} ${persona.apellidos}`,
       sector: loteInfo.sector_nombre,
       loteCodigo: loteInfo.lote_codigo,
-      totalPendiente: Number(totalPendiente.toFixed(2)),
-      deudas: obligaciones.map((o) => ({
-        id: o.id,
-        concepto: o.concepto_nombre,
-        conceptoCodigo: o.concepto_codigo,
-        anio: o.periodo_anio || Number(String(o.fecha_emision).slice(0, 4)),
-        mes: o.periodo_mes,
-        periodo: o.periodo_mes ? `Mes ${o.periodo_mes}` : (o.observacion || 'Cuota/Multa'),
-        valor: Number(o.valor),
-        estado: o.estado,
-        fechaEmision: o.fecha_emision,
-        pagoId: o.pago_id || null
-      }))
+      totalPendiente,
+      deudas
     }
   });
 }
