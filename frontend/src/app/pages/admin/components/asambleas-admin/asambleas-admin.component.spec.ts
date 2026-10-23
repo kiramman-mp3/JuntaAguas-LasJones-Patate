@@ -38,7 +38,7 @@ describe('Módulo de Asambleas', () => {
       createEvento: vi.fn(() => of({ status: 'OK', eventoId: 10 })),
       cambiarEstadoAsamblea: vi.fn((_id: number, estado: string) => of({ status: 'OK', estado })),
       finalizarAsamblea: vi.fn(() => of({ status: 'OK', multasGeneradas: 3 })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ status: 'OK', message: 'Publicada', data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO', reenvio: false } })),
+      enviarConvocatoriaWhatsApp: vi.fn(() => of({ status: 'OK', message: 'Publicada', data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO' } })),
       guardarPuntosAsamblea: vi.fn((_id: number, puntos: any[]) => of({ status: 'OK', data: puntos })),
       getPersonas: vi.fn(() => of({ data: [] })),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
@@ -122,7 +122,7 @@ describe('Módulo de Asambleas', () => {
     it('publica la convocatoria en el grupo de WhatsApp y la marca convocada', async () => {
       const abrir = vi.spyOn(window, 'open');
       await component.enviarConvocatoriaWhatsApp(component.asambleas()[0]);
-      expect(adminMock.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(10, false);
+      expect(adminMock.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(10);
       expect(component.asambleas()[0].estado).toBe('CONVOCADO');
       expect(abrir).not.toHaveBeenCalled();
     });

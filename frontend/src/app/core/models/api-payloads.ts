@@ -234,5 +234,4 @@ export interface EstadoWhatsApp {
 export interface ConvocatoriaWhatsApp {
   grupo: GrupoWhatsApp;
   estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO';
-  reenvio: boolean;
 }

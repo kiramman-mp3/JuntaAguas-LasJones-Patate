@@ -65,7 +65,7 @@ describe('Gestión de Mingas', () => {
       registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
       cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
       finalizarMinga: vi.fn(() => of({ estado: 'REALIZADO', message: 'Finalizada' })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO', reenvio: false }, message: 'Publicada' })),
+      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO' }, message: 'Publicada' })),
     };
     consulta = {
       subirDocumentoEvento: vi.fn(),
@@ -207,7 +207,7 @@ describe('Gestión de Mingas', () => {
   it('refleja el estado convocado que devuelve el servidor sin otra petición', async () => {
     const m = { ...minga };
     await component.enviarConvocatoria(m);
-    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(1, false);
+    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(1);
     expect(m.estado).toBe('CONVOCADO');
     expect(admin.cambiarEstadoMinga).not.toHaveBeenCalled();
   });

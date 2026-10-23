@@ -25,7 +25,7 @@ describe('WhatsAppSesionService', () => {
       cerrarSesionWhatsApp: vi.fn(() => of({ data: { ...conectado, estado: 'DESCONECTADO', conectado: false } })),
       getGruposWhatsApp: vi.fn(() => of({ data: [GRUPO] })),
       guardarGrupoWhatsApp: vi.fn(() => of({ data: GRUPO, message: 'Guardado' })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: GRUPO, estado: 'CONVOCADO', reenvio: false }, message: 'Publicada' }))
+      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: GRUPO, estado: 'CONVOCADO' }, message: 'Publicada' }))
     };
     dialog = { confirmar: vi.fn(async () => true) };
     notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
@@ -97,7 +97,7 @@ describe('WhatsAppSesionService', () => {
 
   it('publica la convocatoria tras confirmar y devuelve el nuevo estado', async () => {
     const resultado = await servicio.convocar({ id: 7, titulo: 'Minga' });
-    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(7, false);
+    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(7);
     expect(resultado?.estado).toBe('CONVOCADO');
     expect(notify.success).toHaveBeenCalledWith('Publicada');
     expect(servicio.enviandoEventoId()).toBeNull();
@@ -115,21 +115,19 @@ describe('WhatsAppSesionService', () => {
     const primera = servicio.convocar({ id: 7, titulo: 'Minga' });
     expect(await servicio.convocar({ id: 7, titulo: 'Minga' })).toBeNull();
     await vi.waitFor(() => expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledOnce());
-    respuesta.next({ data: { grupo: GRUPO, estado: 'CONVOCADO', reenvio: false } });
+    respuesta.next({ data: { grupo: GRUPO, estado: 'CONVOCADO' } });
     respuesta.complete();
     await primera;
     expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledOnce();
   });
 
-  it('pregunta antes de reenviar una convocatoria ya publicada', async () => {
-    admin.enviarConvocatoriaWhatsApp
-      .mockReturnValueOnce(errorHttp('CONVOCATORIA_YA_ENVIADA', 'Ya se publicó.'))
-      .mockReturnValueOnce(of({ data: { grupo: GRUPO, estado: 'CONVOCADO', reenvio: true }, message: 'Publicada' }));
+  it('una convocatoria ya publicada no se vuelve a enviar: solo se informa', async () => {
+    admin.enviarConvocatoriaWhatsApp.mockReturnValueOnce(errorHttp('CONVOCATORIA_YA_ENVIADA', 'Ya se publicó.'));
     const resultado = await servicio.convocar({ id: 7, titulo: 'Minga' });
-    expect(dialog.confirmar).toHaveBeenCalledTimes(2);
-    expect(dialog.confirmar.mock.calls[1][0].mensaje).toContain('Ya se publicó.');
-    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenLastCalledWith(7, true);
-    expect(resultado?.reenvio).toBe(true);
+    expect(resultado).toBeNull();
+    expect(dialog.confirmar).toHaveBeenCalledTimes(1);
+    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledOnce();
+    expect(notify.info).toHaveBeenCalledWith('Ya se publicó.');
   });
 
   it('sin grupo configurado abre el panel para elegirlo', async () => {
