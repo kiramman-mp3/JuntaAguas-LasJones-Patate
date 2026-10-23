@@ -5,12 +5,12 @@ import { Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap,
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { ComprobantePdfService, Comprobante } from '../../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
-import { ComuneroBusqueda, MESES, MetodoPagoNuevo, ObligacionItem, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
+import { ComuneroBusqueda, MESES, MetodoPagoNuevo, ObligacionItem, etiquetaPeriodo, numeroRecibo,numeroReciboPagonual,PagoAnualAgua } from '../../../../../core/models/finanzas';
 import { formatearFecha } from '../../../../../core/utils/fechas';
 import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 
-type FiltroObligaciones = 'TODAS' | 'AGUA' | 'OTRAS';
+type FiltroObligaciones = 'AGUA' | 'OTRAS';
 
 /** Mes del árbol de obligaciones: sus conceptos de cobro y el subtotal. */
 export interface NodoMes {
@@ -66,9 +66,13 @@ export class CobroCajaComponent {
   readonly comunero = signal<ComuneroBusqueda | null>(null);
   readonly obligaciones = signal<ObligacionItem[]>([]);
   readonly cargandoObligaciones = signal(false);
+
+  readonly cargandoObligacionesPagoAnualAgua = signal(false);
+  readonly obligacionesPagoAnualAgua = signal<PagoAnualAgua[]>([]);
+  readonly seleccionAgua = signal<Set<number>>(new Set());
   readonly errorObligaciones = signal('');
   readonly seleccion = signal<ReadonlySet<number>>(new Set());
-  readonly filtro = signal<FiltroObligaciones>('TODAS');
+  readonly filtro = signal<FiltroObligaciones>('AGUA');
 
   readonly metodo = signal<MetodoPagoNuevo>('TRANSFERENCIA');
   readonly referencia = signal('');
@@ -80,13 +84,13 @@ export class CobroCajaComponent {
 
   readonly metodos: { valor: MetodoPagoNuevo; etiqueta: string }[] = [
     { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
-    { valor: 'DEPOSITO', etiqueta: 'Depósito' }
+    { valor: 'DEPOSITO', etiqueta: 'Depósito' },
   ];
 
   readonly visibles = computed(() => {
     const filtro = this.filtro();
     return this.obligaciones().filter((o) =>
-      filtro === 'TODAS' || (filtro === 'AGUA' ? o.concepto_codigo === 'AGUA_MENSUAL' : o.concepto_codigo !== 'AGUA_MENSUAL'));
+      filtro === 'OTRAS' || (filtro === 'AGUA' ? o.concepto_codigo === 'AGUA_MENSUAL' : o.concepto_codigo !== 'AGUA_MENSUAL'));
   });
 
   /**
@@ -129,8 +133,33 @@ export class CobroCajaComponent {
     redondear(this.visibles().filter((o) => this.seleccion().has(o.id)).reduce((s, o) => s + Number(o.valor), 0)));
 
   readonly totalPendiente = computed(() => redondear(this.obligaciones().reduce((s, o) => s + Number(o.valor), 0)));
-  readonly seleccionadas = computed(() => this.obligaciones().filter((o) => this.seleccion().has(o.id)));
-  readonly total = computed(() => redondear(this.seleccionadas().reduce((s, o) => s + Number(o.valor), 0)));
+  // readonly seleccionadas = computed(() => this.obligaciones().filter((o) => this.seleccion().has(o.id)));
+  // readonly total = computed(() => redondear(this.seleccionadas().reduce((s, o) => s + Number(o.valor), 0)));
+
+// 1. Obligaciones seleccionadas según el filtro actual
+  readonly seleccionadas = computed(() => {
+    const elFiltro = this.filtro();
+
+    if (elFiltro === 'AGUA') {
+      // Solo devuelve las de agua que estén seleccionadas
+      return this.obligacionesPagoAnualAgua().filter(p => this.seleccionAgua().has(p.id));
+    } 
+    
+    if (elFiltro === 'OTRAS') {
+      // Solo devuelve las multas/otras que estén seleccionadas
+      return this.obligaciones().filter(o => this.seleccion().has(o.id));
+    }
+
+    // Si el filtro es 'TODAS' (o cualquier otro caso), puedes unirlas ambas si lo requieres
+    const agua = this.obligacionesPagoAnualAgua().filter(p => this.seleccionAgua().has(p.id));
+    const otras = this.obligaciones().filter(o => this.seleccion().has(o.id));
+    return [...agua, ...otras];
+  });
+
+  // 2. Total calculado automáticamente según lo que devuelva 'seleccionadas'
+  readonly total = computed(() => redondear(
+    this.seleccionadas().reduce((s, o) => s + Number('valor_total' in o ? o.valor_total : o.valor), 0)
+  ));
   readonly todasVisiblesMarcadas = computed(() => this.visibles().length > 0 && this.visibles().every((o) => this.seleccion().has(o.id)));
   /** Mensaje que impide cobrar, o '' si el cobro es válido. Se muestra junto al botón, no al enviar. */
   readonly bloqueo = computed(() => {
@@ -192,11 +221,50 @@ export class CobroCajaComponent {
     setTimeout(() => this.campoBusqueda()?.nativeElement.focus());
   }
 
-  cargarObligaciones(): void {
+cargarObligaciones(): void {
     const c = this.comunero();
     if (!c) return;
+
+    // 1. Cargar obligaciones generales
     this.cargandoObligaciones.set(true);
     this.errorObligaciones.set('');
+
+    this.finanzas.getObligaciones({ persona_id: c.id, estado: 'PENDIENTE' }).subscribe({
+      next: (res) => {
+        const ordenadas = [...res.data].sort((a, b) =>
+          (a.periodo_anio ?? 0) - (b.periodo_anio ?? 0) || (a.periodo_mes ?? 0) - (b.periodo_mes ?? 0) || a.id - b.id
+        );
+        this.obligaciones.set(ordenadas.map((o) => ({ ...o, valor: Number(o.valor) })));
+        this.seleccion.set(new Set(ordenadas.map((o) => o.id)));
+        this.cargandoObligaciones.set(false);
+      },
+      error: (err) => {
+        this.cargandoObligaciones.set(false);
+        this.errorObligaciones.set(err.error?.message || 'No se pudieron cargar las obligaciones.');
+      }
+    });
+
+    // 2. Cargar pagos anuales de agua (Aplicando la misma lógica)
+    this.cargandoObligacionesPagoAnualAgua.set(true);
+
+    this.finanzas.getPagosPendientesPersona(Number(c.id)).subscribe({
+      next: (res) => {
+        const listaPagos = res.data || [];
+        const ordenadasAgua = [...listaPagos].sort((a, b) => (a.periodo_anio ?? 0) - (b.periodo_anio ?? 0) || a.id - b.id);
+
+        this.obligacionesPagoAnualAgua.set(ordenadasAgua);
+        
+        // Seleccionar todas por defecto al cargar
+        this.seleccionAgua.set(new Set(ordenadasAgua.map((p) => p.id)));
+        
+        this.cargandoObligacionesPagoAnualAgua.set(false);
+      },
+      error: (error) => {
+        console.error('Error al obtener pagos anuales de agua:', error);
+        this.cargandoObligacionesPagoAnualAgua.set(false);
+      }
+    });
+
     this.finanzas.getObligaciones({ persona_id: c.id, estado: 'PENDIENTE' }).subscribe({
       next: (res) => {
         const ordenadas = [...res.data].sort((a, b) =>
@@ -210,6 +278,46 @@ export class CobroCajaComponent {
         this.errorObligaciones.set(err.error?.message || 'No se pudieron cargar las obligaciones.');
       }
     });
+  }
+  readonly totalSeleccionadoAgua = computed(() => {
+    const seleccionados = this.seleccionAgua();
+    return this.obligacionesPagoAnualAgua()
+      .filter((p) => seleccionados.has(p.id))
+      .reduce((acc, p) => acc + Number(p.valor_total), 0);
+  });
+
+  // 3. Computed para el total general de agua disponible
+  readonly totalAguaGeneral = computed(() => {
+    return this.obligacionesPagoAnualAgua()
+      .reduce((acc, p) => acc + Number(p.valor_total), 0);
+  });
+
+  // 4. Saber si todas están marcadas
+  readonly todasAguaMarcadas = computed(() => {
+    const total = this.obligacionesPagoAnualAgua().length;
+    return total > 0 && this.seleccionAgua().size === total;
+  });
+
+  // 5. Métodos para alternar la selección individual y masiva
+  alternarSeleccionAgua(id: number): void {
+    const nuevo = new Set(this.seleccionAgua());
+    if (nuevo.has(id)) {
+      nuevo.delete(id);
+    } else {
+      nuevo.add(id);
+    }
+    this.seleccionAgua.set(nuevo);
+  }
+formatearValor(valor: any): string {
+    return Number(valor || 0).toFixed(2);
+  }
+  alternarTodasAgua(): void {
+    if (this.todasAguaMarcadas()) {
+      this.seleccionAgua.set(new Set());
+    } else {
+      const todosIds = this.obligacionesPagoAnualAgua().map((p) => p.id);
+      this.seleccionAgua.set(new Set(todosIds));
+    }
   }
 
   alternar(id: number): void {
@@ -256,44 +364,59 @@ export class CobroCajaComponent {
     this.seleccion.set(nueva);
   }
 
-  cobrar(): void {
-    const c = this.comunero();
-    if (!c || this.bloqueo() || this.procesando()) return;
-    const lineas = this.seleccionadas().map((o) => ({
+cobrar(): void {
+  const c = this.comunero();
+  if (!c || this.bloqueo() || this.procesando()) return;
+
+  // 1. Armamos las líneas adaptándonos al tipo (para que no falle TypeScript)
+  const lineas = this.seleccionadas().map((o) => {
+    if ('valor_total' in o) {
+      return {
+        concepto: `Cuota de Agua - Año ${o.periodo_anio}`,
+        periodo: `Año ${o.periodo_anio}`,
+        valor: Number(o.valor_total)
+      };
+    }
+    return {
       concepto: o.concepto_nombre || 'Obligación',
       periodo: etiquetaPeriodo(o.periodo_anio, o.periodo_mes),
       valor: Number(o.valor)
-    }));
-    const metodo = this.metodo();
-    const total = this.total();
-    const observacion = this.observacion().trim();
+    };
+  });
 
-    this.procesando.set(true);
-    this.finanzas.registrarPago({
-      persona_id: c.id,
-      obligacionesIds: this.seleccionadas().map((o) => o.id),
-      metodo,
-      referencia: this.referencia().trim(),
-      observacion: observacion || undefined
-    }).subscribe({
+  const metodo = this.metodo();
+  const total = this.total();
+  const observacion = this.observacion().trim();
+  const referencia = this.referencia().trim();
+
+  this.procesando.set(true);
+
+  // 2. Preparamos el payload en base a la nueva interfaz NuevoPago
+  const payload = {
+    persona_id: c.id,
+    obligacionesIds: this.seleccionadas().map((o) => o.id),
+    metodo,
+    referencia,
+    observacion: observacion || undefined
+  };
+
+  // 3. Evaluamos qué pestaña está activa (AGUA u OTRAS) con if/else
+  if (this.filtro() === 'AGUA') {
+    this.finanzas.marcarPagoPagado(payload).subscribe({
       next: (res) => {
+        // Al ser el endpoint de agua, res es de tipo Respuesta<PagoAnualAgua>
+        this.procesarPagoExitoso(res, lineas, total, metodo, referencia, observacion, c);
+      },
+      error: (err) => {
         this.procesando.set(false);
-        this.pagoRegistradoId.set(res.pagoId);
-        this.comprobante.set({
-          numero: numeroRecibo(res.pagoId),
-          fechaHora: formatearFecha(new Date(), 'conHora'),
-          comuneroNombre: `${c.nombres} ${c.apellidos}`.trim(),
-          comuneroCedula: c.cedula,
-          lineas,
-          total: res.valorTotal ?? total,
-          metodo,
-          referencia: this.referencia().trim(),
-          observacion: observacion || null
-        });
-        this.notify.success(`Pago ${numeroRecibo(res.pagoId)} registrado por $${(res.valorTotal ?? total).toFixed(2)}.`);
-        this.reiniciarPago();
-        this.cargarObligaciones();
-        this.cobrado.emit();
+        this.notify.error(err.error?.message || 'No se pudo registrar el pago de agua.');
+      }
+    });
+  } else {
+    this.finanzas.registrarPago(payload).subscribe({
+      next: (res) => {
+        // Al ser el endpoint normal, res es de tipo PagoRegistrado
+        this.procesarPagoExitoso(res, lineas, total, metodo, referencia, observacion, c);
       },
       error: (err) => {
         this.procesando.set(false);
@@ -301,6 +424,43 @@ export class CobroCajaComponent {
       }
     });
   }
+}
+
+// 4. Método auxiliar para procesar la respuesta (evita duplicar código)
+private procesarPagoExitoso(
+  res: any, 
+  lineas: any[], 
+  total: number, 
+  metodo: any, 
+  referencia: string, 
+  observacion: string, 
+  c: any
+): void {
+  this.procesando.set(false);
+  // Rescatamos el ID del pago devuelto (ajustado por si viene en diferentes propiedades)
+  const pagoId = res.pagoId || res.id; 
+  const numero = this.filtro() === 'AGUA' 
+  ? numeroReciboPagonual(pagoId) 
+  : numeroRecibo(pagoId);
+  this.pagoRegistradoId.set(pagoId);
+
+  this.comprobante.set({
+    numero: numero,
+    fechaHora: formatearFecha(new Date(), 'conHora'),
+    comuneroNombre: `${c.nombres} ${c.apellidos}`.trim(),
+    comuneroCedula: c.cedula,
+    lineas,
+    total: res.valorTotal ?? total,
+    metodo,
+    referencia,
+    observacion: observacion || null
+  });
+  
+  this.notify.success(`Pago ${numero} registrado por $${(res.valorTotal ?? total).toFixed(2)}.`);
+  this.reiniciarPago();
+  this.cargarObligaciones();
+  this.cobrado.emit();
+}
 
   async imprimirComprobante(descargar = false): Promise<void> {
     const c = this.comprobante();
@@ -319,6 +479,6 @@ export class CobroCajaComponent {
     this.metodo.set('TRANSFERENCIA');
     this.referencia.set('');
     this.observacion.set('');
-    this.filtro.set('TODAS');
+    this.filtro.set('AGUA');
   }
 }
