@@ -83,7 +83,7 @@
           <div><dt>Lotes en {{ r.comunidad.sectores }} sectores</dt><dd>{{ r.comunidad.lotes }}</dd></div>
           <div><dt>Turnos de riego activos</dt><dd>{{ r.comunidad.turnosActivos }}</dd></div>
           <div><dt>Asambleas y mingas del año</dt><dd>{{ r.comunidad.eventosAnio }}</dd></div>
-          <div><dt>Cobro de cuotas del año</dt><dd>{{ r.cobranza.porcentaje === null ? '—' : (r.cobranza.porcentaje | percent: '1.0-0') }}</dd></div>
+          <div><dt>Cobro del pago anual de agua</dt><dd>{{ r.cobranza.porcentaje === null ? '—' : (r.cobranza.porcentaje | percent: '1.0-0') }}</dd></div>
           <div><dt>Asistencia promedio</dt><dd>{{ r.asistencia.promedio === null ? '—' : (r.asistencia.promedio | percent: '1.0-0') }}</dd></div>
         </dl>
       </section>

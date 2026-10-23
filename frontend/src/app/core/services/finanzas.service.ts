@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   BalanceRespuesta, UsuarioBusqueda, ConceptoCobro, Egreso, HistorialAnual, NuevaTarifa, NuevoEgreso, NuevoPago,
-  ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoFacturacion, ResultadoObligacionesAnuales, ResumenFacturacion, Tarifa, PagoAnualAgua
+  ObligacionItem, Pago, PagoDetalle, PagoRegistrado, Respuesta, ResultadoObligacionesAnuales, ResumenAnualAgua, Tarifa, ObligacionAnualAgua
 } from '../models/finanzas';
 
 /** Parámetros de consulta sin valores vacíos. */
@@ -16,7 +16,7 @@ function parametros(valores: Record<string, string | number | null | undefined>)
   return params;
 }
 
-/** Cliente tipado del módulo financiero: cobros, pagos, egresos, tarifas y facturación. */
+/** Cliente tipado del módulo financiero: cobros, pagos, egresos, tarifas y pago anual de agua. */
 @Injectable({ providedIn: 'root' })
 export class FinanzasService {
   private http = inject(HttpClient);
@@ -88,18 +88,14 @@ export class FinanzasService {
     return this.http.post<Respuesta<unknown> & { tarifaId: number }>(`${this.url}/tarifas`, tarifa);
   }
 
-  getResumenFacturacion(anio: number): Observable<Respuesta<ResumenFacturacion>> {
-    return this.http.get<Respuesta<ResumenFacturacion>>(`${this.url}/facturacion/mensual`, { params: parametros({ anio }) });
-  }
-
-  /** Emite las cuotas de agua del mes; con `simular` solo calcula cuántas se emitirían. */
-  facturarMes(anio: number, mes: number, simular: boolean): Observable<Respuesta<ResultadoFacturacion>> {
-    return this.http.post<Respuesta<ResultadoFacturacion>>(`${this.url}/facturacion/mensual`, { anio, mes, simular });
+  /** Obligaciones anuales de agua emitidas, cobradas y pendientes de un año. */
+  getResumenAnualAgua(anio: number): Observable<Respuesta<ResumenAnualAgua>> {
+    return this.http.get<Respuesta<ResumenAnualAgua>>(`${this.url}/agua-anual/resumen`, { params: parametros({ anio }) });
   }
 
   /** Obligaciones anuales de agua pendientes de un usuario, de la más antigua a la más reciente. */
-  getObligacionesAnualesAgua(personaId: number): Observable<Respuesta<PagoAnualAgua[]>> {
-    return this.http.get<Respuesta<PagoAnualAgua[]>>(`${this.url}/agua-anual/obligaciones/${personaId}`);
+  getObligacionesAnualesAgua(personaId: number): Observable<Respuesta<ObligacionAnualAgua[]>> {
+    return this.http.get<Respuesta<ObligacionAnualAgua[]>>(`${this.url}/agua-anual/obligaciones/${personaId}`);
   }
 
   /** Registra el pago de obligaciones anuales de agua (solo transferencia o depósito). */
@@ -107,8 +103,11 @@ export class FinanzasService {
     return this.http.post<PagoRegistrado>(`${this.url}/agua-anual/pagos`, payload);
   }
 
-  /** Genera la obligación anual de agua del año para todos los usuarios activos; repetirlo no duplica. */
-  generarObligacionesAnualesAgua(payload: { anio: number; valor_total: number }): Observable<Respuesta<ResultadoObligacionesAnuales>> {
+  /**
+   * Emite la obligación anual de agua del año para los usuarios activos con lote; repetirlo no duplica.
+   * Con `simular` solo calcula cuántas se emitirían. Sin `valor_total` usa la tarifa AGUA_ANUAL del 1 de enero.
+   */
+  generarObligacionesAnualesAgua(payload: { anio: number; valor_total?: number | null; simular?: boolean }): Observable<Respuesta<ResultadoObligacionesAnuales>> {
     return this.http.post<Respuesta<ResultadoObligacionesAnuales>>(`${this.url}/agua-anual/obligaciones`, payload);
   }
 }

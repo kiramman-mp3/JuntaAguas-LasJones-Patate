@@ -14,7 +14,8 @@ export interface Respuesta<T> {
 }
 
 export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'OTRO';
-export type MetodoPagoNuevo = 'TRANSFERENCIA' | 'DEPOSITO'|'EFECTIVO';
+/** Formas de pago que acepta la caja: siempre con referencia bancaria. */
+export type MetodoPagoNuevo = 'TRANSFERENCIA' | 'DEPOSITO';
 export type EstadoPago = 'VIGENTE' | 'ANULADO';
 
 export interface Pago {
@@ -156,30 +157,6 @@ export interface NuevaTarifa {
   observacion?: string;
 }
 
-export interface ResultadoFacturacion {
-  anio: number;
-  mes: number;
-  valor: number;
-  usuarios: number;
-  generadas: number;
-  existentes: number;
-  total: number;
-}
-
-export interface FacturacionMes {
-  mes: number;
-  emitidas: number;
-  pagadas: number;
-  pendientes: number;
-  total: number;
-  recaudado: number;
-}
-
-export interface ResumenFacturacion {
-  anio: number;
-  meses: FacturacionMes[];
-}
-
 /** Persona tal como la devuelve GET /personas (búsqueda de usuarios para cobrar). */
 export interface UsuarioBusqueda {
   id: number;
@@ -190,7 +167,8 @@ export interface UsuarioBusqueda {
   celular?: string | null;
 }
 
-export interface PagoAnualAgua {
+/** Obligación del pago anual de agua de un usuario (una por año). */
+export interface ObligacionAnualAgua {
   id: number;
   persona_id: number;
   periodo_anio: number;
@@ -198,10 +176,24 @@ export interface PagoAnualAgua {
   estado: 'PENDIENTE' | 'PAGADO';
 }
 
+/** Resultado de emitir (o simular) el pago anual de agua de un año. */
 export interface ResultadoObligacionesAnuales {
+  anio: number;
+  valor: number;
   usuarios: number;
   generadas: number;
   existentes: number;
+  total: number;
+}
+
+/** Obligaciones anuales emitidas, cobradas y pendientes de un año. */
+export interface ResumenAnualAgua {
+  anio: number;
+  emitidas: number;
+  pagadas: number;
+  pendientes: number;
+  total: number;
+  recaudado: number;
 }
 
 export const MESES = [
@@ -218,7 +210,7 @@ export function etiquetaPeriodo(anio: number | null | undefined, mes: number | n
 export function numeroRecibo(id: number): string {
   return `REC-${String(id).padStart(6, '0')}`;
 }
-export function numeroReciboPagonual(id: number): string {
+export function numeroReciboAgua(id: number): string {
   return `REC-AGUA-${String(id).padStart(6, '0')}`;
 }
 
