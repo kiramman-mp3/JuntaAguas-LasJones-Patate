@@ -58,6 +58,9 @@
                 <div class="event-card__badges">
                   <span class="pill pill--success">Minga</span>
                   <span class="badge" [class]="estadoBadge(m.estado)">{{ estadoTexto(m.estado) }}</span>
+                  <span class="pill" title="Sector convocado">
+                    <i class="ri-map-pin-range-line" aria-hidden="true"></i> {{ m.sector_nombre || 'Todos los sectores' }}
+                  </span>
                 </div>
                 <div class="event-card__tools">
                   @if (ocupada) {
