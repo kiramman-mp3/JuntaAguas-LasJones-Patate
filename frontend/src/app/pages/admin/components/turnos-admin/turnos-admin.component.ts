@@ -57,7 +57,6 @@ export class TurnosAdminComponent implements OnInit {
 
   readonly busqueda = signal('');
   readonly diaFiltro = signal('');
-  readonly tipoFiltro = signal('');
   readonly sectorFiltro = signal('');
 
   readonly asignarAbierto = signal(false);
@@ -68,18 +67,17 @@ export class TurnosAdminComponent implements OnInit {
     filtrarTurnos(this.turnos(), {
       busqueda: this.busqueda(),
       dia: this.diaFiltro(),
-      tipo: this.tipoFiltro(),
       sector: this.sectorFiltro()
     })
   );
   readonly hayFiltros = computed(
-    () => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.tipoFiltro() || !!this.sectorFiltro()
+    () => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.sectorFiltro()
   );
 
   readonly porPagina = signal(25);
   /** Vuelve a la primera página cada vez que cambia un filtro o la cantidad por página. */
   readonly pagina = linkedSignal({
-    source: () => [this.busqueda(), this.diaFiltro(), this.tipoFiltro(), this.sectorFiltro(), this.porPagina()],
+    source: () => [this.busqueda(), this.diaFiltro(), this.sectorFiltro(), this.porPagina()],
     computation: () => 1
   });
   /** Página válida aunque la lista se acorte (por ejemplo, al eliminar el último turno de una página). */
@@ -134,7 +132,6 @@ export class TurnosAdminComponent implements OnInit {
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.diaFiltro.set('');
-    this.tipoFiltro.set('');
     this.sectorFiltro.set('');
   }
 

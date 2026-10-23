@@ -13,7 +13,7 @@ const router = express.Router();
  *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Turnos de Agua]
- *     summary: Asignar turno (genera cobro si es adicional)
+ *     summary: Asignar turno semanal (sin cruces de horario en el sector)
  *     security: [{ bearerAuth: [] }]
  * /turnos/{id}:
  *   put:

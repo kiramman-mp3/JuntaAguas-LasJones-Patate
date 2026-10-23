@@ -1166,24 +1166,6 @@
         white-space: nowrap;
       }
     }
-
-    .celda-tipo {
-      text-align: center;
-
-      .tipo-tag-tabla {
-        font-size: 0.76rem;
-        font-weight: 700;
-        padding: 0.2rem 0.5rem;
-        border-radius: var(--radius-sm, 6px);
-        background: var(--color-primary-light, #e0f2fe);
-        color: var(--color-primary, #0284c7);
-
-        &.tipo-adicional {
-          background: var(--color-warning-light, #fef3c7);
-          color: var(--color-warning-strong, #b45309);
-        }
-      }
-    }
   }
 }
 
@@ -1385,10 +1367,6 @@
 
         strong {
           color: var(--color-primary, #0284c7);
-        }
-
-        &.turno-adicional-text {
-          color: var(--color-warning-strong, #b45309);
         }
       }
     }
@@ -1720,10 +1698,6 @@
 
           strong {
             color: #38bdf8;
-          }
-
-          &.turno-adicional-text {
-            color: #fbbf24;
           }
         }
       }

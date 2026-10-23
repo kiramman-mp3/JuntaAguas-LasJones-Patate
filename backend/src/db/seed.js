@@ -241,11 +241,11 @@ async function crearTurnos(conexion, lotes, vigenciaDesde) {
       const duracion = Math.min(3, Math.max(1, Math.ceil(lote.superficie / 2500))) * 60;
       if (minuto + duracion > FIN) { dia++; minuto = INICIO; }
       if (dia > 7) break; // El ramal ya no tiene horas libres en la semana.
-      filas.push([lote.persona.id, lote.id, 'REGULAR', dia, hora(minuto), hora(minuto + duracion), vigenciaDesde, 'ACTIVO']);
+      filas.push([lote.persona.id, lote.id, dia, hora(minuto), hora(minuto + duracion), vigenciaDesde, 'ACTIVO']);
       minuto += duracion;
     }
   }
-  await insertarFilas(conexion, 'INSERT INTO turnos_riego (persona_id, lote_id, tipo, dia_semana, hora_inicio, hora_fin, vigencia_desde, estado) VALUES ?', filas);
+  await insertarFilas(conexion, 'INSERT INTO turnos_riego (persona_id, lote_id, dia_semana, hora_inicio, hora_fin, vigencia_desde, estado) VALUES ?', filas);
   return filas.length;
 }
 

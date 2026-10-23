@@ -15,7 +15,6 @@ import { Turno } from '../turno.model';
             <th>Sector</th>
             <th>Día</th>
             <th>Horario</th>
-            <th>Tipo</th>
             <th><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
@@ -27,11 +26,6 @@ import { Turno } from '../turno.model';
               <td data-label="Sector">{{ t.sector }}</td>
               <td data-label="Día">{{ t.dia }}</td>
               <td data-label="Horario"><span class="time-range">{{ t.horaInicio }}<i class="ri-arrow-right-line" aria-hidden="true"></i>{{ t.horaFin }}</span></td>
-              <td data-label="Tipo">
-                <span class="badge" [class.badge--success]="t.tipo === 'REGULAR'" [class.badge--warning]="t.tipo !== 'REGULAR'">
-                  {{ t.tipo === 'REGULAR' ? 'Regular' : 'Adicional' }}
-                </span>
-              </td>
               <td class="cell-actions">
                 <button type="button" class="icon-btn" (click)="ver.emit(t)" title="Ver detalle" [attr.aria-label]="'Ver turno de ' + t.usuario">
                   <i class="ri-eye-line" aria-hidden="true"></i>

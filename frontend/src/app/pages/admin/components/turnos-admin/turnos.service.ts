@@ -22,8 +22,7 @@ export class TurnosService {
           sector: t.sector_nombre || 'N/A',
           superficie_m2: t.superficie_m2,
           horaInicio: String(t.hora_inicio || '').substring(0, 5),
-          horaFin: String(t.hora_fin || '').substring(0, 5),
-          tipo: t.tipo || 'REGULAR'
+          horaFin: String(t.hora_fin || '').substring(0, 5)
         }))
       )
     );

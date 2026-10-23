@@ -387,7 +387,6 @@
                               <th style="width: 12%; text-align: center;">JORNADA</th>
                               <th style="width: 33%;">USUARIO / BENEFICIARIO</th>
                               <th style="width: 7%; text-align: center;">LOTE</th>
-                              <th style="width: 7%; text-align: center;">TIPO</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -413,11 +412,6 @@
                                 </td>
                                 <td class="celda-lote">
                                   <span class="lote-tag-tabla">{{ t.lote_codigo }}</span>
-                                </td>
-                                <td class="celda-tipo">
-                                  <span class="tipo-tag-tabla" [class.tipo-adicional]="t.tipo === 'ADICIONAL'">
-                                    {{ t.tipo === 'ADICIONAL' ? 'Adicional' : 'Ordinario' }}
-                                  </span>
                                 </td>
                               </tr>
                             }
@@ -478,18 +472,6 @@
                               <span class="lote-valor">
                                 <i class="ri-map-pin-2-line" aria-hidden="true"></i>
                                 <strong>Lote Nº {{ t.lote_codigo }}</strong>
-                              </span>
-                            </div>
-
-                            <div class="lote-dato-item">
-                              <span class="lote-etiqueta">Tipo de Turno:</span>
-                              <span class="lote-valor" [class.turno-adicional-text]="t.tipo === 'ADICIONAL'">
-                                @if (t.tipo !== 'ADICIONAL') {
-                                  <i class="ri-drop-fill" aria-hidden="true"></i>
-                                } @else {
-                                  <i class="ri-flashlight-fill" aria-hidden="true"></i>
-                                }
-                                {{ t.tipo === 'ADICIONAL' ? 'Turno Extra / Adicional' : 'Turno Normal Semanal' }}
                               </span>
                             </div>
 
@@ -556,7 +538,6 @@
                         <th style="width: 12%; text-align: center;">JORNADA</th>
                         <th style="width: 35%;">USUARIO / BENEFICIARIO</th>
                         <th style="width: 9%; text-align: center;">LOTE</th>
-                        <th style="width: 9%; text-align: center;">TIPO</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -568,7 +549,6 @@
                           <td style="text-align: center;">{{ obtenerFranjaHoraria(t.hora_inicio).texto }}</td>
                           <td style="font-weight: bold; text-transform: uppercase;">{{ t.usuario_nombre }}</td>
                           <td style="text-align: center; font-weight: bold;">{{ t.lote_codigo }}</td>
-                          <td style="text-align: center; font-size: 8pt;">{{ t.tipo === 'ADICIONAL' ? 'Adicional' : 'Ordinario' }}</td>
                         </tr>
                       }
                     </tbody>

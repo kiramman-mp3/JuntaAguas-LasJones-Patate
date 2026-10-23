@@ -112,10 +112,7 @@ interface SectorAgrupado {
 
                   <div class="sector-day__shifts">
                     @for (t of d.turnos; track t.id) {
-                      <article
-                        class="cronograma-shift"
-                        [class.cronograma-shift--extra]="t.tipo !== 'REGULAR'"
-                      >
+                      <article class="cronograma-shift">
                         <button
                           type="button"
                           class="cronograma-shift__body"
@@ -125,9 +122,6 @@ interface SectorAgrupado {
                           <div class="cronograma-shift__time">
                             <i class="ri-time-line" aria-hidden="true"></i>
                             <strong>{{ t.horaInicio }} – {{ t.horaFin }}</strong>
-                            @if (t.tipo !== 'REGULAR') {
-                              <span class="badge-mini badge-mini--warning">Extra</span>
-                            }
                           </div>
                           <div class="cronograma-shift__who" [title]="t.usuario">
                             {{ t.usuario }}
@@ -450,10 +444,6 @@ interface SectorAgrupado {
       &:hover {
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
         transform: translateY(-1px);
-      }
-
-      &--extra {
-        border-left-color: #f59e0b;
       }
 
       &__body {

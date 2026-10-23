@@ -70,7 +70,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/turnos` | Público / Autenticado | Horarios de distribución de agua asignados por día de la semana (`1` a `7`) y sector. |
-| `POST` | `/turnos` | ADMIN / SECRETARIO | Asignar turno (`REGULAR`/`ADICIONAL`). Valida `hora_inicio < hora_fin` y **no solapamientos**. |
+| `POST` | `/turnos` | ADMIN / SECRETARIO | Asignar turno semanal. Valida `hora_inicio < hora_fin` y **no solapamientos dentro del sector**. |
 | `PUT` | `/turnos/:id` | ADMIN / SECRETARIO | Modificar turno existente (persona, lote, tipo, horario). |
 | `DELETE` | `/turnos/:id` | ADMIN / SECRETARIO | Desactivar turno de riego (conserva historial y cancela horario activo). |
 

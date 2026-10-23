@@ -77,20 +77,6 @@
           }
         </div>
 
-        <div class="grid-2">
-          <div class="form-group">
-            <label for="turno-tipo">Tipo de turno *</label>
-            <select id="turno-tipo" class="input" [(ngModel)]="turno.tipo">
-              <option value="REGULAR">Regular (semanal fijo)</option>
-              <option value="ADICIONAL">Adicional (comprado extra)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="turno-costo">Costo / tarifa ($)</label>
-            <input id="turno-costo" type="number" step="0.50" min="0" class="input" [(ngModel)]="turno.costo" placeholder="0.00" />
-          </div>
-        </div>
-
         <div class="grid-3">
           <div class="form-group">
             <label for="turno-dia">Día *</label>
@@ -110,16 +96,9 @@
           </div>
         </div>
 
-        @if (generaCobro) {
-          <div class="alert alert--info" role="note" animate.enter="reveal-enter">
-            <strong><i class="ri-information-line" aria-hidden="true"></i> Cobro automático</strong>
-            Se generará un cobro pendiente por <strong>${{ turno.costo || 5 | number: '1.2-2' }}</strong> en la cuenta del usuario.
-          </div>
-        }
-
         <div class="form-group">
           <label for="turno-obs">Observaciones <span class="text-muted">(opcional)</span></label>
-          <textarea id="turno-obs" class="input" [(ngModel)]="turno.observacion" rows="2" placeholder="Ej: Compra extra de turno de agua de riego…"></textarea>
+          <textarea id="turno-obs" class="input" [(ngModel)]="turno.observacion" rows="2" placeholder="Ej: Riego por la toma norte del canal…"></textarea>
         </div>
       </div>
     </div>

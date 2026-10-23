@@ -184,7 +184,7 @@ erDiagram
 - **`sectores`**: Sectores geográficos de riego en Patate.
 - **`lotes`**: Terrenos con coordenadas de latitud/longitud aproximadas y radio de error en metros.
 - **`persona_lotes`**: Soporta propiedad, copropiedad o representación de lotes.
-- **`turnos_riego`**: Asigna horarios de riego a un usuario (`persona_id`), distinguiendo turnos `REGULAR` o `ADICIONAL`. Emplea desactivación lógica (`estado_turno_riego: INACTIVO`) para preservar la trazabilidad histórica de asignaciones y evitar la pérdida de antecedentes en fiscalizaciones.
+- **`turnos_riego`**: Asigna horarios semanales de riego a un usuario (`persona_id`) y su lote; dos turnos del mismo sector no pueden cruzarse. Los turnos adicionales se eliminaron (migración 018). Emplea desactivación lógica (`estado_turno_riego: INACTIVO`) para preservar la trazabilidad histórica de asignaciones y evitar la pérdida de antecedentes en fiscalizaciones.
 
 ### 4.3. Dominio de Asambleas, Mingas, Asistencia y Comunicación
 - **`eventos`**: Asambleas y Mingas (`tipo`). Define si genera multa por ausencia (`genera_multa_ausencia`).
@@ -218,7 +218,6 @@ erDiagram
 | **`estado_cuenta`** | `ACTIVA`, `BLOQUEADA`, `INACTIVA` |
 | **`estado_miembro_directiva`** | `VIGENTE`, `FINALIZADO` |
 | **`tipo_relacion_lote`** | `PROPIETARIO`, `COPROPIETARIO`, `REPRESENTANTE` |
-| **`tipo_turno_riego`** | `REGULAR`, `ADICIONAL` |
 | **`estado_turno_riego`** | `ACTIVO`, `INACTIVO` |
 | **`tipo_evento`** | `ASAMBLEA`, `MINGA` |
 | **`estado_evento`** | `BORRADOR`, `CONVOCADO`, `REALIZADO`, `CANCELADO` |
