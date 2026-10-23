@@ -13,8 +13,8 @@ const { hoy } = require('../shared/dates');
 const s = require('../shared/schemas');
 const {
   obligacionesQuery, porCedulaQuery, tarifaSchema, obligacionSchema, pagoSchema, motivoSchema, rangoFechas,
-  egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery,
-  personaIdParam, generarAnualAguaSchema
+  egresosQuery, pagosQuery, egresoSchema,
+  personaIdParam, generarAnualAguaSchema, resumenAnualAguaQuery
 } = require('../schemas/finanzas');
 
 /** Catálogo de conceptos con la tarifa vigente hoy. */
@@ -146,59 +146,38 @@ async function getPeriodosObligaciones(req, res) {
   return res.json({ status: 'OK', data: await consultas.periodosObligaciones(db) });
 }
 
-const porCedula = (mensualidades) => async (req, res) => {
+/** Multas y otros cobros de un usuario, buscado por cédula (el agua se cobra aparte, una vez al año). */
+async function getObligacionesMultas(req, res) {
   const filtros = porCedulaQuery.parse(req.query);
-  return res.json({ status: 'OK', data: await consultas.obligacionesPorCedula(db, { ...filtros, mensualidades }) });
-};
-
-/** Multas y otros cobros (todo lo que no es cuota mensual de agua) de un usuario. */
-const getObligacionesMultas = porCedula(false);
-
-/** Cuotas mensuales de agua de un usuario. */
-const getObligacionesMensualidad = porCedula(true);
-
-/** Emitir (o simular) las cuotas mensuales de agua de un período. */
-async function generarFacturacionMensual(req, res) {
-  const datos = facturacionSchema.parse(req.body);
-  const periodo = `${datos.anio}-${String(datos.mes).padStart(2, '0')}`;
-  if (periodo > hoy().slice(0, 7)) throw badRequest('No se pueden emitir cuotas de meses futuros.');
-
-  const resultado = await withTransaction((conexion) => finanzas.generarFacturacionMensual(conexion, datos));
-  if (!datos.simular && resultado.generadas) {
-    await registrarAuditoria({
-      cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'obligaciones', ip: req.ip,
-      detalle: { facturacionMensual: periodo, generadas: resultado.generadas, total: resultado.total }
-    });
-  }
-  const message = datos.simular
-    ? `Se emitirían ${resultado.generadas} cuotas de $${resultado.valor.toFixed(2)} (total $${resultado.total.toFixed(2)}).`
-    : `Se emitieron ${resultado.generadas} cuotas; ${resultado.existentes} ya estaban emitidas.`;
-  return res.status(datos.simular ? 200 : 201).json({ status: 'OK', message, data: resultado });
+  return res.json({ status: 'OK', data: await consultas.obligacionesPorCedula(db, filtros) });
 }
 
-/** Estado de la facturación de agua de un año (por defecto, el actual). */
-async function getResumenFacturacion(req, res) {
-  const { anio } = resumenFacturacionQuery.parse(req.query);
-  const anioResumen = anio ?? Number(hoy().slice(0, 4));
-  const meses = await finanzas.resumenFacturacionAnual(db, anioResumen);
-  return res.json({ status: 'OK', data: { anio: anioResumen, meses } });
-}
-
-/** Generar la obligación del pago anual de agua del año para todos los usuarios activos. */
+/**
+ * Emitir (o simular) la obligación del pago anual de agua de un año para los usuarios activos con lote.
+ * No se emiten años futuros: la obligación de un año se genera cuando ese año ya empezó.
+ */
 async function generarObligacionesAnualesAgua(req, res) {
-  const { anio, valor_total: valorTotal } = generarAnualAguaSchema.parse(req.body);
-  const resultado = await withTransaction((conexion) => finanzas.generarObligacionesAnualesAgua(conexion, { anio, valorTotal }));
-  if (resultado.generadas) {
+  const { anio, valor_total: valorTotal, simular } = generarAnualAguaSchema.parse(req.body);
+  if (anio > Number(hoy().slice(0, 4))) throw badRequest('No se pueden emitir obligaciones de años futuros.');
+
+  const resultado = await withTransaction((conexion) => finanzas.generarObligacionesAnualesAgua(conexion, { anio, valorTotal, simular }));
+  if (!simular && resultado.generadas) {
     await registrarAuditoria({
       cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'obligacion_anual_agua', ip: req.ip,
-      detalle: { anio, valorTotal, generadas: resultado.generadas, existentes: resultado.existentes }
+      detalle: { anio, valor: resultado.valor, generadas: resultado.generadas, existentes: resultado.existentes, total: resultado.total }
     });
   }
-  return res.status(201).json({
-    status: 'OK',
-    message: `Se generaron ${resultado.generadas} obligaciones del ${anio}; ${resultado.existentes} ya existían.`,
-    data: resultado
-  });
+  const message = simular
+    ? `Se emitirían ${resultado.generadas} obligaciones de ${resultado.valor.toFixed(2)} (total ${resultado.total.toFixed(2)}).`
+    : `Se generaron ${resultado.generadas} obligaciones del ${anio}; ${resultado.existentes} ya existían.`;
+  return res.status(simular ? 200 : 201).json({ status: 'OK', message, data: resultado });
+}
+
+/** Estado del pago anual de agua de un año (por defecto, el actual). */
+async function getResumenAnualAgua(req, res) {
+  const { anio } = resumenAnualAguaQuery.parse(req.query);
+  const data = await finanzas.resumenAnualAgua(db, anio ?? Number(hoy().slice(0, 4)));
+  return res.json({ status: 'OK', data });
 }
 
 /** Obligaciones anuales de agua pendientes de un usuario. */
@@ -242,10 +221,8 @@ module.exports = {
   getHistorialAnual,
   getPeriodosObligaciones,
   getObligacionesMultas,
-  getObligacionesMensualidad,
-  generarFacturacionMensual,
-  getResumenFacturacion,
   generarObligacionesAnualesAgua,
+  getResumenAnualAgua,
   getObligacionesAnualesAgua,
   registrarPagoAnualAgua
 };

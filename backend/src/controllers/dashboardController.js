@@ -31,18 +31,22 @@ async function getResumen(req, res) {
          (SELECT COALESCE(SUM(valor), 0) FROM egresos) AS saldoCaja,
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') +
          (SELECT COALESCE(SUM(valor_total), 0) FROM obligacion_anual_agua WHERE estado = 'PENDIENTE') AS carteraPendiente,
-       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS carteraVencida,
-       (SELECT COUNT(DISTINCT persona_id) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS usuariosEnMora`,
+       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM obligacion_anual_agua WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS carteraVencida,
+       (SELECT COUNT(*) FROM (
+          SELECT persona_id FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?
+          UNION
+          SELECT persona_id FROM obligacion_anual_agua WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?
+        ) mora) AS usuariosEnMora`,
     // fecha_pago está en UTC: el mes de Ecuador empieza a las 05:00 UTC del día 1.
     [inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioAnio), inicioDelDiaUtc(inicioAnio),
-      inicioMes, inicioAnio, fecha, fecha]
+      inicioMes, inicioAnio, fecha, fecha, fecha, fecha]
   );
 
-  // Eficiencia de cobro de las cuotas de agua emitidas este año.
+  // Eficiencia de cobro del pago anual de agua de este año.
   const [[cobranza]] = await db.query(
-    `SELECT COALESCE(SUM(o.valor), 0) AS emitido, COALESCE(SUM(CASE WHEN o.estado = 'PAGADA' THEN o.valor END), 0) AS cobrado
-     FROM obligaciones o JOIN conceptos_cobro c ON c.id = o.concepto_id
-     WHERE c.codigo = 'AGUA_MENSUAL' AND o.estado <> 'ANULADA' AND o.periodo_anio = ?`,
+    `SELECT COALESCE(SUM(valor_total), 0) AS emitido, COALESCE(SUM(CASE WHEN estado = 'PAGADO' THEN valor_total END), 0) AS cobrado
+     FROM obligacion_anual_agua WHERE periodo_anio = ?`,
     [Number(fecha.slice(0, 4))]
   );
 

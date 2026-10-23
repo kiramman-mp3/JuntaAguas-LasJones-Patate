@@ -22,21 +22,10 @@ const router = express.Router();
  *     tags: [Gestión Financiera]
  *     summary: Registrar tarifa (cierra la vigencia de la anterior)
  *     security: [{ bearerAuth: [] }]
- * /financiero/facturacion/mensual:
- *   get:
- *     tags: [Gestión Financiera]
- *     summary: Estado de la facturación de agua de un año, mes a mes (emitidas, cobradas, pendientes)
- *     security: [{ bearerAuth: [] }]
- *   post:
- *     tags: [Gestión Financiera]
- *     summary: Emitir (o simular) las cuotas de agua de un mes para los usuarios activos con lote
- *     security: [{ bearerAuth: [] }]
  */
 router.get('/conceptos', verificarToken, financieroController.getConceptos);
 router.get('/tarifas', ...soloAdmin, financieroController.getTarifas);
 router.post('/tarifas', ...soloAdmin, financieroController.createTarifa);
-router.get('/facturacion/mensual', ...soloAdmin, financieroController.getResumenFacturacion);
-router.post('/facturacion/mensual', ...soloAdmin, financieroController.generarFacturacionMensual);
 
 /**
  * @openapi
@@ -59,11 +48,6 @@ router.post('/facturacion/mensual', ...soloAdmin, financieroController.generarFa
  *     tags: [Gestión Financiera]
  *     summary: Multas y otros cobros de un usuario por cédula
  *     security: [{ bearerAuth: [] }]
- * /financiero/obligaciones/mensualidades:
- *   get:
- *     tags: [Gestión Financiera]
- *     summary: Cuotas mensuales de agua de un usuario por cédula
- *     security: [{ bearerAuth: [] }]
  * /financiero/periodosobligaciones:
  *   get:
  *     tags: [Gestión Financiera]
@@ -73,7 +57,6 @@ router.post('/facturacion/mensual', ...soloAdmin, financieroController.generarFa
 router.get('/obligaciones', verificarToken, financieroController.getObligaciones);
 router.post('/obligaciones', ...soloAdmin, financieroController.createObligacionManual);
 router.get('/obligaciones/multas', ...soloAdmin, financieroController.getObligacionesMultas);
-router.get('/obligaciones/mensualidades', ...soloAdmin, financieroController.getObligacionesMensualidad);
 router.post('/obligaciones/:id/anular', ...soloAdmin, financieroController.anularObligacion);
 router.get('/periodosobligaciones', ...soloAdmin, financieroController.getPeriodosObligaciones);
 
@@ -161,7 +144,7 @@ router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
  * /financiero/agua-anual/obligaciones:
  *   post:
  *     tags: [Gestión Financiera]
- *     summary: Generar la obligación del pago anual de agua del año para todos los usuarios activos (ADMIN)
+ *     summary: Emitir (o simular con simular=true) la obligación anual de agua del año para los usuarios activos con lote (ADMIN). Sin valor_total usa la tarifa AGUA_ANUAL vigente al 1 de enero.
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
  *       required: true
@@ -169,12 +152,18 @@ router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [anio, valor_total]
+ *             required: [anio]
  *             properties:
  *               anio: { type: integer, example: 2026 }
- *               valor_total: { type: number, example: 10 }
+ *               valor_total: { type: number, example: 42 }
+ *               simular: { type: boolean, example: false }
  *     responses:
  *       '201': { description: Obligaciones generadas; las ya existentes del año se respetan }
+ * /financiero/agua-anual/resumen:
+ *   get:
+ *     tags: [Gestión Financiera]
+ *     summary: Obligaciones anuales de agua emitidas, cobradas y pendientes de un año (ADMIN)
+ *     security: [{ bearerAuth: [] }]
  * /financiero/agua-anual/obligaciones/{personaId}:
  *   get:
  *     tags: [Gestión Financiera]
@@ -188,6 +177,7 @@ router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
  *     summary: Registrar el pago de obligaciones anuales de agua por transferencia o depósito (ADMIN)
  *     security: [{ bearerAuth: [] }]
  */
+router.get('/agua-anual/resumen', ...soloAdmin, financieroController.getResumenAnualAgua);
 router.post('/agua-anual/obligaciones', ...soloAdmin, financieroController.generarObligacionesAnualesAgua);
 router.get('/agua-anual/obligaciones/:personaId', ...soloAdmin, financieroController.getObligacionesAnualesAgua);
 router.post('/agua-anual/pagos', ...soloAdmin, financieroController.registrarPagoAnualAgua);

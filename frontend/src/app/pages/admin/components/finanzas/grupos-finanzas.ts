@@ -20,7 +20,7 @@ export interface GrupoSecciones {
 
 /**
  * Tres apartados del menú lateral, cada uno con su URL (/admin/cobros/egresos):
- * Cobros y pagos (caja y egresos), Ajustes (tarifas y facturación mensual de agua)
+ * Cobros y pagos (caja y egresos), Ajustes (tarifas y pago anual de agua)
  * e Historial (recibos e ingresos/egresos por año). `?nuevo=egreso` abre el formulario de egreso.
  */
 export const GRUPOS_FINANZAS: GrupoSecciones[] = [
@@ -34,10 +34,10 @@ export const GRUPOS_FINANZAS: GrupoSecciones[] = [
   },
   {
     id: 'ajustes', etiqueta: 'Ajustes', icono: 'ri-settings-3-line', indicadores: false,
-    descripcion: 'Tarifas de agua, multas y demás conceptos, y emisión mensual de las cuotas de agua.',
+    descripcion: 'Tarifas de agua, multas y demás conceptos, y emisión del pago anual de agua.',
     secciones: [
       { id: 'tarifas', etiqueta: 'Tarifas', icono: 'ri-price-tag-3-line' },
-      { id: 'facturacion', etiqueta: 'Facturación', icono: 'ri-calendar-2-line' }
+      { id: 'facturacion', etiqueta: 'Pago anual', icono: 'ri-calendar-2-line' }
     ]
   },
   {

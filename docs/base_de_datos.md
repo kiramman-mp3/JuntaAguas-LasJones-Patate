@@ -195,7 +195,7 @@ erDiagram
 - **`configuracion`**: Ajustes clave/valor (`whatsapp.grupo_id`, `whatsapp.grupo_nombre`) con la cuenta que los cambió por última vez.
 
 ### 4.4. Dominio Financiero
-- **`conceptos_cobro`**: Catálogo (`AGUA_MENSUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`).
+- **`conceptos_cobro`**: Catálogo (`AGUA_ANUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`, `CUOTA_EXTRAORDINARIA`). `AGUA_MENSUAL` y `TURNO_ADICIONAL` quedan inactivos desde las migraciones 018 y 019: el agua se cobra una vez al año en `obligacion_anual_agua`.
 - **`tarifas`**: Valores con vigencia desde/hasta.
 - **`obligaciones`**: Deudas pendientes. **No se permiten pagos parciales**. Origen `MANUAL` o `AUTOMATICA`.
 - **`pagos` & `pago_detalles`**: Un pago liquida una o varias obligaciones completas. La regla "una obligación se paga una sola vez" la garantiza su estado `PENDIENTE`/`PAGADA` bajo bloqueo, no un índice único (el historial de pagos anulados se conserva).

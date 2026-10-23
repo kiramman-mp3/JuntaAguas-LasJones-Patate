@@ -4,9 +4,11 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const app = require('../../src/app');
 const db = require('../../src/config/db');
-const { crearUsuario, auth, crearPersona } = require('../helpers/fixtures');
+const { hoy } = require('../../src/shared/dates');
+const { crearUsuario, auth, crearPersona, crearSector, crearLote, conceptoId } = require('../helpers/fixtures');
 
 let admin, usuario, otro;
+const ANIO_ACTUAL = Number(hoy().slice(0, 4));
 const generar = (cuerpo, quien = admin) => request(app).post('/api/financiero/agua-anual/obligaciones').set(auth(quien)).send(cuerpo);
 const pendientes = (personaId, quien = admin) => request(app).get(`/api/financiero/agua-anual/obligaciones/${personaId}`).set(auth(quien));
 const pagar = (cuerpo, quien = admin) => request(app).post('/api/financiero/agua-anual/pagos').set(auth(quien)).send(cuerpo);
@@ -17,6 +19,9 @@ before(async () => {
   admin = await crearUsuario({ rol: 'ADMIN' });
   usuario = await crearUsuario();
   otro = await crearUsuario();
+  const sector = await crearSector('La Jones Media');
+  await crearLote({ sectorId: sector, personaId: usuario.personaId, codigo: 'LJM-001' });
+  await crearLote({ sectorId: sector, personaId: otro.personaId, codigo: 'LJM-002' });
 });
 after(closeDatabase);
 
@@ -27,15 +32,33 @@ test('solo la directiva genera, consulta y registra pagos anuales de agua', asyn
   assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [1], metodo: 'DEPOSITO', referencia: 'D-1' }, usuario)).status, 403);
 });
 
-test('valida el año y el valor al generar', async () => {
-  for (const cuerpo of [{ valor_total: 10 }, { anio: 1999, valor_total: 10 }, { anio: 2026 }, { anio: 2026, valor_total: 0 }, { anio: 2026, valor_total: 'x' }]) {
+test('valida el año y el valor al generar, y no emite años futuros', async () => {
+  for (const cuerpo of [{ valor_total: 10 }, { anio: 1999, valor_total: 10 }, { anio: 2026, valor_total: 0 }, { anio: 2026, valor_total: 'x' }]) {
     assert.equal((await generar(cuerpo)).status, 400, JSON.stringify(cuerpo));
   }
+  const futuro = await generar({ anio: ANIO_ACTUAL + 1, valor_total: 10 });
+  assert.equal(futuro.status, 400);
+  assert.match(futuro.body.message, /futuros/);
+  const sinTarifa = await generar({ anio: 2024 });
+  assert.equal(sinTarifa.status, 409, 'sin valor ni tarifa AGUA_ANUAL vigente');
+  assert.match(sinTarifa.body.message, /tarifa/);
 });
 
-test('genera una obligación por usuario activo y repetir no duplica', async () => {
+test('sin valor usa la tarifa AGUA_ANUAL vigente al 1 de enero y simular no escribe', async () => {
+  const tarifa = await request(app).post('/api/financiero/tarifas').set(auth(admin))
+    .send({ concepto_id: await conceptoId('AGUA_ANUAL'), valor: 36, vigencia_desde: '2023-01-01' });
+  assert.equal(tarifa.status, 201, JSON.stringify(tarifa.body));
+  const simulacion = await generar({ anio: 2023, simular: true });
+  assert.equal(simulacion.status, 200);
+  assert.deepEqual(simulacion.body.data, { anio: 2023, valor: 36, usuarios: 2, generadas: 2, existentes: 0, total: 72 });
+  const [[{ antes }]] = await db.query('SELECT COUNT(*) AS antes FROM obligacion_anual_agua WHERE periodo_anio = 2023');
+  assert.equal(antes, 0);
+});
+
+test('genera una obligación por usuario activo con lote y repetir no duplica', async () => {
   await crearPersona({ estado: 'INACTIVO' });
-  const [[{ activos }]] = await db.query("SELECT COUNT(*) AS activos FROM personas WHERE estado = 'ACTIVO'");
+  await crearPersona({ nombres: 'Sin lote' });
+  const activos = 2; // usuario y otro: el administrador, el inactivo y quien no tiene lote no pagan agua.
 
   const primera = await generar({ anio: 2026, valor_total: 10 });
   assert.equal(primera.status, 201, JSON.stringify(primera.body));
@@ -52,6 +75,24 @@ test('genera una obligación por usuario activo y repetir no duplica', async () 
   );
   assert.equal(total, activos, 'ni duplica ni cambia el valor ya emitido');
   assert.equal(Number(valor), 10);
+
+  const [[fechas]] = await db.query(
+    'SELECT fecha_emision, fecha_vencimiento FROM obligacion_anual_agua WHERE periodo_anio = 2026 AND persona_id = ?', [usuario.personaId]
+  );
+  assert.deepEqual(fechas, { fecha_emision: '2026-01-01', fecha_vencimiento: '2026-12-31' });
+
+  const resumen = await request(app).get('/api/financiero/agua-anual/resumen?anio=2026').set(auth(admin));
+  assert.equal(resumen.status, 200);
+  assert.deepEqual(resumen.body.data, { anio: 2026, emitidas: 2, pagadas: 0, pendientes: 2, total: 20, recaudado: 0 });
+  assert.equal((await request(app).get('/api/financiero/agua-anual/resumen').set(auth(usuario))).status, 403);
+});
+
+test('el usuario ve su pago anual pendiente en su estado de cuenta', async () => {
+  const res = await request(app).get(`/api/personas/consulta/${usuario.cedula}`).set(auth(usuario));
+  assert.equal(res.status, 200);
+  const agua = res.body.resultado.deudas.filter((d) => d.tipo === 'AGUA_ANUAL');
+  assert.deepEqual(agua.map((d) => [d.anio, d.valor, d.estado]), [[2026, 10, 'PENDIENTE']]);
+  assert.equal(res.body.resultado.totalPendiente, 10);
 });
 
 test('lista las obligaciones pendientes del usuario, de la más antigua a la más reciente', async () => {
@@ -134,6 +175,19 @@ test('el balance, el historial y el panel suman los pagos anuales y la cartera p
   assert.equal(resumen.status, 200, JSON.stringify(resumen.body));
   const texto = JSON.stringify(resumen.body);
   assert.ok(texto.includes(String(Number(pagado))), 'el panel muestra lo recaudado');
+});
+
+test('una obligación anual de un año ya cerrado cuenta como cartera vencida', async () => {
+  await generar({ anio: 2024, valor_total: 5 });
+  const vencido = Number((await db.query(
+    "SELECT COALESCE(SUM(valor_total), 0) AS v FROM obligacion_anual_agua WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?", [hoy()]
+  ))[0][0].v);
+  assert.ok(vencido >= 10);
+  const { body } = await balance();
+  assert.ok(body.balance.totalVencido >= vencido);
+  const panel = (await request(app).get('/api/dashboard/resumen').set(auth(admin))).body.data.finanzas;
+  assert.ok(panel.carteraVencida >= vencido);
+  assert.ok(panel.usuariosEnMora >= 2);
 });
 
 test('el balance respeta el rango de fechas para los pagos anuales', async () => {

@@ -4,13 +4,18 @@ import { Observable } from 'rxjs';
 
 export interface DeudaItem {
   id: number;
+  /** AGUA_ANUAL: pago anual de agua; OBLIGACION: multas y otros cobros. */
+  tipo: 'AGUA_ANUAL' | 'OBLIGACION';
   concepto: string;
+  conceptoCodigo?: string;
   anio: number;
   periodo: string;
   valor: number;
   estado: 'PENDIENTE' | 'PAGADA' | 'ANULADA';
   fechaEmision: string;
   pagoId?: number | null;
+  /** Pago anual de agua que cubrió esta obligación (si es de tipo AGUA_ANUAL y está pagada). */
+  pagoAnualId?: number | null;
 }
 
 export interface ConsultaResultadoResponse {

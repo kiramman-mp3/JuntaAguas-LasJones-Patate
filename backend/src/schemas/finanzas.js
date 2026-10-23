@@ -77,17 +77,18 @@ const egresoSchema = z.object({
   valor: s.montoPositivo
 });
 
-const facturacionSchema = z.object({ anio, mes, simular: z.boolean().default(false) });
-const resumenFacturacionQuery = z.object({ anio: anio.optional() });
 
 const personaIdParam = z.object({ personaId: s.id });
+/** Sin valor_total se usa la tarifa del concepto AGUA_ANUAL vigente al 1 de enero del año. */
 const generarAnualAguaSchema = z.object({
   anio,
-  valor_total: s.montoPositivo
+  valor_total: z.preprocess((v) => (v === '' || v === null ? undefined : v), s.montoPositivo.optional()),
+  simular: z.boolean().default(false)
 });
+const resumenAnualAguaQuery = z.object({ anio: anio.optional() });
 
 module.exports = {
   ESTADOS_OBLIGACION, METODOS, obligacionesQuery, porCedulaQuery, tarifaSchema, obligacionSchema, pagoSchema,
-  motivoSchema, rangoFechas, egresosQuery, pagosQuery, egresoSchema, facturacionSchema, resumenFacturacionQuery,
-  personaIdParam, generarAnualAguaSchema
+  motivoSchema, rangoFechas, egresosQuery, pagosQuery, egresoSchema,
+  personaIdParam, generarAnualAguaSchema, resumenAnualAguaQuery
 };

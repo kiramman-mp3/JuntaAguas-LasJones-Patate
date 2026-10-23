@@ -105,9 +105,12 @@ test('dos asambleas del mismo mes generan cada una sus multas', async () => {
     assert.equal(res.status, 200, JSON.stringify(res.body));
     assert.equal(res.body.multasGeneradas, 1);
   }
-  const [multas] = await db.query('SELECT evento_id, periodo_mes FROM obligaciones WHERE evento_id IN (?, ?)', [primera, segunda]);
+  const [multas] = await db.query(
+    'SELECT evento_id, periodo_mes, DATEDIFF(fecha_vencimiento, fecha_emision) AS plazo FROM obligaciones WHERE evento_id IN (?, ?)', [primera, segunda]
+  );
   assert.equal(multas.length, 2);
   assert.ok(multas.every((m) => m.periodo_mes === null));
+  assert.ok(multas.every((m) => m.plazo === 30), 'la multa vence a los 30 días de emitida');
 });
 
 test('finalizar exige asistencia completa, estado anunciado y fecha alcanzada', async () => {

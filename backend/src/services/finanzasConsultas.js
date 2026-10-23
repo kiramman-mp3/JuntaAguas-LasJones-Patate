@@ -64,12 +64,12 @@ async function listarObligaciones(conexion, { personaId, estado, anio, mes }) {
   return filas;
 }
 
-/** Obligaciones de un usuario por cédula: solo cuotas de agua o todo lo demás (multas y otros). */
-async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes, mensualidades }) {
+/** Obligaciones (multas y otros cobros) de un usuario por cédula. */
+async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes }) {
   const [personas] = await conexion.query('SELECT id FROM personas WHERE cedula = ?', [cedula]);
   if (!personas.length) throw notFound('No existe una persona registrada con esa cédula.');
 
-  const condiciones = ['o.persona_id = ?', `c.codigo ${mensualidades ? '=' : '<>'} 'AGUA_MENSUAL'`];
+  const condiciones = ['o.persona_id = ?'];
   const params = [personas[0].id];
   if (estado) { condiciones.push('o.estado = ?'); params.push(estado); }
   if (anio) { condiciones.push('o.periodo_anio = ?'); params.push(anio); }
@@ -193,8 +193,10 @@ async function balance(conexion, { desde, hasta }) {
     [hoy()]
   );
   const [[carteraAnual]] = await conexion.query(
-    `SELECT COALESCE(SUM(valor_total), 0) AS total, COUNT(*) AS obligaciones
-     FROM obligacion_anual_agua WHERE estado = 'PENDIENTE'`
+    `SELECT COALESCE(SUM(valor_total), 0) AS total, COUNT(*) AS obligaciones,
+            COALESCE(SUM(CASE WHEN fecha_vencimiento < ? THEN valor_total END), 0) AS vencido
+     FROM obligacion_anual_agua WHERE estado = 'PENDIENTE'`,
+    [hoy()]
   );
   const [[{ usuariosConDeuda }]] = await conexion.query(
     `SELECT COUNT(*) AS usuariosConDeuda FROM (
@@ -228,7 +230,7 @@ async function balance(conexion, { desde, hasta }) {
       totalIngresos: Number(totalIngresos),
       totalEgresos: Number(totalEgresos),
       totalPendientes: sumarMontos(cartera.totalPendientes, carteraAnual.total),
-      totalVencido: Number(cartera.totalVencido),
+      totalVencido: sumarMontos(cartera.totalVencido, carteraAnual.vencido),
       usuariosConDeuda: Number(usuariosConDeuda),
       balanceAlDia: restarMontos(totalIngresos, totalEgresos),
       desde: desde ?? null,

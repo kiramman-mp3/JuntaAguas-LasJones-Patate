@@ -96,7 +96,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/financiero/conceptos` | Público / Autenticado | Catálogo de cobros (`AGUA_MENSUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`) y tarifa vigente. |
+| `GET` | `/financiero/conceptos` | Público / Autenticado | Catálogo de cobros activos (`AGUA_ANUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`, `CUOTA_EXTRAORDINARIA`) y tarifa vigente. El agua se cobra una vez al año (`/financiero/agua-anual/*`). |
 | `POST` | `/financiero/tarifas` | ADMIN | Registrar o actualizar tarifa para un concepto por rango de vigencia. |
 | `GET` | `/financiero/obligaciones` | Autenticado | Cuentas por cobrar pendientes (`?persona_id=...&estado=PENDIENTE`). |
 | `POST` | `/financiero/obligaciones` | ADMIN / TESORERO | Emisión de obligación de cobro manual. |
@@ -160,7 +160,7 @@ Sin `codigo`, un `409` indica un evento cancelado, realizado o con fecha pasada.
     "deudas": [
       {
         "id": 101,
-        "concepto": "Pago Mensual de Agua de Riego",
+        "concepto": "Pago anual de agua",
         "anio": 2026,
         "periodo": "Mes 8",
         "valor": 10.00,
