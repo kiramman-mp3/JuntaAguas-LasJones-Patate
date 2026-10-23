@@ -9,7 +9,6 @@ const { z } = s;
 const dia = z.coerce.number({ error: 'Indique el día de la semana.' }).int()
   .min(1, 'El día de la semana debe estar entre 1 (lunes) y 7 (domingo).')
   .max(7, 'El día de la semana debe estar entre 1 (lunes) y 7 (domingo).');
-const tipo = z.enum(['REGULAR', 'ADICIONAL']);
 const horarioValido = (d) => !d.hora_inicio || !d.hora_fin || d.hora_inicio < d.hora_fin;
 const errorHorario = { path: ['hora_fin'], message: 'La hora de inicio debe ser menor a la hora de finalización.' };
 
@@ -23,19 +22,16 @@ const filtrosQuery = z.object({
 const crearSchema = z.object({
   persona_id: s.id,
   lote_id: s.id,
-  tipo: tipo.default('REGULAR'),
   dia_semana: dia,
   hora_inicio: s.hora,
   hora_fin: s.hora,
   vigencia_desde: s.fechaOpcional,
-  observacion: s.textoOpcional(255),
-  costo: z.preprocess((v) => (v === '' || v === null ? undefined : v), s.dinero.min(0, 'El costo no puede ser negativo.').max(1000).optional())
+  observacion: s.textoOpcional(255)
 }).refine(horarioValido, errorHorario);
 
 const actualizarSchema = z.object({
   persona_id: s.id.optional(),
   lote_id: s.id.optional(),
-  tipo: tipo.optional(),
   dia_semana: dia.optional(),
   hora_inicio: s.hora.optional(),
   hora_fin: s.hora.optional(),
@@ -54,7 +50,7 @@ async function getTurnos(req, res) {
   if (filtros.sector_id) { condiciones.push('l.sector_id = ?'); params.push(filtros.sector_id); }
 
   const [filas] = await db.query(
-    `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
+    `SELECT t.id, t.persona_id, t.lote_id, t.dia_semana, t.hora_inicio, t.hora_fin,
             t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
             CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
             l.codigo AS lote_codigo, l.superficie_m2,
@@ -86,7 +82,7 @@ async function getCronogramaPorSectores(req, res) {
   }
 
   const [filas] = await db.query(
-    `SELECT t.id, t.persona_id, t.lote_id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
+    `SELECT t.id, t.persona_id, t.lote_id, t.dia_semana, t.hora_inicio, t.hora_fin,
             t.vigencia_desde, t.vigencia_hasta, t.estado, t.observacion,
             CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
             l.codigo AS lote_codigo, l.superficie_m2,
@@ -137,7 +133,6 @@ async function getCronogramaPorSectores(req, res) {
         lote_id: fila.lote_id,
         lote_codigo: fila.lote_codigo,
         superficie_m2: fila.superficie_m2,
-        tipo: fila.tipo,
         hora_inicio: String(fila.hora_inicio).substring(0, 5),
         hora_fin: String(fila.hora_fin).substring(0, 5),
         duracion_minutos: minutos,
@@ -175,7 +170,7 @@ async function getCronogramaPublico(req, res) {
   }
 
   const [filas] = await db.query(
-    `SELECT t.id, t.tipo, t.dia_semana, t.hora_inicio, t.hora_fin,
+    `SELECT t.id, t.dia_semana, t.hora_inicio, t.hora_fin,
             CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre,
             l.codigo AS lote_codigo,
             s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
@@ -219,7 +214,6 @@ async function getCronogramaPublico(req, res) {
         id: fila.id,
         usuario_nombre: fila.usuario_nombre,
         lote_codigo: fila.lote_codigo,
-        tipo: fila.tipo,
         hora_inicio: String(fila.hora_inicio).substring(0, 5),
         hora_fin: String(fila.hora_fin).substring(0, 5),
         duracion_minutos: minutos
@@ -239,19 +233,15 @@ async function getCronogramaPublico(req, res) {
   return res.json({ status: 'OK', data: resultado });
 }
 
-/** Asignar un turno sin cruces de horario; un turno adicional genera su cobro en la misma transacción. */
+/** Asignar un turno semanal sin cruces de horario. */
 async function createTurno(req, res) {
   const datos = crearSchema.parse(req.body);
-  const resultado = await withTransaction((conexion) => turnos.crearTurno(conexion, datos));
+  const { turnoId } = await withTransaction((conexion) => turnos.crearTurno(conexion, datos));
 
   await registrarAuditoria({
-    cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'turnos_riego', entidadId: resultado.turnoId, ip: req.ip,
-    detalle: { ...datos, montoTurno: resultado.monto, obligacionId: resultado.obligacionId }
+    cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'turnos_riego', entidadId: turnoId, ip: req.ip, detalle: datos
   });
-  const message = resultado.obligacionId
-    ? `Turno de agua asignado con éxito. Se generó un cobro automático de $${resultado.monto.toFixed(2)} a la cuenta del usuario.`
-    : 'Turno de agua asignado correctamente.';
-  return res.status(201).json({ status: 'OK', message, turnoId: resultado.turnoId, obligacionId: resultado.obligacionId });
+  return res.status(201).json({ status: 'OK', message: 'Turno de agua asignado correctamente.', turnoId });
 }
 
 /** Actualizar un turno; los campos omitidos conservan su valor. */
@@ -263,7 +253,7 @@ async function updateTurno(req, res) {
   await registrarAuditoria({
     cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'turnos_riego', entidadId: id, ip: req.ip,
     detalle: {
-      antes: { persona_id: antes.persona_id, lote_id: antes.lote_id, tipo: antes.tipo, dia_semana: antes.dia_semana, hora_inicio: antes.hora_inicio, hora_fin: antes.hora_fin },
+      antes: { persona_id: antes.persona_id, lote_id: antes.lote_id, dia_semana: antes.dia_semana, hora_inicio: antes.hora_inicio, hora_fin: antes.hora_fin },
       despues
     }
   });
