@@ -16,6 +16,17 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', env.TRUST_PROXY);
 
+// Detrás de un proxy (Nginx, Caddy) con TRUST_PROXY=0 todas las peticiones parecen venir de la misma IP:
+// la auditoría registra la IP del proxy y los límites de intentos se comparten. Se avisa una sola vez.
+let avisoProxy = false;
+app.use((req, res, next) => {
+  if (!avisoProxy && env.esProduccion && !env.TRUST_PROXY && req.headers['x-forwarded-for']) {
+    avisoProxy = true;
+    console.warn('[Servidor Backend] Llegan peticiones con X-Forwarded-For pero TRUST_PROXY=0. Si hay un proxy delante, configure TRUST_PROXY=1 en backend/.env.');
+  }
+  next();
+});
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },
   // Solo lo que usa la aplicación: mapas de OpenStreetMap, PDFs y QR generados en el navegador.

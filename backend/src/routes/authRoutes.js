@@ -1,19 +1,32 @@
 const express = require('express');
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const authController = require('../controllers/authController');
 const { verificarToken, verificarTokenOCambioPassword } = require('../middlewares/authMiddleware');
 const env = require('../config/env');
 
 const router = express.Router();
 
-// Límite por IP; además cada cuenta se bloquea tras 5 intentos fallidos (ver authController).
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: env.esTest ? 1000 : 20,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
+const QUINCE_MINUTOS = 15 * 60 * 1000;
+const opcionesLimite = { windowMs: QUINCE_MINUTOS, standardHeaders: 'draft-8', legacyHeaders: false };
+
+/**
+ * Dos límites para el inicio de sesión (además, cada cuenta se bloquea tras 5 intentos fallidos):
+ * - por IP y cédula: frena a quien prueba contraseñas de una cuenta sin bloquear a los demás usuarios
+ *   que comparten la misma IP (la red de la Junta o un proxy mal configurado, ver TRUST_PROXY);
+ * - por IP, más amplio: frena a quien recorre muchas cédulas desde un mismo equipo.
+ */
+const limitePorCuenta = rateLimit({
+  ...opcionesLimite,
+  limit: env.esTest ? 1000 : 10,
+  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}|${String(req.body?.cedula ?? '').trim().slice(0, 20)}`,
+  message: { status: 'ERROR', message: 'Demasiados intentos para esta cédula. Intente de nuevo en 15 minutos.' }
+});
+const limitePorIp = rateLimit({
+  ...opcionesLimite,
+  limit: env.esTest ? 1000 : 100,
   message: { status: 'ERROR', message: 'Demasiados intentos de inicio de sesión desde esta red. Intente de nuevo en 15 minutos.' }
 });
+const loginLimiter = [limitePorIp, limitePorCuenta];
 
 /**
  * @openapi
