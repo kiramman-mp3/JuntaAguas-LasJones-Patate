@@ -39,6 +39,18 @@ test('las horas sin cero inicial se comparan como horas, no como texto', async (
   assert.equal((await crear({ ...base(), dia_semana: 8, hora_inicio: '06:00', hora_fin: '07:00' })).status, 400);
 });
 
+test('dos lotes del mismo sector no pueden regar a la vez; en otro sector sí', async () => {
+  const delVecino = { persona_id: vecino.personaId, lote_id: loteVecino, dia_semana: 2 };
+  const cruce = await crear({ ...delVecino, hora_inicio: '09:30', hora_fin: '10:30' });
+  assert.equal(cruce.status, 409);
+  assert.match(cruce.body.message, /sector.*LJA-101/);
+
+  const otroSector = await crearSector('La Jones Baja');
+  const loteBajo = await crearLote({ sectorId: otroSector, personaId: vecino.personaId, codigo: 'LJB-201' });
+  const r = await crear({ persona_id: vecino.personaId, lote_id: loteBajo, dia_semana: 2, hora_inicio: '09:30', hora_fin: '10:30' });
+  assert.equal(r.status, 201, r.body.message);
+});
+
 test('el lote debe pertenecer al usuario', async () => {
   const r = await crear({ ...base(), lote_id: loteVecino, hora_inicio: '06:00', hora_fin: '07:00' });
   assert.equal(r.status, 400);

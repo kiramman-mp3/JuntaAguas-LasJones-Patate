@@ -22,19 +22,25 @@ async function verificarPersonaYLote(conexion, personaId, loteId) {
   return lotes[0];
 }
 
-/** Rechaza un turno que se cruce con otro turno activo del mismo lote y día. */
+/**
+ * Rechaza un turno que se cruce con otro turno activo del mismo sector y día: el agua de un
+ * sector llega por un mismo canal, así que dos lotes del sector no pueden regar a la vez.
+ */
 async function verificarSolape(conexion, { loteId, diaSemana, horaInicio, horaFin, excluirId = null }) {
   if (!loteId) return;
   const [solapados] = await conexion.query(
-    `SELECT id, hora_inicio, hora_fin FROM turnos_riego
-     WHERE lote_id = ? AND dia_semana = ? AND estado = 'ACTIVO' AND (? IS NULL OR id <> ?)
-       AND ? < hora_fin AND ? > hora_inicio
+    `SELECT t.id, t.hora_inicio, t.hora_fin, l.codigo AS lote_codigo
+     FROM turnos_riego t
+     JOIN lotes l ON l.id = t.lote_id
+     WHERE l.sector_id = (SELECT sector_id FROM lotes WHERE id = ?)
+       AND t.dia_semana = ? AND t.estado = 'ACTIVO' AND (? IS NULL OR t.id <> ?)
+       AND ? < t.hora_fin AND ? > t.hora_inicio
      LIMIT 1 FOR UPDATE`,
     [loteId, diaSemana, excluirId, excluirId, horaInicio, horaFin]
   );
   if (solapados.length) {
     const t = solapados[0];
-    throw conflict(`El lote ya tiene un turno el ${DIAS[diaSemana]} de ${String(t.hora_inicio).slice(0, 5)} a ${String(t.hora_fin).slice(0, 5)} que se cruza con este horario.`);
+    throw conflict(`El sector ya tiene un turno el ${DIAS[diaSemana]} de ${String(t.hora_inicio).slice(0, 5)} a ${String(t.hora_fin).slice(0, 5)} (lote ${t.lote_codigo}) que se cruza con este horario.`);
   }
 }
 
