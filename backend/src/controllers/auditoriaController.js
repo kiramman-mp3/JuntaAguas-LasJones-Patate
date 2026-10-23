@@ -11,43 +11,27 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(100)
 });
 
-async function getAuditoria(req, res, next) {
-  try {
-    const { entidad, accion, desde, hasta, limit } = querySchema.parse(req.query);
+/** Registro de auditoría más reciente, con filtros por entidad, acción y días de Ecuador. */
+async function getAuditoria(req, res) {
+  const { entidad, accion, desde, hasta, limit } = querySchema.parse(req.query);
+  const condiciones = [];
+  const params = [];
+  if (entidad) { condiciones.push('a.entidad = ?'); params.push(entidad); }
+  if (accion) { condiciones.push('a.accion = ?'); params.push(accion); }
+  // a.fecha se guarda en UTC; los filtros son días de Ecuador.
+  if (desde) { condiciones.push('a.fecha >= ?'); params.push(inicioDelDiaUtc(desde)); }
+  if (hasta) { condiciones.push('a.fecha < ?'); params.push(finDelDiaUtc(hasta)); }
 
-    let sql = `SELECT a.*, p.cedula AS cuenta_usuario, CONCAT(p.nombres, ' ', p.apellidos) AS persona_nombre
-               FROM auditoria a
-               LEFT JOIN cuentas c ON c.id = a.cuenta_id
-               LEFT JOIN personas p ON p.id = c.persona_id
-               WHERE 1=1`;
-    const params = [];
-
-    if (entidad) {
-      sql += ` AND a.entidad = ?`;
-      params.push(entidad);
-    }
-    if (accion) {
-      sql += ` AND a.accion = ?`;
-      params.push(accion);
-    }
-    // a.fecha se guarda en UTC; los filtros son días de Ecuador.
-    if (desde) {
-      sql += ` AND a.fecha >= ?`;
-      params.push(inicioDelDiaUtc(desde));
-    }
-    if (hasta) {
-      sql += ` AND a.fecha < ?`;
-      params.push(finDelDiaUtc(hasta));
-    }
-
-    sql += ` ORDER BY a.fecha DESC LIMIT ?`;
-    params.push(limit);
-
-    const [logs] = await db.query(sql, params);
-    return res.json({ status: 'OK', data: logs });
-  } catch (error) {
-    next(error);
-  }
+  const [logs] = await db.query(
+    `SELECT a.*, p.cedula AS cuenta_usuario, CONCAT(p.nombres, ' ', p.apellidos) AS persona_nombre
+     FROM auditoria a
+     LEFT JOIN cuentas c ON c.id = a.cuenta_id
+     LEFT JOIN personas p ON p.id = c.persona_id
+     ${condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : ''}
+     ORDER BY a.fecha DESC, a.id DESC LIMIT ?`,
+    [...params, limit]
+  );
+  return res.json({ status: 'OK', data: logs });
 }
 
 module.exports = { getAuditoria };
