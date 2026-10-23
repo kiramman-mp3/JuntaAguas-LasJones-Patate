@@ -162,8 +162,8 @@ test('no reenvía una convocatoria ya publicada salvo que se pida', async () => 
 test('la convocatoria de una asamblea incluye el orden del día', async () => {
   const eventoId = await crearEvento({ tipo: 'ASAMBLEA', estado: 'BORRADOR', multa: 0 });
   await db.query(
-    'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, titulo_acta) VALUES (?, 1, ?, ?), (?, 2, ?, ?)',
-    [eventoId, 'Informe de tesorería', 'Informe de tesorería', eventoId, 'Elección de directiva', 'Elección de directiva']
+    'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar) VALUES (?, 1, ?), (?, 2, ?)',
+    [eventoId, 'Informe de tesorería', eventoId, 'Elección de directiva']
   );
   const r = await convocar(eventoId);
   assert.equal(r.status, 201);

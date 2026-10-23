@@ -18,14 +18,12 @@ async function nivelDeAcceso(url) {
      WHERE d.ruta_archivo_firmado = ? OR d.ruta_archivo_generado = ?`,
     [url, url]
   );
-  const [actas] = await db.query('SELECT id FROM puntos_asamblea WHERE acta_firmada_url = ? LIMIT 1', [url]);
 
   const niveles = documentos.map((d) => {
     if (d.tipo === 'CONVOCATORIA' && d.estado !== 'BORRADOR') return ACCESO.PUBLICO;
     if (d.tipo === 'ACTA' || d.tipo === 'RESOLUCION') return ACCESO.COMUNEROS;
     return ACCESO.ADMIN;
   });
-  if (actas.length) niveles.push(ACCESO.COMUNEROS);
   if (!niveles.length) return null;
   if (niveles.includes(ACCESO.PUBLICO)) return ACCESO.PUBLICO;
   if (niveles.includes(ACCESO.COMUNEROS)) return ACCESO.COMUNEROS;
