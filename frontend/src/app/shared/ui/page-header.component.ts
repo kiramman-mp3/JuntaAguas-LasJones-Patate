@@ -24,7 +24,7 @@ import { Component, input } from '@angular/core';
         <ng-content />
       </div>
     </header>
-  `
+  `,
 })
 export class PageHeaderComponent {
   readonly titulo = input.required<string>();

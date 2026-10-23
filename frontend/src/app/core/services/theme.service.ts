@@ -8,7 +8,7 @@ type Theme = 'light' | 'dark';
  * Aplica el atributo [data-theme] en <html> y persiste la preferencia.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ThemeService {
   readonly theme = signal<Theme>('light');
@@ -37,7 +37,7 @@ export class ThemeService {
   /** Lectura segura: localStorage puede no existir en SSR o en pruebas. */
   private leerGuardado(): Theme | null {
     try {
-      return (localStorage.getItem(STORAGE_KEY) as Theme | null);
+      return localStorage.getItem(STORAGE_KEY) as Theme | null;
     } catch {
       return null;
     }

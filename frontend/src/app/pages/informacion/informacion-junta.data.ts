@@ -23,9 +23,9 @@ export const INFORMACION_JUNTA = {
   descripcion:
     'Organización comunitaria encargada de administrar el agua de riego del canal La Jones en el ' +
     'cantón Patate, provincia de Tungurahua. Coordina los turnos de agua, las mingas de ' +
-    'mantenimiento y las asambleas de los comuneros.',
+    'mantenimiento y las asambleas de los usuarios.',
   mision:
-    'Distribuir el agua de riego de forma equitativa, transparente y oportuna entre los comuneros, ' +
+    'Distribuir el agua de riego de forma equitativa, transparente y oportuna entre los usuarios, ' +
     'cuidando el canal y sus fuentes con el trabajo comunitario.',
   vision:
     'Ser una junta organizada y confiable, con un sistema de riego en buen estado que asegure la ' +

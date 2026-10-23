@@ -12,7 +12,7 @@ const { z, id } = require('../shared/schemas');
 const grupoSchema = z.object({
   grupoId: z.string({ error: 'Seleccione un grupo.' }).trim().regex(/^[\d-]+@g\.us$/, 'Seleccione un grupo de WhatsApp válido.')
 });
-const convocatoriaSchema = z.object({ eventoId: id, reenviar: z.boolean().default(false) });
+const convocatoriaSchema = z.object({ eventoId: id });
 
 /** Estado de la conexión y grupo elegido. Consultarlo no inicia WhatsApp. */
 async function getEstado(req, res) {
@@ -51,16 +51,16 @@ async function guardarGrupo(req, res) {
 
 /** Publicar la convocatoria de una asamblea o minga en el grupo de WhatsApp. */
 async function enviarConvocatoria(req, res) {
-  const { eventoId, reenviar } = convocatoriaSchema.parse(req.body ?? {});
-  const resultado = await convocarPorWhatsApp({ eventoId, reenviar, cuentaId: req.user.cuentaId });
+  const { eventoId } = convocatoriaSchema.parse(req.body ?? {});
+  const resultado = await convocarPorWhatsApp({ eventoId, cuentaId: req.user.cuentaId });
   await registrarAuditoria({
     cuentaId: req.user.cuentaId, accion: 'CONVOCAR', entidad: 'eventos', entidadId: eventoId, ip: req.ip,
-    detalle: { canal: 'WHATSAPP', grupo: resultado.grupo.nombre, reenvio: resultado.reenvio, estadoAnterior: resultado.estadoAnterior }
+    detalle: { canal: 'WHATSAPP', grupo: resultado.grupo.nombre, estadoAnterior: resultado.estadoAnterior }
   });
   return res.status(201).json({
     status: 'OK',
     message: `Convocatoria publicada en el grupo "${resultado.grupo.nombre}".`,
-    data: { grupo: resultado.grupo, estado: resultado.estado, reenvio: resultado.reenvio }
+    data: { grupo: resultado.grupo, estado: resultado.estado }
   });
 }
 

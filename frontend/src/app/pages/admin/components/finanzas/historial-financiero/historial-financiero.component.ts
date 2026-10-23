@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
-import { HistorialAnual, MESES, numeroEgreso, numeroRecibo } from '../../../../../core/models/finanzas';
+import { HistorialAnual, MESES, numeroEgreso } from '../../../../../core/models/finanzas';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 
 /** Un pago o un egreso dentro de un mes del historial. */
@@ -38,7 +38,7 @@ function rangoDelMes(mes: string): { desde: string; hasta: string } {
   selector: 'app-historial-financiero',
   standalone: true,
   imports: [FechaLocalPipe],
-  templateUrl: './historial-financiero.component.html'
+  templateUrl: './historial-financiero.component.html',
 })
 export class HistorialFinancieroComponent {
   private finanzas = inject(FinanzasService);
@@ -68,7 +68,7 @@ export class HistorialFinancieroComponent {
       error: (err) => {
         this.cargando.set(false);
         this.error.set(err.error?.message || 'No se pudo cargar el historial financiero.');
-      }
+      },
     });
   }
 
@@ -103,25 +103,46 @@ export class HistorialFinancieroComponent {
   cargarMovimientos(mes: string): void {
     this.meses.update((m) => ({ ...m, [mes]: { cargando: true, error: '', movimientos: [] } }));
     const rango = rangoDelMes(mes);
-    forkJoin({ pagos: this.finanzas.getPagos(rango), egresos: this.finanzas.getEgresos(rango) }).subscribe({
-      next: ({ pagos, egresos }) => {
+    // Ingresos: pagos de multas y otros (REC-…) y pagos anuales de agua (REC-AGUA-…).
+    forkJoin({
+      recibos: this.finanzas.getRecibos(rango),
+      egresos: this.finanzas.getEgresos(rango),
+    }).subscribe({
+      next: ({ recibos, egresos }) => {
         const movimientos: Movimiento[] = [
-          ...pagos.data.map((p): Movimiento => ({
-            tipo: 'INGRESO', id: p.id, numero: numeroRecibo(p.id), fecha: p.fecha_pago,
-            detalle: p.observacion || 'Pago de obligaciones', tercero: p.comunero_nombre,
-            valor: Number(p.valor_total), anulado: p.estado === 'ANULADO'
+          ...recibos.map((r): Movimiento => ({
+            tipo: 'INGRESO',
+            id: r.id,
+            numero: r.numero,
+            fecha: r.fecha_pago,
+            detalle: r.tipo === 'AGUA' ? r.detalle : `Pago de ${r.detalle}`,
+            tercero: r.usuario_nombre,
+            valor: r.valor_total,
+            anulado: r.estado === 'ANULADO',
           })),
           ...egresos.data.map((e): Movimiento => ({
-            tipo: 'EGRESO', id: e.id, numero: numeroEgreso(e.id), fecha: e.fecha,
-            detalle: e.concepto, tercero: e.proveedor_nombre ?? '',
-            valor: Number(e.valor), anulado: false
-          }))
+            tipo: 'EGRESO',
+            id: e.id,
+            numero: numeroEgreso(e.id),
+            fecha: e.fecha,
+            detalle: e.concepto,
+            tercero: e.proveedor_nombre ?? '',
+            valor: Number(e.valor),
+            anulado: false,
+          })),
         ].sort((a, b) => b.fecha.localeCompare(a.fecha));
         this.meses.update((m) => ({ ...m, [mes]: { cargando: false, error: '', movimientos } }));
       },
       error: (err) => {
-        this.meses.update((m) => ({ ...m, [mes]: { cargando: false, error: err.error?.message || 'No se pudieron cargar los movimientos.', movimientos: [] } }));
-      }
+        this.meses.update((m) => ({
+          ...m,
+          [mes]: {
+            cargando: false,
+            error: err.error?.message || 'No se pudieron cargar los movimientos.',
+            movimientos: [],
+          },
+        }));
+      },
     });
   }
 }

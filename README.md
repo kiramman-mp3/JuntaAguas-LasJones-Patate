@@ -1,6 +1,6 @@
 # Sistema de Gestión - Junta de Agua y Riego "La Jones"
 
-Sistema web para administrar la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador): comuneros y lotes, turnos de riego, asambleas y mingas con asistencia y multas, cobros, facturación mensual del agua, egresos y un portal donde cada comunero consulta su cuenta.
+Sistema web para administrar la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador): usuarios y lotes, turnos de riego, asambleas y mingas con asistencia y multas, cobros, pago anual del agua, egresos y un portal donde cada usuario consulta su cuenta.
 
 La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INSTRUCCIONES.md). Para la defensa y demostración del sistema, consulte la [**Guía Maestra de Presentación**](docs/GUIA_DE_PRESENTACION.md).
 
@@ -8,7 +8,7 @@ La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INST
 
 ## Tecnologías
 
-- **Frontend:** Angular 22 (componentes standalone, signals, rutas con carga diferida), TypeScript estricto, SCSS, RxJS, Leaflet, pdfmake y jsPDF (cargados bajo demanda), Vitest.
+- **Frontend:** Angular 22 (componentes standalone, signals, rutas con carga diferida), TypeScript estricto, SCSS, RxJS, Leaflet, jsPDF con autotable para todos los PDF del navegador (cargado bajo demanda), Vitest.
 - **Backend:** Node.js 26, Express 5, mysql2 (SQL parametrizado), zod para validar la entrada, JWT, bcryptjs, helmet, multer, pdfkit y Swagger (solo fuera de producción).
 - **Servicio de WhatsApp** (`whatsapp-service/`): proceso aparte con Express 5 y whatsapp-web.js (Edge o Chromium sin interfaz). Publica las convocatorias en el grupo de WhatsApp de la Junta; si se detiene, el resto del sistema sigue funcionando.
 - **Base de datos:** MySQL 8 (InnoDB, utf8mb4) en Docker, con migraciones versionadas.
@@ -24,17 +24,18 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 | Ruta | Qué hace |
 |---|---|
 | `/admin/dashboard` | Indicadores reales: recaudado, cartera pendiente y vencida, morosos, egresos, saldo de caja, porcentaje de cobro, asistencia y próximos eventos. |
-| `/admin/comuneros` | Comuneros, cuentas de acceso con contraseña temporal, lotes georreferenciados (mapa) y transferencia de titularidad con auditoría. |
+| `/admin/usuarios` | Gestión de usuarios, cuentas de acceso con contraseña temporal, lotes georreferenciados (mapa) y transferencia de titularidad con auditoría. |
 | `/admin/asistencias` | Asambleas y mingas: convocatoria, padrón de asistencia, finalización con multas automáticas por ausencia, acta general de la asamblea, documentos firmados, hoja de asistencia en PDF y convocatoria publicada en el grupo de WhatsApp de la Junta. |
-| `/admin/turnos` | Turnos de riego semanales sin cruces de horario; un turno adicional genera su cobro. |
-| `/admin/finanzas/cobrar` | Cobro en caja: búsqueda del comunero, obligaciones pendientes (cuotas, multas y otros rubros), efectivo o transferencia, comprobante en PDF. |
+| `/admin/turnos` | Turnos de riego semanales sin cruces de horario dentro de cada sector. |
+| `/admin/finanzas/cobrar` | Cobro en caja: búsqueda del usuario, obligaciones pendientes (cuotas, multas y otros rubros), efectivo o transferencia, comprobante en PDF. |
 | `/admin/finanzas/pagos` | Historial de pagos por fechas, reimpresión del comprobante y anulación con motivo. |
 | `/admin/finanzas/egresos` | Registro y consulta de egresos (proveedor, RUC, factura). |
-| `/admin/finanzas/facturacion` | Facturación mensual del agua: estado del año mes a mes, vista previa y emisión de las cuotas. |
+| `/admin/finanzas/facturacion` | Pago anual del agua: estado del año (emitidas, cobradas, pendientes), vista previa y emisión de la obligación anual a los usuarios con lote. |
+| `/admin/gestion` | Gestión interna de la directiva: registro de auditoría (filtros por día de Ecuador), inventario de bienes y plan anual de actividades. |
 | `/admin/finanzas/tarifas` | Tarifas por concepto con su historial de vigencias. |
 
-### Comunero (rol USUARIO)
-- **Mi cuenta** (`/mi-cuenta`): valores pendientes, historial de pagos y lote del comunero. El servidor solo devuelve los datos de quien inició sesión.
+### Usuario (rol USUARIO)
+- **Mi cuenta** (`/mi-cuenta`): valores pendientes, historial de pagos y lote del usuario. El servidor solo devuelve los datos de quien inició sesión.
 
 ### Portal público
 - **Inicio** y **Eventos** (`/eventos`): próximas asambleas y mingas, y convocatorias firmadas. No expone datos personales.
@@ -53,7 +54,7 @@ JuntaAguas-LasJones-Patate/
 ├── .github/workflows/ci.yml   # Lint, pruebas y build en cada PR a develop o main
 ├── bd/docker-compose.yml      # MySQL 8 para desarrollo
 ├── backend/
-│   ├── database/migrations/   # Migraciones versionadas (001_baseline.sql, 002…012 .js)
+│   ├── database/migrations/   # Migraciones versionadas (001_baseline.sql, 002…017 .js; cada número es único)
 │   ├── src/
 │   │   ├── app.js             # App Express (sin listen; la usan las pruebas)
 │   │   ├── index.js           # Arranque del servidor
@@ -76,14 +77,14 @@ JuntaAguas-LasJones-Patate/
     ├── pages/                 # inicio, eventos, login, mi-cuenta, no-encontrado
     │   └── admin/             # Contenedor del panel + admin.routes.ts (rutas hijas)
     │       ├── dashboard/
-    │       └── components/    # comuneros, asistencias (asambleas y mingas), turnos, finanzas/{cobro-caja, historial-pagos, egresos, facturacion-mensual, tarifas}
+    │       └── components/    # usuarios, asistencias (asambleas y mingas), turnos, finanzas/{cobro-caja, historial-pagos, egresos, facturacion-anual, tarifas}
     └── testing/               # Utilidades para las pruebas
 ```
 
 **Principios:**
 - Las reglas de negocio viven en `backend/src/services` y reciben una conexión dentro de una transacción (`shared/transaction.js`). Los controladores no contienen SQL de escritura.
 - Toda entrada se valida con zod; un error de validación responde 400 con el mensaje del campo.
-- Autorización por ruta: `soloAdmin` para la gestión; un comunero solo ve sus propios datos.
+- Autorización por ruta: `soloAdmin` para la gestión; un usuario solo ve sus propios datos.
 - Fechas: la Junta opera en hora de Ecuador (UTC-5). Las fechas de calendario viajan como `AAAA-MM-DD`; los instantes (por ejemplo, la fecha de un pago) se guardan en UTC y se filtran por día de Ecuador.
 - Gestión Documental y Asistencias: Las asambleas y mingas permiten generar la lista de asistencia en PDF con el padrón activo para firmas físicas en territorio (`GET /api/eventos/:id/pdf-asistencia`). Posteriormente, se respalda el acta escaneada o convocatoria firmada en almacenamiento seguro validado por firma binaria (`POST /api/eventos/:id/documentos`).
 - El frontend usa un único interceptor para el token y clientes de API tipados (`AdminService`, `FinanzasService`, `ConsultaService`).
@@ -126,7 +127,7 @@ cp .env.example .env          # mismo WHATSAPP_SERVICE_TOKEN que en backend/.env
 npm run dev                   # http://127.0.0.1:3100 (solo para el backend)
 ```
 
-El seed imprime al terminar la cédula del administrador, la de un comunero de demostración y la contraseña.
+El seed imprime al terminar la cédula del administrador, la de un usuario de demostración y la contraseña.
 
 ---
 
@@ -153,11 +154,11 @@ Es seguro repetirlo: nunca siembra datos de prueba ni borra información; en una
 Primeros pasos en el panel, con la base vacía:
 
 - **Ajustes → Tarifas:** registre la cuota de agua y las multas por inasistencia a asamblea y a minga (sin ellas no se pueden facturar meses ni crear eventos con multa).
-- **Comuneros y lotes → Catastro:** cree los sectores y luego los lotes.
-- **Comuneros y lotes → Padrón:** registre a los comuneros y sus cuentas de acceso.
+- **Gestión de Usuarios → Catastro:** cree los sectores y luego los lotes.
+- **Gestión de Usuarios → Padrón:** registre usuarios y sus cuentas de acceso.
 - **WhatsApp** (menú lateral): pulse *Conectar WhatsApp*, escanee el código QR con el teléfono de la Junta (*Dispositivos vinculados*) y elija el grupo donde se publicarán las convocatorias.
 
-Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1`; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador en el servidor.
+Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1` (con `0` detrás de un proxy, todas las peticiones parecen venir de la misma IP: la auditoría registra la IP del proxy y el backend lo advierte en el log). El inicio de sesión limita los intentos por IP y cédula (10 cada 15 min) y por IP (100 cada 15 min), y cada cuenta se bloquea 15 minutos tras 5 contraseñas incorrectas; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador en el servidor.
 
 ### Convocatorias por WhatsApp
 

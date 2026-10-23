@@ -1,0 +1,128 @@
+<div class="fin-split">
+  <section class="fin-panel" aria-labelledby="anual-titulo">
+    <div class="fin-panel__head">
+      <div>
+        <h3 class="fin-panel__title" id="anual-titulo">
+          <i class="ri-calendar-2-line" aria-hidden="true"></i> Pago anual de agua
+        </h3>
+        <p class="fin-panel__desc">
+          El agua se cobra una sola vez al año a cada usuario activo con lote.
+        </p>
+      </div>
+      <div class="field">
+        <label for="anual-anio" class="sr-only">Año</label>
+        <select
+          id="anual-anio"
+          class="input"
+          [ngModel]="anio()"
+          (ngModelChange)="cambiarAnio($event)"
+        >
+          @for (a of anios; track a) {
+            <option [ngValue]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert--danger" role="alert">
+        {{ error() }}
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">
+          Reintentar
+        </button>
+      </div>
+    } @else if (cargando() && !resumen()) {
+      <div class="skeleton skeleton--card" style="height: 140px" aria-live="polite"></div>
+    } @else if (resumen(); as r) {
+      @if (r.emitidas) {
+        <div class="summary" style="margin-top: 0.75rem">
+          <div class="summary__row">
+            <span class="text-muted">Obligaciones emitidas</span
+            ><strong class="money">{{ r.emitidas }} · ${{ r.total.toFixed(2) }}</strong>
+          </div>
+          <div class="summary__row">
+            <span class="text-muted">Cobradas</span
+            ><strong class="money">{{ r.pagadas }} · ${{ r.recaudado.toFixed(2) }}</strong>
+          </div>
+          <div class="summary__row">
+            <span class="text-muted">Pendientes</span
+            ><strong class="money"
+              >{{ r.pendientes }} · ${{ (r.total - r.recaudado).toFixed(2) }}</strong
+            >
+          </div>
+          <span class="month-tile__bar" aria-hidden="true"
+            ><span [style.transform]="'scaleX(' + progreso(r) + ')'"></span
+          ></span>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="ri-calendar-close-line" aria-hidden="true"></i>
+          <strong>Sin emitir</strong>
+          <p>Aún no se emitió el pago anual de agua de {{ r.anio }}.</p>
+        </div>
+      }
+    }
+  </section>
+
+  <aside class="fin-panel" aria-labelledby="anual-emitir-titulo" aria-live="polite">
+    <h3 class="fin-panel__title" id="anual-emitir-titulo">Emitir {{ anio() }}</h3>
+    <div class="field" style="margin-top: 0.75rem">
+      <label for="anual-valor">Valor por usuario <span class="text-muted">(opcional)</span></label>
+      <input
+        id="anual-valor"
+        class="input"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="Tarifa vigente al 1 de enero"
+        [ngModel]="valor()"
+        (ngModelChange)="cambiarValor($event)"
+      />
+      <p class="field__hint">Vacío: se usa la tarifa «Pago anual de agua» registrada en Tarifas.</p>
+    </div>
+
+    @if (calculando()) {
+      <p class="text-muted" style="margin-top: 0.75rem">Calculando…</p>
+    } @else if (errorVistaPrevia()) {
+      <div class="alert alert--warning" role="alert" style="margin-top: 0.75rem">
+        {{ errorVistaPrevia() }}
+      </div>
+    } @else if (vistaPrevia(); as p) {
+      @if (p.generadas) {
+        <div class="preview-card" style="margin-top: 0.75rem">
+          <span class="text-muted">Se emitirán</span>
+          <span class="summary__total money">{{ p.generadas }} obligaciones</span>
+          <span
+            >de <strong class="money">${{ p.valor.toFixed(2) }}</strong> · total
+            <strong class="money">${{ p.total.toFixed(2) }}</strong></span
+          >
+          @if (p.existentes) {
+            <span class="field__hint"
+              >{{ p.existentes }} usuarios ya tienen su obligación de este año.</span
+            >
+          }
+          <span class="field__hint"
+            >Reciben la obligación los {{ p.usuarios }} usuarios activos con al menos un lote. Vence
+            el 31 de diciembre.</span
+          >
+        </div>
+        <button
+          type="button"
+          class="btn btn--primary btn--lg btn--block pressable"
+          style="margin-top: 1rem"
+          [disabled]="emitiendo()"
+          (click)="emitir()"
+        >
+          <i class="ri-send-plane-line" aria-hidden="true"></i>
+          {{ emitiendo() ? 'Emitiendo…' : 'Emitir ' + p.generadas + ' obligaciones' }}
+        </button>
+      } @else {
+        <div class="empty-state">
+          <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+          <strong>Año al día</strong>
+          <p>Los {{ p.existentes }} usuarios con lote ya tienen su obligación de {{ p.anio }}.</p>
+        </div>
+      }
+    }
+  </aside>
+</div>

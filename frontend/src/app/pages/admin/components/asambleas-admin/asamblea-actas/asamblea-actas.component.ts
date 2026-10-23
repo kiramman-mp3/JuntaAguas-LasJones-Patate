@@ -17,7 +17,7 @@ import { AsambleasService } from '../asambleas.service';
   selector: 'app-asamblea-actas',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, ModalComponent, SkeletonComponent, EmptyStateComponent],
-  templateUrl: './asamblea-actas.component.html'
+  templateUrl: './asamblea-actas.component.html',
 })
 export class AsambleaActasComponent implements OnInit {
   private asambleas = inject(AsambleasService);
@@ -56,14 +56,18 @@ export class AsambleaActasComponent implements OnInit {
       error: () => {
         this.errorCarga.set(true);
         this.cargando.set(false);
-      }
+      },
     });
   }
 
   agregarTemaNuevo(): void {
     const tema = this.nuevoTema.punto_tratar.trim();
     if (!tema) {
-      this.dialog.aviso({ tipo: 'WARNING', titulo: 'Campo requerido', mensaje: 'Ingrese el asunto o título del nuevo tema a tratar.' });
+      this.dialog.aviso({
+        tipo: 'WARNING',
+        titulo: 'Campo requerido',
+        mensaje: 'Ingrese el asunto o título del nuevo tema a tratar.',
+      });
       return;
     }
     const orden = this.puntos.length + 1;
@@ -71,7 +75,7 @@ export class AsambleaActasComponent implements OnInit {
       orden,
       punto_tratar: `${orden}. ${tema}`,
       tratado: this.nuevoTema.tratado.trim(),
-      resolucion: this.nuevoTema.resolucion.trim()
+      resolucion: this.nuevoTema.resolucion.trim(),
     });
     this.nuevoTema = { punto_tratar: '', tratado: '', resolucion: '' };
     this.mostrarNuevoTema = false;
@@ -87,8 +91,12 @@ export class AsambleaActasComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo guardar', mensaje: err?.error?.message || 'Error al guardar puntos de asamblea.' });
-      }
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'No se pudo guardar',
+          mensaje: err?.error?.message || 'Error al guardar puntos de asamblea.',
+        });
+      },
     });
   }
 
@@ -118,8 +126,12 @@ export class AsambleaActasComponent implements OnInit {
       },
       error: (err) => {
         this.subiendoActa.set(false);
-        this.dialog.aviso({ tipo: 'DANGER', titulo: 'No se pudo subir el acta', mensaje: err?.error?.message || 'Error al subir el acta firmada.' });
-      }
+        this.dialog.aviso({
+          tipo: 'DANGER',
+          titulo: 'No se pudo subir el acta',
+          mensaje: err?.error?.message || 'Error al subir el acta firmada.',
+        });
+      },
     });
   }
 }

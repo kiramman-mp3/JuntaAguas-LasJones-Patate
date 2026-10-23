@@ -75,7 +75,7 @@ async function cambiarEstado(req, res) {
   });
 }
 
-/** Padrón de asistencia del evento (comuneros con su estado) y resumen. */
+/** Padrón de asistencia del evento (usuarios con su estado) y resumen. */
 async function getAsistencias(req, res) {
   const { id } = idParam.parse(req.params);
   const { evento, padron } = await withTransaction(async (conexion) => {
@@ -85,7 +85,7 @@ async function getAsistencias(req, res) {
   return res.json({ status: 'OK', data: padron.personas, resumen: padron.resumen, estado: evento.estado });
 }
 
-/** Registrar o corregir la asistencia de los comuneros mientras el evento está abierto. */
+/** Registrar o corregir la asistencia de los usuarios mientras el evento está abierto. */
 async function registrarAsistencias(req, res) {
   const { id } = idParam.parse(req.params);
   const { registradas } = await withTransaction(async (conexion) => {

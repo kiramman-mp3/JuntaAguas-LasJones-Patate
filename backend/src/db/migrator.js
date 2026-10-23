@@ -3,6 +3,16 @@ const path = require('path');
 
 const MIGRATIONS_DIR = path.join(__dirname, '../../database/migrations');
 
+/**
+ * Migraciones renombradas para que cada número sea único (nombre anterior -> nombre actual).
+ * schema_migrations guarda el nombre del archivo: sin este mapa, una base que ya las aplicó
+ * con el nombre anterior las ejecutaría de nuevo.
+ */
+const MIGRACIONES_RENOMBRADAS = Object.freeze({
+  '011_pago_comprobante.js': '015_pago_comprobante.js',
+  '014_terminologia_usuarios.js': '016_terminologia_usuarios.js'
+});
+
 async function columnExists(db, tabla, columna) {
   const [rows] = await db.query(
     'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
@@ -31,7 +41,15 @@ async function addIndexIfMissing(db, tabla, indice, columnas) {
   if (!rows.length) await db.query(`ALTER TABLE \`${tabla}\` ADD INDEX \`${indice}\` ${columnas}`);
 }
 
-const helpers = { columnExists, addColumnIfMissing, dropColumnIfExists, addIndexIfMissing };
+async function addUniqueIfMissing(db, tabla, indice, columnas) {
+  const [rows] = await db.query(
+    'SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?',
+    [tabla, indice]
+  );
+  if (!rows.length) await db.query(`ALTER TABLE \`${tabla}\` ADD UNIQUE KEY \`${indice}\` ${columnas}`);
+}
+
+const helpers = { columnExists, addColumnIfMissing, dropColumnIfExists, addIndexIfMissing, addUniqueIfMissing };
 
 /** Divide un script SQL en sentencias, ignorando comentarios de línea. */
 function sentenciasSql(script) {
@@ -62,6 +80,13 @@ async function migrate(db, { log = console.log } = {}) {
 
   const [aplicadas] = await db.query('SELECT id FROM schema_migrations');
   const hechas = new Set(aplicadas.map((r) => r.id));
+  for (const [anterior, actual] of Object.entries(MIGRACIONES_RENOMBRADAS)) {
+    if (!hechas.has(anterior)) continue;
+    if (hechas.has(actual)) await db.query('DELETE FROM schema_migrations WHERE id = ?', [anterior]);
+    else await db.query('UPDATE schema_migrations SET id = ? WHERE id = ?', [actual, anterior]);
+    hechas.delete(anterior);
+    hechas.add(actual);
+  }
   const pendientes = listarMigraciones().filter((f) => !hechas.has(f));
 
   for (const archivo of pendientes) {
@@ -81,4 +106,4 @@ async function migrate(db, { log = console.log } = {}) {
   return pendientes;
 }
 
-module.exports = { migrate, listarMigraciones, helpers };
+module.exports = { migrate, listarMigraciones, helpers, MIGRACIONES_RENOMBRADAS };

@@ -56,7 +56,7 @@ module.exports.up = async (db) => {
       nuevoId = idPatateViejo;
     }
 
-    // Reasignar los lotes (y por ende los comuneros titulares) al nuevo sector
+    // Reasignar los lotes (y por ende los usuarios titulares) al nuevo sector
     await db.query('UPDATE lotes SET sector_id = ? WHERE sector_id = ?', [nuevoId, s.id]);
 
     // Desactivar el sector anterior

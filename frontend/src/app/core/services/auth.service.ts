@@ -22,26 +22,33 @@ export interface LoginResponse {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
 
   private readonly http = inject(HttpClient);
 
-
-
   /** Con `recordar` la sesión sobrevive al cierre del navegador; sin él dura lo que la pestaña. */
   login(cedula: string, password: string, recordar = true): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { cedula, password }).pipe(
-      tap(res => {
+      tap((res) => {
         if (res.token) session.guardar(res.token, res.user, recordar);
-      })
+      }),
     );
   }
 
-  logout() {
+  /**
+   * Cierra la sesión en este navegador y en el servidor: el token deja de valer aunque alguien lo
+   * haya copiado. El aviso al servidor no bloquea la salida si no hay conexión.
+   */
+  logout(): void {
+    const token = session.token();
     session.limpiar();
+    if (!token) return;
+    this.http
+      .post(`${this.apiUrl}/logout`, {}, { headers: { Authorization: `Bearer ${token}` } })
+      .subscribe({ error: () => undefined });
   }
 
   /**
@@ -49,11 +56,13 @@ export class AuthService {
    * con acceso completo, que reemplaza al de la sesión.
    */
   changePassword(actualPassword: string, nuevaPassword: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/change-password`, { actualPassword, nuevaPassword }).pipe(
-      tap(res => {
-        if (res.token) session.guardar(res.token, res.user);
-      })
-    );
+    return this.http
+      .post<LoginResponse>(`${this.apiUrl}/change-password`, { actualPassword, nuevaPassword })
+      .pipe(
+        tap((res) => {
+          if (res.token) session.guardar(res.token, res.user);
+        }),
+      );
   }
 
   getToken(): string | null {

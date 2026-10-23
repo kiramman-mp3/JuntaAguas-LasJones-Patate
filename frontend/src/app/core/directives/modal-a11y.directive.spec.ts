@@ -8,14 +8,18 @@ import { ModalA11yDirective } from './modal-a11y.directive';
   selector: 'app-modal-hijo',
   standalone: true,
   imports: [ModalA11yDirective],
-  template: `<div appModalA11y class="modal-backdrop" id="hijo"><button type="button" class="btn-close">x</button></div>`
+  template: `<div appModalA11y class="modal-backdrop" id="hijo">
+    <button type="button" class="btn-close">x</button>
+  </div>`,
 })
 class ModalHijoComponent {}
 
 @Component({
   standalone: true,
   imports: [ModalHijoComponent],
-  template: `@if (abierto()) { <app-modal-hijo /> }`
+  template: `@if (abierto()) {
+    <app-modal-hijo />
+  }`,
 })
 class PadreComponent {
   readonly abierto = signal(true);
@@ -27,13 +31,17 @@ class PadreComponent {
   template: `
     <div class="contenedor-animado" style="transform: translateX(0)">
       @if (primero()) {
-        <div appModalA11y class="modal-backdrop" id="primero"><button type="button" class="btn-close">x</button></div>
+        <div appModalA11y class="modal-backdrop" id="primero">
+          <button type="button" class="btn-close">x</button>
+        </div>
       }
       @if (segundo()) {
-        <div appModalA11y class="modal-backdrop" id="segundo"><button type="button">ok</button></div>
+        <div appModalA11y class="modal-backdrop" id="segundo">
+          <button type="button">ok</button>
+        </div>
       }
     </div>
-  `
+  `,
 })
 class AnfitrionComponent {
   readonly primero = signal(false);

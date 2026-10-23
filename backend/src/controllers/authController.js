@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const { withTransaction } = require('../shared/transaction');
 const { firmarToken, ALCANCE_CAMBIO_PASSWORD } = require('../middlewares/authMiddleware');
 const { compararPassword, hashPassword, problemaConPassword, HASH_FICTICIO } = require('../shared/passwords');
 const { badRequest, unauthorized, notFound } = require('../shared/errors');
@@ -33,8 +34,8 @@ function usuarioPublico(fila) {
   };
 }
 
-async function buscarCuentaPorCedula(identificador) {
-  const idLimpio = String(identificador || '').trim();
+/** Cuenta de la persona con esa cédula. No hay alias: cada cuenta se identifica solo por su cédula. */
+async function buscarCuentaPorCedula(cedula) {
   const [rows] = await db.query(
     `SELECT c.id AS cuenta_id, c.password_hash, c.estado AS estado_cuenta, c.debe_cambiar_password,
             c.intentos_fallidos, c.bloqueada_hasta, c.bloqueada_hasta > UTC_TIMESTAMP() AS bloqueada,
@@ -43,12 +44,8 @@ async function buscarCuentaPorCedula(identificador) {
      FROM personas p
      JOIN cuentas c ON c.persona_id = p.id
      JOIN roles r ON r.id = c.rol_id
-     WHERE p.cedula = ?
-        OR (LOWER(?) = 'admin' AND r.codigo = 'ADMIN' AND c.estado = 'ACTIVA')
-        OR (? = '1800000001' AND r.codigo = 'ADMIN' AND c.estado = 'ACTIVA')
-     ORDER BY c.id ASC
-     LIMIT 1`,
-    [idLimpio, idLimpio, idLimpio]
+     WHERE p.cedula = ?`,
+    [String(cedula || '').trim()]
   );
   return rows[0] || null;
 }
@@ -120,20 +117,32 @@ async function changePassword(req, res) {
     throw badRequest('La contraseña actual ingresada es incorrecta.');
   }
 
-  await db.query(
-    `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = FALSE, password_updated_at = UTC_TIMESTAMP(3)
-     WHERE id = ?`,
-    [await hashPassword(nuevaPassword), req.user.cuentaId]
-  );
-
-  await registrarAuditoria({
-    cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: req.user.cuentaId, ip: req.ip,
-    detalle: { cambioPassword: true }
+  const hash = await hashPassword(nuevaPassword);
+  await withTransaction(async (conexion) => {
+    await conexion.query(
+      `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = FALSE, password_updated_at = UTC_TIMESTAMP(3)
+       WHERE id = ?`,
+      [hash, req.user.cuentaId]
+    );
+    await registrarAuditoria({
+      conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: req.user.cuentaId, ip: req.ip,
+      detalle: { cambioPassword: true }
+    });
   });
 
   const cuenta = await buscarCuentaPorCedula(req.user.cedula);
   const user = usuarioPublico(cuenta);
   return res.json({ status: 'OK', message: 'Contraseña actualizada correctamente.', token: firmarToken(user), user });
+}
+
+/**
+ * Cierra la sesión en el servidor: todos los tokens emitidos hasta ahora para esta cuenta dejan de valer
+ * (también los de otros equipos donde se recordó la sesión).
+ */
+async function logout(req, res) {
+  await db.query('UPDATE cuentas SET sesiones_validas_desde = UTC_TIMESTAMP(3) WHERE id = ?', [req.user.cuentaId]);
+  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'LOGOUT', entidad: 'cuentas', entidadId: req.user.cuentaId, ip: req.ip });
+  return res.json({ status: 'OK', message: 'Sesión cerrada.' });
 }
 
 /** Perfil de la cuenta autenticada. */
@@ -156,4 +165,4 @@ async function getMe(req, res) {
   });
 }
 
-module.exports = { login, changePassword, getMe };
+module.exports = { login, logout, changePassword, getMe };

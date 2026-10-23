@@ -53,7 +53,7 @@ async function listarObligaciones(conexion, { personaId, estado, anio, mes }) {
   if (mes) { condiciones.push('o.periodo_mes = ?'); params.push(mes); }
   const [filas] = await conexion.query(
     `SELECT o.*, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula
      FROM obligaciones o
      JOIN personas p ON p.id = o.persona_id
      JOIN conceptos_cobro c ON c.id = o.concepto_id
@@ -64,19 +64,19 @@ async function listarObligaciones(conexion, { personaId, estado, anio, mes }) {
   return filas;
 }
 
-/** Obligaciones de un comunero por cédula: solo cuotas de agua o todo lo demás (multas y otros). */
-async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes, mensualidades }) {
+/** Obligaciones (multas y otros cobros) de un usuario por cédula. */
+async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes }) {
   const [personas] = await conexion.query('SELECT id FROM personas WHERE cedula = ?', [cedula]);
   if (!personas.length) throw notFound('No existe una persona registrada con esa cédula.');
 
-  const condiciones = ['o.persona_id = ?', `c.codigo ${mensualidades ? '=' : '<>'} 'AGUA_MENSUAL'`];
+  const condiciones = ['o.persona_id = ?'];
   const params = [personas[0].id];
   if (estado) { condiciones.push('o.estado = ?'); params.push(estado); }
   if (anio) { condiciones.push('o.periodo_anio = ?'); params.push(anio); }
   if (mes) { condiciones.push('o.periodo_mes = ?'); params.push(mes); }
   const [filas] = await conexion.query(
     `SELECT o.*, c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,
-            CONCAT(p.nombres, ' ', p.apellidos) AS comunero_nombre, p.cedula
+            CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula
      FROM obligaciones o
      JOIN personas p ON p.id = o.persona_id
      JOIN conceptos_cobro c ON c.id = o.concepto_id
@@ -103,7 +103,7 @@ async function listarPagos(conexion, { personaId, estado, desde, hasta }) {
   if (estado) { condiciones.push('p.estado = ?'); params.push(estado); }
   filtroFechaPago('p.fecha_pago', { desde, hasta }, condiciones, params);
   const [filas] = await conexion.query(
-    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS comunero_nombre, per.cedula,
+    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula,
             CONCAT(reg.nombres, ' ', reg.apellidos) AS registrado_por_usuario,
             (SELECT COUNT(*) FROM pago_detalles pd WHERE pd.pago_id = p.id) AS obligaciones_pagadas
      FROM pagos p
@@ -120,7 +120,7 @@ async function listarPagos(conexion, { personaId, estado, desde, hasta }) {
 /** Pago con sus líneas (para reimprimir el comprobante). Devuelve null si no existe. */
 async function detallePago(conexion, id) {
   const [filas] = await conexion.query(
-    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS comunero_nombre, per.cedula
+    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula
      FROM pagos p JOIN personas per ON per.id = p.persona_id WHERE p.id = ?`,
     [id]
   );
@@ -133,6 +133,49 @@ async function detallePago(conexion, id) {
      JOIN conceptos_cobro c ON c.id = o.concepto_id
      WHERE pd.pago_id = ?
      ORDER BY o.periodo_anio, o.periodo_mes`,
+    [id]
+  );
+  return { ...filas[0], detalles };
+}
+
+/** Pagos anuales de agua (vigentes y anulados) con el usuario, quién los registró y los años cubiertos. */
+async function listarPagosAnuales(conexion, { personaId, estado, desde, hasta }) {
+  const condiciones = [];
+  const params = [];
+  if (personaId) { condiciones.push('p.persona_id = ?'); params.push(personaId); }
+  if (estado) { condiciones.push('p.estado = ?'); params.push(estado); }
+  filtroFechaPago('p.fecha_pago', { desde, hasta }, condiciones, params);
+  const [filas] = await conexion.query(
+    `SELECT p.id, p.persona_id, p.valor_total, p.metodo, p.referencia, p.observacion, p.fecha_pago, p.estado,
+            p.motivo_anulacion, p.fecha_anulacion,
+            CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula,
+            CONCAT(reg.nombres, ' ', reg.apellidos) AS registrado_por_usuario,
+            (SELECT GROUP_CONCAT(o.periodo_anio ORDER BY o.periodo_anio SEPARATOR ', ')
+             FROM pago_anual_agua_detalle d JOIN obligacion_anual_agua o ON o.id = d.obligacion_anual_agua
+             WHERE d.pago_anual_agua_id = p.id) AS anios
+     FROM pago_anual_agua p
+     JOIN personas per ON per.id = p.persona_id
+     LEFT JOIN cuentas c ON c.id = p.registrado_por_cuenta_id
+     LEFT JOIN personas reg ON reg.id = c.persona_id
+     ${where(condiciones)}
+     ORDER BY p.fecha_pago DESC, p.id DESC`,
+    params
+  );
+  return filas;
+}
+
+/** Pago anual de agua con sus años (para reimprimir el comprobante). Devuelve null si no existe. */
+async function detallePagoAnual(conexion, id) {
+  const [filas] = await conexion.query(
+    `SELECT p.*, CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula
+     FROM pago_anual_agua p JOIN personas per ON per.id = p.persona_id WHERE p.id = ?`,
+    [id]
+  );
+  if (!filas.length) return null;
+  const [detalles] = await conexion.query(
+    `SELECT d.obligacion_anual_agua AS obligacion_id, d.valor_pagado, o.periodo_anio
+     FROM pago_anual_agua_detalle d JOIN obligacion_anual_agua o ON o.id = d.obligacion_anual_agua
+     WHERE d.pago_anual_agua_id = ? ORDER BY o.periodo_anio`,
     [id]
   );
   return { ...filas[0], detalles };
@@ -158,8 +201,8 @@ async function listarEgresos(conexion, { proveedor, desde, hasta }) {
 }
 
 /**
- * Balance: ingresos (pagos vigentes) y egresos del período, cartera pendiente a la fecha,
- * resumen mensual del período (o de los últimos 12 meses) y cartera por concepto.
+ * Balance: ingresos (pagos vigentes y pagos anuales de agua) y egresos del período, cartera pendiente
+ * a la fecha, resumen mensual del período (o de los últimos 12 meses) y cartera por concepto.
  */
 async function balance(conexion, { desde, hasta }) {
   const fin = hasta || hoy();
@@ -168,23 +211,42 @@ async function balance(conexion, { desde, hasta }) {
   const filtroPagos = ["estado = 'VIGENTE'"];
   const pIngresos = [];
   filtroFechaPago('fecha_pago', { desde, hasta }, filtroPagos, pIngresos);
+  const filtroPagosAnuales = ["estado = 'VIGENTE'"];
+  const pIngresosAnuales = [];
+  filtroFechaPago('fecha_pago', { desde, hasta }, filtroPagosAnuales, pIngresosAnuales);
   const filtroEgresos = [];
   const pEgresos = [];
   if (desde) { filtroEgresos.push('fecha >= ?'); pEgresos.push(desde); }
   if (hasta) { filtroEgresos.push('fecha <= ?'); pEgresos.push(hasta); }
 
-  const [[{ totalIngresos }]] = await conexion.query(
-    `SELECT COALESCE(SUM(valor_total), 0) AS totalIngresos FROM pagos ${where(filtroPagos)}`, pIngresos
+  const [[{ ingresosPagos }]] = await conexion.query(
+    `SELECT COALESCE(SUM(valor_total), 0) AS ingresosPagos FROM pagos ${where(filtroPagos)}`, pIngresos
   );
+  const [[{ ingresosAnuales }]] = await conexion.query(
+    `SELECT COALESCE(SUM(valor_total), 0) AS ingresosAnuales FROM pago_anual_agua ${where(filtroPagosAnuales)}`, pIngresosAnuales
+  );
+  const totalIngresos = sumarMontos(ingresosPagos, ingresosAnuales);
   const [[{ totalEgresos }]] = await conexion.query(
     `SELECT COALESCE(SUM(valor), 0) AS totalEgresos FROM egresos ${where(filtroEgresos)}`, pEgresos
   );
   const [[cartera]] = await conexion.query(
     `SELECT COALESCE(SUM(valor), 0) AS totalPendientes,
-            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < ? THEN valor END), 0) AS totalVencido,
-            COUNT(DISTINCT persona_id) AS comunerosConDeuda
+            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < ? THEN valor END), 0) AS totalVencido
      FROM obligaciones WHERE estado = 'PENDIENTE'`,
     [hoy()]
+  );
+  const [[carteraAnual]] = await conexion.query(
+    `SELECT COALESCE(SUM(valor_total), 0) AS total, COUNT(*) AS obligaciones,
+            COALESCE(SUM(CASE WHEN fecha_vencimiento < ? THEN valor_total END), 0) AS vencido
+     FROM obligacion_anual_agua WHERE estado = 'PENDIENTE'`,
+    [hoy()]
+  );
+  const [[{ usuariosConDeuda }]] = await conexion.query(
+    `SELECT COUNT(*) AS usuariosConDeuda FROM (
+       SELECT persona_id FROM obligaciones WHERE estado = 'PENDIENTE'
+       UNION
+       SELECT persona_id FROM obligacion_anual_agua WHERE estado = 'PENDIENTE'
+     ) t`
   );
   // El mes de un pago es el de Ecuador, no el de UTC.
   const [resumenMensual] = await conexion.query(
@@ -192,9 +254,13 @@ async function balance(conexion, { desde, hasta }) {
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m') AS mes, valor_total AS ingresos, 0 AS egresos
        FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ? AND fecha_pago < ?
        UNION ALL
+       SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0
+       FROM pago_anual_agua WHERE estado = 'VIGENTE' AND fecha_pago >= ? AND fecha_pago < ?
+       UNION ALL
        SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes, 0, valor FROM egresos WHERE fecha >= ? AND fecha <= ?
      ) t GROUP BY mes ORDER BY mes DESC`,
-    [ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin), inicioResumen, fin]
+    [ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin),
+      ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin), inicioResumen, fin]
   );
   const [carteraPorConcepto] = await conexion.query(
     `SELECT c.codigo, c.nombre, COUNT(*) AS obligaciones, SUM(o.valor) AS total
@@ -206,18 +272,26 @@ async function balance(conexion, { desde, hasta }) {
     balance: {
       totalIngresos: Number(totalIngresos),
       totalEgresos: Number(totalEgresos),
-      totalPendientes: Number(cartera.totalPendientes),
-      totalVencido: Number(cartera.totalVencido),
-      comunerosConDeuda: Number(cartera.comunerosConDeuda),
+      totalPendientes: sumarMontos(cartera.totalPendientes, carteraAnual.total),
+      totalVencido: sumarMontos(cartera.totalVencido, carteraAnual.vencido),
+      usuariosConDeuda: Number(usuariosConDeuda),
       balanceAlDia: restarMontos(totalIngresos, totalEgresos),
       desde: desde ?? null,
       hasta: hasta ?? null,
       fechaReporte: new Date().toISOString()
     },
     resumenMensual: resumenMensual.map((m) => ({ mes: m.mes, ingresos: Number(m.ingresos), egresos: Number(m.egresos) })),
-    carteraPorConcepto: carteraPorConcepto.map((c) => ({ ...c, total: Number(c.total) }))
+    carteraPorConcepto: [
+      ...carteraPorConcepto.map((c) => ({ ...c, total: Number(c.total) })),
+      ...(Number(carteraAnual.obligaciones)
+        ? [{ codigo: 'AGUA_ANUAL', nombre: 'Pago anual de agua', obligaciones: Number(carteraAnual.obligaciones), total: Number(carteraAnual.total) }]
+        : [])
+    ].sort((a, b) => b.total - a.total)
   };
 }
+
+/** Suma importes en centavos y devuelve dólares. */
+const sumarMontos = (...montos) => aDolares(montos.reduce((suma, m) => suma + aCentavos(m), 0));
 
 /** Suma ingresos y egresos de un nodo (mes, año o total) en centavos y devuelve dólares con su balance. */
 function totales(nodos) {
@@ -227,7 +301,7 @@ function totales(nodos) {
 }
 
 /**
- * Historial financiero anual: años → meses con ingresos (pagos vigentes, por mes de Ecuador),
+ * Historial financiero anual: años → meses con ingresos (pagos vigentes y pagos anuales de agua, por mes de Ecuador),
  * egresos y balance. Los totales y balances se calculan aquí, en centavos, para que el
  * frontend solo los muestre. Años y meses van del más reciente al más antiguo.
  */
@@ -239,9 +313,11 @@ async function historialAnual(conexion) {
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m') AS mes, valor_total AS ingresos, 0 AS egresos, 1 AS es_pago
        FROM pagos WHERE estado = 'VIGENTE'
        UNION ALL
+       SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0, 1 FROM pago_anual_agua WHERE estado = 'VIGENTE'
+       UNION ALL
        SELECT DATE_FORMAT(fecha, '%Y-%m'), 0, valor, 0 FROM egresos
      ) t GROUP BY mes ORDER BY mes DESC`,
-    [ZONA_MYSQL]
+    [ZONA_MYSQL, ZONA_MYSQL]
   );
 
   const anios = new Map();
@@ -261,5 +337,5 @@ async function historialAnual(conexion) {
 
 module.exports = {
   filtroFechaPago, listarConceptos, listarTarifas, listarObligaciones, obligacionesPorCedula, periodosObligaciones,
-  listarPagos, detallePago, listarEgresos, balance, historialAnual
+  listarPagos, detallePago, listarPagosAnuales, detallePagoAnual, listarEgresos, balance, historialAnual
 };

@@ -13,7 +13,7 @@ import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
   standalone: true,
   imports: [CommonModule, RouterLink, FechaLocalPipe, PageHeaderComponent, EmptyStateComponent],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent implements OnInit {
   resumen: DashboardResumen | null = null;
@@ -38,9 +38,10 @@ export class DashboardComponent implements OnInit {
       },
       error: () => {
         this.cargandoResumen = false;
-        this.errorCarga = 'No se pudieron cargar los indicadores. Verifique su conexión e intente de nuevo.';
+        this.errorCarga =
+          'No se pudieron cargar los indicadores. Verifique su conexión e intente de nuevo.';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 }

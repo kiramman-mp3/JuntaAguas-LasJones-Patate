@@ -8,7 +8,11 @@ import { Component, input } from '@angular/core';
   selector: 'app-empty-state',
   standalone: true,
   template: `
-    <div class="empty-state" [class.empty-state--error]="tono() === 'error'" [attr.role]="tono() === 'error' ? 'alert' : null">
+    <div
+      class="empty-state"
+      [class.empty-state--error]="tono() === 'error'"
+      [attr.role]="tono() === 'error' ? 'alert' : null"
+    >
       <span class="empty-state__icon" aria-hidden="true"><i [class]="icono()"></i></span>
       <strong>{{ titulo() }}</strong>
       @if (mensaje()) {
@@ -18,7 +22,7 @@ import { Component, input } from '@angular/core';
         <ng-content />
       </div>
     </div>
-  `
+  `,
 })
 export class EmptyStateComponent {
   readonly icono = input('ri-inbox-2-line');

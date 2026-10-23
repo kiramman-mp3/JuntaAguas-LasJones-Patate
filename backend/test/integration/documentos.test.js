@@ -13,7 +13,7 @@ const PDF = Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF');
 const HTML = Buffer.from('<html><script>alert(1)</script></html>');
 const DIR = path.join(process.env.UPLOADS_DIR, 'documentos');
 
-let admin, comunero;
+let admin, usuario;
 
 async function crearEvento({ estado = 'PROGRAMADO', tipo = 'ASAMBLEA' } = {}) {
   const [r] = await db.query(
@@ -33,7 +33,7 @@ const subir = (eventoId, campos, archivo = PDF, nombre = 'convocatoria firmada.p
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario();
+  usuario = await crearUsuario();
 });
 after(closeDatabase);
 
@@ -111,8 +111,8 @@ test('acceso a documentos según su tipo', async () => {
 
   assert.equal((await request(app).get(convocatoriaBorrador)).status, 401);
   assert.equal((await request(app).get(acta)).status, 401);
-  assert.equal((await request(app).get(acta).set(auth(comunero))).status, 200);
-  assert.equal((await request(app).get(lista).set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get(acta).set(auth(usuario))).status, 200);
+  assert.equal((await request(app).get(lista).set(auth(usuario))).status, 403);
   assert.equal((await request(app).get(lista).set(auth(admin))).status, 200);
 });
 

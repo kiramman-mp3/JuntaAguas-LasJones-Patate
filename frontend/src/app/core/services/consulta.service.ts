@@ -4,13 +4,18 @@ import { Observable } from 'rxjs';
 
 export interface DeudaItem {
   id: number;
+  /** AGUA_ANUAL: pago anual de agua; OBLIGACION: multas y otros cobros. */
+  tipo: 'AGUA_ANUAL' | 'OBLIGACION';
   concepto: string;
+  conceptoCodigo?: string;
   anio: number;
   periodo: string;
   valor: number;
   estado: 'PENDIENTE' | 'PAGADA' | 'ANULADA';
   fechaEmision: string;
   pagoId?: number | null;
+  /** Pago anual de agua que cubrió esta obligación (si es de tipo AGUA_ANUAL y está pagada). */
+  pagoAnualId?: number | null;
 }
 
 export interface ConsultaResultadoResponse {
@@ -66,15 +71,13 @@ import { environment } from '../../../environments/environment';
 import { EventoItem, RespuestaApi } from '../models/api-payloads';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ConsultaService {
   private apiUrl = environment.apiUrl;
 
   private readonly http = inject(HttpClient);
   private readonly documentos = inject(DocumentosService);
-
-
 
   consultarPorCedula(cedula: string): Observable<ConsultaResultadoResponse> {
     return this.http.get<ConsultaResultadoResponse>(`${this.apiUrl}/personas/consulta/${cedula}`);
@@ -89,7 +92,11 @@ export class ConsultaService {
     return this.http.get<EventoDetalleResponse>(`${this.apiUrl}/eventos/${id}`);
   }
 
-  subirDocumentoEvento(id: number, tipo: TipoDocumento, archivo: File): Observable<DocumentoSubido> {
+  subirDocumentoEvento(
+    id: number,
+    tipo: TipoDocumento,
+    archivo: File,
+  ): Observable<DocumentoSubido> {
     return this.documentos.subir(id, tipo, archivo);
   }
 
@@ -101,4 +108,3 @@ export class ConsultaService {
     return this.http.get(`${this.apiUrl}/eventos/${id}/pdf-asistencia`, { responseType: 'blob' });
   }
 }
-

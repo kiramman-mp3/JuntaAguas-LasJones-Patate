@@ -11,11 +11,11 @@ import { SectionNavComponent, SeccionNav } from '../../../../shared/ui/section-n
   selector: 'app-asistencias-admin',
   standalone: true,
   imports: [RouterOutlet, PageHeaderComponent, SectionNavComponent],
-  templateUrl: './asistencias-admin.component.html'
+  templateUrl: './asistencias-admin.component.html',
 })
 export class AsistenciasAdminComponent {
   readonly secciones: SeccionNav[] = [
     { ruta: '/admin/asistencias/asambleas', etiqueta: 'Asambleas', icono: 'ri-user-voice-line' },
-    { ruta: '/admin/asistencias/mingas', etiqueta: 'Mingas', icono: 'ri-tools-line' }
+    { ruta: '/admin/asistencias/mingas', etiqueta: 'Mingas', icono: 'ri-tools-line' },
   ];
 }

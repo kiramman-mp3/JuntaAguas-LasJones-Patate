@@ -8,29 +8,29 @@ const db = require('../../src/config/db');
 const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, crearPersona, auth, conceptoId, crearObligacion, crearSector, crearLote } = require('../helpers/fixtures');
 
-let admin, comunero, vecino, aguaId;
+let admin, usuario, vecino, aguaId, extraordinariaId;
 
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario();
+  usuario = await crearUsuario();
   vecino = await crearUsuario();
-  aguaId = await conceptoId('AGUA_MENSUAL');
+  aguaId = await conceptoId('AGUA_ANUAL');
+  extraordinariaId = await conceptoId('CUOTA_EXTRAORDINARIA');
   const sector = await crearSector('La Jones Baja');
-  await crearLote({ sectorId: sector, personaId: comunero.personaId, codigo: 'LJB-001' });
+  await crearLote({ sectorId: sector, personaId: usuario.personaId, codigo: 'LJB-001' });
   await crearLote({ sectorId: sector, personaId: vecino.personaId, codigo: 'LJB-002' });
-  // Persona activa sin lote: no debe recibir cuota de agua.
+  // Persona activa sin lote: no recibe el pago anual de agua.
   await crearPersona({ nombres: 'Sin lote' });
 });
 after(closeDatabase);
 
 const tarifa = (body) => request(app).post('/api/financiero/tarifas').set(auth(admin)).send({ concepto_id: aguaId, ...body });
-const facturar = (body) => request(app).post('/api/financiero/facturacion/mensual').set(auth(admin)).send(body);
 const pagar = (body) => request(app).post('/api/financiero/pagos').set(auth(admin)).send({ metodo: 'TRANSFERENCIA', referencia: 'TRF-123', ...body });
 
 test('una tarifa nueva cierra la vigencia de la anterior y no se permiten solapes', async () => {
-  assert.equal((await tarifa({ valor: 4, vigencia_desde: '2025-01-01' })).status, 201);
-  assert.equal((await tarifa({ valor: 4.5, vigencia_desde: '2026-01-01' })).status, 201);
+  assert.equal((await tarifa({ valor: 40, vigencia_desde: '2025-01-01' })).status, 201);
+  assert.equal((await tarifa({ valor: 45, vigencia_desde: '2026-01-01' })).status, 201);
   const [filas] = await db.query('SELECT valor, vigencia_desde, vigencia_hasta FROM tarifas WHERE concepto_id = ? ORDER BY vigencia_desde', [aguaId]);
   assert.equal(filas[0].vigencia_hasta, '2025-12-31');
   assert.equal(filas[1].vigencia_hasta, null);
@@ -38,68 +38,47 @@ test('una tarifa nueva cierra la vigencia de la anterior y no se permiten solape
   assert.equal((await tarifa({ valor: 0, vigencia_desde: '2027-01-01' })).status, 400);
 
   const conceptos = await request(app).get('/api/financiero/conceptos').set(auth(admin));
-  assert.equal(conceptos.body.data.find((c) => c.codigo === 'AGUA_MENSUAL').tarifa_actual, 4.5);
+  assert.equal(conceptos.body.data.find((c) => c.codigo === 'AGUA_ANUAL').tarifa_actual, 45);
+  assert.ok(!conceptos.body.data.some((c) => c.codigo === 'AGUA_MENSUAL'), 'la cuota mensual ya no se ofrece');
 });
 
-test('la facturación mensual emite una cuota por comunero con lote, con la tarifa del período, una sola vez', async () => {
-  const simulacion = await facturar({ anio: 2025, mes: 3, simular: true });
-  assert.equal(simulacion.status, 200);
-  assert.equal(simulacion.body.data.generadas, 2);
-  assert.equal(simulacion.body.data.valor, 4);
-  const [[{ antes }]] = await db.query('SELECT COUNT(*) AS antes FROM obligaciones WHERE periodo_anio = 2025 AND periodo_mes = 3');
-  assert.equal(antes, 0, 'simular no escribe');
-
-  const emision = await facturar({ anio: 2025, mes: 3 });
-  assert.equal(emision.status, 201);
-  assert.equal(emision.body.data.generadas, 2);
-  assert.equal(emision.body.data.total, 8);
-
-  const repetida = await facturar({ anio: 2025, mes: 3 });
-  assert.equal(repetida.body.data.generadas, 0);
-  assert.equal(repetida.body.data.existentes, 2);
-
-  const [[cuota]] = await db.query(
-    'SELECT valor, fecha_emision, fecha_vencimiento FROM obligaciones WHERE persona_id = ? AND periodo_anio = 2025 AND periodo_mes = 3',
-    [comunero.personaId]
-  );
-  assert.equal(cuota.valor, 4);
-  assert.equal(cuota.fecha_emision, '2025-03-01');
-  assert.equal(cuota.fecha_vencimiento, '2025-03-31');
-
-  assert.equal((await facturar({ anio: 2026, mes: 1 })).body.data.valor, 4.5);
-  assert.equal((await facturar({ anio: 2099, mes: 1 })).status, 400);
-  assert.equal((await facturar({ anio: 2024, mes: 1 })).status, 409, 'sin tarifa vigente');
-});
-
-test('el resumen de facturación muestra los 12 meses con emitidas, cobradas y pendientes', async () => {
-  const res = await request(app).get('/api/financiero/facturacion/mensual?anio=2025').set(auth(admin));
-  assert.equal(res.status, 200);
-  assert.equal(res.body.data.anio, 2025);
-  assert.equal(res.body.data.meses.length, 12);
-  const marzo = res.body.data.meses[2];
-  assert.deepEqual(marzo, { mes: 3, emitidas: 2, pagadas: 0, pendientes: 2, total: 8, recaudado: 0 });
-  assert.equal(res.body.data.meses[0].emitidas, 0);
-
-  assert.equal((await request(app).get('/api/financiero/facturacion/mensual').set(auth(comunero))).status, 403);
-  assert.equal((await request(app).get('/api/financiero/facturacion/mensual?anio=abc').set(auth(admin))).status, 400);
+test('el agua ya no se factura mes a mes', async () => {
+  assert.equal((await request(app).post('/api/financiero/facturacion/mensual').set(auth(admin)).send({ anio: 2025, mes: 3 })).status, 404);
+  assert.equal((await request(app).get('/api/financiero/facturacion/mensual').set(auth(admin))).status, 404);
+  assert.equal((await request(app).get(`/api/financiero/obligaciones/mensualidades?cedula=${usuario.cedula}`).set(auth(admin))).status, 404);
 });
 
 test('el pago valida pertenencia, estado y referencia; ignora ids repetidos', async () => {
-  const propia = await crearObligacion({ personaId: comunero.personaId, anio: 2024, mes: 5, valor: 4 });
+  const propia = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 5, valor: 4 });
   const ajena = await crearObligacion({ personaId: vecino.personaId, anio: 2024, mes: 5, valor: 4 });
 
-  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [ajena] })).status, 400);
-  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia], metodo: 'TRANSFERENCIA', referencia: '' })).status, 400);
+  assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [ajena] })).status, 400);
+  assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [propia], metodo: 'TRANSFERENCIA', referencia: '' })).status, 400);
 
-  const ok = await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia, propia] });
+  const ok = await pagar({ persona_id: usuario.personaId, obligacionesIds: [propia, propia] });
   assert.equal(ok.status, 201, JSON.stringify(ok.body));
   assert.equal(ok.body.valorTotal, 4);
-  assert.equal((await pagar({ persona_id: comunero.personaId, obligacionesIds: [propia] })).status, 409);
+  assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [propia] })).status, 409);
+});
+
+test('si la auditoría no se puede guardar, el pago no se registra', async () => {
+  const ob = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 11, valor: 4 });
+  await db.query('RENAME TABLE auditoria TO auditoria_respaldo');
+  try {
+    const res = await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob] });
+    assert.equal(res.status, 500);
+  } finally {
+    await db.query('RENAME TABLE auditoria_respaldo TO auditoria');
+  }
+  const [[obligacion]] = await db.query('SELECT estado FROM obligaciones WHERE id = ?', [ob]);
+  assert.equal(obligacion.estado, 'PENDIENTE');
+  const [pagos] = await db.query('SELECT 1 FROM pago_detalles WHERE obligacion_id = ?', [ob]);
+  assert.equal(pagos.length, 0, 'sin rastro de auditoría no queda un pago a medias');
 });
 
 test('anular un pago conserva su detalle, devuelve las obligaciones y permite volver a cobrarlas', async () => {
-  const ob = await crearObligacion({ personaId: comunero.personaId, anio: 2024, mes: 6, valor: 4 });
-  const pago = await pagar({ persona_id: comunero.personaId, obligacionesIds: [ob], observacion: 'Incluye [ANULADO: texto del usuario]' });
+  const ob = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 6, valor: 4 });
+  const pago = await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob], observacion: 'Incluye [ANULADO: texto del usuario]' });
   const pagoId = pago.body.pagoId;
 
   assert.equal((await request(app).post(`/api/financiero/pagos/${pagoId}/anular`).set(auth(admin)).send({ motivo: 'x' })).status, 400);
@@ -112,7 +91,7 @@ test('anular un pago conserva su detalle, devuelve las obligaciones y permite vo
   const [detalles] = await db.query('SELECT obligacion_id FROM pago_detalles WHERE pago_id = ?', [pagoId]);
   assert.equal(detalles.length, 1, 'el detalle queda como historial');
 
-  const nuevo = await pagar({ persona_id: comunero.personaId, obligacionesIds: [ob] });
+  const nuevo = await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob] });
   assert.equal(nuevo.status, 201);
 });
 
@@ -154,6 +133,16 @@ test('los filtros por día usan el calendario de Ecuador aunque fecha_pago esté
   await db.query('DELETE FROM pagos WHERE id = ?', [r.insertId]);
 });
 
+test('la auditoría también se filtra por días de Ecuador', async () => {
+  // 02:00 UTC del 10 de marzo son las 21:00 del 9 de marzo en Ecuador.
+  await db.query(
+    "INSERT INTO auditoria (cuenta_id, accion, entidad, fecha) VALUES (?, 'PRUEBA_ZONA', 'pruebas', '2025-03-10 02:00:00')", [admin.cuentaId]
+  );
+  const dia = async (fecha) => (await request(app).get(`/api/auditoria?accion=PRUEBA_ZONA&desde=${fecha}&hasta=${fecha}`).set(auth(admin))).body.data;
+  assert.equal((await dia('2025-03-09')).length, 1, 'aparece el 9 de marzo');
+  assert.equal((await dia('2025-03-10')).length, 0, 'no aparece el 10 de marzo');
+});
+
 test('solo se anulan obligaciones pendientes', async () => {
   const ob = await crearObligacion({ personaId: vecino.personaId, anio: 2024, mes: 8 });
   const anular = () => request(app).post(`/api/financiero/obligaciones/${ob}/anular`).set(auth(admin)).send({ motivo: 'Exonerado por asamblea' });
@@ -162,23 +151,28 @@ test('solo se anulan obligaciones pendientes', async () => {
 });
 
 test('una obligación manual duplicada en el mismo período devuelve 409', async () => {
-  const cuerpo = { persona_id: vecino.personaId, concepto_id: aguaId, periodo_anio: 2023, periodo_mes: 1, fecha_emision: '2023-01-01', valor: 3 };
-  assert.equal((await request(app).post('/api/financiero/obligaciones').set(auth(admin)).send(cuerpo)).status, 201);
+  const cuerpo = { persona_id: vecino.personaId, concepto_id: extraordinariaId, periodo_anio: 2023, periodo_mes: 1, fecha_emision: '2023-01-01', valor: 3 };
+  const creada = await request(app).post('/api/financiero/obligaciones').set(auth(admin)).send(cuerpo);
+  assert.equal(creada.status, 201);
   assert.equal((await request(app).post('/api/financiero/obligaciones').set(auth(admin)).send(cuerpo)).status, 409);
+  const [[ob]] = await db.query('SELECT fecha_vencimiento FROM obligaciones WHERE id = ?', [creada.body.obligacionId]);
+  assert.equal(ob.fecha_vencimiento, '2023-01-31', 'sin vencimiento propio vence a los 30 días');
+
+  const agua = { ...cuerpo, concepto_id: aguaId, periodo_mes: 2 };
+  assert.equal((await request(app).post('/api/financiero/obligaciones').set(auth(admin)).send(agua)).status, 400, 'el agua anual no es manual');
 });
 
-test('mensualidades y multas se separan por código de concepto, no por id', async () => {
-  const multa = await crearObligacion({ personaId: comunero.personaId, codigo: 'MULTA_MINGA', anio: 2025, mes: null, valor: 10 });
-  const mensual = await request(app).get(`/api/financiero/obligaciones/mensualidades?cedula=${comunero.cedula}&anio=2025`).set(auth(admin));
-  const multas = await request(app).get(`/api/financiero/obligaciones/multas?cedula=${comunero.cedula}&anio=2025`).set(auth(admin));
-  assert.ok(mensual.body.data.every((o) => o.concepto_codigo === 'AGUA_MENSUAL'));
+test('las multas y otros cobros se consultan por cédula', async () => {
+  const multa = await crearObligacion({ personaId: usuario.personaId, codigo: 'MULTA_MINGA', anio: 2025, mes: null, valor: 10 });
+  const multas = await request(app).get(`/api/financiero/obligaciones/multas?cedula=${usuario.cedula}&anio=2025`).set(auth(admin));
+  assert.equal(multas.status, 200);
   assert.deepEqual(multas.body.data.map((o) => o.id), [multa]);
 });
 
 test('el comprobante de un pago solo lo ve su dueño o el administrador', async () => {
-  const ob = await crearObligacion({ personaId: comunero.personaId, anio: 2024, mes: 9, valor: 4 });
-  const { pagoId } = (await pagar({ persona_id: comunero.personaId, obligacionesIds: [ob] })).body;
-  const propio = await request(app).get(`/api/financiero/pagos/${pagoId}`).set(auth(comunero));
+  const ob = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 9, valor: 4 });
+  const { pagoId } = (await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob] })).body;
+  const propio = await request(app).get(`/api/financiero/pagos/${pagoId}`).set(auth(usuario));
   assert.equal(propio.status, 200);
   assert.equal(propio.body.data.detalles.length, 1);
   assert.equal((await request(app).get(`/api/financiero/pagos/${pagoId}`).set(auth(vecino))).status, 404);
@@ -189,9 +183,9 @@ test('el dashboard entrega indicadores reales', async () => {
   assert.equal(res.status, 200);
   assert.equal(res.body.data.fecha, hoy());
   assert.equal(res.body.data.comunidad.lotes, 2);
-  assert.equal(res.body.data.comunidad.comunerosActivos, 4);
+  assert.equal(res.body.data.comunidad.usuariosActivos, 4);
   assert.ok(res.body.data.finanzas.carteraPendiente > 0);
-  assert.equal((await request(app).get('/api/dashboard/resumen').set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get('/api/dashboard/resumen').set(auth(usuario))).status, 403);
 });
 
 test('el historial anual agrupa por año y mes y cuadra con el balance', async () => {
@@ -218,5 +212,5 @@ test('el historial anual agrupa por año y mes y cuadra con el balance', async (
   assert.equal(total.egresos, balance.totalEgresos);
   assert.equal(total.balance, balance.balanceAlDia);
 
-  assert.equal((await request(app).get('/api/financiero/historial').set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get('/api/financiero/historial').set(auth(usuario))).status, 403);
 });

@@ -44,7 +44,7 @@ async function conceptoId(codigo) {
   return fila.id;
 }
 
-async function crearObligacion({ personaId, codigo = 'AGUA_MENSUAL', anio = 2026, mes = 1, valor = 4, estado = 'PENDIENTE', eventoId = null }) {
+async function crearObligacion({ personaId, codigo = 'CUOTA_EXTRAORDINARIA', anio = 2026, mes = 1, valor = 4, estado = 'PENDIENTE', eventoId = null }) {
   const [r] = await db.query(
     `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado)
      VALUES (?, ?, ?, ?, ?, ?, ?, 'AUTOMATICA', ?)`,

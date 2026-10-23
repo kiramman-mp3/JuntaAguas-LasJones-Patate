@@ -24,7 +24,7 @@ export interface AsambleaItem {
   genera_multa_ausencia: boolean;
   valor_multa: number;
   asistentes: number;
-  totalComuneros: number;
+  totalUsuarios: number;
   convocatoria_firmada_url?: string;
   convocatoria_firmada_nombre?: string;
   acta_firmada_url?: string;
@@ -63,7 +63,7 @@ const ESTADOS: Record<EstadoAsamblea, { texto: string; icono: string; tono: stri
   PROGRAMADO: { texto: 'Programada', icono: 'ri-calendar-line', tono: 'info' },
   CONVOCADO: { texto: 'Convocada', icono: 'ri-megaphone-line', tono: 'warning' },
   REALIZADO: { texto: 'Realizada', icono: 'ri-checkbox-circle-line', tono: 'success' },
-  CANCELADO: { texto: 'Cancelada', icono: 'ri-close-circle-line', tono: 'danger' }
+  CANCELADO: { texto: 'Cancelada', icono: 'ri-close-circle-line', tono: 'danger' },
 };
 
 export function estadoTexto(estado: string): string {
@@ -80,7 +80,13 @@ export function estadoBadge(estado: string): string {
 }
 
 export function resumirAsistencia(personas: { estado: EstadoAsistencia }[]): ResumenAsistencia {
-  const r: ResumenAsistencia = { total: personas.length, presentes: 0, ausentes: 0, justificados: 0, pendientes: 0 };
+  const r: ResumenAsistencia = {
+    total: personas.length,
+    presentes: 0,
+    ausentes: 0,
+    justificados: 0,
+    pendientes: 0,
+  };
   for (const p of personas) {
     if (p.estado === 'PRESENTE') r.presentes++;
     else if (p.estado === 'AUSENTE') r.ausentes++;

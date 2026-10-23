@@ -38,9 +38,9 @@ const CLAVE_VISTA = 'turnos.vista';
     TurnosCronogramaComponent,
     TurnoAsignarComponent,
     TurnoEditarComponent,
-    TurnoDetalleComponent
+    TurnoDetalleComponent,
   ],
-  templateUrl: './turnos-admin.component.html'
+  templateUrl: './turnos-admin.component.html',
 })
 export class TurnosAdminComponent implements OnInit {
   private servicio = inject(TurnosService);
@@ -57,7 +57,6 @@ export class TurnosAdminComponent implements OnInit {
 
   readonly busqueda = signal('');
   readonly diaFiltro = signal('');
-  readonly tipoFiltro = signal('');
   readonly sectorFiltro = signal('');
 
   readonly asignarAbierto = signal(false);
@@ -68,22 +67,23 @@ export class TurnosAdminComponent implements OnInit {
     filtrarTurnos(this.turnos(), {
       busqueda: this.busqueda(),
       dia: this.diaFiltro(),
-      tipo: this.tipoFiltro(),
-      sector: this.sectorFiltro()
-    })
+      sector: this.sectorFiltro(),
+    }),
   );
   readonly hayFiltros = computed(
-    () => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.tipoFiltro() || !!this.sectorFiltro()
+    () => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.sectorFiltro(),
   );
 
   readonly porPagina = signal(25);
   /** Vuelve a la primera página cada vez que cambia un filtro o la cantidad por página. */
   readonly pagina = linkedSignal({
-    source: () => [this.busqueda(), this.diaFiltro(), this.tipoFiltro(), this.sectorFiltro(), this.porPagina()],
-    computation: () => 1
+    source: () => [this.busqueda(), this.diaFiltro(), this.sectorFiltro(), this.porPagina()],
+    computation: () => 1,
   });
   /** Página válida aunque la lista se acorte (por ejemplo, al eliminar el último turno de una página). */
-  readonly paginaActual = computed(() => Math.min(this.pagina(), Math.max(1, Math.ceil(this.filtrados().length / this.porPagina()))));
+  readonly paginaActual = computed(() =>
+    Math.min(this.pagina(), Math.max(1, Math.ceil(this.filtrados().length / this.porPagina()))),
+  );
   readonly turnosDeLaPagina = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.porPagina();
     return this.filtrados().slice(inicio, inicio + this.porPagina());
@@ -105,7 +105,7 @@ export class TurnosAdminComponent implements OnInit {
       error: () => {
         this.error.set(true);
         this.cargando.set(false);
-      }
+      },
     });
   }
 
@@ -117,7 +117,7 @@ export class TurnosAdminComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error cargando sectores para turnos:', err);
-        }
+        },
       });
     }
   }
@@ -134,7 +134,6 @@ export class TurnosAdminComponent implements OnInit {
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.diaFiltro.set('');
-    this.tipoFiltro.set('');
     this.sectorFiltro.set('');
   }
 
@@ -158,7 +157,7 @@ export class TurnosAdminComponent implements OnInit {
       tipo: 'DANGER',
       titulo: 'Eliminar turno',
       mensaje: `¿Eliminar el turno de "${turno.usuario}" (${turno.dia} ${turno.horaInicio} – ${turno.horaFin})?`,
-      textoConfirmar: 'Eliminar'
+      textoConfirmar: 'Eliminar',
     });
     if (!confirmado) return;
     this.admin.eliminarTurno(turno.id).subscribe({
@@ -166,7 +165,7 @@ export class TurnosAdminComponent implements OnInit {
         this.turnos.update((lista) => lista.filter((t) => t.id !== turno.id));
         this.notify.success(res.message || 'Turno eliminado.');
       },
-      error: (err) => this.notify.error(err.error?.message || 'Error al eliminar el turno.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al eliminar el turno.'),
     });
   }
 

@@ -66,7 +66,7 @@ router.put('/grupo', whatsappController.guardarGrupo);
  *     summary: Publicar la convocatoria de una asamblea o minga en el grupo
  *     description: >
  *       Responde 409 con codigo GRUPO_NO_CONFIGURADO si no hay grupo elegido, o CONVOCATORIA_YA_ENVIADA
- *       si ya se publicó (repita con reenviar=true). El evento pasa a CONVOCADO.
+ *       si ya se publicó o hay un envío en curso: cada convocatoria se publica una sola vez. El evento pasa a CONVOCADO.
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
  *       required: true
@@ -77,7 +77,6 @@ router.put('/grupo', whatsappController.guardarGrupo);
  *             required: [eventoId]
  *             properties:
  *               eventoId: { type: integer }
- *               reenviar: { type: boolean, default: false }
  */
 router.post('/convocatorias', whatsappController.enviarConvocatoria);
 

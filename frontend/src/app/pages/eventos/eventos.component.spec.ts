@@ -16,15 +16,15 @@ describe('Eventos públicos', () => {
       { id: 1, tipo: 'ASAMBLEA', fecha: '2026-10-05', estado: 'CONVOCADO' },
       { id: 2, tipo: 'MINGA', fecha: '2026-10-04', estado: 'PROGRAMADO' },
       { id: 3, tipo: 'MINGA', fecha: '2026-10-11', estado: 'PROGRAMADO' },
-      { id: 4, tipo: 'ASAMBLEA', fecha: '2026-10-20', estado: 'CANCELADO' }
+      { id: 4, tipo: 'ASAMBLEA', fecha: '2026-10-20', estado: 'CANCELADO' },
     ];
     const consulta = { getEventosPublicos: () => of({ status: 'OK', data: eventos }) };
     TestBed.configureTestingModule({
       providers: [
         { provide: ConsultaService, useValue: consulta },
         { provide: Router, useValue: {} },
-        { provide: ChangeDetectorRef, useValue: { detectChanges: vi.fn() } }
-      ]
+        { provide: ChangeDetectorRef, useValue: { detectChanges: vi.fn() } },
+      ],
     });
     const component = TestBed.runInInjectionContext(() => new EventosComponent());
     component.ngOnInit();

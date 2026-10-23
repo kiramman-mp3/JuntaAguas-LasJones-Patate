@@ -5,7 +5,7 @@
  */
 const { badRequest, notFound, conflict } = require('../shared/errors');
 const { hoy, yaOcurrio } = require('../shared/dates');
-const { conceptoPorCodigo, tarifaVigente } = require('./finanzasService');
+const { conceptoPorCodigo, tarifaVigente, vencimientoPorDefecto } = require('./finanzasService');
 
 const ESTADOS_ABIERTOS = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO'];
 const ESTADOS_ASISTENCIA = ['PENDIENTE', 'PRESENTE', 'AUSENTE', 'JUSTIFICADO'];
@@ -21,10 +21,13 @@ const TRANSICIONES = {
   CANCELADO: []
 };
 
-/** Carga y bloquea el evento. Si se indica `tipo`, exige que coincida. */
+/** Carga y bloquea el evento, con el nombre de su sector (la hoja de asistencia lo muestra). Si se indica `tipo`, exige que coincida. */
 async function obtenerEvento(conexion, id, { tipo } = {}) {
   if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0) throw badRequest('El identificador del evento no es válido.');
-  const [filas] = await conexion.query('SELECT * FROM eventos WHERE id = ? FOR UPDATE', [id]);
+  const [filas] = await conexion.query(
+    'SELECT e.*, s.nombre AS sector_nombre FROM eventos e LEFT JOIN sectores s ON s.id = e.sector_id WHERE e.id = ? FOR UPDATE OF e',
+    [id]
+  );
   if (!filas.length) throw notFound(tipo === 'MINGA' ? 'Minga no encontrada.' : 'Evento no encontrado.');
   const evento = filas[0];
   if (tipo && evento.tipo !== tipo) {
@@ -40,7 +43,7 @@ function exigirAbierto(evento) {
 }
 
 /**
- * Padrón de asistencia: comuneros activos más quien ya tenga un registro en el evento
+ * Padrón de asistencia: usuarios activos más quien ya tenga un registro en el evento
  * (por si fue desactivado después). Incluye el resumen por estado.
  */
 async function obtenerPadron(conexion, evento) {
@@ -149,7 +152,7 @@ async function finalizar(conexion, evento, ahora = new Date()) {
 
   const { personas, resumen } = await obtenerPadron(conexion, evento);
   if (!resumen.total || resumen.pendientes) {
-    throw conflict('Complete y guarde la asistencia de todos los comuneros antes de finalizar.', { resumen });
+    throw conflict('Complete y guarde la asistencia de todos los usuarios antes de finalizar.', { resumen });
   }
 
   let multasGeneradas = 0;
@@ -170,12 +173,12 @@ async function finalizar(conexion, evento, ahora = new Date()) {
 
     const filas = personas
       .filter((p) => p.estado === 'AUSENTE' && !yaMultadas.has(Number(p.persona_id)))
-      .map((p) => [p.persona_id, conceptoId, evento.id, Number(evento.fecha.slice(0, 4)), null, emision, valor, 'AUTOMATICA', 'PENDIENTE', observacion]);
+      .map((p) => [p.persona_id, conceptoId, evento.id, Number(evento.fecha.slice(0, 4)), null, emision, vencimientoPorDefecto(emision), valor, 'AUTOMATICA', 'PENDIENTE', observacion]);
 
     if (filas.length) {
       // periodo_mes NULL: la multa se identifica por el evento, así dos eventos del mismo mes generan sus propias multas.
       await conexion.query(
-        `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado, observacion)
+        `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, fecha_vencimiento, valor, origen, estado, observacion)
          VALUES ?`,
         [filas]
       );
@@ -207,7 +210,7 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
   if (desde) { filtros.push('e.fecha >= ?'); params.push(desde); }
   if (hasta) { filtros.push('e.fecha <= ?'); params.push(hasta); }
 
-  const [[{ totalComuneros }]] = await conexion.query("SELECT COUNT(*) AS totalComuneros FROM personas WHERE estado = 'ACTIVO'");
+  const [[{ totalUsuarios }]] = await conexion.query("SELECT COUNT(*) AS totalUsuarios FROM personas WHERE estado = 'ACTIVO'");
   const [comunerosPorSector] = await conexion.query(
     `SELECT l.sector_id, COUNT(DISTINCT pl.persona_id) AS total
      FROM persona_lotes pl
@@ -241,14 +244,14 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
 
   // Eventos cerrados reportan su padrón real; los abiertos, los comuneros activos actuales.
   const data = filas.map((e) => {
-    const totalSector = e.sector_id ? (mapaSectorTotal[e.sector_id] || 0) : totalComuneros;
+    const totalSector = e.sector_id ? (mapaSectorTotal[e.sector_id] || 0) : totalUsuarios;
     return {
       ...e,
       sector_id: e.sector_id ? Number(e.sector_id) : null,
       asistentes: Number(e.asistentes),
       registrados: Number(e.registrados),
       multas_generadas: Number(e.multas_generadas),
-      totalComuneros: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalSector
+      totalUsuarios: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalSector
     };
   });
   return data;

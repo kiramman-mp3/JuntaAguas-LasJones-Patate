@@ -9,26 +9,52 @@
   <div class="modal__body form-stack">
     <div class="toolbar">
       <span class="toolbar__grow text-muted">
-        <strong class="text-main">{{ puntos.length }}</strong> {{ puntos.length === 1 ? 'punto tratado' : 'puntos tratados' }} en el acta general
+        <strong class="text-main">{{ puntos.length }}</strong>
+        {{ puntos.length === 1 ? 'punto tratado' : 'puntos tratados' }} en el acta general
       </span>
-      <button type="button" class="btn btn--ghost btn--sm" (click)="mostrarNuevoTema = !mostrarNuevoTema" [attr.aria-expanded]="mostrarNuevoTema">
+      <button
+        type="button"
+        class="btn btn--ghost btn--sm"
+        (click)="mostrarNuevoTema = !mostrarNuevoTema"
+        [attr.aria-expanded]="mostrarNuevoTema"
+      >
         <i [class]="mostrarNuevoTema ? 'ri-subtract-line' : 'ri-add-line'" aria-hidden="true"></i>
         {{ mostrarNuevoTema ? 'Ocultar tema nuevo' : 'Añadir tema nuevo' }}
       </button>
-      <button type="button" class="btn btn--secondary btn--sm" (click)="descargarActaGeneral()" [disabled]="cargando() || !puntos.length">
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        (click)="descargarActaGeneral()"
+        [disabled]="cargando() || !puntos.length"
+      >
         <i class="ri-file-download-line" aria-hidden="true"></i> Acta general (PDF)
       </button>
-      <label class="btn btn--outline btn--sm btn-upload" [class.is-busy]="subiendoActa()" title="Subir el acta general firmada (PDF o imagen)">
+      <label
+        class="btn btn--outline btn--sm btn-upload"
+        [class.is-busy]="subiendoActa()"
+        title="Subir el acta general firmada (PDF o imagen)"
+      >
         @if (subiendoActa()) {
           <span class="spinner spinner--sm" aria-hidden="true"></span> Subiendo…
         } @else {
-          <i class="ri-upload-2-line" aria-hidden="true"></i> {{ actaFirmadaUrl() ? 'Reemplazar firmada' : 'Subir firmada' }}
+          <i class="ri-upload-2-line" aria-hidden="true"></i>
+          {{ actaFirmadaUrl() ? 'Reemplazar firmada' : 'Subir firmada' }}
         }
-        <input type="file" class="sr-only" accept="application/pdf,image/jpeg,image/png" #fileActa
-          [disabled]="subiendoActa()" (change)="subirActaFirmada(fileActa)" />
+        <input
+          type="file"
+          class="sr-only"
+          accept="application/pdf,image/jpeg,image/png"
+          #fileActa
+          [disabled]="subiendoActa()"
+          (change)="subirActaFirmada(fileActa)"
+        />
       </label>
       @if (actaFirmadaUrl()) {
-        <button type="button" class="btn btn--secondary btn--sm" (click)="verDocumento(actaFirmadaUrl())">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          (click)="verDocumento(actaFirmadaUrl())"
+        >
           <i class="ri-eye-line" aria-hidden="true"></i> Ver firmada
         </button>
       }
@@ -36,23 +62,46 @@
 
     @if (mostrarNuevoTema) {
       <section class="inset-panel inset-panel--accent" animate.enter="reveal-enter">
-        <h4 class="inset-panel__title"><i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Tema nuevo / punto extraordinario</h4>
+        <h4 class="inset-panel__title">
+          <i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Tema nuevo / punto
+          extraordinario
+        </h4>
         <div class="form-group">
           <label for="tema-asunto">Tema o asunto *</label>
-          <input id="tema-asunto" type="text" class="input" [(ngModel)]="nuevoTema.punto_tratar" placeholder="Ej: Adquisición de válvula para canal de riego" />
+          <input
+            id="tema-asunto"
+            type="text"
+            class="input"
+            [(ngModel)]="nuevoTema.punto_tratar"
+            placeholder="Ej: Adquisición de válvula para canal de riego"
+          />
         </div>
         <div class="grid-2">
           <div class="form-group">
             <label for="tema-tratado">Deliberación</label>
-            <textarea id="tema-tratado" class="input" rows="2" [(ngModel)]="nuevoTema.tratado" placeholder="Resumen del debate…"></textarea>
+            <textarea
+              id="tema-tratado"
+              class="input"
+              rows="2"
+              [(ngModel)]="nuevoTema.tratado"
+              placeholder="Resumen del debate…"
+            ></textarea>
           </div>
           <div class="form-group">
             <label for="tema-resolucion">Resolución aprobada</label>
-            <textarea id="tema-resolucion" class="input" rows="2" [(ngModel)]="nuevoTema.resolucion" placeholder="Acuerdos o resolución votada…"></textarea>
+            <textarea
+              id="tema-resolucion"
+              class="input"
+              rows="2"
+              [(ngModel)]="nuevoTema.resolucion"
+              placeholder="Acuerdos o resolución votada…"
+            ></textarea>
           </div>
         </div>
         <div class="inset-panel__actions">
-          <button type="button" class="btn btn--outline btn--sm" (click)="mostrarNuevoTema = false">Cancelar</button>
+          <button type="button" class="btn btn--outline btn--sm" (click)="mostrarNuevoTema = false">
+            Cancelar
+          </button>
           <button type="button" class="btn btn--primary btn--sm" (click)="agregarTemaNuevo()">
             <i class="ri-check-line" aria-hidden="true"></i> Agregar al acta
           </button>
@@ -63,8 +112,15 @@
     @if (cargando()) {
       <app-skeleton variante="tarjetas" [filas]="2" mensaje="Cargando acta…" />
     } @else if (errorCarga()) {
-      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudo cargar el acta" mensaje="Revise su conexión e intente nuevamente.">
-        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      <app-empty-state
+        tono="error"
+        icono="ri-wifi-off-line"
+        titulo="No se pudo cargar el acta"
+        mensaje="Revise su conexión e intente nuevamente."
+      >
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">
+          <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
+        </button>
       </app-empty-state>
     } @else {
       <div class="stack">
@@ -80,11 +136,23 @@
             <div class="grid-2">
               <div class="form-group">
                 <label class="label-sm" [for]="'tratado-' + $index">Deliberación y debate</label>
-                <textarea [id]="'tratado-' + $index" class="input input--sm" rows="2" [(ngModel)]="punto.tratado" placeholder="Intervenciones y puntos analizados…"></textarea>
+                <textarea
+                  [id]="'tratado-' + $index"
+                  class="input input--sm"
+                  rows="2"
+                  [(ngModel)]="punto.tratado"
+                  placeholder="Intervenciones y puntos analizados…"
+                ></textarea>
               </div>
               <div class="form-group">
                 <label class="label-sm" [for]="'resolucion-' + $index">Resolución y acuerdos</label>
-                <textarea [id]="'resolucion-' + $index" class="input input--sm" rows="2" [(ngModel)]="punto.resolucion" placeholder="Resolución formal para este punto…"></textarea>
+                <textarea
+                  [id]="'resolucion-' + $index"
+                  class="input input--sm"
+                  rows="2"
+                  [(ngModel)]="punto.resolucion"
+                  placeholder="Resolución formal para este punto…"
+                ></textarea>
               </div>
             </div>
           </article>
@@ -94,8 +162,15 @@
   </div>
 
   <div class="modal__footer">
-    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">Cerrar</button>
-    <button type="button" class="btn btn--primary" (click)="guardarTodos()" [disabled]="guardando() || cargando() || errorCarga()">
+    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">
+      Cerrar
+    </button>
+    <button
+      type="button"
+      class="btn btn--primary"
+      (click)="guardarTodos()"
+      [disabled]="guardando() || cargando() || errorCarga()"
+    >
       @if (guardando()) {
         <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
       } @else {

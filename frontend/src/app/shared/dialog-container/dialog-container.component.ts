@@ -6,7 +6,7 @@ const ICONOS: Record<DialogTipo, string> = {
   INFO: 'ri-information-line',
   WARNING: 'ri-alert-line',
   DANGER: 'ri-error-warning-line',
-  CONFIRM: 'ri-question-line'
+  CONFIRM: 'ri-question-line',
 };
 
 /**
@@ -20,9 +20,17 @@ const ICONOS: Record<DialogTipo, string> = {
   template: `
     @if (dialogService.estado().visible) {
       @let d = dialogService.estado();
-      <div appModalA11y class="modal-backdrop dialog-backdrop" animate.enter="modal-backdrop--enter" animate.leave="modal-backdrop--leave"
-        tabindex="-1" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-mensaje"
-        (keydown.escape)="dialogService.responder(false)" (mousedown)="$event.target === $event.currentTarget && dialogService.responder(false)">
+      <div
+        appModalA11y
+        class="modal-backdrop dialog-backdrop"
+        animate.enter="modal-backdrop--enter"
+        animate.leave="modal-backdrop--leave"
+        tabindex="-1"
+        aria-labelledby="dialogo-titulo"
+        aria-describedby="dialogo-mensaje"
+        (keydown.escape)="dialogService.responder(false)"
+        (mousedown)="$event.target === $event.currentTarget && dialogService.responder(false)"
+      >
         <div class="modal card dialog" [class]="'dialog--' + d.tipo.toLowerCase()">
           <div class="dialog__icon" aria-hidden="true"><i [class]="icono()"></i></div>
           <h3 id="dialogo-titulo" class="dialog__title">{{ d.titulo }}</h3>
@@ -39,7 +47,9 @@ const ICONOS: Record<DialogTipo, string> = {
           }
           <div class="dialog__actions">
             @if (d.textoCancelar) {
-              <button type="button" class="btn btn--ghost" (click)="dialogService.responder(false)">{{ d.textoCancelar }}</button>
+              <button type="button" class="btn btn--ghost" (click)="dialogService.responder(false)">
+                {{ d.textoCancelar }}
+              </button>
             }
             <button
               type="button"
@@ -111,8 +121,8 @@ const ICONOS: Record<DialogTipo, string> = {
         width: 100%;
         margin-top: 1rem;
       }
-    `
-  ]
+    `,
+  ],
 })
 export class DialogContainerComponent {
   public dialogService = inject(DialogService);

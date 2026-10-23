@@ -5,10 +5,19 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
-import { ApiResponse, EventoItem, SectorItem } from '../../core/models/api-payloads';
+import {
+  ApiResponse,
+  CronogramaSectorPublico,
+  EventoItem,
+  SectorItem,
+  TurnoCronogramaPublico,
+} from '../../core/models/api-payloads';
+
+type DiaCronograma = CronogramaSectorPublico['dias'][number];
+type DiaVisible = DiaCronograma & { turnosFiltrados: TurnoCronogramaPublico[] };
 
 interface StatsPublicos {
-  totalComuneros: number;
+  totalUsuarios: number;
   totalLotes: number;
   totalSectores: number;
 }
@@ -18,18 +27,18 @@ interface StatsPublicos {
   standalone: true,
   imports: [CommonModule, FormsModule, FechaLocalPipe, RouterLink],
   templateUrl: './inicio.component.html',
-  styleUrls: ['./inicio.component.scss']
+  styleUrls: ['./inicio.component.scss'],
 })
 export class InicioComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  totalComuneros = 0;
+  totalUsuarios = 0;
   proximosEventos: EventoItem[] = [];
   sectores: SectorItem[] = [];
 
   modalCronogramaAbierto = false;
-  sectorCronograma: any = null;
+  sectorCronograma: CronogramaSectorPublico | null = null;
   cargandoCronograma = false;
   nombreSectorModal = '';
   sectorIdModal = 0;
@@ -41,13 +50,13 @@ export class InicioComponent implements OnInit {
     this.http.get<ApiResponse<StatsPublicos>>(`${environment.apiUrl}/personas/stats`).subscribe({
       next: (res) => {
         if (res?.data) {
-          this.totalComuneros = res.data.totalComuneros;
+          this.totalUsuarios = res.data.totalUsuarios;
           this.cdr.detectChanges();
         }
       },
       error: () => {
         this.cdr.detectChanges();
-      }
+      },
     });
 
     this.http.get<ApiResponse<EventoItem[]>>(`${environment.apiUrl}/eventos/publicos`).subscribe({
@@ -60,7 +69,7 @@ export class InicioComponent implements OnInit {
       error: (err) => {
         console.error('Error cargando eventos:', err);
         this.cdr.detectChanges();
-      }
+      },
     });
 
     this.http.get<ApiResponse<SectorItem[]>>(`${environment.apiUrl}/lotes/sectores`).subscribe({
@@ -73,7 +82,7 @@ export class InicioComponent implements OnInit {
       error: (err) => {
         console.error('Error al cargar sectores:', err);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -86,20 +95,24 @@ export class InicioComponent implements OnInit {
     this.diaSeleccionadoModal = 'TODOS';
     this.busquedaModal = '';
 
-    this.http.get<ApiResponse<any[]>>(`${environment.apiUrl}/turnos/cronograma-publico?sector_id=${sectorId}`).subscribe({
-      next: (res) => {
-        this.cargandoCronograma = false;
-        if (res?.data && res.data.length > 0) {
-          this.sectorCronograma = res.data[0];
-        }
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.cargandoCronograma = false;
-        console.error('Error cargando cronograma del sector:', err);
-        this.cdr.detectChanges();
-      }
-    });
+    this.http
+      .get<ApiResponse<CronogramaSectorPublico[]>>(
+        `${environment.apiUrl}/turnos/cronograma-publico?sector_id=${sectorId}`,
+      )
+      .subscribe({
+        next: (res) => {
+          this.cargandoCronograma = false;
+          if (res?.data && res.data.length > 0) {
+            this.sectorCronograma = res.data[0];
+          }
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.cargandoCronograma = false;
+          console.error('Error cargando cronograma del sector:', err);
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   seleccionarDia(dia: string) {
@@ -110,30 +123,31 @@ export class InicioComponent implements OnInit {
     this.verCronograma(sectorId, nombre);
   }
 
-  diasVisibles(): any[] {
+  diasVisibles(): DiaVisible[] {
     if (!this.sectorCronograma?.dias) return [];
     const query = this.busquedaModal.trim().toLowerCase();
 
     return this.sectorCronograma.dias
-      .filter((d: any) => {
-        if (this.diaSeleccionadoModal !== 'TODOS' && d.dia_nombre.toLowerCase() !== this.diaSeleccionadoModal.toLowerCase()) {
+      .filter((d) => {
+        if (
+          this.diaSeleccionadoModal !== 'TODOS' &&
+          d.dia_nombre.toLowerCase() !== this.diaSeleccionadoModal.toLowerCase()
+        ) {
           return false;
         }
         return true;
       })
-      .map((d: any) => {
-        const turnosFiltrados = (d.turnos || []).filter((t: any) => {
+      .map((d): DiaVisible => {
+        const turnosFiltrados = (d.turnos || []).filter((t) => {
           if (!query) return true;
-          const nombre = (t.comunero_nombre || '').toLowerCase();
-          const lote = (t.lote_codigo || '').toLowerCase();
-          return nombre.includes(query) || lote.includes(query);
+          return (t.lote_codigo || '').toLowerCase().includes(query);
         });
         return {
           ...d,
-          turnosFiltrados
+          turnosFiltrados,
         };
       })
-      .filter((d: any) => d.turnosFiltrados.length > 0);
+      .filter((d) => d.turnosFiltrados.length > 0);
   }
 
   totalTurnosVisibles(): number {
@@ -144,7 +158,7 @@ export class InicioComponent implements OnInit {
     if (!horaInicio || !horaFin) return '';
     const [h1, m1] = horaInicio.split(':').map(Number);
     const [h2, m2] = horaFin.split(':').map(Number);
-    let diffMin = (h2 * 60 + m2) - (h1 * 60 + m1);
+    let diffMin = h2 * 60 + m2 - (h1 * 60 + m1);
     if (diffMin <= 0) diffMin += 24 * 60;
     const horas = Math.floor(diffMin / 60);
     const minutos = diffMin % 60;
@@ -153,17 +167,42 @@ export class InicioComponent implements OnInit {
     return `${horas} hora${horas > 1 ? 's' : ''} y ${minutos} min`;
   }
 
-  obtenerFranjaHoraria(horaInicio: string): { icono: string; texto: string; textoLargo: string; clase: string } {
+  obtenerFranjaHoraria(horaInicio: string): {
+    icono: string;
+    texto: string;
+    textoLargo: string;
+    clase: string;
+  } {
     if (!horaInicio) {
-      return { icono: 'ri-time-line', texto: 'Horario', textoLargo: 'Turno programado', clase: 'franja-dia' };
+      return {
+        icono: 'ri-time-line',
+        texto: 'Horario',
+        textoLargo: 'Turno programado',
+        clase: 'franja-dia',
+      };
     }
     const hora = parseInt(horaInicio.split(':')[0], 10);
     if (hora >= 5 && hora < 12) {
-      return { icono: 'ri-sun-cloudy-fill', texto: 'Mañana', textoLargo: 'Turno en la Mañana', clase: 'franja-manana' };
+      return {
+        icono: 'ri-sun-cloudy-fill',
+        texto: 'Mañana',
+        textoLargo: 'Turno en la Mañana',
+        clase: 'franja-manana',
+      };
     } else if (hora >= 12 && hora < 18) {
-      return { icono: 'ri-sun-fill', texto: 'Tarde', textoLargo: 'Turno en la Tarde', clase: 'franja-tarde' };
+      return {
+        icono: 'ri-sun-fill',
+        texto: 'Tarde',
+        textoLargo: 'Turno en la Tarde',
+        clase: 'franja-tarde',
+      };
     } else {
-      return { icono: 'ri-moon-clear-fill', texto: 'Noche', textoLargo: 'Turno en la Noche', clase: 'franja-noche' };
+      return {
+        icono: 'ri-moon-clear-fill',
+        texto: 'Noche',
+        textoLargo: 'Turno en la Noche',
+        clase: 'franja-noche',
+      };
     }
   }
 

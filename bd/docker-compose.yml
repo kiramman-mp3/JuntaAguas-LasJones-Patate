@@ -1,19 +1,23 @@
+# MySQL 8 para DESARROLLO. Solo escucha en este equipo (127.0.0.1): no se expone a la red local.
+# Las credenciales y el puerto se toman de bd/.env (copie bd/.env.example); los valores por defecto
+# son solo para desarrollo y nunca deben usarse en producción.
 services:
   mysql_db:
     image: mysql:8.0
     container_name: junta_las_jones_mysql
-    restart: always
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: junta_las_jones
-      MYSQL_USER: junta_user
-      MYSQL_PASSWORD: junta_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-junta_las_jones}
+      MYSQL_USER: ${MYSQL_USER:-junta_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-junta_password}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:${MYSQL_PUERTO:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      # La contraseña se lee de la variable del contenedor, no se escribe en este archivo.
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\""]
       interval: 5s
       timeout: 5s
       retries: 10

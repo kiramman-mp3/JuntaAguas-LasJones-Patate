@@ -36,6 +36,34 @@ test('una cuenta inactiva no puede iniciar sesión ni usar tokens previos', asyn
   assert.equal((await request(app).get('/api/auth/me').set(auth(u))).status, 401);
 });
 
+test('no existen alias de inicio de sesión: un administrador solo entra con su cédula', async () => {
+  const admin = await crearUsuario({ rol: 'ADMIN' });
+  for (const alias of ['admin', 'ADMIN', '1800000001']) {
+    assert.equal((await login(alias, admin.password)).status, 401, `el alias ${alias} no debe iniciar sesión`);
+  }
+  // Los intentos con alias no cuentan contra la cuenta del administrador.
+  const [[{ intentos }]] = await db.query('SELECT intentos_fallidos AS intentos FROM cuentas WHERE id = ?', [admin.cuentaId]);
+  assert.equal(intentos, 0);
+  assert.equal((await login(admin.cedula, admin.password)).status, 200);
+});
+
+test('cerrar sesión invalida en el servidor el token usado y permite volver a entrar', async () => {
+  const u = await crearUsuario();
+  const inicio = await login(u.cedula, u.password);
+  const token = { Authorization: `Bearer ${inicio.body.token}` };
+  assert.equal((await request(app).get('/api/auth/me').set(token)).status, 200);
+
+  assert.equal((await request(app).post('/api/auth/logout').set(token)).status, 200);
+  const despues = await request(app).get('/api/auth/me').set(token);
+  assert.equal(despues.status, 401, 'un token copiado deja de servir al cerrar sesión');
+  assert.match(despues.body.message, /cerrada/);
+  assert.equal((await request(app).post('/api/auth/logout')).status, 401);
+
+  await new Promise((r) => setTimeout(r, 5));
+  const nuevo = await login(u.cedula, u.password);
+  assert.equal((await request(app).get('/api/auth/me').set({ Authorization: `Bearer ${nuevo.body.token}` })).status, 200);
+});
+
 test('el token por query string ya no se acepta', async () => {
   const u = await crearUsuario();
   const res = await request(app).get(`/api/auth/me?token=${u.token}`);

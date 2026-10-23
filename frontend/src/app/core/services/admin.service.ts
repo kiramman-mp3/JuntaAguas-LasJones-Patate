@@ -3,30 +3,47 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  AsistenciaRegistro, ConvocatoriaWhatsApp, DashboardResumen, EstadoWhatsApp, EventoItem, FinalizacionRespuesta, GrupoWhatsApp, LoteItem, PadronRespuesta,
-  PersonaListado, RespuestaApi, RespuestaMensaje, RespuestaPaginada, SectorItem, TurnoItem
+  AsistenciaRegistro,
+  ConvocatoriaWhatsApp,
+  DashboardResumen,
+  EstadoWhatsApp,
+  EventoItem,
+  FinalizacionRespuesta,
+  GrupoWhatsApp,
+  LoteItem,
+  PadronRespuesta,
+  PersonaListado,
+  RespuestaApi,
+  RespuestaMensaje,
+  RespuestaPaginada,
+  SectorItem,
+  TurnoItem,
 } from '../models/api-payloads';
 
 type RespuestaCredencial = RespuestaMensaje & { passwordTemporal: string };
 type EstadoEvento = 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO';
 
 /**
- * Cliente de la API para el panel administrativo (comuneros, lotes, turnos, eventos y WhatsApp).
+ * Cliente de la API para el panel administrativo (usuarios/personas, lotes, turnos, eventos y WhatsApp).
  * Las operaciones financieras están en FinanzasService.
  * Los formularios de los componentes aún no están tipados, por eso los cuerpos se reciben como `object`.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AdminService {
   private baseUrl = environment.apiUrl;
 
   private readonly http = inject(HttpClient);
 
-
-
-  /** Listado paginado de comuneros. El servidor acepta como máximo 100 por página. */
-  getPersonas(page = 1, limit = 25, busqueda = '', estado = '', sector_id?: number): Observable<RespuestaPaginada<PersonaListado>> {
+  /** Listado paginado de personas gestionadas como usuarios. El servidor acepta como máximo 100 por página. */
+  getPersonas(
+    page = 1,
+    limit = 25,
+    busqueda = '',
+    estado = '',
+    sector_id?: number,
+  ): Observable<RespuestaPaginada<PersonaListado>> {
     let params = new HttpParams().set('page', page).set('limit', Math.min(limit, 100));
     if (busqueda) params = params.set('busqueda', busqueda);
     if (estado) params = params.set('estado', estado);
@@ -34,25 +51,39 @@ export class AdminService {
     return this.http.get<RespuestaPaginada<PersonaListado>>(`${this.baseUrl}/personas`, { params });
   }
 
-  createPersona(data: object): Observable<RespuestaMensaje & { personaId: number; passwordTemporal?: string }> {
-    return this.http.post<RespuestaMensaje & { personaId: number; passwordTemporal?: string }>(`${this.baseUrl}/personas`, data);
+  createPersona(
+    data: object,
+  ): Observable<RespuestaMensaje & { personaId: number; passwordTemporal?: string }> {
+    return this.http.post<RespuestaMensaje & { personaId: number; passwordTemporal?: string }>(
+      `${this.baseUrl}/personas`,
+      data,
+    );
   }
 
   updatePersona(id: number, data: object): Observable<RespuestaMensaje> {
     return this.http.put<RespuestaMensaje>(`${this.baseUrl}/personas/${id}`, data);
   }
 
-  /** Crea la cuenta de acceso de un comunero; la respuesta trae la contraseña temporal. */
+  /** Crea la cuenta de acceso de un usuario; la respuesta trae la contraseña temporal. */
   crearCuenta(personaId: number, rol: 'ADMIN' | 'USUARIO'): Observable<RespuestaCredencial> {
-    return this.http.post<RespuestaCredencial>(`${this.baseUrl}/personas/${personaId}/cuenta`, { rol });
+    return this.http.post<RespuestaCredencial>(`${this.baseUrl}/personas/${personaId}/cuenta`, {
+      rol,
+    });
   }
 
   /** Genera una contraseña temporal nueva y obliga a cambiarla en el próximo ingreso. */
   restablecerPassword(personaId: number): Observable<RespuestaCredencial> {
-    return this.http.post<RespuestaCredencial>(`${this.baseUrl}/personas/${personaId}/cuenta/restablecer-password`, {});
+    return this.http.post<RespuestaCredencial>(
+      `${this.baseUrl}/personas/${personaId}/cuenta/restablecer-password`,
+      {},
+    );
   }
 
-  getLotes(sector_id?: number, busqueda?: string, persona_id?: number): Observable<RespuestaApi<LoteItem[]>> {
+  getLotes(
+    sector_id?: number,
+    busqueda?: string,
+    persona_id?: number,
+  ): Observable<RespuestaApi<LoteItem[]>> {
     let params = new HttpParams();
     if (sector_id) params = params.set('sector_id', sector_id);
     if (busqueda) params = params.set('busqueda', busqueda);
@@ -61,7 +92,12 @@ export class AdminService {
   }
 
   /** Catastro paginado en el servidor (getLotes devuelve la lista completa para los selectores). */
-  getLotesPaginados(page: number, limit: number, sector_id?: number, busqueda?: string): Observable<RespuestaPaginada<LoteItem>> {
+  getLotesPaginados(
+    page: number,
+    limit: number,
+    sector_id?: number,
+    busqueda?: string,
+  ): Observable<RespuestaPaginada<LoteItem>> {
     let params = new HttpParams().set('page', page).set('limit', Math.min(limit, 100));
     if (sector_id) params = params.set('sector_id', sector_id);
     if (busqueda) params = params.set('busqueda', busqueda);
@@ -73,15 +109,26 @@ export class AdminService {
   }
 
   sugerirCodigoLote(sectorId: number): Observable<RespuestaApi<{ codigo: string }>> {
-    return this.http.get<RespuestaApi<{ codigo: string }>>(`${this.baseUrl}/lotes/sugerir-codigo`, { params: { sector_id: sectorId } });
+    return this.http.get<RespuestaApi<{ codigo: string }>>(`${this.baseUrl}/lotes/sugerir-codigo`, {
+      params: { sector_id: sectorId },
+    });
   }
 
   vincularPersonaLote(loteId: number, data: object): Observable<RespuestaMensaje> {
-    return this.http.post<RespuestaMensaje>(`${this.baseUrl}/lotes/${loteId}/vincular-persona`, data);
+    return this.http.post<RespuestaMensaje>(
+      `${this.baseUrl}/lotes/${loteId}/vincular-persona`,
+      data,
+    );
   }
 
-  createSector(data: { nombre: string; descripcion?: string }): Observable<RespuestaMensaje & { sectorId: number }> {
-    return this.http.post<RespuestaMensaje & { sectorId: number }>(`${this.baseUrl}/lotes/sectores`, data);
+  createSector(data: {
+    nombre: string;
+    descripcion?: string;
+  }): Observable<RespuestaMensaje & { sectorId: number }> {
+    return this.http.post<RespuestaMensaje & { sectorId: number }>(
+      `${this.baseUrl}/lotes/sectores`,
+      data,
+    );
   }
 
   getSectores(): Observable<RespuestaApi<SectorItem[]>> {
@@ -95,22 +142,13 @@ export class AdminService {
     return this.http.get<RespuestaApi<TurnoItem[]>>(`${this.baseUrl}/turnos`, { params });
   }
 
-  getCronograma(sector_id?: number, dia_semana?: number): Observable<RespuestaApi<any[]>> {
-    let params = new HttpParams();
-    if (sector_id) params = params.set('sector_id', sector_id);
-    if (dia_semana) params = params.set('dia_semana', dia_semana);
-    return this.http.get<RespuestaApi<any[]>>(`${this.baseUrl}/turnos/cronograma`, { params });
-  }
-
-  getCronogramaPublico(sector_id?: number, dia_semana?: number): Observable<RespuestaApi<any[]>> {
-    let params = new HttpParams();
-    if (sector_id) params = params.set('sector_id', sector_id);
-    if (dia_semana) params = params.set('dia_semana', dia_semana);
-    return this.http.get<RespuestaApi<any[]>>(`${this.baseUrl}/turnos/cronograma-publico`, { params });
-  }
-
-  asignarTurno(payload: object): Observable<RespuestaMensaje & { turnoId: number; obligacionId: number | null }> {
-    return this.http.post<RespuestaMensaje & { turnoId: number; obligacionId: number | null }>(`${this.baseUrl}/turnos`, payload);
+  asignarTurno(
+    payload: object,
+  ): Observable<RespuestaMensaje & { turnoId: number; obligacionId: number | null }> {
+    return this.http.post<RespuestaMensaje & { turnoId: number; obligacionId: number | null }>(
+      `${this.baseUrl}/turnos`,
+      payload,
+    );
   }
 
   actualizarTurno(id: number, payload: object): Observable<RespuestaMensaje> {
@@ -127,31 +165,58 @@ export class AdminService {
   }
 
   createEvento(payload: object): Observable<RespuestaMensaje & { eventoId: number }> {
-    return this.http.post<RespuestaMensaje & { eventoId: number }>(`${this.baseUrl}/eventos`, payload);
+    return this.http.post<RespuestaMensaje & { eventoId: number }>(
+      `${this.baseUrl}/eventos`,
+      payload,
+    );
   }
 
-  registrarAsistencias(id: number, asistencias: AsistenciaRegistro[]): Observable<RespuestaMensaje & { registradas: number }> {
-    return this.http.post<RespuestaMensaje & { registradas: number }>(`${this.baseUrl}/eventos/${id}/asistencias`, { asistencias });
+  registrarAsistencias(
+    id: number,
+    asistencias: AsistenciaRegistro[],
+  ): Observable<RespuestaMensaje & { registradas: number }> {
+    return this.http.post<RespuestaMensaje & { registradas: number }>(
+      `${this.baseUrl}/eventos/${id}/asistencias`,
+      { asistencias },
+    );
   }
 
   getAsistencias(eventoId: number): Observable<PadronRespuesta> {
     return this.http.get<PadronRespuesta>(`${this.baseUrl}/eventos/${eventoId}/asistencias`);
   }
 
-  cambiarEstadoAsamblea(id: number, estado: EstadoEvento): Observable<RespuestaMensaje & { estado: EstadoEvento }> {
-    return this.http.post<RespuestaMensaje & { estado: EstadoEvento }>(`${this.baseUrl}/eventos/${id}/estado`, { estado });
+  cambiarEstadoAsamblea(
+    id: number,
+    estado: EstadoEvento,
+  ): Observable<RespuestaMensaje & { estado: EstadoEvento }> {
+    return this.http.post<RespuestaMensaje & { estado: EstadoEvento }>(
+      `${this.baseUrl}/eventos/${id}/estado`,
+      { estado },
+    );
   }
 
   finalizarAsamblea(id: number): Observable<FinalizacionRespuesta> {
     return this.http.post<FinalizacionRespuesta>(`${this.baseUrl}/eventos/${id}/finalizar`, {});
   }
 
-  guardarPuntosAsamblea(id: number, puntos: object[]): Observable<RespuestaMensaje & { data: unknown[] }> {
-    return this.http.post<RespuestaMensaje & { data: unknown[] }>(`${this.baseUrl}/eventos/${id}/puntos`, { puntos });
+  guardarPuntosAsamblea(
+    id: number,
+    puntos: object[],
+  ): Observable<RespuestaMensaje & { data: unknown[] }> {
+    return this.http.post<RespuestaMensaje & { data: unknown[] }>(
+      `${this.baseUrl}/eventos/${id}/puntos`,
+      { puntos },
+    );
   }
 
-  cambiarEstadoMinga(id: number, estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO'): Observable<RespuestaMensaje & { estado: string }> {
-    return this.http.post<RespuestaMensaje & { estado: string }>(`${this.baseUrl}/mingas/${id}/estado`, { estado });
+  cambiarEstadoMinga(
+    id: number,
+    estado: 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO',
+  ): Observable<RespuestaMensaje & { estado: string }> {
+    return this.http.post<RespuestaMensaje & { estado: string }>(
+      `${this.baseUrl}/mingas/${id}/estado`,
+      { estado },
+    );
   }
 
   finalizarMinga(id: number): Observable<FinalizacionRespuesta> {
@@ -162,8 +227,14 @@ export class AdminService {
     return this.http.get<PadronRespuesta>(`${this.baseUrl}/mingas/${id}/asistencias`);
   }
 
-  registrarAsistenciasMinga(id: number, asistencias: AsistenciaRegistro[]): Observable<RespuestaMensaje & { registradas: number }> {
-    return this.http.post<RespuestaMensaje & { registradas: number }>(`${this.baseUrl}/mingas/${id}/asistencias`, { asistencias });
+  registrarAsistenciasMinga(
+    id: number,
+    asistencias: AsistenciaRegistro[],
+  ): Observable<RespuestaMensaje & { registradas: number }> {
+    return this.http.post<RespuestaMensaje & { registradas: number }>(
+      `${this.baseUrl}/mingas/${id}/asistencias`,
+      { asistencias },
+    );
   }
 
   getDashboardResumen(): Observable<RespuestaApi<DashboardResumen>> {
@@ -176,11 +247,17 @@ export class AdminService {
   }
 
   iniciarWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
-    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/sesion/iniciar`, {});
+    return this.http.post<RespuestaApi<EstadoWhatsApp>>(
+      `${this.baseUrl}/whatsapp/sesion/iniciar`,
+      {},
+    );
   }
 
   cerrarSesionWhatsApp(): Observable<RespuestaApi<EstadoWhatsApp>> {
-    return this.http.post<RespuestaApi<EstadoWhatsApp>>(`${this.baseUrl}/whatsapp/sesion/cerrar`, {});
+    return this.http.post<RespuestaApi<EstadoWhatsApp>>(
+      `${this.baseUrl}/whatsapp/sesion/cerrar`,
+      {},
+    );
   }
 
   getGruposWhatsApp(): Observable<RespuestaApi<GrupoWhatsApp[]>> {
@@ -188,11 +265,16 @@ export class AdminService {
   }
 
   guardarGrupoWhatsApp(grupoId: string): Observable<RespuestaApi<GrupoWhatsApp>> {
-    return this.http.put<RespuestaApi<GrupoWhatsApp>>(`${this.baseUrl}/whatsapp/grupo`, { grupoId });
+    return this.http.put<RespuestaApi<GrupoWhatsApp>>(`${this.baseUrl}/whatsapp/grupo`, {
+      grupoId,
+    });
   }
 
-  /** Publica la convocatoria en el grupo. Con `reenviar` repite una convocatoria ya publicada. */
-  enviarConvocatoriaWhatsApp(eventoId: number, reenviar = false): Observable<RespuestaApi<ConvocatoriaWhatsApp>> {
-    return this.http.post<RespuestaApi<ConvocatoriaWhatsApp>>(`${this.baseUrl}/whatsapp/convocatorias`, { eventoId, reenviar });
+  /** Publica la convocatoria en el grupo. Cada convocatoria se publica una sola vez (409 si ya se publicó). */
+  enviarConvocatoriaWhatsApp(eventoId: number): Observable<RespuestaApi<ConvocatoriaWhatsApp>> {
+    return this.http.post<RespuestaApi<ConvocatoriaWhatsApp>>(
+      `${this.baseUrl}/whatsapp/convocatorias`,
+      { eventoId },
+    );
   }
 }

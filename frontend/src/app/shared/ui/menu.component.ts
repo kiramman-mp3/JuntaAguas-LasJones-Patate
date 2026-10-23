@@ -11,8 +11,16 @@ let siguienteId = 0;
   selector: 'app-menu',
   standalone: true,
   template: `
-    <button type="button" class="icon-btn menu__trigger" [attr.aria-expanded]="abierto()" [attr.aria-controls]="panelId"
-      aria-haspopup="menu" [attr.aria-label]="etiqueta()" [title]="etiqueta()" (click)="alternar()">
+    <button
+      type="button"
+      class="icon-btn menu__trigger"
+      [attr.aria-expanded]="abierto()"
+      [attr.aria-controls]="panelId"
+      aria-haspopup="menu"
+      [attr.aria-label]="etiqueta()"
+      [title]="etiqueta()"
+      (click)="alternar()"
+    >
       <i class="ri-more-2-fill" aria-hidden="true"></i>
     </button>
     @if (abierto()) {
@@ -21,7 +29,7 @@ let siguienteId = 0;
       </div>
     }
   `,
-  host: { class: 'menu' }
+  host: { class: 'menu' },
 })
 export class MenuComponent {
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -33,7 +41,9 @@ export class MenuComponent {
   alternar(): void {
     this.abierto.update((v) => !v);
     if (this.abierto()) {
-      setTimeout(() => this.host.nativeElement.querySelector<HTMLElement>('.menu__item:not(:disabled)')?.focus());
+      setTimeout(() =>
+        this.host.nativeElement.querySelector<HTMLElement>('.menu__item:not(:disabled)')?.focus(),
+      );
     }
   }
 

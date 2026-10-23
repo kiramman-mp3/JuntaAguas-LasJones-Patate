@@ -18,7 +18,7 @@ Se realizó un análisis estático de código cruzando las 25 definiciones de ta
 
 | No. | Tabla | Ocurrencias Backend | Ocurrencias Frontend | Estado Operativo | Observación Técnica |
 |---|---|---|---|---|---|
-| 1 | `personas` | 77 | 6 | **Activa (Crítica)** | Núcleo del padrón de comuneros. |
+| 1 | `personas` | 77 | 6 | **Activa (Crítica)** | Núcleo del padrón de usuarios. |
 | 2 | `roles` | 16 | 3 | **Activa (Crítica)** | Control de acceso basado en roles (`ADMIN`, `USUARIO`). |
 | 3 | `cuentas` | 26 | 1 | **Activa (Crítica)** | Autenticación y credenciales de acceso. |
 | 4 | `cargos_directiva` | 0 | 0 | ❌ **Sin Uso Real** | Catálogo huérfano; la directiva se gestiona por roles. |
@@ -34,7 +34,7 @@ Se realizó un análisis estático de código cruzando las 25 definiciones de ta
 | 14 | `envios_convocatoria`| 3 | 0 | **Activa** | Trazabilidad de notificaciones por WhatsApp. |
 | 15 | `conceptos_cobro` | 9 | 0 | **Activa (Crítica)** | Catálogo de rubros cobrables. |
 | 16 | `tarifas` | 6 | 0 | **Activa** | Vigencias y valores aplicables por período. |
-| 17 | `obligaciones` | 54 | 12 | **Activa (Crítica)** | Cuentas por cobrar y deudas de comuneros. |
+| 17 | `obligaciones` | 54 | 12 | **Activa (Crítica)** | Cuentas por cobrar y deudas de usuarios. |
 | 18 | `pagos` | 26 | 7 | **Activa (Crítica)** | Recaudación en caja y comprobantes. |
 | 19 | `pago_detalles` | 7 | 0 | **Activa (Crítica)** | Detalle transaccional de obligaciones liquidadas. |
 | 20 | `proveedores` | 1 | 0 | ⚠️ **Candidata a Depuración** | Solo aparece en un LEFT JOIN; no existe CRUD ni registros. |
