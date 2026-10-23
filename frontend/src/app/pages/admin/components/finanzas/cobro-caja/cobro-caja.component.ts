@@ -319,7 +319,7 @@ export class CobroCajaComponent {
       next: (res) => {
         this.procesando.set(false);
         const numero = anual ? numeroReciboAgua(res.pagoId) : numeroRecibo(res.pagoId);
-        // El comprobante bancario se adjunta desde aquí a los pagos de multas y otros; el del agua anual, desde su historial.
+        // El respaldo bancario (archivo) solo se adjunta a los pagos de multas y otros cobros.
         this.pagoRegistradoId.set(anual ? null : res.pagoId);
         this.comprobante.set({
           numero,

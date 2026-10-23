@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { cargarJsPdf } from '../utils/jspdf';
+import { PagoAnualDetalle, PagoDetalle, etiquetaPeriodo, numeroRecibo, numeroReciboAgua } from '../models/finanzas';
+import { formatearFecha } from '../utils/fechas';
 
 export interface ComprobanteLinea {
   concepto: string;
@@ -20,6 +22,38 @@ export interface Comprobante {
   referencia?: string | null;
   observacion?: string | null;
   anulado?: boolean;
+}
+
+/** Comprobante de un pago de multas y otros cobros, para reimprimirlo. */
+export function comprobanteDePago(p: PagoDetalle): Comprobante {
+  return {
+    numero: numeroRecibo(p.id),
+    fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
+    usuarioNombre: p.usuario_nombre,
+    usuarioCedula: p.cedula,
+    lineas: (p.detalles ?? []).map((d) => ({ concepto: d.concepto_nombre, periodo: etiquetaPeriodo(d.periodo_anio, d.periodo_mes), valor: Number(d.valor_pagado) })),
+    total: Number(p.valor_total),
+    metodo: p.metodo,
+    referencia: p.referencia,
+    observacion: p.estado === 'ANULADO' ? `Anulado: ${p.motivo_anulacion ?? ''}` : p.observacion,
+    anulado: p.estado === 'ANULADO'
+  };
+}
+
+/** Comprobante de un pago anual de agua, para reimprimirlo. */
+export function comprobanteDePagoAnual(p: PagoAnualDetalle): Comprobante {
+  return {
+    numero: numeroReciboAgua(p.id),
+    fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
+    usuarioNombre: p.usuario_nombre,
+    usuarioCedula: p.cedula,
+    lineas: (p.detalles ?? []).map((d) => ({ concepto: 'Pago anual de agua', periodo: `Año ${d.periodo_anio}`, valor: Number(d.valor_pagado) })),
+    total: Number(p.valor_total),
+    metodo: p.metodo,
+    referencia: p.referencia,
+    observacion: p.estado === 'ANULADO' ? `Anulado: ${p.motivo_anulacion ?? ''}` : p.observacion,
+    anulado: p.estado === 'ANULADO'
+  };
 }
 
 /**

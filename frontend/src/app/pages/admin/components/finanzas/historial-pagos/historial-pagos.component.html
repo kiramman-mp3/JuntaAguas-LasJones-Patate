@@ -3,7 +3,7 @@
     <div>
       <h3 class="fin-panel__title" id="pagos-titulo"><i class="ri-file-list-3-line" aria-hidden="true"></i> Historial de pagos</h3>
       <p class="fin-panel__desc">
-        {{ filtrados().length }} {{ filtrados().length === 1 ? 'pago' : 'pagos' }} ·
+        {{ filtrados().length }} {{ filtrados().length === 1 ? 'recibo' : 'recibos' }} ·
         vigentes <strong class="money">${{ totalVigente().toFixed(2) }}</strong>
       </p>
     </div>
@@ -27,8 +27,16 @@
       </select>
     </div>
     <div class="field">
+      <label for="pagos-tipo">Tipo</label>
+      <select id="pagos-tipo" name="tipo" class="input" [ngModel]="tipo()" (ngModelChange)="tipo.set($event)">
+        <option value="">Todos</option>
+        <option value="AGUA">Pago anual de agua</option>
+        <option value="GENERAL">Multas y otros</option>
+      </select>
+    </div>
+    <div class="field">
       <label for="pagos-texto">Buscar</label>
-      <input id="pagos-texto" name="texto" class="input" type="search" placeholder="Usuario, cédula o REC-…"
+      <input id="pagos-texto" name="texto" class="input" type="search" placeholder="Usuario, cédula o número de recibo"
         [ngModel]="texto()" (ngModelChange)="texto.set($event)" />
     </div>
   </form>
@@ -37,7 +45,7 @@
     <div class="alert alert--danger" role="alert">
       {{ error() }} <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
     </div>
-  } @else if (cargando() && !pagos().length) {
+  } @else if (cargando() && !recibos().length) {
     <div aria-live="polite"><div class="skeleton skeleton--text"></div><div class="skeleton skeleton--text"></div></div>
   } @else if (!filtrados().length) {
     <div class="empty-state">
@@ -60,38 +68,38 @@
           </tr>
         </thead>
         <tbody>
-          @for (p of filtrados(); track p.id) {
-            <tr [class.is-anulado]="p.estado === 'ANULADO'">
-              <td class="money"><strong>{{ numeroRecibo(p.id) }}</strong></td>
-              <td>{{ p.fecha_pago | fechaLocal:'conHora' }}</td>
+          @for (r of filtrados(); track clave(r)) {
+            <tr [class.is-anulado]="r.estado === 'ANULADO'">
+              <td class="money"><strong>{{ r.numero }}</strong></td>
+              <td>{{ r.fecha_pago | fechaLocal:'conHora' }}</td>
               <td>
-                {{ p.usuario_nombre }}<br />
-                <span class="fin-table__muted">{{ p.cedula }} · {{ p.obligaciones_pagadas }} {{ p.obligaciones_pagadas === 1 ? 'obligación' : 'obligaciones' }}</span>
+                {{ r.usuario_nombre }}<br />
+                <span class="fin-table__muted">{{ r.cedula }} · {{ r.detalle }}</span>
               </td>
               <td>
-                {{ p.metodo | titlecase }}
-                @if (p.referencia) { <br /><span class="fin-table__muted">Ref. {{ p.referencia }}</span> }
+                {{ r.metodo | titlecase }}
+                @if (r.referencia) { <br /><span class="fin-table__muted">Ref. {{ r.referencia }}</span> }
               </td>
-              <td class="num"><span class="money">${{ p.valor_total.toFixed(2) }}</span></td>
+              <td class="num"><span class="money">${{ r.valor_total.toFixed(2) }}</span></td>
               <td>
-                @if (p.estado === 'ANULADO') {
-                  <span class="badge badge--danger" [attr.title]="p.motivo_anulacion">Anulado</span>
+                @if (r.estado === 'ANULADO') {
+                  <span class="badge badge--danger" [attr.title]="r.motivo_anulacion">Anulado</span>
                 } @else {
                   <span class="badge badge--success">Vigente</span>
                 }
               </td>
               <td class="acciones">
-                @if (p.metodo === 'TRANSFERENCIA' || p.metodo === 'DEPOSITO') {
-                  <app-comprobante-bancario [pagoId]="p.id" [existente]="!!p.comprobante_url"
-                    [editable]="p.estado === 'VIGENTE'" (subido)="cargar()" />
+                @if (r.tipo === 'GENERAL' && (r.metodo === 'TRANSFERENCIA' || r.metodo === 'DEPOSITO')) {
+                  <app-comprobante-bancario [pagoId]="r.id" [existente]="!!r.comprobante_url"
+                    [editable]="r.estado === 'VIGENTE'" (subido)="cargar()" />
                 }
-                <button type="button" class="icon-btn" [disabled]="procesandoId() === p.id" (click)="reimprimir(p)"
-                  [attr.aria-label]="'Reimprimir comprobante ' + numeroRecibo(p.id)" title="Reimprimir comprobante">
-                  <i [class]="procesandoId() === p.id ? 'ri-loader-4-line ri-spin' : 'ri-printer-line'" aria-hidden="true"></i>
+                <button type="button" class="icon-btn" [disabled]="procesando() === clave(r)" (click)="reimprimir(r)"
+                  [attr.aria-label]="'Reimprimir comprobante ' + r.numero" title="Reimprimir comprobante">
+                  <i [class]="procesando() === clave(r) ? 'ri-loader-4-line ri-spin' : 'ri-printer-line'" aria-hidden="true"></i>
                 </button>
-                @if (p.estado === 'VIGENTE') {
-                  <button type="button" class="icon-btn icon-btn--danger" [disabled]="procesandoId() === p.id" (click)="anular(p)"
-                    [attr.aria-label]="'Anular pago ' + numeroRecibo(p.id)" title="Anular pago">
+                @if (r.estado === 'VIGENTE') {
+                  <button type="button" class="icon-btn icon-btn--danger" [disabled]="procesando() === clave(r)" (click)="anular(r)"
+                    [attr.aria-label]="'Anular pago ' + r.numero" title="Anular pago">
                     <i class="ri-close-circle-line" aria-hidden="true"></i>
                   </button>
                 }
