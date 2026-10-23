@@ -23,6 +23,9 @@ function escribirListaAsistencia(destino, evento, personas) {
   doc.text(`Evento: ${evento.titulo}`);
   doc.text(`Fecha: ${fechaLegible(evento.fecha)} | Hora: ${String(evento.hora_inicio || '08:00').slice(0, 5)}`);
   doc.text(`Lugar: ${evento.lugar || 'Casa Comunal Junta La Jones'}`);
+  if (evento.tipo === 'MINGA') {
+    doc.text(`Sector: ${evento.sector_nombre || 'Todos los sectores'}`);
+  }
   if (evento.genera_multa_ausencia) doc.text(`Multa por inasistencia: $${Number(evento.valor_multa).toFixed(2)}`);
   doc.moveDown(0.8);
 

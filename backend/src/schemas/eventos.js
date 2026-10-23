@@ -21,6 +21,7 @@ const crearSchema = z.object({
   lugar: textoOpcional(255),
   requiere_asistencia: z.boolean().default(true),
   genera_multa_ausencia: z.boolean().default(true),
+  sector_id: z.preprocess((v) => (v === '' || v === null || v === undefined ? null : v), z.coerce.number().int().positive().nullish()).transform((v) => v ?? null),
   // valor_multa no se recibe: se toma de la tarifa vigente del concepto de multa.
   puntos_orden_dia: z.array(z.union([
     z.string(),

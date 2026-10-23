@@ -30,6 +30,10 @@ function textoConvocatoria(evento, puntos = []) {
     `📍 *Lugar:* ${evento.lugar || LUGAR_POR_DEFECTO}`
   ];
 
+  if (esMinga) {
+    lineas.push(`🌱 *Sector:* ${evento.sector_nombre || 'Todos los sectores'}`);
+  }
+
   if (puntos.length) {
     lineas.push('', '*Orden del día:*', ...puntos.map((p, i) => `${i + 1}. ${recortar(p.punto_tratar.trim(), MAX_PUNTO)}`));
   }
@@ -75,7 +79,13 @@ async function convocarPorWhatsApp({ eventoId, reenviar = false, cuentaId }) {
     throw conflict('Elija primero el grupo de WhatsApp de las convocatorias en el panel de WhatsApp.', { codigo: 'GRUPO_NO_CONFIGURADO' });
   }
 
-  const [eventos] = await db.query('SELECT * FROM eventos WHERE id = ?', [eventoId]);
+  const [eventos] = await db.query(
+    `SELECT e.*, s.nombre AS sector_nombre
+     FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
+     WHERE e.id = ?`,
+    [eventoId]
+  );
   const evento = eventos[0];
   if (!evento) throw notFound('Evento no encontrado.');
   const nombre = evento.tipo === 'MINGA' ? 'minga' : 'asamblea';
