@@ -130,7 +130,7 @@ async function getPersonaById(req, res) {
   );
 
   const [turnos] = await db.query(
-    `SELECT t.id, t.dia_semana, t.hora_inicio, t.hora_fin, t.tipo, t.estado, t.observacion,
+    `SELECT t.id, t.dia_semana, t.hora_inicio, t.hora_fin, t.estado, t.observacion,
             l.codigo AS lote_codigo, s.nombre AS sector_nombre
      FROM turnos_riego t
      LEFT JOIN lotes l ON l.id = t.lote_id
