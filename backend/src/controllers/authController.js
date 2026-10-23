@@ -135,6 +135,16 @@ async function changePassword(req, res) {
   return res.json({ status: 'OK', message: 'Contraseña actualizada correctamente.', token: firmarToken(user), user });
 }
 
+/**
+ * Cierra la sesión en el servidor: todos los tokens emitidos hasta ahora para esta cuenta dejan de valer
+ * (también los de otros equipos donde se recordó la sesión).
+ */
+async function logout(req, res) {
+  await db.query('UPDATE cuentas SET sesiones_validas_desde = UTC_TIMESTAMP(3) WHERE id = ?', [req.user.cuentaId]);
+  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'LOGOUT', entidad: 'cuentas', entidadId: req.user.cuentaId, ip: req.ip });
+  return res.json({ status: 'OK', message: 'Sesión cerrada.' });
+}
+
 /** Perfil de la cuenta autenticada. */
 async function getMe(req, res) {
   const [rows] = await db.query(
@@ -155,4 +165,4 @@ async function getMe(req, res) {
   });
 }
 
-module.exports = { login, changePassword, getMe };
+module.exports = { login, logout, changePassword, getMe };

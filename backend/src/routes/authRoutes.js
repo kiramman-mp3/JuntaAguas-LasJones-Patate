@@ -79,6 +79,16 @@ router.get('/me', verificarToken, authController.getMe);
  *               actualPassword: { type: string }
  *               nuevaPassword: { type: string, description: 'Mínimo 8 caracteres, letras y números.' }
  */
+/**
+ * @openapi
+ * /auth/logout:
+ *   post:
+ *     tags: [Autenticación]
+ *     summary: Cerrar sesión; invalida en el servidor todos los tokens emitidos para la cuenta
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/logout', verificarTokenOCambioPassword, authController.logout);
+
 router.post('/change-password', verificarTokenOCambioPassword, authController.changePassword);
 
 module.exports = router;
