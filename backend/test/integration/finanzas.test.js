@@ -61,6 +61,21 @@ test('el pago valida pertenencia, estado y referencia; ignora ids repetidos', as
   assert.equal((await pagar({ persona_id: usuario.personaId, obligacionesIds: [propia] })).status, 409);
 });
 
+test('si la auditoría no se puede guardar, el pago no se registra', async () => {
+  const ob = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 11, valor: 4 });
+  await db.query('RENAME TABLE auditoria TO auditoria_respaldo');
+  try {
+    const res = await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob] });
+    assert.equal(res.status, 500);
+  } finally {
+    await db.query('RENAME TABLE auditoria_respaldo TO auditoria');
+  }
+  const [[obligacion]] = await db.query('SELECT estado FROM obligaciones WHERE id = ?', [ob]);
+  assert.equal(obligacion.estado, 'PENDIENTE');
+  const [pagos] = await db.query('SELECT 1 FROM pago_detalles WHERE obligacion_id = ?', [ob]);
+  assert.equal(pagos.length, 0, 'sin rastro de auditoría no queda un pago a medias');
+});
+
 test('anular un pago conserva su detalle, devuelve las obligaciones y permite volver a cobrarlas', async () => {
   const ob = await crearObligacion({ personaId: usuario.personaId, anio: 2024, mes: 6, valor: 4 });
   const pago = await pagar({ persona_id: usuario.personaId, obligacionesIds: [ob], observacion: 'Incluye [ANULADO: texto del usuario]' });
