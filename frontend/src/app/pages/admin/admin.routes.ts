@@ -19,6 +19,26 @@ const seccionesGestionUsuarios: Routes = [
   { path: '**', redirectTo: 'padron' }
 ];
 
+const seccionesGestionInterna: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'auditoria' },
+  {
+    path: 'auditoria',
+    title: 'Auditoría · Junta La Jones',
+    loadComponent: () => import('./components/gestion-admin/auditoria/auditoria.component').then(m => m.AuditoriaComponent)
+  },
+  {
+    path: 'inventario',
+    title: 'Inventario · Junta La Jones',
+    loadComponent: () => import('./components/gestion-admin/inventario/inventario.component').then(m => m.InventarioComponent)
+  },
+  {
+    path: 'plan-anual',
+    title: 'Plan anual · Junta La Jones',
+    loadComponent: () => import('./components/gestion-admin/plan-anual/plan-anual.component').then(m => m.PlanAnualComponent)
+  },
+  { path: '**', redirectTo: 'auditoria' }
+];
+
 const rutaGestionUsuarios = (path: string): Route => ({
   path,
   title: 'Gestión de Usuarios · Junta La Jones',
@@ -60,6 +80,12 @@ export const ADMIN_ROUTES: Routes = [
     path: 'turnos',
     title: 'Turnos de agua · Junta La Jones',
     loadComponent: () => import('./components/turnos-admin/turnos-admin.component').then(m => m.TurnosAdminComponent)
+  },
+  {
+    path: 'gestion',
+    title: 'Gestión interna · Junta La Jones',
+    loadComponent: () => import('./components/gestion-admin/gestion-admin.component').then(m => m.GestionAdminComponent),
+    children: seccionesGestionInterna
   },
   // Finanzas se divide en tres apartados del menú; cada uno usa el mismo componente con su grupo.
   { path: 'cobros', pathMatch: 'full', redirectTo: 'cobros/cobrar' },

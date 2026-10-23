@@ -43,14 +43,18 @@ export class AdminComponent {
     { ruta: '/admin/historial', etiqueta: 'Historial', corta: 'Historial', icono: 'ri-history-line' }
   ];
 
-  /** Panel de apartados financieros de la barra inferior (móvil). */
+  readonly menuDirectiva: ItemMenu[] = [
+    { ruta: '/admin/gestion', etiqueta: 'Gestión interna', corta: 'Gestión', icono: 'ri-briefcase-4-line' }
+  ];
+
+  /** Panel de la barra inferior (móvil) con los apartados financieros y la gestión interna. */
   readonly finanzasAbierto = signal(false);
 
   private readonly url = toSignal(
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd), map(() => this.router.url)),
     { initialValue: this.router.url }
   );
-  readonly enFinanzas = computed(() => this.menuFinanzas.some((i) => this.url().startsWith(i.ruta)));
+  readonly enFinanzas = computed(() => [...this.menuFinanzas, ...this.menuDirectiva].some((i) => this.url().startsWith(i.ruta)));
 
   @HostListener('document:mousedown', ['$event'])
   alTocarFuera(evento: MouseEvent): void {
