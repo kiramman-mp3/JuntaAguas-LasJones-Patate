@@ -6,8 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { FinanzasService } from '../../core/services/finanzas.service';
 import { ComprobantePdfService } from '../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { Pago, numeroRecibo, etiquetaPeriodo } from '../../core/models/finanzas';
-import { formatearFecha } from '../../core/utils/fechas';
+import { Recibo, TipoRecibo, numeroRecibo } from '../../core/models/finanzas';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 
 interface UsuarioResultado {
@@ -15,6 +14,7 @@ interface UsuarioResultado {
   nombres: string;
   sector: string;
   loteCodigo: string;
+  totalPendiente: number;
   deudas: DeudaItem[];
 }
 
@@ -30,12 +30,12 @@ export class MiCuentaComponent implements OnInit {
   resultado: UsuarioResultado | null = null;
   errorMensaje = '';
 
-  pagos: Pago[] = [];
+  /** Recibos vigentes del usuario: multas y otros (REC-…) y pago anual de agua (REC-AGUA-…). */
+  recibos: Recibo[] = [];
   cargandoPagos = false;
-  imprimiendoId: number | null = null;
-  descargandoId: number | null = null;
-
-  readonly numeroRecibo = numeroRecibo;
+  /** Clave (tipo-id) del recibo que se está imprimiendo o descargando. */
+  imprimiendo: string | null = null;
+  descargando: string | null = null;
 
   private consultaService = inject(ConsultaService);
   private authService = inject(AuthService);
@@ -82,10 +82,10 @@ export class MiCuentaComponent implements OnInit {
 
   cargarPagos(): void {
     this.cargandoPagos = true;
-    this.finanzasService.getPagos({ estado: 'VIGENTE' }).subscribe({
-      next: (res) => {
+    this.finanzasService.getRecibos({ estado: 'VIGENTE' }).subscribe({
+      next: (recibos) => {
         this.cargandoPagos = false;
-        this.pagos = (res.data || []).map((p) => ({ ...p, valor_total: Number(p.valor_total) }));
+        this.recibos = recibos;
         this.cdr.detectChanges();
       },
       error: () => {
@@ -111,46 +111,39 @@ export class MiCuentaComponent implements OnInit {
     return this.resultado ? this.resultado.deudas.filter(d => d.estado === 'PAGADA') : [];
   }
 
+  /** Saldo pendiente calculado por el servidor (en centavos, sin error de redondeo). */
   get totalPendiente(): number {
-    if (!this.resultado) return 0;
-    return this.resultado.deudas
-      .filter(d => d.estado === 'PENDIENTE')
-      .reduce((sum, d) => sum + Number(d.valor), 0);
+    return this.resultado?.totalPendiente ?? 0;
   }
 
-  get ultimoPago(): Pago | null {
-    return this.pagos.length > 0 ? this.pagos[0] : null;
+  get ultimoRecibo(): Recibo | null {
+    return this.recibos[0] ?? null;
   }
 
-  imprimirComprobante(pagoId: number, descargar = false): void {
-    if (this.imprimiendoId || this.descargandoId) return;
-    if (descargar) {
-      this.descargandoId = pagoId;
-    } else {
-      this.imprimiendoId = pagoId;
-    }
+  clave(tipo: TipoRecibo, id: number): string {
+    return `${tipo}-${id}`;
+  }
+
+  /** Recibo con el que se pagó una obligación, o null si no tiene uno vigente. */
+  reciboDe(item: DeudaItem): { tipo: TipoRecibo; id: number } | null {
+    if (item.tipo === 'AGUA_ANUAL') return item.pagoAnualId ? { tipo: 'AGUA', id: item.pagoAnualId } : null;
+    return item.pagoId ? { tipo: 'GENERAL', id: item.pagoId } : null;
+  }
+
+  imprimirComprobante(tipo: TipoRecibo, id: number, descargar = false): void {
+    if (this.imprimiendo || this.descargando) return;
+    const clave = this.clave(tipo, id);
+    if (descargar) this.descargando = clave; else this.imprimiendo = clave;
     this.cdr.detectChanges();
 
-    this.finanzasService.getPago(pagoId).subscribe({
-      next: async (res) => {
-        const p = res.data;
+    const terminar = () => {
+      this.imprimiendo = null;
+      this.descargando = null;
+      this.cdr.detectChanges();
+    };
+    this.finanzasService.getComprobante(tipo, id).subscribe({
+      next: async (comprobante) => {
         try {
-          const comprobante = {
-            numero: numeroRecibo(p.id),
-            fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
-            usuarioNombre: p.usuario_nombre,
-            usuarioCedula: p.cedula,
-            lineas: (p.detalles || []).map((d) => ({
-              concepto: d.concepto_nombre,
-              periodo: etiquetaPeriodo(d.periodo_anio, d.periodo_mes),
-              valor: Number(d.valor_pagado)
-            })),
-            total: Number(p.valor_total),
-            metodo: p.metodo,
-            referencia: p.referencia,
-            observacion: p.estado === 'ANULADO' ? `Anulado: ${p.motivo_anulacion ?? ''}` : p.observacion,
-            anulado: p.estado === 'ANULADO'
-          };
           if (descargar) {
             await this.pdfService.descargar(comprobante);
             this.notify.success('Comprobante descargado en PDF.');
@@ -160,16 +153,12 @@ export class MiCuentaComponent implements OnInit {
         } catch {
           this.notify.error('No se pudo generar el comprobante.');
         } finally {
-          this.imprimiendoId = null;
-          this.descargandoId = null;
-          this.cdr.detectChanges();
+          terminar();
         }
       },
       error: (err) => {
-        this.imprimiendoId = null;
-        this.descargandoId = null;
+        terminar();
         this.notify.error(err?.error?.message || 'No se pudo obtener la información del comprobante.');
-        this.cdr.detectChanges();
       }
     });
   }
