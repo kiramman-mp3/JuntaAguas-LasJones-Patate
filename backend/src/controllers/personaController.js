@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+// Las altas y cambios de usuarios y cuentas guardan su auditoría dentro de la misma transacción.
 const { withTransaction } = require('../shared/transaction');
 const { generarPasswordTemporal, hashPassword } = require('../shared/passwords');
 const { ROLES, esAdmin } = require('../shared/roles');
@@ -283,12 +284,11 @@ async function createPersona(req, res) {
     const passwordTemporal = datos.crearCuenta
       ? await crearCuentaEnTransaccion(conexion, { personaId: insert.insertId, rol: datos.rol, creadaPor: req.user.cuentaId })
       : null;
+    await registrarAuditoria({
+      conexion, cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'personas', entidadId: insert.insertId, ip: req.ip,
+      detalle: { cedula: datos.cedula, crearCuenta: datos.crearCuenta, rol: datos.crearCuenta ? datos.rol : null }
+    });
     return { personaId: insert.insertId, passwordTemporal };
-  });
-
-  await registrarAuditoria({
-    cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'personas', entidadId: resultado.personaId, ip: req.ip,
-    detalle: { cedula: datos.cedula, crearCuenta: datos.crearCuenta, rol: datos.crearCuenta ? datos.rol : null }
   });
 
   return res.status(201).json({
@@ -304,7 +304,7 @@ async function updatePersona(req, res) {
   const { id } = s.idParam.parse(req.params);
   const datos = actualizarSchema.parse(req.body);
 
-  const cambios = await withTransaction(async (conexion) => {
+  await withTransaction(async (conexion) => {
     const [personaRows] = await conexion.query('SELECT estado FROM personas WHERE id = ? FOR UPDATE', [id]);
     if (!personaRows.length) throw notFound('Usuario no encontrado.');
     const estadoActual = personaRows[0].estado;
@@ -330,12 +330,10 @@ async function updatePersona(req, res) {
        WHERE id = ?`,
       [datos.nombres, datos.apellidos, datos.direccion, datos.telefono, datos.celular, datos.email, datos.fecha_nacimiento, nuevoEstado, id]
     );
-    return { nuevoEstado };
-  });
-
-  await registrarAuditoria({
-    cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'personas', entidadId: id, ip: req.ip,
-    detalle: { nombres: datos.nombres, apellidos: datos.apellidos, estado: cambios.nuevoEstado }
+    await registrarAuditoria({
+      conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'personas', entidadId: id, ip: req.ip,
+      detalle: { nombres: datos.nombres, apellidos: datos.apellidos, estado: nuevoEstado }
+    });
   });
 
   return res.json({ status: 'OK', message: 'Datos del usuario actualizados correctamente.' });
@@ -350,10 +348,10 @@ async function crearCuenta(req, res) {
     const [persona] = await conexion.query('SELECT id FROM personas WHERE id = ? FOR UPDATE', [id]);
     if (!persona.length) throw notFound('Usuario no encontrado.');
     if (await cuentaDePersona(conexion, id)) throw conflict('El usuario ya tiene una cuenta de acceso.');
-    return crearCuentaEnTransaccion(conexion, { personaId: id, rol, creadaPor: req.user.cuentaId });
+    const clave = await crearCuentaEnTransaccion(conexion, { personaId: id, rol, creadaPor: req.user.cuentaId });
+    await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { personaId: id, rol } });
+    return clave;
   });
-
-  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { personaId: id, rol } });
   return res.status(201).json({ status: 'OK', message: 'Cuenta creada. Entregue la contraseña temporal al usuario.', passwordTemporal });
 }
 
@@ -384,9 +382,8 @@ async function actualizarCuenta(req, res) {
         [cambios.estado, cuenta.id]
       );
     }
+    await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: cambios });
   });
-
-  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: cambios });
   return res.json({ status: 'OK', message: 'Cuenta actualizada correctamente.' });
 }
 
@@ -406,10 +403,9 @@ async function restablecerPassword(req, res) {
        WHERE id = ?`,
       [await hashPassword(clave), cuenta.id]
     );
+    await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { restablecerPassword: true } });
     return clave;
   });
-
-  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { restablecerPassword: true } });
   return res.json({ status: 'OK', message: 'Contraseña restablecida. Entregue la contraseña temporal al usuario.', passwordTemporal });
 }
 

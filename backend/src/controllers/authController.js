@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
+const { withTransaction } = require('../shared/transaction');
 const { firmarToken, ALCANCE_CAMBIO_PASSWORD } = require('../middlewares/authMiddleware');
 const { compararPassword, hashPassword, problemaConPassword, HASH_FICTICIO } = require('../shared/passwords');
 const { badRequest, unauthorized, notFound } = require('../shared/errors');
@@ -116,15 +117,17 @@ async function changePassword(req, res) {
     throw badRequest('La contraseña actual ingresada es incorrecta.');
   }
 
-  await db.query(
-    `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = FALSE, password_updated_at = UTC_TIMESTAMP(3)
-     WHERE id = ?`,
-    [await hashPassword(nuevaPassword), req.user.cuentaId]
-  );
-
-  await registrarAuditoria({
-    cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: req.user.cuentaId, ip: req.ip,
-    detalle: { cambioPassword: true }
+  const hash = await hashPassword(nuevaPassword);
+  await withTransaction(async (conexion) => {
+    await conexion.query(
+      `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = FALSE, password_updated_at = UTC_TIMESTAMP(3)
+       WHERE id = ?`,
+      [hash, req.user.cuentaId]
+    );
+    await registrarAuditoria({
+      conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: req.user.cuentaId, ip: req.ip,
+      detalle: { cambioPassword: true }
+    });
   });
 
   const cuenta = await buscarCuentaPorCedula(req.user.cedula);
