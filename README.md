@@ -31,6 +31,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 | `/admin/finanzas/pagos` | Historial de pagos por fechas, reimpresión del comprobante y anulación con motivo. |
 | `/admin/finanzas/egresos` | Registro y consulta de egresos (proveedor, RUC, factura). |
 | `/admin/finanzas/facturacion` | Pago anual del agua: estado del año (emitidas, cobradas, pendientes), vista previa y emisión de la obligación anual a los usuarios con lote. |
+| `/admin/gestion` | Gestión interna de la directiva: registro de auditoría (filtros por día de Ecuador), inventario de bienes y plan anual de actividades. |
 | `/admin/finanzas/tarifas` | Tarifas por concepto con su historial de vigencias. |
 
 ### Usuario (rol USUARIO)
