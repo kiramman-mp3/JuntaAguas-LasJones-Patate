@@ -1,134 +1,320 @@
-.noticias {
-  padding-top: 2.5rem;
-  padding-bottom: 4rem;
+// Estilos de las tres páginas de noticias (portada, archivo y detalle). La tarjeta tiene los suyos.
 
-  &__migas {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-    font-size: 0.9rem;
-    color: var(--text-muted);
+.noticias__principal {
+  margin-bottom: clamp(3rem, 6vw, 5rem);
+}
 
-    a {
-      color: var(--color-primary);
-      text-decoration: none;
+.noticias__canal {
+  max-width: 62rem;
+}
 
-      &:hover {
-        text-decoration: underline;
+// --- El canal: una línea de tiempo por donde "corre" el agua --------------------------------------
+// Cada noticia cuelga de la línea con una gota y la fecha a la izquierda; la última gota es el
+// acceso al archivo. El trazo es azul agua que se vuelve turquesa hacia abajo.
+.canal {
+  --riel: 4.5rem; // ancho de la columna de fechas
+  --separacion: 2.25rem; // espacio entre la fecha y el texto; la línea corre por su centro
+  --gota: 0.95rem;
+  --altura-gota: 0.7rem; // distancia desde el borde superior de cada elemento hasta la gota
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--riel) minmax(0, 1fr);
+    column-gap: var(--separacion);
+    padding-bottom: clamp(2rem, 4vw, 3rem);
+
+    // La línea
+    &::before {
+      content: '';
+      position: absolute;
+      left: calc(var(--riel) + var(--separacion) / 2 - 1px);
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-primary), var(--color-secondary));
+      opacity: 0.4;
+    }
+
+    &:first-child::before {
+      top: var(--altura-gota);
+    }
+
+    // La gota
+    &::after {
+      content: '';
+      position: absolute;
+      left: calc(var(--riel) + var(--separacion) / 2 - var(--gota) / 2);
+      top: var(--altura-gota);
+      width: var(--gota);
+      height: var(--gota);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      background: var(--color-primary);
+      // El anillo del color del fondo "corta" la línea alrededor de la gota.
+      box-shadow: 0 0 0 5px var(--bg-app);
+    }
+
+    &--fin {
+      padding-bottom: 0;
+
+      &::before {
+        bottom: auto;
+        height: var(--altura-gota);
+      }
+
+      &::after {
+        background: var(--color-secondary);
       }
     }
   }
 
-  &__cabecera {
-    margin-bottom: 2rem;
+  &__fecha {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    line-height: 1;
+    color: var(--text-muted);
+
+    strong {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+    }
+
+    span {
+      margin-top: 0.2rem;
+      font-weight: 600;
+    }
+
+    small {
+      margin-top: 0.15rem;
+      font-size: 0.75rem;
+    }
   }
+
+  &__cierre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    padding-top: 0.1rem;
+  }
+
+  @media (max-width: 719px) {
+    --riel: 0rem;
+    --separacion: 1.75rem;
+
+    &__item {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0.75rem;
+      padding-left: var(--separacion);
+
+      &::before {
+        left: 0.4rem;
+      }
+
+      &::after {
+        left: calc(0.4rem - var(--gota) / 2 + 1px);
+      }
+    }
+
+    &__fecha {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.4rem;
+      text-align: left;
+
+      strong {
+        font-size: 1.6rem;
+      }
+
+      span,
+      small {
+        margin: 0;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// --- Archivo -------------------------------------------------------------------------------------
+
+.filtros {
+  display: grid;
+  gap: 1.25rem;
+  padding: 0 0 2rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border-color);
+
+  &__busqueda {
+    position: relative;
+    max-width: 40rem;
+
+    i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.85rem 1rem 0.85rem 2.75rem;
+      font-size: 1.05rem;
+      border-radius: var(--radius-full);
+    }
+  }
+
+  &__etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__fechas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem 1.5rem;
+
+    label {
+      display: grid;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    input {
+      min-width: 10.5rem;
+    }
+  }
+}
+
+.ficha {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.4rem 0.95rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+
+  small {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  &--activa {
+    border-color: var(--color-primary-solid);
+    background: var(--color-primary-solid);
+    color: var(--text-white);
+
+    small {
+      color: inherit;
+      opacity: 0.85;
+    }
+
+    &:hover {
+      color: var(--text-white);
+      background: var(--color-primary-solid-hover);
+    }
+  }
+}
+
+.resultados {
+  &__resumen {
+    margin: 0 0 2rem;
+    color: var(--text-muted);
+  }
+
+  &.is-refreshing {
+    opacity: 0.55;
+    transition: opacity var(--duration-fast) ease;
+  }
+}
+
+.mes {
+  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
 
   &__titulo {
-    margin: 0.75rem 0 0.75rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin: 0 0 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    font-family: var(--font-display);
+    font-size: 1.35rem;
     font-weight: 700;
-    overflow-wrap: anywhere;
-  }
+    letter-spacing: -0.02em;
 
-  &__lead {
-    max-width: 60rem;
-    font-size: 1.05rem;
-    color: var(--text-muted);
+    &::first-letter {
+      text-transform: uppercase;
+    }
+
+    small {
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0;
+      color: var(--text-muted);
+    }
   }
 
   &__rejilla {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-    gap: 1.5rem;
-
-    // En la portada, la primera noticia ocupa todo el ancho y las demás se reparten debajo.
-    &--portada > .destacada {
-      grid-column: 1 / -1;
-    }
-  }
-
-  &__mas {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 2.5rem;
-  }
-
-  &__filtros {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-    align-items: end;
-    gap: 1rem;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
-  }
-
-  &__campo-busqueda {
-    grid-column: span 2;
-  }
-
-  &__limpiar {
-    align-self: end;
-  }
-
-  &__resumen {
-    margin: 0 0 1rem;
-    color: var(--text-muted);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 2.5rem 2rem;
   }
 }
 
-@media (max-width: 640px) {
-  .noticias__campo-busqueda {
-    grid-column: 1 / -1;
-  }
-}
+// --- Detalle -------------------------------------------------------------------------------------
 
-.is-refreshing {
-  opacity: 0.6;
-  transition: opacity var(--duration-fast, 150ms) ease;
-}
-
-// El anfitrión de la tarjeta es el elemento de la rejilla.
-:host {
-  display: block;
-}
-
-.noticia-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-  border: 1px solid var(--border-color);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-sm);
-
-  &__imagen {
-    display: block;
-    aspect-ratio: 16 / 9;
-    background: var(--bg-surface-hover);
-    overflow: hidden;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-  }
-
-  &__cuerpo {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    flex: 1;
-    padding: 1.1rem 1.25rem 1.25rem;
+.detalle {
+  &__cabecera {
+    position: relative;
+    padding: clamp(1.5rem, 4vw, 2.75rem) 0 1.5rem;
   }
 
   &__meta {
-    font-size: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    margin-bottom: 1.25rem;
     color: var(--text-muted);
   }
 
@@ -136,90 +322,69 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    list-style: none;
     margin: 0;
     padding: 0;
-
-    a {
-      text-decoration: none;
-    }
+    list-style: none;
   }
 
   &__titulo {
+    max-width: 24ch;
     margin: 0;
-    font-size: 1.15rem;
-    line-height: 1.3;
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 1.3rem + 3.2vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.032em;
+    text-wrap: balance;
     overflow-wrap: anywhere;
-
-    a {
-      color: var(--text-main);
-      text-decoration: none;
-
-      &:hover {
-        color: var(--color-primary);
-      }
-    }
   }
 
-  &__resumen {
-    margin: 0;
+  &__lead {
+    max-width: 52ch;
+    margin: 1.25rem 0 0;
+    font-size: clamp(1.1rem, 1.02rem + 0.4vw, 1.35rem);
+    line-height: 1.5;
     color: var(--text-muted);
+  }
+
+  &__imagen {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: 34rem;
+    object-fit: cover;
+    margin: 1rem 0 clamp(2rem, 4vw, 3rem);
+    border-radius: clamp(1rem, 2vw, 1.75rem);
+    background: var(--bg-surface-hover);
+    box-shadow: var(--shadow-md);
+  }
+
+  &__texto {
+    max-width: 68ch;
+    font-size: 1.12rem;
+    line-height: 1.8;
+    // Respeta los saltos de línea que escribió la directiva.
+    white-space: pre-line;
     overflow-wrap: anywhere;
   }
 
   &__mas {
-    margin-top: auto;
-    color: var(--color-primary);
-    font-weight: 600;
-    text-decoration: none;
+    margin-top: clamp(3rem, 7vw, 5rem);
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
 
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  &--destacada {
-    @media (min-width: 900px) {
-      flex-direction: row;
-
-      .noticia-card__imagen {
-        flex: 1 1 55%;
-        aspect-ratio: auto;
-        min-height: 18rem;
-      }
-
-      .noticia-card__cuerpo {
-        flex: 1 1 45%;
-        justify-content: center;
-        padding: 2rem;
-      }
-
-      .noticia-card__titulo {
-        font-size: 1.6rem;
-      }
+    &-rejilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+      gap: 2.5rem 2rem;
     }
   }
 }
 
-.noticia-detalle {
-  max-width: 52rem;
-  margin: 0 auto;
-
-  &__imagen {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    border-radius: var(--radius-lg);
-    margin: 1.5rem 0;
-    background: var(--bg-surface-hover);
-  }
-
-  &__texto {
-    font-size: 1.05rem;
-    line-height: 1.75;
-    // Respeta los saltos de línea que escribió la directiva.
-    white-space: pre-line;
-    overflow-wrap: anywhere;
+@media (prefers-reduced-motion: reduce) {
+  .ficha,
+  .resultados.is-refreshing {
+    transition: none;
   }
 }

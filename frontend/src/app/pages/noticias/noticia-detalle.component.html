@@ -1,5 +1,5 @@
-<div class="container noticias">
-  <nav class="noticias__migas" aria-label="Ruta de navegación">
+<div class="portal">
+  <nav class="portal-migas" aria-label="Ruta de navegación">
     <a routerLink="/noticias"><i class="ri-arrow-left-line" aria-hidden="true"></i> Noticias</a>
     <span aria-hidden="true">/</span>
     <a routerLink="/noticias/todas">Todas las noticias</a>
@@ -23,36 +23,49 @@
       mensaje="Revise su conexión e intente de nuevo."
     />
   } @else if (noticia(); as n) {
-    <article class="noticia-detalle">
-      <header>
-        <time class="caption" [attr.datetime]="n.publicada_en">{{
-          n.publicada_en | fechaLocal: 'larga'
-        }}</time>
-        <h1 class="noticias__titulo">{{ n.titulo }}</h1>
-        <p class="noticias__lead">{{ n.descripcion_corta }}</p>
-        @if (n.tags.length) {
-          <ul class="noticia-card__tags" aria-label="Etiquetas">
-            @for (tag of n.tags; track tag) {
-              <li>
-                <a
-                  class="badge badge--info"
-                  routerLink="/noticias/todas"
-                  [queryParams]="{ tag: tag }"
-                  >{{ tag }}</a
-                >
-              </li>
-            }
-          </ul>
-        }
+    <article>
+      <header class="detalle__cabecera portal-cabecera">
+        <app-curvas-nivel />
+        <div class="detalle__meta">
+          <time [attr.datetime]="n.publicada_en">{{ n.publicada_en | fechaLocal: 'larga' }}</time>
+          @if (n.tags.length) {
+            <ul class="detalle__tags" aria-label="Etiquetas">
+              @for (tag of n.tags; track tag) {
+                <li>
+                  <a
+                    class="noticia-tag"
+                    routerLink="/noticias/todas"
+                    [queryParams]="{ tag: tag }"
+                    >{{ tag }}</a
+                  >
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        <h1 class="detalle__titulo">{{ n.titulo }}</h1>
+        <p class="detalle__lead">{{ n.descripcion_corta }}</p>
       </header>
+
       <img
-        class="noticia-detalle__imagen"
+        class="detalle__imagen noticia-detalle__imagen"
         [src]="urlImagen(n.imagen_url)"
         [alt]="'Imagen de la noticia: ' + n.titulo"
         width="960"
         height="540"
       />
-      <div class="noticia-detalle__texto">{{ n.descripcion_larga }}</div>
+      <div class="detalle__texto noticia-detalle__texto">{{ n.descripcion_larga }}</div>
     </article>
+
+    @if (otras().length) {
+      <section class="detalle__mas" aria-labelledby="otras-titulo">
+        <h2 id="otras-titulo" class="portal-subtitulo">Otras noticias</h2>
+        <div class="detalle__mas-rejilla">
+          @for (otra of otras(); track otra.id) {
+            <app-noticia-tarjeta [noticia]="otra" />
+          }
+        </div>
+      </section>
+    }
   }
 </div>

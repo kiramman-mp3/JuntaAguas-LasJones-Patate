@@ -65,10 +65,12 @@ test.describe('lectura pública (datos sembrados: 8 noticias)', () => {
 
   test('filtra por etiqueta con la cantidad de cada una y la deja en la dirección', async ({ page }) => {
     await page.goto('/noticias/todas');
-    const opciones = await page.locator('#noticias-tag option').allInnerTexts();
-    expect(opciones.map((o) => o.trim())).toContain('canal (2)');
+    const fichas = page.getByRole('group', { name: 'Etiquetas' });
+    await expect(fichas.getByRole('button', { name: 'Todas' })).toHaveAttribute('aria-pressed', 'true');
+    // Cada ficha muestra cuántas noticias tiene su etiqueta.
+    await expect(fichas.getByRole('button', { name: 'canal 2', exact: true })).toBeVisible();
 
-    await page.locator('#noticias-tag').selectOption('canal');
+    await fichas.getByRole('button', { name: 'canal 2', exact: true }).click();
     await expect(tarjetas(page)).toHaveCount(2);
     await expect(page).toHaveURL(new RegExp('tag=canal'));
     await expect(page.getByText('con la etiqueta')).toContainText('canal');
@@ -77,7 +79,12 @@ test.describe('lectura pública (datos sembrados: 8 noticias)', () => {
     // Una dirección con filtros se abre ya filtrada.
     await page.goto('/noticias/todas?tag=asamblea');
     await expect(tarjetas(page)).toHaveCount(2);
-    await expect(page.locator('#noticias-tag')).toHaveValue('asamblea');
+    await expect(page.getByRole('button', { name: 'asamblea 2', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
+    // Elegir otra vez la etiqueta activa la quita.
+    await page.getByRole('button', { name: 'asamblea 2', exact: true }).click();
+    await expect(tarjetas(page)).toHaveCount(8);
+    await expect(page).not.toHaveURL(new RegExp('tag='));
   });
 
   test('filtra por texto (título, descripción o etiqueta) y avisa cuando no hay coincidencias', async ({ page }) => {
@@ -127,7 +134,7 @@ test.describe('lectura pública (datos sembrados: 8 noticias)', () => {
     await expect(page.locator('.noticia-detalle__imagen')).toBeVisible();
 
     // Una etiqueta del detalle lleva al archivo ya filtrado.
-    await page.getByRole('link', { name: 'finanzas', exact: true }).click();
+    await page.locator('.detalle__tags').getByRole('link', { name: 'finanzas', exact: true }).click();
     await expect(page).toHaveURL(new RegExp('/noticias/todas\\?tag=finanzas'));
     await expect(tarjetas(page)).toHaveCount(2);
   });

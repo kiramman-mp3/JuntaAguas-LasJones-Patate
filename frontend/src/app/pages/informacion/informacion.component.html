@@ -1,48 +1,52 @@
-<div class="container info-junta">
-  <!-- QUIÉNES SOMOS -->
-  <section class="info-junta__section" aria-labelledby="info-titulo">
-    <span class="badge badge--info"
-      ><i class="ri-information-line" aria-hidden="true"></i> Información de la Junta</span
-    >
-    <h1 id="info-titulo" class="info-junta__title">{{ info.nombre }}</h1>
-    <p class="info-junta__lead">{{ info.descripcion }}</p>
+<div class="portal info">
+  <header class="portal-cabecera">
+    <app-curvas-nivel />
+    <h1 id="info-titulo" class="portal-cabecera__titulo">{{ info.nombre }}</h1>
+    <p class="portal-cabecera__lead">{{ info.descripcion }}</p>
+  </header>
 
-    <div class="info-junta__grid info-junta__grid--dos">
-      <article class="card info-card">
-        <h2 class="info-card__title"><i class="ri-focus-3-line" aria-hidden="true"></i> Misión</h2>
-        <p>{{ info.mision }}</p>
-      </article>
-      <article class="card info-card">
-        <h2 class="info-card__title"><i class="ri-eye-line" aria-hidden="true"></i> Visión</h2>
-        <p>{{ info.vision }}</p>
-      </article>
-    </div>
+  <!-- MISIÓN Y VISIÓN -->
+  <section class="info__proposito" aria-label="Misión y visión">
+    <article class="declaracion declaracion--mision">
+      <h2 class="declaracion__titulo">Misión</h2>
+      <p class="declaracion__texto">{{ info.mision }}</p>
+    </article>
+    <article class="declaracion declaracion--vision">
+      <h2 class="declaracion__titulo">Visión</h2>
+      <p class="declaracion__texto">{{ info.vision }}</p>
+    </article>
   </section>
 
   <!-- DIRECTIVA -->
-  <section class="info-junta__section" aria-labelledby="directiva-titulo">
-    <h2 id="directiva-titulo" class="info-junta__subtitle">Directiva</h2>
-    <div class="info-junta__grid">
+  <section class="info__seccion" aria-labelledby="directiva-titulo">
+    <h2 id="directiva-titulo" class="portal-subtitulo">Directiva</h2>
+    <ul class="directiva">
       @for (m of info.directiva; track m.cargo) {
-        <article class="card info-card info-card--persona">
-          <span class="info-card__icon" aria-hidden="true"><i [class]="m.icono"></i></span>
-          <h3>{{ m.nombre }}</h3>
-          <p class="caption">{{ m.cargo }}</p>
-        </article>
+        <li class="directiva__persona">
+          <span class="directiva__monograma" aria-hidden="true">{{ iniciales(m.nombre) }}</span>
+          <div>
+            <p class="directiva__nombre">{{ m.nombre }}</p>
+            <p class="directiva__cargo">{{ m.cargo }}</p>
+          </div>
+        </li>
       }
-    </div>
+    </ul>
   </section>
 
-  <!-- SECTORES -->
+  <!-- SECTORES: la barra de cada sector se llena según sus lotes -->
   @if (sectores.length > 0) {
-    <section class="info-junta__section" aria-labelledby="sectores-titulo">
-      <h2 id="sectores-titulo" class="info-junta__subtitle">Sectores de riego</h2>
-      <ul class="info-junta__sectores">
-        @for (s of sectores; track s.id) {
-          <li class="card info-card">
-            <i class="ri-drop-line" aria-hidden="true"></i>
-            <strong>{{ s.nombre }}</strong>
-            <span class="caption">{{ s.lotesCount }} lotes</span>
+    <section class="info__seccion" aria-labelledby="sectores-titulo">
+      <h2 id="sectores-titulo" class="portal-subtitulo">Sectores de riego</h2>
+      <p class="info__nota">
+        {{ sectores.length }} sectores con {{ totalLotes }} lotes en total. La barra compara el
+        tamaño de cada sector.
+      </p>
+      <ul class="niveles">
+        @for (s of sectores; track s.id; let i = $index) {
+          <li class="niveles__sector" [style.--nivel]="nivel(s)" [style.--orden]="i">
+            <strong class="niveles__nombre">{{ s.nombre }}</strong>
+            <span class="niveles__barra" aria-hidden="true"><span></span></span>
+            <span class="niveles__lotes">{{ s.lotesCount }} lotes</span>
           </li>
         }
       </ul>
@@ -50,11 +54,11 @@
   }
 
   <!-- CONTACTO -->
-  <section class="info-junta__section" aria-labelledby="contacto-titulo">
-    <h2 id="contacto-titulo" class="info-junta__subtitle">Contacto y atención</h2>
-    <dl class="card info-card info-junta__contacto">
+  <section class="info__seccion" aria-labelledby="contacto-titulo">
+    <h2 id="contacto-titulo" class="portal-subtitulo">Contacto y atención</h2>
+    <dl class="contacto">
       @for (c of info.contacto; track c.etiqueta) {
-        <div>
+        <div class="contacto__dato" [class.contacto__dato--pendiente]="c.valor === 'Por confirmar'">
           <dt><i [class]="c.icono" aria-hidden="true"></i> {{ c.etiqueta }}</dt>
           <dd>{{ c.valor }}</dd>
         </div>

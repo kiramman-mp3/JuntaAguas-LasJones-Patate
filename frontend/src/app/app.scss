@@ -20,6 +20,7 @@
   }
 
   &__brand {
+    white-space: nowrap;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -220,5 +221,17 @@
     border-top: 1px solid var(--border-color);
     text-align: center;
     color: var(--text-muted);
+  }
+}
+
+/* En teléfonos los botones de sesión muestran solo el icono (el texto sigue disponible para lectores de pantalla). */
+@media (max-width: 480px) {
+  .main-nav__texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

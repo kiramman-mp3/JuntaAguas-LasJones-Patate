@@ -9,14 +9,23 @@ import {
   Noticia,
   NoticiasService,
 } from '../../core/services/noticias.service';
+import { diaEnEcuador, formatearFecha } from '../../core/utils/fechas';
+import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { PaginadorComponent } from '../../shared/ui/paginador.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton.component';
 import { NoticiaTarjetaComponent } from './noticia-tarjeta.component';
 
+interface GrupoMes {
+  clave: string;
+  etiqueta: string;
+  noticias: Noticia[];
+}
+
 /**
  * Archivo de noticias: todas las publicadas, con filtros por texto, etiqueta y fechas y paginación.
- * Los filtros viven en la URL (?q=&tag=&desde=&hasta=&pagina=) para poder compartir o volver a una búsqueda.
+ * Los resultados se agrupan por mes. Los filtros viven en la URL (?q=&tag=&desde=&hasta=&pagina=)
+ * para poder compartir o volver a una búsqueda.
  */
 @Component({
   selector: 'app-noticias-archivo',
@@ -24,6 +33,7 @@ import { NoticiaTarjetaComponent } from './noticia-tarjeta.component';
   imports: [
     FormsModule,
     RouterLink,
+    CurvasNivelComponent,
     EmptyStateComponent,
     PaginadorComponent,
     SkeletonComponent,
@@ -59,6 +69,20 @@ export class NoticiasArchivoComponent implements OnInit {
     () => !!this.desde() && !!this.hasta() && this.desde() > this.hasta(),
   );
 
+  /** Las noticias de la página, agrupadas por el mes en que se publicaron (ya vienen de más reciente a más antigua). */
+  readonly grupos = computed<GrupoMes[]>(() => {
+    const porMes = new Map<string, Noticia[]>();
+    for (const noticia of this.noticias()) {
+      const clave = diaEnEcuador(noticia.publicada_en).slice(0, 7);
+      porMes.set(clave, [...(porMes.get(clave) ?? []), noticia]);
+    }
+    return [...porMes].map(([clave, noticias]) => ({
+      clave,
+      etiqueta: formatearFecha(`${clave}-01`, 'mesAnio'),
+      noticias,
+    }));
+  });
+
   ngOnInit(): void {
     this.servicio.etiquetas().subscribe({
       next: (lista) => this.etiquetas.set(lista),
@@ -84,6 +108,11 @@ export class NoticiasArchivoComponent implements OnInit {
   escribir(texto: string): void {
     this.q.set(texto);
     this.escritura$.next(texto.trim());
+  }
+
+  /** Elegir de nuevo la etiqueta activa la quita. */
+  alternarEtiqueta(etiqueta: string): void {
+    this.aplicar({ tag: this.tag() === etiqueta ? '' : etiqueta });
   }
 
   /** Cambia filtros en la URL; la suscripción a la ruta recarga la lista. */
