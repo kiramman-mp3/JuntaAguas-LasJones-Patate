@@ -12,7 +12,7 @@ La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INST
 - **Backend:** Node.js 26, Express 5, mysql2 (SQL parametrizado), zod para validar la entrada, JWT, bcryptjs, helmet, multer, pdfkit y Swagger (solo fuera de producción).
 - **Servicio de WhatsApp** (`whatsapp-service/`): proceso aparte con Express 5 y whatsapp-web.js (Edge o Chromium sin interfaz). Publica las convocatorias en el grupo de WhatsApp de la Junta; si se detiene, el resto del sistema sigue funcionando.
 - **Base de datos:** MySQL 8 (InnoDB, utf8mb4) en Docker, con migraciones versionadas.
-- **Calidad:** ESLint en backend, servicio de WhatsApp y frontend; pruebas de integración contra MySQL real; GitHub Actions (`.github/workflows/ci.yml`).
+- **Calidad:** ESLint en backend, servicio de WhatsApp y frontend; pruebas de integración contra MySQL real; pruebas E2E con Playwright (`e2e/`); GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
 
