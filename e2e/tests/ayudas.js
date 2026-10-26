@@ -62,11 +62,11 @@ function tokenAdmin() {
 }
 
 /** Crea por API un usuario con cuenta y devuelve sus datos y su contraseña temporal. */
-async function crearUsuarioConCuenta(request, { nombres = unico('Api'), apellidos = 'Prueba E2E' } = {}) {
+async function crearUsuarioConCuenta(request, { nombres = unico('Api'), apellidos = 'Prueba E2E', rol = 'USUARIO' } = {}) {
   const cedula = cedulaNueva();
   const r = await request.post('/api/personas', {
     headers: { Authorization: `Bearer ${tokenAdmin()}` },
-    data: { cedula, nombres, apellidos, estado: 'ACTIVO', crearCuenta: true, rol: 'USUARIO' }
+    data: { cedula, nombres, apellidos, estado: 'ACTIVO', crearCuenta: true, rol }
   });
   expect(r.ok(), await r.text()).toBeTruthy();
   const cuerpo = await r.json();
