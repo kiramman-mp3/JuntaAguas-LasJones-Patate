@@ -12,6 +12,8 @@ const { hoy: hoyEcuador } = require('../shared/dates');
 const { prefijoSector } = require('../utils/loteCodigo');
 const finanzas = require('../services/finanzasService');
 const eventos = require('../services/eventosService');
+const { guardarDocumento } = require('../services/documentStorage');
+const { degradadoPng } = require('./imagenDemo');
 
 const NOMBRES_H = ['José', 'Luis', 'Segundo', 'Manuel', 'Carlos', 'Juan', 'Marco', 'Jorge', 'Ángel', 'Fausto', 'Washington', 'Edison', 'Patricio', 'Héctor', 'Rodrigo', 'Wilson', 'Galo', 'Milton', 'Diego', 'Byron', 'Fabián', 'Raúl', 'Germán', 'Hugo', 'Darwin'];
 const NOMBRES_M = ['María', 'Rosa', 'Carmen', 'Blanca', 'Luz', 'Martha', 'Gloria', 'Ana', 'Lucía', 'Mercedes', 'Fanny', 'Rocío', 'Nelly', 'Mariana', 'Silvia', 'Elena', 'Jenny', 'Patricia', 'Dolores', 'Inés', 'Teresa', 'Verónica', 'Gladys', 'Mónica', 'Beatriz'];
@@ -421,6 +423,32 @@ async function crearInventario(conexion, fechaInicio) {
   return bienes.length;
 }
 
+const NOTICIAS = [
+  { titulo: 'Minga de limpieza del canal matriz antes del verano', corta: 'Este fin de semana limpiamos el canal desde la bocatoma. Participan todos los sectores.', larga: 'La directiva convoca a todos los usuarios a la minga de limpieza del canal matriz. Iniciamos a las 7:00 en la bocatoma. Traer pala, machete y botas de caucho. La asistencia genera registro y la inasistencia sin justificar una multa, según lo resuelto en asamblea. Al final habrá un refrigerio para los asistentes.', tags: ['minga', 'canal', 'verano'], colores: [[22, 101, 52], [134, 239, 172]] },
+  { titulo: 'Rendición de cuentas: fecha y lugar de la asamblea', corta: 'La asamblea ordinaria de rendición de cuentas será en la casa comunal.', larga: 'Se presentará el informe de tesorería, el estado de la cartera por cobrar y el avance del plan anual de actividades. Los usuarios podrán hacer preguntas y proponer puntos para la próxima sesión. Lleve su cédula para registrar su asistencia.', tags: ['asamblea', 'finanzas'], colores: [[30, 64, 175], [147, 197, 253]] },
+  { titulo: 'Nuevos turnos de riego para la temporada seca', corta: 'Se ajustaron los horarios de los tres sectores para repartir mejor el caudal.', larga: 'Con el aumento de la demanda en verano, la directiva reorganizó los turnos semanales sin cruces dentro de cada sector. Puede consultar su turno en el portal o en la secretaría. Cualquier reclamo se atiende los sábados de 08:00 a 12:00.', tags: ['turnos', 'riego', 'verano'], colores: [[14, 116, 144], [165, 243, 252]] },
+  { titulo: 'Pago anual de agua: cómo cancelar por transferencia o en secretaría', corta: 'El pago anual vence el 31 de diciembre. Conserve su comprobante.', larga: 'Puede pagar en la secretaría de la Junta o por transferencia o depósito bancario indicando su cédula como referencia. Al registrar el pago recibirá un comprobante numerado que también puede descargar desde Mi cuenta.', tags: ['pagos', 'finanzas'], colores: [[161, 98, 7], [253, 224, 71]] },
+  { titulo: 'Reparación de la compuerta de El Tambo', corta: 'Se repara la compuerta de la derivación de El Tambo; habrá cortes parciales.', larga: 'Durante la reparación el agua llegará con menor caudal a los lotes de la derivación. Agradecemos su comprensión. La obra se financia con el fondo de mantenimiento aprobado en asamblea.', tags: ['canal', 'mantenimiento'], colores: [[154, 52, 18], [253, 186, 116]] },
+  { titulo: 'Actualización del catastro de lotes', corta: 'Verifique que los datos de su lote y su titularidad estén correctos.', larga: 'Estamos actualizando la georreferenciación de los lotes. Si cambió de titular o de contacto, acérquese a la secretaría con su cédula y el documento que respalde el cambio.', tags: ['catastro', 'secretaría'], colores: [[88, 28, 135], [216, 180, 254]] },
+  { titulo: 'Recomendaciones para el uso eficiente del agua', corta: 'Pequeños cambios en el riego ahorran agua y mejoran la cosecha.', larga: 'Riegue en las primeras horas de la mañana, revise las fugas en su acequia y respete su turno. El agua es de todos los usuarios y cuidarla es parte del trabajo comunitario.', tags: ['riego', 'recomendaciones'], colores: [[6, 95, 70], [110, 231, 183]] },
+  { titulo: 'Elección de la nueva directiva: calendario', corta: 'La elección se realizará en diciembre; las candidaturas se reciben en secretaría.', larga: 'Pueden postularse los usuarios al día en sus obligaciones. Las candidaturas se reciben hasta una semana antes de la asamblea de elección. La votación es presencial y secreta.', tags: ['asamblea', 'elecciones'], colores: [[67, 56, 202], [199, 210, 254]] }
+];
+
+/** Noticias de ejemplo, una cada nueve días hacia atrás, con imagen y etiquetas. */
+async function crearNoticias(conexion, hoy, cuentaId) {
+  for (const [i, n] of NOTICIAS.entries()) {
+    const imagen = await guardarDocumento(degradadoPng(...n.colores), 'noticia', { soloImagen: true });
+    // 15:00 UTC = 10:00 en Ecuador.
+    const publicada = `${sumarDias(hoy, -(i * 9 + 2))} 15:00:00`;
+    const [r] = await conexion.query(
+      'INSERT INTO noticias (titulo, descripcion_corta, descripcion_larga, imagen_url, publicada_en, creada_por_cuenta_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [n.titulo, n.corta, n.larga, imagen.url, publicada, cuentaId]
+    );
+    await conexion.query('INSERT INTO noticia_etiquetas (noticia_id, etiqueta) VALUES ?', [n.tags.map((t) => [r.insertId, t])]);
+  }
+  return NOTICIAS.length;
+}
+
 async function crearPlanAnual(conexion, anio, hoy, cuentaId) {
   const [r] = await conexion.query(
     "INSERT INTO planes_anuales (anio, descripcion, estado, created_by_cuenta_id) VALUES (?, ?, 'ACTIVO', ?)",
@@ -552,10 +580,11 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsua
     const egresos = await crearEgresos(conexion, azar, meses, hoy, personas[1].cuentaId);
     const bienes = await crearInventario(conexion, fechaInicio);
     const actividades = await crearPlanAnual(conexion, actual.anio, hoy, admin.cuentaId);
+    const noticias = await crearNoticias(conexion, hoy, admin.cuentaId);
 
     await conexion.commit();
     return {
-      ...resumen, anualAgua, usuarios: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades,
+      ...resumen, anualAgua, usuarios: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades, noticias,
       anulaciones: recientes.length, retirados: retiros.size,
       admin: { cedula: admin.cedula, nombre: `${admin.nombres} ${admin.apellidos}` },
       demo: { cedula: demo.cedula, nombre: `${demo.nombres} ${demo.apellidos}` }
