@@ -2,7 +2,7 @@ const env = require('./config/env');
 const db = require('./config/db');
 const app = require('./app');
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, env.HOST, () => {
   console.log(`[Servidor Backend] http://localhost:${env.PORT}/api (${env.NODE_ENV})`);
   if (!env.esProduccion) console.log(`[Swagger UI] http://localhost:${env.PORT}/api-docs`);
 });

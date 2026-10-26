@@ -12,6 +12,8 @@ const SECRETOS_COMPROMETIDOS = new Set([
 const esquema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
+  // Interfaz donde escucha el servidor. Detrás de Nginx/Caddy use 127.0.0.1 para que solo el proxy llegue al puerto.
+  HOST: z.string().default('0.0.0.0'),
   DB_HOST: z.string().default('127.0.0.1'),
   DB_PORT: z.coerce.number().int().positive().default(3306),
   DB_USER: z.string().default('root'),
