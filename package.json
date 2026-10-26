@@ -14,6 +14,7 @@
     "start:whatsapp": "npm --prefix whatsapp-service start",
     "test": "npm --prefix backend test && npm --prefix whatsapp-service test && npm --prefix frontend test -- --watch=false",
     "lint": "npm --prefix backend run lint && npm --prefix whatsapp-service run lint && npm --prefix frontend run lint && npm --prefix frontend run format:check",
-    "respaldo": "node scripts/respaldo.js"
+    "respaldo": "node scripts/respaldo.js",
+    "vigilar": "node scripts/vigilar.js"
   }
 }
