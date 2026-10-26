@@ -42,6 +42,8 @@ module.exports = async function globalSetup() {
   const usuario = /Usuario:\s+(\d+)\s+\((.+)\)/.exec(seed.stdout);
   if (!admin || !usuario) throw new Error(`No se pudieron leer las credenciales del seed:\n${seed.stdout}`);
   fs.mkdirSync(path.dirname(ARCHIVO_CREDENCIALES), { recursive: true });
+  // El estado compartido entre archivos pertenece a la base anterior, que acaba de recrearse.
+  fs.rmSync(path.join(path.dirname(ARCHIVO_CREDENCIALES), 'estado.json'), { force: true });
   fs.writeFileSync(ARCHIVO_CREDENCIALES, JSON.stringify({
     password: PASSWORD,
     admin: { cedula: admin[1], nombre: admin[2] },
