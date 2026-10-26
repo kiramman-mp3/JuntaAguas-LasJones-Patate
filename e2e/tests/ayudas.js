@@ -103,7 +103,28 @@ async function descargarPdf(page, accion) {
   return { nombre: descarga.suggestedFilename(), contenido };
 }
 
+/** Ruta absoluta de un archivo de e2e/fixtures. */
+const fixture = (nombre) => require('path').join(__dirname, '..', 'fixtures', nombre);
+
+/**
+ * Para PDF que la aplicación abre en una pestaña nueva: ejecuta la acción, comprueba que el servidor
+ * responde con un PDF real (URL que cumpla `patron`) y cierra las pestañas que se hayan abierto.
+ */
+async function pdfEnPestana(page, patron, accion) {
+  const [respuesta] = await Promise.all([
+    page.waitForResponse((r) => patron.test(r.url()) && r.request().method() === 'GET'),
+    accion()
+  ]);
+  expect(respuesta.status()).toBe(200);
+  const cuerpo = await respuesta.body();
+  expect(cuerpo.subarray(0, 4).toString(), 'la respuesta es un PDF').toBe('%PDF');
+  for (const otra of page.context().pages()) if (otra !== page) await otra.close();
+  return cuerpo;
+}
+
 module.exports = {
+  pdfEnPestana,
+  fixture,
   buscarEnPadron, abrirEdicion,
   descargarPdf, tokenAdmin, crearUsuarioConCuenta,
   credenciales, fechaEcuador, unico, cedulaValida, cedulaNueva, iniciarSesion, dialogo, aviso, leerEstado, guardarEstado, irA, ZONA
