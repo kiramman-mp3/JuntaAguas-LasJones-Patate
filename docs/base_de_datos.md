@@ -22,7 +22,7 @@ El modelo relacional está compuesto por **22 tablas** normalizadas y distribuid
 
 ---
 
-## 3. 🗂️ Organización del Modelo por Dominios (22 Tablas Optimizadas)
+## 3. 🗂️ Organización del Modelo por Dominios (24 Tablas Optimizadas)
 
 | Dominio Funcional | Tablas Integrantes | Descripción Breve |
 | :--- | :--- | :--- |
@@ -32,6 +32,7 @@ El modelo relacional está compuesto por **22 tablas** normalizadas y distribuid
 | **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `obligacion_anual_agua`, `pago_anual_agua`, `pago_anual_agua_detalle`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos, pago único anual de agua y gastos operativos. |
 | **Inventario** | `bienes_inventario` | Registro y control físico de bienes y herramientas de la Junta. |
 | **Planificación Anual** | `planes_anuales`, `actividades_plan` | Plan operativo anual de trabajo y seguimiento de cumplimiento de actividades. |
+| **Noticias** | `noticias`, `noticia_etiquetas` | Noticias del portal con su imagen y sus etiquetas (filtro con índice). |
 | **Auditoría** | `auditoria` | Bitácora imborrable de operaciones realizadas por los administradores. |
 | **Configuración** | `configuracion` | Ajustes clave/valor (por ejemplo, el grupo de WhatsApp de las convocatorias). |
 
@@ -217,6 +218,7 @@ erDiagram
 ### 4.5. Dominio de Inventario, Planificación y Auditoría
 - **`bienes_inventario`**: Control físico de activos.
 - **`planes_anuales` & `actividades_plan`**: Plan operativo anual (un solo plan activo por año).
+- **`noticias` & `noticia_etiquetas`**: Noticias publicadas (título, descripción corta y larga, `imagen_url`, `publicada_en` en UTC) y sus etiquetas en minúsculas (clave compuesta `noticia_id` + `etiqueta`, borrado en cascada).
 - **`auditoria`**: Bitácora inalterable de operaciones críticas.
 
 ---

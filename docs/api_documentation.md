@@ -130,6 +130,19 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `POST` | `/planes` | ADMIN | Crear plan anual o añadir actividades con fechas de inicio/fin. |
 | `GET` | `/auditoria` | **ADMIN** | Bitácora imborrable de auditoría para trazabilidad de cambios en el sistema. |
 
+### 3.7.1. 📰 Noticias (`/api/noticias`)
+
+| Método | Endpoint | Permisos | Descripción |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/noticias` | Público | Noticias de la más reciente a la más antigua. Filtros: `q` (título, descripción corta o etiqueta), `tag`, `desde`, `hasta` (días de Ecuador), `pagina`, `limite` (máx. 50). Devuelve `data`, `total`, `pagina`, `limite`; la lista no trae la descripción larga. |
+| `GET` | `/noticias/etiquetas` | Público | Etiquetas en uso con la cantidad de noticias de cada una. |
+| `GET` | `/noticias/:id` | Público | Noticia completa con descripción larga. |
+| `POST` | `/noticias` | **ADMIN** | Publicar (`multipart/form-data`): `titulo`, `descripcion_corta`, `descripcion_larga`, `tags` (JSON, 1 a 8) y `archivo` (imagen JPG/PNG, obligatoria). |
+| `PUT` | `/noticias/:id` | **ADMIN** | Modificar; la imagen solo se reemplaza si se adjunta `archivo` (la anterior se borra). |
+| `DELETE` | `/noticias/:id` | **ADMIN** | Eliminar la noticia, sus etiquetas y su imagen. |
+
+La imagen se sirve en `/uploads/documentos/noticia_*.png|jpg` sin autenticación. Cada alta, cambio y baja queda en la auditoría (entidad `noticias`).
+
 ---
 
 ### 3.8. 💬 WhatsApp y convocatorias (`/api/whatsapp`)
