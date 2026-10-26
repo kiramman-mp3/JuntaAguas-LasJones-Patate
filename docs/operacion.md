@@ -70,7 +70,35 @@ Sin HTTPS, la contraseña, el token de sesión y las cédulas viajan en claro po
 
 5. Cierre en el firewall todo salvo 80 y 443 (y SSH). MySQL (3306) y el servicio de WhatsApp (3100) nunca deben ser accesibles desde fuera.
 
-## 3. Dependencias con avisos conocidos
+## 3. Registro y monitoreo
+
+### Registro de eventos
+
+En producción el backend escribe **una línea JSON por evento** en la salida estándar (los errores, en la de error):
+
+```json
+{"hora":"2026-10-26T14:03:11.402Z","nivel":"info","mensaje":"petición","reqId":"9b1c…","metodo":"POST","ruta":"/api/pagos","estado":201,"duracionMs":48.2,"ip":"190.x.x.x","cuentaId":3}
+```
+
+- Cada petición lleva un `X-Request-Id` (también en la respuesta). Los errores 500 devuelven `requestId` en el cuerpo: si un usuario reporta un fallo, busque ese identificador.
+- No se registran contraseñas, tokens, cuerpos ni parámetros de la URL (una búsqueda por cédula, por ejemplo, no queda en el registro).
+- `LOG_LEVEL` en `backend/.env` ajusta el detalle (`debug` incluye las consultas de salud).
+- Con systemd: `journalctl -u junta-backend -f -o cat | jq 'select(.nivel!="info")'`. Un servicio de ejemplo con reinicio automático está en [`deploy/junta-backend.service.example`](../deploy/junta-backend.service.example).
+- La auditoría de negocio (quién cobró, anuló o cambió algo) sigue en la tabla `auditoria` y en `/admin/gestion`.
+
+### Aviso cuando el sistema se cae
+
+`npm run vigilar` consulta `/api/health` (que también prueba la conexión a la base) cada 60 s y envía un aviso a un webhook cuando el sistema deja de responder y cuando se recupera. También avisa si el último respaldo de `backups/` tiene más de 26 horas, así un respaldo que dejó de ejecutarse no pasa inadvertido.
+
+```bash
+VIGILAR_WEBHOOK=https://hooks.slack.com/services/XXX npm run vigilar
+```
+
+El webhook recibe `{ "text": "...", "content": "..." }`, compatible con Slack, Discord y Mattermost. Variables opcionales: `VIGILAR_URL`, `VIGILAR_INTERVALO`, `VIGILAR_FALLOS` (3 fallos seguidos antes de avisar), `VIGILAR_RESPALDO_HORAS`. Con `--una-vez` hace una sola comprobación y sale con código 1 si falla, para usarlo desde cron.
+
+Conviene además un monitor **externo** (por ejemplo UptimeRobot, gratuito) que consulte `https://su-dominio/api/health`: el vigilante corre en el mismo equipo y no puede avisar si el equipo entero se apaga.
+
+## 4. Dependencias con avisos conocidos
 
 `npm audit --omit=dev` en `whatsapp-service/` informa avisos que **no se pueden corregir** sin bajar `whatsapp-web.js` a una versión anterior y peor:
 

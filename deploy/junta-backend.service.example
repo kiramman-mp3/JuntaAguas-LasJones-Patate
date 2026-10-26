@@ -1,0 +1,36 @@
+# Servicio systemd: arranca el backend al encender el equipo y lo reinicia si se cae.
+# Copie como /etc/systemd/system/junta-backend.service, ajuste rutas y usuario, y ejecute:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now junta-backend
+# Antes, prepare la base y compile el frontend sin iniciar servidores: npm run prod:preparar
+# Registro (JSON, una línea por evento): journalctl -u junta-backend -f
+[Unit]
+Description=Junta de Agua La Jones - backend
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=junta
+WorkingDirectory=/opt/junta-las-jones/backend
+ExecStart=/usr/bin/node src/index.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+
+# Vigilante de disponibilidad (opcional): copie este bloque como junta-vigilante.service
+# [Unit]
+# Description=Junta de Agua La Jones - vigilante de disponibilidad
+# After=junta-backend.service
+# [Service]
+# User=junta
+# WorkingDirectory=/opt/junta-las-jones
+# Environment=VIGILAR_WEBHOOK=https://hooks.slack.com/services/XXX
+# ExecStart=/usr/bin/node scripts/vigilar.js
+# Restart=always
+# [Install]
+# WantedBy=multi-user.target
