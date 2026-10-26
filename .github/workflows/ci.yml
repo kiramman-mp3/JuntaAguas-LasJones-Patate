@@ -116,6 +116,11 @@ jobs:
         working-directory: backend
       - run: npm ci
         working-directory: frontend
+      # El servicio de WhatsApp real corre con un cliente simulado: no hace falta descargar Chrome.
+      - run: npm ci
+        working-directory: whatsapp-service
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
       # El backend sirve el frontend compilado: las pruebas recorren la aplicación como un usuario.
       - run: npm run build
         working-directory: frontend

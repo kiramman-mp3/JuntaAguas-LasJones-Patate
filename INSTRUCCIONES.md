@@ -136,7 +136,25 @@ Las pruebas del backend usan su propia base (`junta_las_jones_test`), que crean 
 
 ### Pruebas de extremo a extremo (navegador real)
 
-`e2e/` maneja la aplicación como un usuario con Playwright: crea una minga, registra una ausencia, la finaliza (nace la multa), cobra la multa en caja y anula el pago. Usan su propia base (`junta_las_jones_e2e`, sembrada de nuevo en cada ejecución) y un backend en el puerto 3210; no tocan `junta_las_jones`. Con MySQL levantado:
+`e2e/` maneja la aplicación como un usuario con Playwright y cubre todo el sistema (unos 130 casos, ~5 minutos):
+
+| Archivo | Qué recorre |
+|---|---|
+| `01-publico` | Inicio, eventos (PDF de convocatoria), información, 404, rutas protegidas y API sin sesión |
+| `02-usuarios-y-sesion` | Alta de usuarios, contraseña temporal, primer ingreso, bloqueo, límite de intentos, restablecimiento, baja y permisos |
+| `03-sectores-y-lotes` | Sectores, lotes (mapa), asignación y transferencia de titularidad |
+| `04-asambleas` / `05-mingas` | Convocatoria, orden del día, documentos firmados, asistencia, actas, cierre con multas, corrección posterior y cancelación |
+| `06-turnos` | Asignación, cruces de horario, vistas, edición y baja |
+| `07-whatsapp` | Vinculación, grupo, publicación, reintento tras fallo y servicio caído (servicio real con teléfono simulado, `e2e/whatsapp-simulado.js`) |
+| `08-flujos-criticos` | Multa por ausencia → cobro en caja → anulación |
+| `09-finanzas` | Egresos, tarifas, pago anual de agua, historial y comprobante bancario |
+| `10-mi-cuenta` | Portal del usuario y aislamiento de sus datos |
+| `11-gestion-interna` / `12-tablero-y-navegacion` / `13-auditoria` | Inventario, plan anual, tablero, menú y registro de auditoría |
+| `14-tema-y-movil` | Modo oscuro y todas las pantallas en 390 px |
+
+Los archivos dependen entre sí en orden numérico (comparten el estado de `e2e/.auth/estado.json`): ejecute la suite completa. Una prueba marcada `test.fail` documenta un defecto conocido (el subtipo "Extraordinaria" de la asamblea no se guarda); cuando se corrija, Playwright avisará de quitar la marca.
+
+Usan su propia base (`junta_las_jones_e2e`, sembrada de nuevo en cada ejecución), un backend en el puerto 3210 y un servicio de WhatsApp simulado en el 3199; no tocan `junta_las_jones`. Con MySQL levantado:
 
 ```bash
 npm --prefix e2e install
