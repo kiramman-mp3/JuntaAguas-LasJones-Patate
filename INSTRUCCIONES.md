@@ -134,6 +134,16 @@ cd frontend         && npm run lint && npm test -- --watch=false && npm run buil
 
 Las pruebas del backend usan su propia base (`junta_las_jones_test`), que crean y borran; no tocan `junta_las_jones`.
 
+### Pruebas de extremo a extremo (navegador real)
+
+`e2e/` maneja la aplicación como un usuario con Playwright: crea una minga, registra una ausencia, la finaliza (nace la multa), cobra la multa en caja y anula el pago. Usan su propia base (`junta_las_jones_e2e`, sembrada de nuevo en cada ejecución) y un backend en el puerto 3210; no tocan `junta_las_jones`. Con MySQL levantado:
+
+```bash
+npm --prefix e2e install
+E2E_CHANNEL=msedge npm run test:e2e              # usa el Edge instalado (o chrome); compila el frontend antes
+npm --prefix e2e run browsers                     # alternativa: descargar Chromium (lo que hace el CI)
+```
+
 ---
 
 ## 8. Actualizar la base de datos tras un `git pull`
