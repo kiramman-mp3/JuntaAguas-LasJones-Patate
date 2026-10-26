@@ -48,6 +48,8 @@ export class AsambleasService {
           nombre: p.nombre,
           estado: p.estado || 'PENDIENTE',
           motivo_justificacion: p.motivo_justificacion || '',
+          archivo_justificacion_url: p.archivo_justificacion_url || null,
+          archivo_justificacion_nombre: p.archivo_justificacion_nombre || null,
         })),
       ),
     );

@@ -10,6 +10,7 @@ const MIGRATIONS_DIR = path.join(__dirname, '../../database/migrations');
  */
 const MIGRACIONES_RENOMBRADAS = Object.freeze({
   '011_pago_comprobante.js': '015_pago_comprobante.js',
+  '013_asistencia_archivo_justificacion.js': '024_asistencia_archivo_justificacion.js',
   '014_terminologia_usuarios.js': '016_terminologia_usuarios.js'
 });
 

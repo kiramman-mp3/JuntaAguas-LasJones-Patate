@@ -24,4 +24,6 @@ export interface AsistenciaMinga {
   cedula: string;
   estado: EstadoAsistenciaMinga;
   motivo_justificacion: string;
+  archivo_justificacion_url?: string | null;
+  archivo_justificacion_nombre?: string | null;
 }

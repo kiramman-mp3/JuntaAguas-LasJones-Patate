@@ -10,6 +10,7 @@ import {
   EventoItem,
   FinalizacionRespuesta,
   GrupoWhatsApp,
+  JustificanteSubido,
   LoteItem,
   PadronRespuesta,
   PersonaListado,
@@ -185,6 +186,37 @@ export class AdminService {
     return this.http.get<PadronRespuesta>(`${this.baseUrl}/eventos/${eventoId}/asistencias`);
   }
 
+  subirJustificanteAsistencia(
+    eventoId: number,
+    personaId: number,
+    archivo: File,
+    motivo?: string,
+  ): Observable<JustificanteSubido> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    if (motivo) formData.append('motivo_justificacion', motivo);
+    return this.http.post<JustificanteSubido>(
+      `${this.baseUrl}/eventos/${eventoId}/asistencias/${personaId}/justificante`,
+      formData,
+    );
+  }
+
+  descargarJustificanteAsistencia(eventoId: number, personaId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.baseUrl}/eventos/${eventoId}/asistencias/${personaId}/justificante`,
+      { responseType: 'blob' },
+    );
+  }
+
+  eliminarJustificanteAsistencia(
+    eventoId: number,
+    personaId: number,
+  ): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(
+      `${this.baseUrl}/eventos/${eventoId}/asistencias/${personaId}/justificante`,
+    );
+  }
+
   cambiarEstadoAsamblea(
     id: number,
     estado: EstadoEvento,
@@ -234,6 +266,37 @@ export class AdminService {
     return this.http.post<RespuestaMensaje & { registradas: number }>(
       `${this.baseUrl}/mingas/${id}/asistencias`,
       { asistencias },
+    );
+  }
+
+  subirJustificanteAsistenciaMinga(
+    mingaId: number,
+    personaId: number,
+    archivo: File,
+    motivo?: string,
+  ): Observable<JustificanteSubido> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    if (motivo) formData.append('motivo_justificacion', motivo);
+    return this.http.post<JustificanteSubido>(
+      `${this.baseUrl}/mingas/${mingaId}/asistencias/${personaId}/justificante`,
+      formData,
+    );
+  }
+
+  descargarJustificanteAsistenciaMinga(mingaId: number, personaId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.baseUrl}/mingas/${mingaId}/asistencias/${personaId}/justificante`,
+      { responseType: 'blob' },
+    );
+  }
+
+  eliminarJustificanteAsistenciaMinga(
+    mingaId: number,
+    personaId: number,
+  ): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(
+      `${this.baseUrl}/mingas/${mingaId}/asistencias/${personaId}/justificante`,
     );
   }
 

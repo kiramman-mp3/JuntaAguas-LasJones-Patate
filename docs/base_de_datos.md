@@ -144,6 +144,17 @@ erDiagram
         decimal valor_multa
     }
 
+    asistencias {
+        bigint id PK
+        bigint evento_id FK
+        bigint persona_id FK
+        string estado
+        text motivo_justificacion
+        string archivo_justificacion_url
+        string archivo_justificacion_nombre
+        datetime fecha_registro
+    }
+
     obligaciones {
         bigint id PK
         bigint persona_id FK
@@ -189,7 +200,7 @@ erDiagram
 ### 4.3. Dominio de Asambleas, Mingas, Asistencia y Comunicación
 - **`eventos`**: Asambleas y Mingas (`tipo`). Define si genera multa por ausencia (`genera_multa_ausencia`).
 - **`puntos_asamblea`**: Puntos a tratar, lo tratado y resoluciones tomadas.
-- **`asistencias`**: Asistencia por usuario (`PENDIENTE`, `PRESENTE`, `AUSENTE`, `JUSTIFICADO`).
+- **`asistencias`**: Asistencia por usuario (`PENDIENTE`, `PRESENTE`, `AUSENTE`, `JUSTIFICADO`). Permite adjuntar opcionalmente comprobantes o certificados de justificación física (`archivo_justificacion_url`, `archivo_justificacion_nombre`), manteniendo editable el registro aun cuando el evento se encuentre en estado `REALIZADO` y conciliando automáticamente las multas generadas.
 - **`documentos_evento`**: Gestión de PDFs generados (`GENERADO`) y versiones firmadas manualmente (`FIRMADO`).
 - **`envios_convocatoria`**: Envíos de convocatorias. Las publicadas en el grupo de WhatsApp tienen `persona_id` NULL, el id del grupo en `destino`, su nombre en `destino_nombre`, `estado` (`ENVIADO`, o `ERROR` con `detalle_error`) y `enviado_por_cuenta_id`.
 - **`configuracion`**: Ajustes clave/valor (`whatsapp.grupo_id`, `whatsapp.grupo_nombre`) con la cuenta que los cambió por última vez.
