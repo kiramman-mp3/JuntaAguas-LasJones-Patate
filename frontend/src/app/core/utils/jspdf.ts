@@ -2,7 +2,9 @@
  * Carga diferida de jsPDF y jspdf-autotable (unos 400 kB). Se descargan la primera vez
  * que se genera un PDF y la promesa se reutiliza; si la carga falla, el siguiente intento la repite.
  */
-interface ModulosJsPdf {
+import { InjectionToken } from '@angular/core';
+
+export interface ModulosJsPdf {
   jsPDF: typeof import('jspdf').jsPDF;
   autoTable: typeof import('jspdf-autotable').default;
 }
@@ -18,3 +20,9 @@ export function cargarJsPdf(): Promise<ModulosJsPdf> {
     });
   return carga;
 }
+
+/** Cargador de jsPDF que usan los servicios de PDF; las pruebas lo reemplazan por uno falso. */
+export const CARGADOR_JSPDF = new InjectionToken<() => Promise<ModulosJsPdf>>('CARGADOR_JSPDF', {
+  providedIn: 'root',
+  factory: () => cargarJsPdf,
+});

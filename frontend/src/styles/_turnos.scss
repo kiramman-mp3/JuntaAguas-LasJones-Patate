@@ -1,6 +1,6 @@
 /* ==============================================================================
    TURNOS DE RIEGO
-   Calendario semanal, selector de comuneros y rango horario.
+   Calendario semanal, selector de usuarios y rango horario.
    ============================================================================== */
 
 .time-range {
@@ -11,10 +11,15 @@
   font-weight: 600;
   white-space: nowrap;
 
-  i { color: var(--text-muted); font-size: 0.85rem; }
+  i {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
 }
 
-.view-swap { animation: ui-fade 0.25s ease backwards; }
+.view-swap {
+  animation: ui-fade 0.25s ease backwards;
+}
 
 /* --- Calendario semanal: siete columnas; en pantallas angostas se desplaza dentro de su contenedor --- */
 .week {
@@ -55,7 +60,10 @@
     justify-content: space-between;
     padding: 0.7rem 0.85rem;
 
-    strong { font-size: 0.88rem; letter-spacing: -0.01em; }
+    strong {
+      font-size: 0.88rem;
+      letter-spacing: -0.01em;
+    }
   }
 
   &__count {
@@ -86,7 +94,12 @@
     font-size: 0.78rem;
     color: var(--text-muted);
 
-    i { display: block; font-size: 1.3rem; opacity: 0.45; margin-bottom: 0.2rem; }
+    i {
+      display: block;
+      font-size: 1.3rem;
+      opacity: 0.45;
+      margin-bottom: 0.2rem;
+    }
   }
 }
 
@@ -96,10 +109,16 @@
   background: var(--bg-surface);
   box-shadow: var(--shadow-sm);
   border-left: 3px solid var(--color-primary);
-  transition: box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out);
+  transition:
+    box-shadow 0.25s var(--ease-out),
+    transform 0.25s var(--ease-out);
 
-  &:hover { box-shadow: var(--shadow-md); }
-  &--extra { border-left-color: var(--color-accent-amber); }
+  &:hover {
+    box-shadow: var(--shadow-md);
+  }
+  &--extra {
+    border-left-color: var(--color-accent-amber);
+  }
 
   &__main {
     display: flex;
@@ -115,7 +134,9 @@
     cursor: pointer;
     border-radius: inherit;
 
-    &:active { transform: scale(0.98); }
+    &:active {
+      transform: scale(0.98);
+    }
   }
 
   &__time {
@@ -146,7 +167,11 @@
     gap: 0.1rem;
     padding: 0 0.3rem 0.3rem;
 
-    .icon-btn { width: 1.75rem; height: 1.75rem; font-size: 0.95rem; }
+    .icon-btn {
+      width: 1.75rem;
+      height: 1.75rem;
+      font-size: 0.95rem;
+    }
   }
 }
 
@@ -157,7 +182,9 @@
   gap: 1.25rem;
   align-items: start;
 
-  @media (max-width: 820px) { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 820px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .picker {
@@ -176,7 +203,10 @@
     gap: 0.5rem;
   }
 
-  &__count { font-size: 0.75rem; color: var(--text-muted); }
+  &__count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
 
   &__list {
     display: flex;
@@ -186,7 +216,9 @@
     overflow-y: auto;
     overscroll-behavior: contain;
 
-    @media (max-width: 820px) { max-height: 240px; }
+    @media (max-width: 820px) {
+      max-height: 240px;
+    }
   }
 
   &__option {
@@ -202,17 +234,28 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
-    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease-out;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      transform 0.1s ease-out;
 
-    &:hover { border-color: var(--border-color); }
-    &:active { transform: scale(0.99); }
+    &:hover {
+      border-color: var(--border-color);
+    }
+    &:active {
+      transform: scale(0.99);
+    }
 
     &.is-selected {
       border-color: var(--color-primary);
       background: var(--color-primary-light);
     }
 
-    .avatar { width: 2rem; height: 2rem; font-size: 0.7rem; }
+    .avatar {
+      width: 2rem;
+      height: 2rem;
+      font-size: 0.7rem;
+    }
   }
 
   &__text {
@@ -221,11 +264,23 @@
     min-width: 0;
     flex: 1;
 
-    strong { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    span { font-size: 0.75rem; color: var(--text-muted); }
+    strong {
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
   }
 
-  &__check { color: var(--color-primary); font-size: 1.15rem; }
+  &__check {
+    color: var(--color-primary);
+    font-size: 1.15rem;
+  }
 
   &__empty {
     margin: 1.5rem 0;
@@ -250,11 +305,19 @@
     flex: 1;
     min-width: 0;
 
-    strong { overflow-wrap: anywhere; }
-    span { font-size: 0.78rem; color: var(--text-muted); }
+    strong {
+      overflow-wrap: anywhere;
+    }
+    span {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
   }
 
-  .avatar { background: var(--color-primary-solid); color: #fff; }
+  .avatar {
+    background: var(--color-primary-solid);
+    color: #fff;
+  }
 
   &.is-empty {
     background: transparent;

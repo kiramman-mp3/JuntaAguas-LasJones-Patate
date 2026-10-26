@@ -11,7 +11,7 @@ async function getResumen(req, res) {
   const inicioAnio = `${fecha.slice(0, 4)}-01-01`;
 
   const [[comunidad]] = await db.query(
-    `SELECT (SELECT COUNT(*) FROM personas WHERE estado = 'ACTIVO') AS comunerosActivos,
+    `SELECT (SELECT COUNT(*) FROM personas WHERE estado = 'ACTIVO') AS usuariosActivos,
             (SELECT COUNT(*) FROM lotes WHERE activo = TRUE) AS lotes,
             (SELECT COUNT(*) FROM sectores WHERE activo = TRUE) AS sectores,
             (SELECT COUNT(*) FROM turnos_riego WHERE estado = 'ACTIVO') AS turnosActivos,
@@ -20,24 +20,33 @@ async function getResumen(req, res) {
 
   const [[finanzas]] = await db.query(
     `SELECT
-       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoMes,
-       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoAnio,
+       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoMes,
+       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoAnio,
        (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE fecha >= ?) AS egresosMes,
        (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE fecha >= ?) AS egresosAnio,
-       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE') -
+       (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE') +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE estado = 'VIGENTE') -
          (SELECT COALESCE(SUM(valor), 0) FROM egresos) AS saldoCaja,
-       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') AS carteraPendiente,
-       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS carteraVencida,
-       (SELECT COUNT(DISTINCT persona_id) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS comunerosEnMora`,
+       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM obligacion_anual_agua WHERE estado = 'PENDIENTE') AS carteraPendiente,
+       (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) +
+         (SELECT COALESCE(SUM(valor_total), 0) FROM obligacion_anual_agua WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) AS carteraVencida,
+       (SELECT COUNT(*) FROM (
+          SELECT persona_id FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?
+          UNION
+          SELECT persona_id FROM obligacion_anual_agua WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?
+        ) mora) AS usuariosEnMora`,
     // fecha_pago está en UTC: el mes de Ecuador empieza a las 05:00 UTC del día 1.
-    [inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioAnio), inicioMes, inicioAnio, fecha, fecha]
+    [inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioMes), inicioDelDiaUtc(inicioAnio), inicioDelDiaUtc(inicioAnio),
+      inicioMes, inicioAnio, fecha, fecha, fecha, fecha]
   );
 
-  // Eficiencia de cobro de las cuotas de agua emitidas este año.
+  // Eficiencia de cobro del pago anual de agua de este año.
   const [[cobranza]] = await db.query(
-    `SELECT COALESCE(SUM(o.valor), 0) AS emitido, COALESCE(SUM(CASE WHEN o.estado = 'PAGADA' THEN o.valor END), 0) AS cobrado
-     FROM obligaciones o JOIN conceptos_cobro c ON c.id = o.concepto_id
-     WHERE c.codigo = 'AGUA_MENSUAL' AND o.estado <> 'ANULADA' AND o.periodo_anio = ?`,
+    `SELECT COALESCE(SUM(valor_total), 0) AS emitido, COALESCE(SUM(CASE WHEN estado = 'PAGADA' THEN valor_total END), 0) AS cobrado
+     FROM obligacion_anual_agua WHERE periodo_anio = ? AND estado <> 'ANULADA'`,
     [Number(fecha.slice(0, 4))]
   );
 

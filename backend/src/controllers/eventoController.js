@@ -5,7 +5,6 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../services/auditService');
 const archivos = require('../services/documentStorage');
-const { eliminarDocumento } = archivos;
 const eventos = require('../services/eventosService');
 const documentos = require('../services/documentosEventoService');
 const { escribirListaAsistencia } = require('../services/listaAsistenciaPdf');
@@ -14,7 +13,7 @@ const { badRequest, notFound } = require('../shared/errors');
 const { idParam } = require('../shared/schemas');
 const { z } = require('zod');
 const {
-  listarSchema, crearSchema, puntosSchema, actaPuntoSchema, documentoSchema, puntoParam
+  listarSchema, crearSchema, puntosSchema, documentoSchema
 } = require('../schemas/eventos');
 
 const eventoPersonaParam = z.object({
@@ -48,17 +47,16 @@ async function createEvento(req, res) {
   const { eventoId, valorMulta, puntos } = await withTransaction((conexion) => eventos.crearEvento(conexion, datos, req.user.cuentaId));
   await registrarAuditoria({
     cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'eventos', entidadId: eventoId, ip: req.ip,
-    detalle: { tipo: datos.tipo, titulo: datos.titulo, fecha: datos.fecha, valorMulta, puntos }
+    detalle: { tipo: datos.tipo, titulo: datos.titulo, fecha: datos.fecha, valorMulta, puntos, sectorId: datos.sector_id ?? null }
   });
   return res.status(201).json({ status: 'OK', message: 'Evento registrado exitosamente.', eventoId });
 }
 
-/** Guardar los puntos del orden del día y sus actas; borra los archivos de los puntos eliminados. */
+/** Guardar los puntos del orden del día y su desarrollo en el acta general. */
 async function savePuntosAsamblea(req, res) {
   const { id } = idParam.parse(req.params);
   const { puntos } = puntosSchema.parse(req.body);
-  const { data, archivosEliminados } = await withTransaction((conexion) => eventos.guardarPuntos(conexion, id, puntos));
-  for (const url of archivosEliminados) await eliminarDocumento(url);
+  const { data } = await withTransaction((conexion) => eventos.guardarPuntos(conexion, id, puntos));
   await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'puntos_asamblea', entidadId: id, ip: req.ip, detalle: { puntos: data.length } });
   return res.json({ status: 'OK', message: 'Puntos del orden del día y actas guardados correctamente.', data, puntos: data });
 }
@@ -84,15 +82,7 @@ async function cambiarEstado(req, res) {
   });
 }
 
-/** Actualizar los datos del acta de un punto específico. */
-async function cambiarEstadoActaPunto(req, res) {
-  const { id, puntoId } = puntoParam.parse(req.params);
-  const cambios = Object.fromEntries(Object.entries(actaPuntoSchema.parse(req.body)).filter(([, v]) => v !== undefined));
-  const actualizado = await withTransaction((conexion) => eventos.actualizarActaPunto(conexion, id, puntoId, cambios));
-  return res.json({ status: 'OK', message: 'Acta del punto actualizada exitosamente.', data: actualizado });
-}
-
-/** Padrón de asistencia del evento (comuneros con su estado) y resumen. */
+/** Padrón de asistencia del evento (usuarios con su estado) y resumen. */
 async function getAsistencias(req, res) {
   const { id } = idParam.parse(req.params);
   const { evento, padron } = await withTransaction(async (conexion) => {
@@ -102,7 +92,7 @@ async function getAsistencias(req, res) {
   return res.json({ status: 'OK', data: padron.personas, resumen: padron.resumen, estado: evento.estado });
 }
 
-/** Registrar o corregir la asistencia de los comuneros mientras el evento está abierto. */
+/** Registrar o corregir la asistencia de los usuarios mientras el evento está abierto. */
 async function registrarAsistencias(req, res) {
   const { id } = idParam.parse(req.params);
   const { registradas } = await withTransaction(async (conexion) => {
@@ -138,22 +128,22 @@ async function finalizarEventoYGenerarMultas(req, res) {
 }
 
 /**
- * Guardar el documento firmado (PDF o imagen escaneada) de un evento o del acta de un punto.
+ * Guardar el documento firmado (PDF o imagen escaneada) de un evento, como el acta general.
  * Recibe multipart/form-data con el campo "archivo". El tipo real del archivo se valida por su contenido.
  */
 async function guardarDocumentoEvento(req, res) {
   const { id } = idParam.parse(req.params);
-  const { tipo, punto_id } = documentoSchema.parse(req.body ?? {});
+  const { tipo } = documentoSchema.parse(req.body ?? {});
   if (!req.file) throw badRequest('Debe adjuntar el archivo firmado.');
 
   const { url, nombre } = await documentos.guardarDocumentoFirmado({
-    eventoId: id, tipo, puntoId: punto_id ?? null, archivo: req.file, cuentaId: req.user.cuentaId
+    eventoId: id, tipo, archivo: req.file, cuentaId: req.user.cuentaId
   });
   await registrarAuditoria({
-    cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: punto_id ? 'puntos_asamblea' : 'documentos_evento',
-    entidadId: punto_id || id, ip: req.ip, detalle: { eventoId: id, tipo, url }
+    cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'documentos_evento',
+    entidadId: id, ip: req.ip, detalle: { eventoId: id, tipo, url }
   });
-  return res.json({ status: 'OK', message: 'Documento firmado guardado correctamente.', url, nombre_archivo: nombre, punto_id: punto_id ?? null });
+  return res.json({ status: 'OK', message: 'Documento firmado guardado correctamente.', url, nombre_archivo: nombre });
 }
 
 /** Hoja de asistencia en PDF con el padrón del evento, para firmas. */
@@ -281,7 +271,6 @@ module.exports = {
   createEvento,
   savePuntosAsamblea,
   cambiarEstado,
-  cambiarEstadoActaPunto,
   registrarAsistencias,
   getAsistencias,
   finalizarEventoYGenerarMultas,

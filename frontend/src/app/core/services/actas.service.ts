@@ -1,43 +1,229 @@
 import { Injectable, inject } from '@angular/core';
+import type { jsPDF } from 'jspdf';
 import { NotificationService } from './notification.service';
-import { aFecha } from '../utils/fechas';
+import { diaEnEcuador } from '../utils/fechas';
+import { CARGADOR_JSPDF } from '../utils/jspdf';
 
-interface PdfMake { createPdf(documento: unknown): { download(nombre: string): void } }
-
-let cargaPdfMake: Promise<PdfMake> | null = null;
-
-/**
- * Carga pdfmake y sus fuentes solo cuando se genera el primer PDF: juntos pesan más de 1 MB
- * y antes viajaban en el bundle inicial de todas las páginas.
- */
-function cargarPdfMake(): Promise<PdfMake> {
-  cargaPdfMake ??= Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
-    .then(([modulo, fuentes]) => {
-      const pdfMake: any = (modulo as any).default ?? modulo;
-      const vfs = (fuentes as any).default ?? fuentes;
-      // pdfmake 0.3 exporta el vfs directamente; versiones anteriores lo anidaban en { pdfMake: { vfs } } o { vfs }.
-      const archivos = vfs?.pdfMake?.vfs ?? vfs?.vfs ?? vfs;
-      if (typeof pdfMake.addVirtualFileSystem === 'function') pdfMake.addVirtualFileSystem(archivos);
-      else pdfMake.vfs = archivos;
-      return pdfMake as PdfMake;
-    })
-    .catch((error) => {
-      cargaPdfMake = null; // Permite reintentar si falló la red.
-      throw error;
-    });
-  return cargaPdfMake;
+/** Datos del evento que usan el acta y la convocatoria. Los campos opcionales se completan a mano al imprimir. */
+export interface EventoDocumento {
+  id?: number;
+  tipo?: string;
+  titulo?: string;
+  descripcion?: string | null;
+  fecha?: string;
+  hora_inicio?: string | null;
+  hora_fin?: string | null;
+  hora_clausura?: string | null;
+  lugar?: string | null;
+  sector?: string | null;
+  subtipo_asamblea?: string | null;
+  numero_acta?: string | null;
+  presidente?: string | null;
+  secretario?: string | null;
+  usuarios_presentes?: number | string | null;
+  total_usuarios?: number | string | null;
+  cuorum_requerido?: string | null;
+  cuorum_constatado?: string | null;
+  resolucion_acta_anterior?: string | null;
+  varios_desarrollo?: string | null;
+  varios_resolucion?: string | null;
+  genera_multa_ausencia?: boolean | number | null;
+  valor_multa?: number | string | null;
 }
 
+/** Punto del orden del día con lo tratado y resuelto. */
+export interface PuntoActa {
+  orden?: number;
+  punto_tratar?: string | null;
+  tratado?: string | null;
+  desarrollo?: string | null;
+  resolucion?: string | null;
+}
+
+export interface AsistenciaResumen {
+  estado?: string;
+  total: number | string;
+}
+
+const MESES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+const LINEA = '____________________________________________________________________________';
+const AZUL: [number, number, number] = [43, 84, 126];
+const ROJO: [number, number, number] = [220, 38, 38];
+
+/** Día, mes (en letras) y año del evento según el calendario de Ecuador. */
+function fechaDelEvento(evento: EventoDocumento) {
+  const [anio, mes, dia] = diaEnEcuador(evento.fecha || new Date())
+    .split('-')
+    .map(Number);
+  const mesNombre = MESES[mes - 1] ?? '__________';
+  return { anio, dia, mesNombre, texto: `${dia} de ${mesNombre} de ${anio}` };
+}
+
+const hora = (valor: string | null | undefined, porDefecto: string) =>
+  valor ? valor.substring(0, 5) : porDefecto;
+
+/**
+ * Escribe un documento A4 de arriba hacia abajo con salto de página automático.
+ * Reúne lo que necesitan el acta y la convocatoria: títulos, párrafos justificados, tablas y firmas.
+ */
+class Redactor {
+  private y: number;
+  private readonly ancho: number;
+  private readonly alto: number;
+
+  constructor(
+    readonly doc: jsPDF,
+    private readonly autoTable: (doc: jsPDF, opciones: object) => void,
+    private readonly margen: number,
+  ) {
+    this.y = margen;
+    this.ancho = doc.internal.pageSize.getWidth() - margen * 2;
+    this.alto = doc.internal.pageSize.getHeight();
+  }
+
+  private asegurar(espacio: number): void {
+    if (this.y + espacio > this.alto - this.margen) {
+      this.doc.addPage();
+      this.y = this.margen;
+    }
+  }
+
+  espacio(puntos: number): void {
+    this.y += puntos;
+  }
+
+  centrado(
+    texto: string,
+    tamano: number,
+    { color = [0, 0, 0] as [number, number, number], separacion = 4 } = {},
+  ): void {
+    this.asegurar(tamano);
+    this.doc
+      .setFont('helvetica', 'bold')
+      .setFontSize(tamano)
+      .setTextColor(...color);
+    this.y += tamano;
+    this.doc.text(texto, this.margen + this.ancho / 2, this.y, { align: 'center' });
+    this.y += separacion;
+    this.doc.setTextColor(0, 0, 0);
+  }
+
+  derecha(texto: string, tamano: number): void {
+    this.doc.setFont('helvetica', 'italic').setFontSize(tamano);
+    this.y += tamano;
+    this.doc.text(texto, this.margen + this.ancho, this.y, { align: 'right' });
+    this.y += 6;
+  }
+
+  seccion(texto: string): void {
+    this.asegurar(30);
+    this.y += 8;
+    this.doc
+      .setFont('helvetica', 'bold')
+      .setFontSize(11)
+      .setTextColor(...AZUL);
+    this.y += 11;
+    this.doc.text(texto, this.margen, this.y);
+    this.doc.setTextColor(0, 0, 0);
+    this.y += 5;
+  }
+
+  parrafo(
+    texto: string,
+    {
+      negrita = false,
+      sangria = 0,
+      tamano = 10,
+      color = [0, 0, 0] as [number, number, number],
+    } = {},
+  ): void {
+    this.doc
+      .setFont('helvetica', negrita ? 'bold' : 'normal')
+      .setFontSize(tamano)
+      .setTextColor(...color);
+    const lineas: string[] = this.doc.splitTextToSize(texto, this.ancho - sangria);
+    const altoLinea = tamano * 1.2;
+    for (const linea of lineas) {
+      this.asegurar(altoLinea);
+      this.y += altoLinea;
+      this.doc.text(linea, this.margen + sangria, this.y);
+    }
+    this.y += 4;
+    this.doc.setTextColor(0, 0, 0);
+  }
+
+  tabla(filas: [string, string][], anchoEtiqueta = 130): void {
+    this.autoTable(this.doc, {
+      startY: this.y + 4,
+      body: filas,
+      theme: 'grid',
+      margin: { left: this.margen, right: this.margen },
+      styles: { fontSize: 10, textColor: [0, 0, 0], lineColor: [85, 85, 85], lineWidth: 0.5 },
+      columnStyles: { 0: { cellWidth: anchoEtiqueta, fontStyle: 'bold' } },
+    });
+    this.y =
+      ((this.doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
+        this.y) + 12;
+  }
+
+  /** Dos bloques de firma lado a lado: línea, nombre y cargos. */
+  firmas(bloques: string[][]): void {
+    this.asegurar(90);
+    this.y += 40;
+    const columna = this.ancho / bloques.length;
+    bloques.forEach((lineas, i) => {
+      const x = this.margen + columna * i + columna / 2;
+      let y = this.y;
+      this.doc
+        .setFont('helvetica', 'normal')
+        .setFontSize(10)
+        .text('__________________________________', x, y, { align: 'center' });
+      lineas.forEach((texto, j) => {
+        y += 12;
+        this.doc
+          .setFont('helvetica', j < 2 ? 'bold' : 'normal')
+          .setFontSize(j < 2 ? 10 : 9)
+          .text(texto, x, y, { align: 'center' });
+      });
+    });
+    this.y += 12 * (Math.max(...bloques.map((b) => b.length)) + 1);
+  }
+}
+
+/** Genera el acta y la convocatoria de los eventos en PDF con jsPDF (la misma librería de los comprobantes). */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ActasService {
   private readonly notify = inject(NotificationService);
+  private readonly cargarJsPdf = inject(CARGADOR_JSPDF);
 
-  /** Genera y descarga el documento; informa si no se pudo cargar el generador de PDF. */
-  private async descargar(documento: unknown, nombre: string): Promise<void> {
+  /** Crea el documento con `escribir`, lo descarga e informa si no se pudo cargar el generador de PDF. */
+  private async generar(
+    nombre: string,
+    margen: number,
+    escribir: (r: Redactor) => void,
+  ): Promise<void> {
     try {
-      (await cargarPdfMake()).createPdf(documento).download(nombre);
+      const { jsPDF, autoTable } = await this.cargarJsPdf();
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      escribir(
+        new Redactor(doc, autoTable as unknown as (doc: jsPDF, opciones: object) => void, margen),
+      );
+      doc.save(nombre);
     } catch (error) {
       console.error('No se pudo generar el PDF:', error);
       this.notify.error('No se pudo generar el PDF. Verifique su conexión e intente de nuevo.');
@@ -45,453 +231,168 @@ export class ActasService {
   }
 
   /**
-   * Generar y descargar el PDF oficial de un acta de asamblea finalizada
-   * @param evento Detalle del evento (título, fecha, lugar, presidente, secretario, etc.)
-   * @param puntos Array de puntos tratados {orden, punto_tratar, tratado, resolucion}
-   * @param asistenciaStats Opcional: Estadísticas de asistencia
+   * Genera y descarga el acta oficial de una asamblea.
+   * @param evento detalle del evento (título, fecha, lugar, presidente, secretario…)
+   * @param puntos puntos del orden del día con lo tratado y resuelto
+   * @param asistenciaStats resumen de asistencia por estado (opcional)
    */
-  generarActaPDF(evento: any, puntos: any[] = [], asistenciaStats?: any[]): Promise<void> {
-    const fechaObj = aFecha(evento.fecha) ?? new Date();
-    // Prevenir desfasaje UTC
-    const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
-    const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
-    const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();
-    const anio = dateParts.length === 3 ? parseInt(dateParts[0], 10) : fechaObj.getFullYear();
+  generarActaPDF(
+    evento: EventoDocumento,
+    puntos: PuntoActa[] = [],
+    asistenciaStats?: AsistenciaResumen[],
+  ): Promise<void> {
+    const { anio, dia, mesNombre, texto: fechaTexto } = fechaDelEvento(evento);
+    const horaInicio = hora(evento.hora_inicio, '________');
+    const horaClausura = evento.hora_fin
+      ? evento.hora_fin.substring(0, 5)
+      : evento.hora_clausura || '________';
+    const extraordinaria =
+      (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase() === 'EXTRAORDINARIA';
 
-    const meses = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    ];
-    const mesNombre = meses[mesIdx] || '__________';
-    const fechaTexto = `${dia} de ${mesNombre} de ${anio}`;
-
-    const horaInicio = evento.hora_inicio ? evento.hora_inicio.substring(0, 5) : '________';
-    const horaClausura = evento.hora_fin ? evento.hora_fin.substring(0, 5) : (evento.hora_clausura || '________');
-    const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
-
-    // Stats de Asistencia
-    let presentesCount = evento.usuarios_presentes || '______';
-    let totalUsuariosCount = evento.total_usuarios || '______';
-    if (asistenciaStats && Array.isArray(asistenciaStats)) {
-      const presObj = asistenciaStats.find(s => (s.estado || '').toUpperCase() === 'PRESENTE');
-      if (presObj) presentesCount = presObj.total;
-      const totalSum = asistenciaStats.reduce((acc, curr) => acc + (parseInt(curr.total, 10) || 0), 0);
-      if (totalSum > 0) totalUsuariosCount = totalSum;
+    let presentes: number | string = evento.usuarios_presentes || '______';
+    let totalUsuarios: number | string = evento.total_usuarios || '______';
+    if (asistenciaStats?.length) {
+      const presentesFila = asistenciaStats.find(
+        (s) => (s.estado || '').toUpperCase() === 'PRESENTE',
+      );
+      if (presentesFila) presentes = presentesFila.total;
+      const suma = asistenciaStats.reduce(
+        (acc, s) => acc + (Number.parseInt(String(s.total), 10) || 0),
+        0,
+      );
+      if (suma > 0) totalUsuarios = suma;
     }
 
     const presidente = evento.presidente || '____________________________________________';
     const secretario = evento.secretario || '____________________________________________';
     const lugar = evento.lugar || 'sede de la organización';
     const sector = evento.sector || 'Patate Centro';
-    const numeroActa = evento.numero_acta || `N.º ${evento.id || '___'}`;
+    const textoDe = (p: PuntoActa | undefined) => (p?.punto_tratar || '').toLowerCase();
 
-    const contenido: any[] = [];
+    return this.generar(`Acta_Asamblea_${evento.fecha}.pdf`, 40, (r) => {
+      r.centrado('JUNTA DE RIEGO LA JONES - PATATE', 14, { separacion: 2 });
+      r.centrado('ACTA DE ASAMBLEA GENERAL', 13, { separacion: 2 });
+      r.centrado(extraordinaria ? 'EXTRAORDINARIA' : 'ORDINARIA', 11, { separacion: 4 });
+      r.tabla([
+        ['Acta N.º', evento.numero_acta || `N.º ${evento.id ?? '___'}`],
+        ['Fecha', fechaTexto],
+        ['Hora de inicio', `${horaInicio} hs`],
+      ]);
 
-    // --- ENCABEZADO PRINCIPAL ---
-    contenido.push({ text: 'JUNTA DE RIEGO LA JONES - PATATE', style: 'docTitle' });
-    contenido.push({ text: 'ACTA DE ASAMBLEA GENERAL', style: 'docSubtitle' });
-    contenido.push({
-      text: subtipo === 'EXTRAORDINARIA' ? 'EXTRAORDINARIA' : 'ORDINARIA',
-      style: 'docType'
-    });
+      r.parrafo(
+        `En la sede de la organización ubicada en ${lugar}, sector ${sector}, cantón Patate, provincia de Tungurahua, a los ${dia} días del mes de ${mesNombre} del año ${anio}, siendo las ${horaInicio} horas, se reúnen los usuarios de la Junta de Riego La Jones - Patate, previa convocatoria realizada de conformidad con las disposiciones correspondientes, con el objeto de celebrar la Asamblea General ${extraordinaria ? 'Extraordinaria' : 'Ordinaria'}.`,
+      );
 
-    // --- TABLA DE METADATOS INICIAL ---
-    contenido.push({
-      margin: [0, 10, 0, 15],
-      table: {
-        widths: [130, '*'],
-        body: [
-          [{ text: 'Acta N.º', bold: true }, { text: numeroActa }],
-          [{ text: 'Fecha', bold: true }, { text: fechaTexto }],
-          [{ text: 'Hora de inicio', bold: true }, { text: `${horaInicio} hs` }]
-        ]
-      },
-      layout: {
-        hLineWidth: () => 0.5,
-        vLineWidth: () => 0.5,
-        hLineColor: () => '#555555',
-        vLineColor: () => '#555555'
+      r.seccion('INSTALACIÓN DE LA ASAMBLEA');
+      r.parrafo(
+        `Preside la Asamblea el señor ${presidente}, Presidente de la Junta de Riego La Jones - Patate, y actúa como Secretario/a el/la señor/a ${secretario}.`,
+      );
+      r.parrafo('El señor Presidente da la bienvenida a los usuarios presentes.');
+
+      r.seccion('Punto 1. CONSTATACIÓN DEL CUÓRUM');
+      r.parrafo(
+        `El/la Secretario/a procede a constatar la asistencia de los usuarios convocados, mediante las firmas constantes en las hojas de asistencia, verificándose la presencia de ${presentes} usuarios de un total de ${totalUsuarios} usuarios registrados.`,
+      );
+      r.parrafo(`Usuarios presentes: ${presentes}`, { sangria: 10 });
+      r.parrafo(
+        `Cuórum requerido: ${evento.cuorum_requerido || '50% + 1 de los usuarios registrados'}`,
+        { sangria: 10 },
+      );
+      r.parrafo(
+        `Cuórum constatado: ${evento.cuorum_constatado || (presentes !== '______' ? 'Existe cuórum reglamentario' : '______________________________')}`,
+        { sangria: 10 },
+      );
+      r.parrafo(
+        'Una vez cumplidos los requisitos correspondientes, se declara instalada la Asamblea.',
+      );
+
+      r.seccion('Punto 2. LECTURA Y APROBACIÓN DEL ACTA ANTERIOR');
+      r.parrafo(
+        'El/la Secretario/a procede a dar lectura al acta de la Asamblea General anterior. Una vez concluida la lectura, el señor Presidente pone el acta a consideración de los usuarios presentes.',
+      );
+      const punto2 = puntos.find((p) => p.orden === 2 || textoDe(p).includes('acta anterior'));
+      r.parrafo('Resolución:', { negrita: true });
+      r.parrafo(
+        punto2?.resolucion ||
+          evento.resolucion_acta_anterior ||
+          'El acta de la asamblea anterior es aprobada sin observaciones por la unanimidad de los usuarios presentes.',
+      );
+
+      const dinamicos = puntos.filter(
+        (p) =>
+          !['cuórum', 'cuorum', 'acta anterior', 'varios'].some((clave) =>
+            textoDe(p).includes(clave),
+          ),
+      );
+      let numero = 3;
+      for (const p of dinamicos) {
+        r.seccion(`PUNTO ${numero}. ${(p.punto_tratar || '').toUpperCase()}`);
+        r.parrafo('Desarrollo:', { negrita: true });
+        r.parrafo(p.tratado || p.desarrollo || LINEA);
+        r.parrafo('Resolución / Resoluciones:', { negrita: true });
+        r.parrafo(p.resolucion || LINEA);
+        numero++;
       }
-    });
 
-    // --- TEXTO INTRODUCTORIO ---
-    contenido.push({
-      text: `En la sede de la organización ubicada en ${lugar}, sector ${sector}, cantón Patate, provincia de Tungurahua, a los ${dia} días del mes de ${mesNombre} del año ${anio}, siendo las ${horaInicio} horas, se reúnen los usuarios de la Junta de Riego La Jones - Patate, previa convocatoria realizada de conformidad con las disposiciones correspondientes, con el objeto de celebrar la Asamblea General ${subtipo === 'EXTRAORDINARIA' ? 'Extraordinaria' : 'Ordinaria'}.\n\n`,
-      style: 'paragraph'
-    });
+      const varios = puntos.find((p) => textoDe(p).includes('varios'));
+      r.seccion(`PUNTO ${numero}. VARIOS`);
+      r.parrafo('Durante este punto, los usuarios presentan los siguientes asuntos:');
+      r.parrafo(varios?.tratado || evento.varios_desarrollo || LINEA);
+      r.parrafo('Resoluciones / Acuerdos:', { negrita: true });
+      r.parrafo(varios?.resolucion || evento.varios_resolucion || LINEA);
 
-    // --- INSTALACIÓN DE LA ASAMBLEA ---
-    contenido.push({ text: 'INSTALACIÓN DE LA ASAMBLEA', style: 'sectionTitle' });
-    contenido.push({
-      text: `Preside la Asamblea el señor ${presidente}, Presidente de la Junta de Riego La Jones - Patate, y actúa como Secretario/a el/la señor/a ${secretario}.\n`,
-      style: 'paragraph'
-    });
-    contenido.push({ text: 'El señor Presidente da la bienvenida a los usuarios presentes.\n\n', style: 'paragraph' });
+      r.seccion('CLAUSURA');
+      r.parrafo(
+        `Una vez tratados todos los puntos constantes en el orden del día, y no habiendo más asuntos que tratar, el señor Presidente agradece la presencia y participación de los usuarios y declara clausurada la Asamblea General a las ${horaClausura} horas del día ${fechaTexto}.`,
+      );
+      r.parrafo('Para constancia de lo actuado, se suscribe la presente acta.');
 
-    // --- PUNTO 1. CONSTATACIÓN DEL CUÓRUM ---
-    contenido.push({ text: 'Punto 1. CONSTATACIÓN DEL CUÓRUM', style: 'sectionTitle' });
-    contenido.push({
-      text: `El/la Secretario/a procede a constatar la asistencia de los usuarios convocados, mediante las firmas constantes en las hojas de asistencia de los sectores: Patate Viejo, La Merced y San Javier, verificándose la presencia de ${presentesCount} usuarios de un total de ${totalUsuariosCount} usuarios registrados.\n`,
-      style: 'paragraph'
+      r.firmas([
+        [`Sr. ${presidente}`, 'PRESIDENTE', 'Junta de Riego La Jones - Patate'],
+        [`Sr./Sra. ${secretario}`, 'SECRETARIO/A', 'Junta de Riego La Jones - Patate'],
+      ]);
+      r.parrafo('Anexos: Hojas de asistencia de los sectores.', { negrita: true, color: AZUL });
     });
-    contenido.push({ text: `Usuarios presentes: ${presentesCount}`, style: 'bulletField' });
-    contenido.push({ text: `Cuórum requerido: ${evento.cuorum_requerido || '50% + 1 de los usuarios registrados'}`, style: 'bulletField' });
-    contenido.push({ text: `Cuórum constatado: ${evento.cuorum_constatado || (presentesCount !== '______' ? 'Existe cuórum reglamentario' : '______________________________')}\n`, style: 'bulletField' });
-    contenido.push({ text: 'Una vez cumplidos los requisitos correspondientes, se declara instalada la Asamblea.\n\n', style: 'paragraph' });
+  }
 
-    // --- PUNTO 2. LECTURA Y APROBACIÓN DEL ACTA ANTERIOR ---
-    contenido.push({ text: 'Punto 2. LECTURA Y APROBACIÓN DEL ACTA ANTERIOR', style: 'sectionTitle' });
-    contenido.push({
-      text: 'El/la Secretario/a procede a dar lectura al acta de la Asamblea General anterior.\nUna vez concluida la lectura, el señor Presidente pone el acta a consideration de los usuarios presentes.\n',
-      style: 'paragraph'
-    });
-    contenido.push({ text: 'Resolución:', bold: true, margin: [0, 2, 0, 2] });
-    const punto2Obj = puntos.find(p => p.orden === 2 || (p.punto_tratar && p.punto_tratar.toLowerCase().includes('acta anterior')));
-    contenido.push({
-      text: punto2Obj?.resolucion || evento.resolucion_acta_anterior || 'El acta de la asamblea anterior es aprobada sin observaciones por la unanimidad de los usuarios presentes.',
-      style: 'paragraphContent'
-    });
-    contenido.push({ text: '\nEl acta es aprobada / aprobada con observaciones por los usuarios presentes.\n\n', style: 'paragraph' });
+  /** Genera y descarga la convocatoria oficial a una asamblea o minga. */
+  generarConvocatoriaPDF(evento: EventoDocumento): Promise<void> {
+    const { texto: fechaTexto } = fechaDelEvento(evento);
+    const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
+    const multa = evento.genera_multa_ausencia
+      ? `* IMPORTANTE: La inasistencia no justificada estará sujeta a la sanción/multa establecida de $${Number(evento.valor_multa || 10).toFixed(2)}.`
+      : 'Asistencia obligatoria para los miembros registrados.';
 
-    // --- PUNTOS RESTANTES DEL ORDEN DEL DÍA (3, 4, 5...) ---
-    const puntosDinamicos = puntos.filter(p => {
-      const lower = (p.punto_tratar || '').toLowerCase();
-      return !lower.includes('cuórum') && !lower.includes('cuorum') && !lower.includes('acta anterior') && !lower.includes('varios');
-    });
-
-    let numPunto = 3;
-    puntosDinamicos.forEach((p) => {
-      contenido.push({
-        text: `PUNTO ${numPunto}. ${(p.punto_tratar || '').toUpperCase()}`,
-        style: 'sectionTitle'
+    return this.generar(`Convocatoria_${evento.tipo}_${evento.fecha}.pdf`, 45, (r) => {
+      r.centrado('JUNTA DE RIEGO LA JONES - PATATE', 14, { separacion: 2 });
+      r.centrado(`CONVOCATORIA OFICIAL A ${evento.tipo || 'EVENTO'}`, 12, {
+        color: [30, 58, 138],
+        separacion: 4,
       });
-      contenido.push({ text: 'Desarrollo:', bold: true, margin: [0, 2, 0, 2] });
-      contenido.push({ text: p.tratado || p.desarrollo || '____________________________________________________________________________', style: 'paragraphContent' });
-      contenido.push({ text: '\nResolución / Resoluciones:', bold: true, margin: [0, 2, 0, 2] });
-      contenido.push({ text: p.resolucion || '____________________________________________________________________________\n\n', style: 'paragraphContent' });
-      numPunto++;
+      r.derecha(`Patate, ${fechaTexto}`, 10);
+      r.espacio(10);
+      r.parrafo(
+        'Se convoca con carácter de OBLIGATORIO a todos los usuarios pertenecientes a la Junta de Riego La Jones - Patate a participar en el siguiente evento programado:',
+      );
+      r.tabla([
+        ['Asunto / Título:', evento.titulo || 'Asamblea General'],
+        ['Tipo de Evento:', `${evento.tipo || 'ASAMBLEA'} (${subtipo})`],
+        ['Fecha de Realización:', fechaTexto],
+        ['Hora de Inicio:', `${hora(evento.hora_inicio, '09:00')} hs`],
+        ['Lugar:', evento.lugar || 'Casa Comunal Junta La Jones'],
+        ['Descripción:', evento.descripcion || 'Sin descripción adicional.'],
+      ]);
+      r.parrafo(multa, {
+        negrita: true,
+        tamano: 9,
+        color: evento.genera_multa_ausencia ? ROJO : [0, 0, 0],
+      });
+      r.espacio(14);
+      r.parrafo('Atentamente,');
+      r.firmas([
+        ['PRESIDENTE DE LA JUNTA', '', 'Junta de Riego La Jones - Patate'],
+        ['SECRETARIO/A', '', 'Junta de Riego La Jones - Patate'],
+      ]);
     });
-
-    // --- PUNTO VARIOS ---
-    const puntoVarios = puntos.find(p => (p.punto_tratar || '').toLowerCase().includes('varios'));
-    contenido.push({ text: `PUNTO ${numPunto}. VARIOS`, style: 'sectionTitle' });
-    contenido.push({ text: 'Durante este punto, los usuarios presentan los siguientes asuntos:', style: 'paragraph' });
-    contenido.push({
-      text: puntoVarios?.tratado || evento.varios_desarrollo || '____________________________________________________________________________',
-      style: 'paragraphContent'
-    });
-    contenido.push({ text: '\nResoluciones / Acuerdos:', bold: true, margin: [0, 4, 0, 2] });
-    contenido.push({
-      text: puntoVarios?.resolucion || evento.varios_resolucion || '____________________________________________________________________________\n\n',
-      style: 'paragraphContent'
-    });
-
-    // --- CLAUSURA ---
-    contenido.push({ text: 'CLAUSURA', style: 'sectionTitle' });
-    contenido.push({
-      text: `Una vez tratados todos los puntos constantes en el orden del día, y no habiendo más asuntos que tratar, el señor Presidente agradece la presencia y participación de los usuarios y declara clausurada la Asamblea General a las ${horaClausura} horas del día ${fechaTexto}.\n\nPara constancia de lo actuado, se suscribe la presente acta.\n\n`,
-      style: 'paragraph'
-    });
-
-    // --- FIRMAS EN CAJA ---
-    contenido.push({
-      margin: [0, 15, 0, 15],
-      table: {
-        widths: ['50%', '50%'],
-        body: [
-          [
-            {
-              margin: [10, 15, 10, 15],
-              stack: [
-                { text: '\n\n__________________________________', alignment: 'center' },
-                { text: `Sr. ${presidente}`, bold: true, alignment: 'center' },
-                { text: 'PRESIDENTE', bold: true, alignment: 'center' },
-                { text: 'Junta de Riego La Jones - Patate', alignment: 'center' }
-              ]
-            },
-            {
-              margin: [10, 15, 10, 15],
-              stack: [
-                { text: '\n\n__________________________________', alignment: 'center' },
-                { text: `Sr./Sra. ${secretario}`, bold: true, alignment: 'center' },
-                { text: 'SECRETARIO/A', bold: true, alignment: 'center' },
-                { text: 'Junta de Riego La Jones - Patate', alignment: 'center' }
-              ]
-            }
-          ]
-        ]
-      },
-      layout: {
-        hLineWidth: () => 0.5,
-        vLineWidth: () => 0.5,
-        hLineColor: () => '#555555',
-        vLineColor: () => '#555555'
-      }
-    });
-
-    // --- ANEXOS ---
-    contenido.push({
-      text: 'Anexos: Hojas de asistencia de los sectores: Patate Viejo, La Merced y San Javier.',
-      style: 'anexosText'
-    });
-
-    const docDefinition = {
-      pageSize: 'A4',
-      pageMargins: [40, 45, 40, 45],
-      content: contenido,
-      styles: {
-        docTitle: {
-          fontSize: 14,
-          bold: true,
-          alignment: 'center',
-          margin: [0, 0, 0, 2]
-        },
-        docSubtitle: {
-          fontSize: 13,
-          bold: true,
-          alignment: 'center',
-          margin: [0, 0, 0, 2]
-        },
-        docType: {
-          fontSize: 11,
-          bold: true,
-          alignment: 'center',
-          margin: [0, 0, 0, 10]
-        },
-        sectionTitle: {
-          fontSize: 11,
-          bold: true,
-          color: '#2B547E',
-          margin: [0, 8, 0, 4]
-        },
-        paragraph: {
-          fontSize: 10,
-          alignment: 'justify',
-          lineHeight: 1.2
-        },
-        paragraphContent: {
-          fontSize: 10,
-          margin: [0, 0, 0, 5],
-          alignment: 'justify',
-          lineHeight: 1.2
-        },
-        bulletField: {
-          fontSize: 10,
-          margin: [10, 2, 0, 2]
-        },
-        anexosText: {
-          fontSize: 10,
-          bold: true,
-          color: '#2B547E',
-          margin: [0, 10, 0, 0]
-        }
-      },
-      defaultStyle: {
-        fontSize: 10
-      }
-    };
-
-    return this.descargar(docDefinition, `Acta_Asamblea_${evento.fecha}.pdf`);
-  }
-
-  /**
-   * Generar y descargar el PDF de Convocatoria a una Asamblea o Minga
-   */
-  generarConvocatoriaPDF(evento: any): Promise<void> {
-    const fechaObj = aFecha(evento.fecha) ?? new Date();
-    const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
-    const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
-    const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();
-    const anio = dateParts.length === 3 ? parseInt(dateParts[0], 10) : fechaObj.getFullYear();
-
-    const meses = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    ];
-    const mesNombre = meses[mesIdx] || '__________';
-    const fechaTexto = `${dia} de ${mesNombre} de ${anio}`;
-    const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
-
-    const docDefinition = {
-      pageSize: 'A4',
-      pageMargins: [45, 50, 45, 50],
-      content: [
-        { text: 'JUNTA DE RIEGO LA JONES - PATATE', style: 'docTitle' },
-        { text: `CONVOCATORIA OFICIAL A ${evento.tipo || 'EVENTO'}`, style: 'docSubtitle' },
-        { text: `Patate, ${fechaTexto}`, style: 'docDate' },
-        { text: '\n' },
-        {
-          text: `Se convoca con carácter de OBLIGATORIO a todos los usuarios y comuneros pertenecientes a la Junta de Riego La Jones - Patate a participar en el siguiente evento programado:\n\n`,
-          style: 'paragraph'
-        },
-        {
-          table: {
-            widths: [130, '*'],
-            body: [
-              [{ text: 'Asunto / Título:', bold: true }, { text: evento.titulo || 'Asamblea General' }],
-              [{ text: 'Tipo de Evento:', bold: true }, { text: `${evento.tipo || 'ASAMBLEA'} (${subtipo})` }],
-              [{ text: 'Fecha de Realización:', bold: true }, { text: fechaTexto }],
-              [{ text: 'Hora de Inicio:', bold: true }, { text: `${evento.hora_inicio ? evento.hora_inicio.substring(0, 5) : '09:00'} hs` }],
-              [{ text: 'Lugar:', bold: true }, { text: evento.lugar || 'Casa Comunal Junta La Jones' }],
-              [{ text: 'Descripción:', bold: true }, { text: evento.descripcion || 'Sin descripción adicional.' }]
-            ]
-          },
-          margin: [0, 5, 0, 15],
-          layout: {
-            hLineWidth: () => 0.5,
-            vLineWidth: () => 0.5,
-            hLineColor: () => '#555555',
-            vLineColor: () => '#555555'
-          }
-        },
-        {
-          text: evento.genera_multa_ausencia ? `* IMPORTANTE: La inasistencia no justificada estará sujeta a la sanción/multa establecida de $${evento.valor_multa || '10.00'}.` : 'Asistencia obligatoria para los miembros registrados.',
-          style: 'warningText'
-        },
-        { text: '\n\nAtentamente,\n\n\n' },
-        {
-          columns: [
-            {
-              stack: [
-                { text: '__________________________________', alignment: 'center' },
-                { text: 'PRESIDENTE DE LA JUNTA', bold: true, alignment: 'center' },
-                { text: 'Junta de Riego La Jones - Patate', alignment: 'center', fontSize: 9 }
-              ]
-            },
-            {
-              stack: [
-                { text: '__________________________________', alignment: 'center' },
-                { text: 'SECRETARIO/A', bold: true, alignment: 'center' },
-                { text: 'Junta de Riego La Jones - Patate', alignment: 'center', fontSize: 9 }
-              ]
-            }
-          ]
-        }
-      ],
-      styles: {
-        docTitle: { fontSize: 14, bold: true, alignment: 'center', margin: [0, 0, 0, 2] },
-        docSubtitle: { fontSize: 12, bold: true, alignment: 'center', color: '#1E3A8A', margin: [0, 0, 0, 5] },
-        docDate: { fontSize: 10, alignment: 'right', italic: true, margin: [0, 0, 0, 10] },
-        paragraph: { fontSize: 10, alignment: 'justify', lineHeight: 1.2 },
-        warningText: { fontSize: 9, bold: true, color: '#DC2626', margin: [0, 5, 0, 15] }
-      }
-    };
-
-    return this.descargar(docDefinition, `Convocatoria_${evento.tipo}_${evento.fecha}.pdf`);
-  }
-
-  /**
-   * Generar y descargar el PDF oficial de un acta por punto tratado específico o tema nuevo (F07)
-   */
-  generarActaPuntoPDF(evento: any, punto: any, asistenciaStats?: any[]): Promise<void> {
-    const fechaObj = aFecha(evento.fecha) ?? new Date();
-    const dateParts = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0].split('-') : [];
-    const dia = dateParts.length === 3 ? parseInt(dateParts[2], 10) : fechaObj.getDate();
-    const mesIdx = dateParts.length === 3 ? parseInt(dateParts[1], 10) - 1 : fechaObj.getMonth();
-    const anio = dateParts.length === 3 ? parseInt(dateParts[0], 10) : fechaObj.getFullYear();
-
-    const meses = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    ];
-    const mesNombre = meses[mesIdx] || '__________';
-    const fechaTexto = `${dia} de ${mesNombre} de ${anio}`;
-
-    const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
-    const presidente = evento.presidente || 'Carlos Eduardo Moreta Salazar';
-    const secretario = evento.secretario || 'Secretaría General de la Junta';
-    const lugar = evento.lugar || 'Casa Comunal Junta La Jones';
-
-    // Stats de Asistencia
-    let presentesCount = evento.asistentes || '______';
-    let totalUsuariosCount = evento.totalComuneros || '______';
-    if (asistenciaStats && Array.isArray(asistenciaStats)) {
-      const presObj = asistenciaStats.find(s => (s.estado || '').toUpperCase() === 'PRESENTE');
-      if (presObj) presentesCount = presObj.total;
-      const totalSum = asistenciaStats.reduce((acc, curr) => acc + (parseInt(curr.total, 10) || 0), 0);
-      if (totalSum > 0) totalUsuariosCount = totalSum;
-    }
-
-    const numeroPunto = punto.orden || 1;
-    const tituloPunto = (punto.titulo_acta || punto.punto_tratar || `PUNTO Nº ${numeroPunto}`).toUpperCase();
-
-    const docDefinition = {
-      pageSize: 'A4',
-      pageMargins: [45, 45, 45, 45],
-      content: [
-        { text: 'JUNTA DE AGUA Y RIEGO LA JONES - PATATE', style: 'docTitle' },
-        { text: 'ACTA RESOLUTIVA DE PUNTO TRATADO EN ASAMBLEA', style: 'docSubtitle' },
-        { text: `ASAMBLEA GENERAL ${subtipo}`, style: 'docType' },
-        {
-          margin: [0, 8, 0, 12],
-          table: {
-            widths: [130, '*'],
-            body: [
-              [{ text: 'Punto del Orden del Día:', bold: true }, { text: `Punto Nº ${numeroPunto}` }],
-              [{ text: 'Tema / Asunto:', bold: true }, { text: tituloPunto }],
-              [{ text: 'Fecha de Tratamiento:', bold: true }, { text: fechaTexto }],
-              [{ text: 'Lugar de Sesión:', bold: true }, { text: lugar }],
-              [{ text: 'Cuórum Registrado:', bold: true }, { text: `${presentesCount} comuneros presentes de ${totalUsuariosCount} registrados` }],
-              [{ text: 'Estado del Acta:', bold: true }, { text: punto.estado_acta || 'APROBADA' }]
-            ]
-          },
-          layout: {
-            hLineWidth: () => 0.5,
-            vLineWidth: () => 0.5,
-            hLineColor: () => '#555555',
-            vLineColor: () => '#555555'
-          }
-        },
-        { text: '1. ANTECEDENTES Y DELIBERACIÓN', style: 'sectionTitle' },
-        {
-          text: punto.tratado || 'Durante la sesión de la Asamblea General, se procedió a la exposición y análisis exhaustivo de este punto por parte de la directiva y los comuneros presentes, debatiéndose los alcances y necesidades correspondientes para la comunidad.',
-          style: 'paragraph'
-        },
-        { text: '\n2. RESOLUCIONES Y ACUERDOS APROBADOS', style: 'sectionTitle' },
-        {
-          text: punto.resolucion || 'Habiéndose sometido a consideración de la Asamblea General de Usuarios, y contando con el voto favorable de la mayoría requerida, se resolvió aprobar las medidas y disposiciones expuestas para el beneficio del sistema de riego.',
-          style: 'resolucionBox'
-        },
-        { text: '\n3. RESPONSABLES DE LA EJECUCIÓN', style: 'sectionTitle' },
-        {
-          text: punto.responsables ? `Se designa y responsabiliza de dar cumplimiento a lo acordado a: ${punto.responsables}.` : 'La Directiva de la Junta de Riego y las comisiones pertinentes quedan facultadas para la ejecución de lo resuelto.',
-          style: 'paragraph'
-        },
-        { text: '\n\nPara constancia y fe de lo resuelto, suscriben la presente acta en unidad de acto:\n\n\n' },
-        {
-          columns: [
-            {
-              stack: [
-                { text: '__________________________________', alignment: 'center' },
-                { text: `Sr. ${presidente}`, bold: true, alignment: 'center' },
-                { text: 'PRESIDENTE', bold: true, alignment: 'center' },
-                { text: 'Junta de Riego La Jones', alignment: 'center', fontSize: 9 }
-              ]
-            },
-            {
-              stack: [
-                { text: '__________________________________', alignment: 'center' },
-                { text: `Sr./Sra. ${secretario}`, bold: true, alignment: 'center' },
-                { text: 'SECRETARIO/A', bold: true, alignment: 'center' },
-                { text: 'Junta de Riego La Jones', alignment: 'center', fontSize: 9 }
-              ]
-            }
-          ]
-        }
-      ],
-      styles: {
-        docTitle: { fontSize: 13, bold: true, alignment: 'center', margin: [0, 0, 0, 2] },
-        docSubtitle: { fontSize: 12, bold: true, alignment: 'center', color: '#0369a1', margin: [0, 0, 0, 2] },
-        docType: { fontSize: 10, bold: true, alignment: 'center', color: '#475569', margin: [0, 0, 0, 6] },
-        sectionTitle: { fontSize: 11, bold: true, color: '#0284c7', margin: [0, 6, 0, 3] },
-        paragraph: { fontSize: 10, alignment: 'justify', lineHeight: 1.25 },
-        resolucionBox: { fontSize: 10, bold: true, color: '#0f172a', alignment: 'justify', lineHeight: 1.25, margin: [5, 2, 5, 2] }
-      }
-    };
-
-    const cleanFecha = typeof evento.fecha === 'string' ? evento.fecha.split('T')[0] : 'fecha';
-    return this.descargar(docDefinition, `Acta_Punto_${numeroPunto}_${cleanFecha}.pdf`);
   }
 }
-
-

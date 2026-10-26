@@ -26,10 +26,10 @@ El modelo relacional está compuesto por **22 tablas** normalizadas y distribuid
 
 | Dominio Funcional | Tablas Integrantes | Descripción Breve |
 | :--- | :--- | :--- |
-| **Identidad y Acceso** | `personas`, `roles`, `cuentas` | Gestión de comuneros, credenciales de acceso y perfiles (`ADMIN`, `USUARIO`). |
+| **Identidad y Acceso** | `personas`, `roles`, `cuentas` | Gestión de usuarios, credenciales de acceso y perfiles (`ADMIN`, `USUARIO`). |
 | **Lotes y Riego** | `sectores`, `lotes`, `persona_lotes`, `turnos_riego` | Terrenos por sector, ubicación aproximada (lat/lng/radio de error), titularidad y horarios de agua. |
 | **Asambleas, Mingas, Asistencia y Comunicación** | `eventos`, `puntos_asamblea`, `asistencias`, `documentos_evento`, `envios_convocatoria` | Eventos, orden del día/resoluciones, control de asistencia, documentos PDF y convocatorias publicadas en el grupo de WhatsApp. |
-| **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos y gastos operativos. |
+| **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `obligacion_anual_agua`, `pago_anual_agua`, `pago_anual_agua_detalle`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos, pago único anual de agua y gastos operativos. |
 | **Inventario** | `bienes_inventario` | Registro y control físico de bienes y herramientas de la Junta. |
 | **Planificación Anual** | `planes_anuales`, `actividades_plan` | Plan operativo anual de trabajo y seguimiento de cumplimiento de actividades. |
 | **Auditoría** | `auditoria` | Bitácora imborrable de operaciones realizadas por los administradores. |
@@ -195,21 +195,23 @@ erDiagram
 - **`sectores`**: Sectores geográficos de riego en Patate.
 - **`lotes`**: Terrenos con coordenadas de latitud/longitud aproximadas y radio de error en metros.
 - **`persona_lotes`**: Soporta propiedad, copropiedad o representación de lotes.
-- **`turnos_riego`**: Asigna horarios de riego a un comunero (`persona_id`), distinguiendo turnos `REGULAR` o `ADICIONAL`. Emplea desactivación lógica (`estado_turno_riego: INACTIVO`) para preservar la trazabilidad histórica de asignaciones y evitar la pérdida de antecedentes en fiscalizaciones.
+- **`turnos_riego`**: Asigna horarios semanales de riego a un usuario (`persona_id`) y su lote; dos turnos del mismo sector no pueden cruzarse. Los turnos adicionales se eliminaron (migración 018). Emplea desactivación lógica (`estado_turno_riego: INACTIVO`) para preservar la trazabilidad histórica de asignaciones y evitar la pérdida de antecedentes en fiscalizaciones.
 
 ### 4.3. Dominio de Asambleas, Mingas, Asistencia y Comunicación
 - **`eventos`**: Asambleas y Mingas (`tipo`). Define si genera multa por ausencia (`genera_multa_ausencia`).
 - **`puntos_asamblea`**: Puntos a tratar, lo tratado y resoluciones tomadas.
-- **`asistencias`**: Asistencia por comunero (`PENDIENTE`, `PRESENTE`, `AUSENTE`, `JUSTIFICADO`). Permite adjuntar opcionalmente comprobantes o certificados de justificación física (`archivo_justificacion_url`, `archivo_justificacion_nombre`), manteniendo editable el registro aun cuando el evento se encuentre en estado `REALIZADO` y conciliando automáticamente las multas generadas.
+- **`asistencias`**: Asistencia por usuario (`PENDIENTE`, `PRESENTE`, `AUSENTE`, `JUSTIFICADO`). Permite adjuntar opcionalmente comprobantes o certificados de justificación física (`archivo_justificacion_url`, `archivo_justificacion_nombre`), manteniendo editable el registro aun cuando el evento se encuentre en estado `REALIZADO` y conciliando automáticamente las multas generadas.
 - **`documentos_evento`**: Gestión de PDFs generados (`GENERADO`) y versiones firmadas manualmente (`FIRMADO`).
 - **`envios_convocatoria`**: Envíos de convocatorias. Las publicadas en el grupo de WhatsApp tienen `persona_id` NULL, el id del grupo en `destino`, su nombre en `destino_nombre`, `estado` (`ENVIADO`, o `ERROR` con `detalle_error`) y `enviado_por_cuenta_id`.
 - **`configuracion`**: Ajustes clave/valor (`whatsapp.grupo_id`, `whatsapp.grupo_nombre`) con la cuenta que los cambió por última vez.
 
 ### 4.4. Dominio Financiero
-- **`conceptos_cobro`**: Catálogo (`AGUA_MENSUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`).
+- **`conceptos_cobro`**: Catálogo (`AGUA_ANUAL`, `MULTA_ASAMBLEA`, `MULTA_MINGA`, `CUOTA_EXTRAORDINARIA`). `AGUA_MENSUAL` y `TURNO_ADICIONAL` quedan inactivos desde las migraciones 018 y 019: el agua se cobra una vez al año en `obligacion_anual_agua`.
 - **`tarifas`**: Valores con vigencia desde/hasta.
 - **`obligaciones`**: Deudas pendientes. **No se permiten pagos parciales**. Origen `MANUAL` o `AUTOMATICA`.
-- **`pagos` & `pago_detalles`**: Un pago liquida una o varias obligaciones completas (`obligacion_id` es `UNIQUE` en `pago_detalles`).
+- **`pagos` & `pago_detalles`**: Un pago liquida una o varias obligaciones completas. La regla "una obligación se paga una sola vez" la garantiza su estado `PENDIENTE`/`PAGADA` bajo bloqueo, no un índice único (el historial de pagos anulados se conserva).
+- **`obligacion_anual_agua`**: Una obligación por usuario y año (`UNIQUE persona_id, periodo_anio`) con estado `PENDIENTE`/`PAGADO`.
+- **`pago_anual_agua` & `pago_anual_agua_detalle`**: Cabecera y detalle del pago anual (solo `TRANSFERENCIA` o `DEPOSITO`, con `registrado_por_cuenta_id`). Una obligación anual solo puede figurar en un detalle (`UNIQUE`). Sus importes se suman al balance, al historial y al panel junto con `pagos`.
 - **`proveedores` & `egresos`**: Registro de compras y gastos de la Junta.
 
 ### 4.5. Dominio de Inventario, Planificación y Auditoría
@@ -227,7 +229,6 @@ erDiagram
 | **`estado_cuenta`** | `ACTIVA`, `BLOQUEADA`, `INACTIVA` |
 | **`estado_miembro_directiva`** | `VIGENTE`, `FINALIZADO` |
 | **`tipo_relacion_lote`** | `PROPIETARIO`, `COPROPIETARIO`, `REPRESENTANTE` |
-| **`tipo_turno_riego`** | `REGULAR`, `ADICIONAL` |
 | **`estado_turno_riego`** | `ACTIVO`, `INACTIVO` |
 | **`tipo_evento`** | `ASAMBLEA`, `MINGA` |
 | **`estado_evento`** | `BORRADOR`, `CONVOCADO`, `REALIZADO`, `CANCELADO` |

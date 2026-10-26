@@ -23,6 +23,9 @@ function escribirListaAsistencia(destino, evento, personas) {
   doc.text(`Evento: ${evento.titulo}`);
   doc.text(`Fecha: ${fechaLegible(evento.fecha)} | Hora: ${String(evento.hora_inicio || '08:00').slice(0, 5)}`);
   doc.text(`Lugar: ${evento.lugar || 'Casa Comunal Junta La Jones'}`);
+  if (evento.tipo === 'MINGA') {
+    doc.text(`Sector: ${evento.sector_nombre || 'Todos los sectores'}`);
+  }
   if (evento.genera_multa_ausencia) doc.text(`Multa por inasistencia: $${Number(evento.valor_multa).toFixed(2)}`);
   doc.moveDown(0.8);
 
@@ -31,7 +34,7 @@ function escribirListaAsistencia(destino, evento, personas) {
     doc.fillColor('#0f172a').fontSize(9);
     doc.text('Nº', 45, y + 5, { width: 30 });
     doc.text('Cédula', 80, y + 5, { width: 80 });
-    doc.text('Apellidos y Nombres (Comunero)', 165, y + 5, { width: 220 });
+    doc.text('Apellidos y Nombres (Usuario)', 165, y + 5, { width: 220 });
     doc.text('Firma / Huella', 390, y + 5, { width: 150 });
     return y + 22;
   };

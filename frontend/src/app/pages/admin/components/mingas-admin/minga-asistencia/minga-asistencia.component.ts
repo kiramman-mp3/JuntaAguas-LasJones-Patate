@@ -1,4 +1,13 @@
-import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject, input, output } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
@@ -10,12 +19,12 @@ import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { AsistenciaMinga, EstadoAsistenciaMinga, Minga } from '../minga.model';
 
-/** Registro de asistencia de una minga. Los comuneros sin marcar quedan pendientes. */
+/** Registro de asistencia de una minga. Los usuarios sin marcar quedan pendientes. */
 @Component({
   selector: 'app-minga-asistencia',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, ModalComponent, SkeletonComponent, EmptyStateComponent],
-  templateUrl: './minga-asistencia.component.html'
+  templateUrl: './minga-asistencia.component.html',
 })
 export class MingaAsistenciaComponent implements OnInit {
   private admin = inject(AdminService);
@@ -39,7 +48,9 @@ export class MingaAsistenciaComponent implements OnInit {
 
   get filtradas() {
     const texto = this.buscar.trim().toLocaleLowerCase('es');
-    return this.asistencias.filter((a) => `${a.nombre} ${a.cedula}`.toLocaleLowerCase('es').includes(texto));
+    return this.asistencias.filter((a) =>
+      `${a.nombre} ${a.cedula}`.toLocaleLowerCase('es').includes(texto),
+    );
   }
 
   get totalPresentes() {
@@ -47,7 +58,10 @@ export class MingaAsistenciaComponent implements OnInit {
   }
 
   get totalPendientes() {
-    return this.asistencias.filter((a) => a.estado === 'PENDIENTE' || (a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())).length;
+    return this.asistencias.filter(
+      (a) =>
+        a.estado === 'PENDIENTE' || (a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim()),
+    ).length;
   }
 
   get cerrada() {
@@ -70,7 +84,7 @@ export class MingaAsistenciaComponent implements OnInit {
         finalize(() => {
           this.cargando = false;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: (res) => {
@@ -78,7 +92,9 @@ export class MingaAsistenciaComponent implements OnInit {
           this.disponible = true;
           this.asistencias = res.data || [];
         },
-        error: () => (this.error = 'No se pudieron cargar los comuneros y sus asistencias. Intente nuevamente.')
+        error: () =>
+          (this.error =
+            'No se pudieron cargar los usuarios y sus asistencias. Intente nuevamente.'),
       });
   }
 
@@ -96,7 +112,9 @@ export class MingaAsistenciaComponent implements OnInit {
   marcarPresentes(): void {
     if (this.cerrada) return;
     // Respeta las justificaciones previamente registradas.
-    this.filtradas.filter((a) => a.estado !== 'JUSTIFICADO').forEach((a) => (a.estado = 'PRESENTE'));
+    this.filtradas
+      .filter((a) => a.estado !== 'JUSTIFICADO')
+      .forEach((a) => (a.estado = 'PRESENTE'));
   }
 
   adjuntarArchivo(a: AsistenciaMinga, event: Event): void {
@@ -108,35 +126,37 @@ export class MingaAsistenciaComponent implements OnInit {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'Archivo demasiado pesado',
-        mensaje: 'El archivo adjunto no puede superar los 10 MB.'
+        mensaje: 'El archivo adjunto no puede superar los 10 MB.',
       });
       input.value = '';
       return;
     }
 
     this.subiendoPersonaId = a.persona_id;
-    this.admin.subirJustificanteAsistenciaMinga(this.minga().id, a.persona_id, file, a.motivo_justificacion).subscribe({
-      next: (res: any) => {
-        this.subiendoPersonaId = null;
-        a.archivo_justificacion_url = res.url;
-        a.archivo_justificacion_nombre = res.nombre;
-        if (!a.motivo_justificacion?.trim()) {
-          a.motivo_justificacion = 'Inasistencia justificada con documento';
-        }
-        input.value = '';
-        this.cdr.markForCheck();
-      },
-      error: (err: any) => {
-        this.subiendoPersonaId = null;
-        input.value = '';
-        this.cdr.markForCheck();
-        this.dialog.aviso({
-          tipo: 'DANGER',
-          titulo: 'Error al subir archivo',
-          mensaje: err?.error?.message || 'No se pudo subir el archivo de justificación.'
-        });
-      }
-    });
+    this.admin
+      .subirJustificanteAsistenciaMinga(this.minga().id, a.persona_id, file, a.motivo_justificacion)
+      .subscribe({
+        next: (res) => {
+          this.subiendoPersonaId = null;
+          a.archivo_justificacion_url = res.url;
+          a.archivo_justificacion_nombre = res.nombre;
+          if (!a.motivo_justificacion?.trim()) {
+            a.motivo_justificacion = 'Inasistencia justificada con documento';
+          }
+          input.value = '';
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.subiendoPersonaId = null;
+          input.value = '';
+          this.cdr.markForCheck();
+          this.dialog.aviso({
+            tipo: 'DANGER',
+            titulo: 'Error al subir archivo',
+            mensaje: err?.error?.message || 'No se pudo subir el archivo de justificación.',
+          });
+        },
+      });
   }
 
   descargarArchivo(a: AsistenciaMinga): void {
@@ -145,7 +165,8 @@ export class MingaAsistenciaComponent implements OnInit {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : 'jpg';
+        const ext =
+          blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : 'jpg';
         link.download = a.archivo_justificacion_nombre || `Justificante_${a.cedula}.${ext}`;
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -154,9 +175,9 @@ export class MingaAsistenciaComponent implements OnInit {
         this.dialog.aviso({
           tipo: 'DANGER',
           titulo: 'Error de descarga',
-          mensaje: 'No se pudo descargar el archivo de justificación.'
+          mensaje: 'No se pudo descargar el archivo de justificación.',
         });
-      }
+      },
     });
   }
 
@@ -166,7 +187,7 @@ export class MingaAsistenciaComponent implements OnInit {
       titulo: '¿Quitar archivo adjunto?',
       mensaje: `¿Desea eliminar el archivo "${a.archivo_justificacion_nombre || 'justificativo'}"? La justificación escrita se mantendrá.`,
       textoConfirmar: 'Quitar archivo',
-      textoCancelar: 'Cancelar'
+      textoCancelar: 'Cancelar',
     });
     if (!seguro) return;
 
@@ -176,20 +197,29 @@ export class MingaAsistenciaComponent implements OnInit {
         a.archivo_justificacion_nombre = null;
         this.cdr.markForCheck();
       },
-      error: (err: any) => {
+      error: (err: HttpErrorResponse) => {
         this.dialog.aviso({
           tipo: 'DANGER',
           titulo: 'Error al quitar archivo',
-          mensaje: err?.error?.message || 'No se pudo eliminar el archivo adjunto.'
+          mensaje: err?.error?.message || 'No se pudo eliminar el archivo adjunto.',
         });
-      }
+      },
     });
   }
 
   guardar(): void {
-    if (this.cerrada || this.guardando || this.cargando || !this.disponible || !this.asistencias.length) return;
+    if (
+      this.cerrada ||
+      this.guardando ||
+      this.cargando ||
+      !this.disponible ||
+      !this.asistencias.length
+    )
+      return;
     this.error = '';
-    if (this.asistencias.some((a) => a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())) {
+    if (
+      this.asistencias.some((a) => a.estado === 'JUSTIFICADO' && !a.motivo_justificacion.trim())
+    ) {
       this.error = 'Escriba el motivo de cada ausencia justificada.';
       return;
     }
@@ -197,8 +227,10 @@ export class MingaAsistenciaComponent implements OnInit {
       persona_id: a.persona_id,
       estado: a.estado,
       motivo_justificacion: a.estado === 'JUSTIFICADO' ? a.motivo_justificacion.trim() : null,
-      archivo_justificacion_url: a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_url ?? null) : null,
-      archivo_justificacion_nombre: a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_nombre ?? null) : null
+      archivo_justificacion_url:
+        a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_url ?? null) : null,
+      archivo_justificacion_nombre:
+        a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_nombre ?? null) : null,
     }));
     this.guardando = true;
     this.admin
@@ -208,11 +240,13 @@ export class MingaAsistenciaComponent implements OnInit {
         finalize(() => {
           this.guardando = false;
           this.cdr.markForCheck();
-        })
+        }),
       )
       .subscribe({
         next: () => this.guardada.emit(),
-        error: (err) => (this.error = err.error?.message || 'No se pudo guardar la asistencia. Intente nuevamente.')
+        error: (err) =>
+          (this.error =
+            err.error?.message || 'No se pudo guardar la asistencia. Intente nuevamente.'),
       });
   }
 }

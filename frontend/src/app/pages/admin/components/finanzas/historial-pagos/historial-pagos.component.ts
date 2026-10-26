@@ -5,17 +5,20 @@ import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { ComprobantePdfService } from '../../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { DialogService } from '../../../../../core/services/dialog.service';
-import { EstadoPago, Pago, etiquetaPeriodo, numeroRecibo } from '../../../../../core/models/finanzas';
-import { formatearFecha, hoyEnEcuador } from '../../../../../core/utils/fechas';
+import { EstadoPago, Recibo, TipoRecibo } from '../../../../../core/models/finanzas';
+import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 
-/** Historial de pagos de un rango de fechas: reimprimir comprobantes y anular pagos. */
+/**
+ * Historial de recibos de un rango de fechas: los pagos de multas y otros cobros (REC-…) y los
+ * pagos anuales de agua (REC-AGUA-…). Permite reimprimir el comprobante y anular cualquiera de ellos.
+ */
 @Component({
   selector: 'app-historial-pagos',
   standalone: true,
   imports: [FormsModule, FechaLocalPipe, TitleCasePipe, ComprobanteBancarioComponent],
-  templateUrl: './historial-pagos.component.html'
+  templateUrl: './historial-pagos.component.html',
 })
 export class HistorialPagosComponent {
   private finanzas = inject(FinanzasService);
@@ -28,27 +31,51 @@ export class HistorialPagosComponent {
   readonly desde = signal(`${hoyEnEcuador().slice(0, 7)}-01`);
   readonly hasta = signal(hoyEnEcuador());
   readonly estado = signal<EstadoPago | ''>('');
+  readonly tipo = signal<TipoRecibo | ''>('');
   readonly texto = signal('');
-  readonly pagos = signal<Pago[]>([]);
+  readonly recibos = signal<Recibo[]>([]);
   readonly cargando = signal(false);
   readonly error = signal('');
-  readonly procesandoId = signal<number | null>(null);
-
-  readonly numeroRecibo = numeroRecibo;
+  /** Clave (tipo-id) del recibo que se está imprimiendo o anulando. */
+  readonly procesando = signal<string | null>(null);
 
   readonly filtrados = computed(() => {
     const t = this.texto().trim().toLowerCase();
-    if (!t) return this.pagos();
-    return this.pagos().filter((p) =>
-      [p.comunero_nombre, p.cedula, numeroRecibo(p.id), p.referencia, p.registrado_por_usuario]
-        .some((campo) => String(campo ?? '').toLowerCase().includes(t)));
+    const tipo = this.tipo();
+    return this.recibos().filter(
+      (r) =>
+        (!tipo || r.tipo === tipo) &&
+        (!t ||
+          [
+            r.usuario_nombre,
+            r.cedula,
+            r.numero,
+            r.referencia,
+            r.registrado_por_usuario,
+            r.detalle,
+          ].some((campo) =>
+            String(campo ?? '')
+              .toLowerCase()
+              .includes(t),
+          )),
+    );
   });
 
-  readonly totalVigente = computed(() =>
-    Math.round(this.filtrados().filter((p) => p.estado === 'VIGENTE').reduce((s, p) => s + Number(p.valor_total), 0) * 100) / 100);
+  readonly totalVigente = computed(
+    () =>
+      Math.round(
+        this.filtrados()
+          .filter((r) => r.estado === 'VIGENTE')
+          .reduce((s, r) => s + r.valor_total, 0) * 100,
+      ) / 100,
+  );
 
   constructor() {
     this.cargar();
+  }
+
+  clave(r: Recibo): string {
+    return `${r.tipo}-${r.id}`;
   }
 
   cargar(): void {
@@ -58,80 +85,70 @@ export class HistorialPagosComponent {
     }
     this.cargando.set(true);
     this.error.set('');
-    this.finanzas.getPagos({ desde: this.desde() || undefined, hasta: this.hasta() || undefined, estado: this.estado() || undefined }).subscribe({
-      next: (res) => {
-        this.pagos.set(res.data.map((p) => ({ ...p, valor_total: Number(p.valor_total) })));
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        this.error.set(err.error?.message || 'No se pudo cargar el historial de pagos.');
-      }
-    });
+    this.finanzas
+      .getRecibos({
+        desde: this.desde() || undefined,
+        hasta: this.hasta() || undefined,
+        estado: this.estado() || undefined,
+      })
+      .subscribe({
+        next: (recibos) => {
+          this.recibos.set(recibos);
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.error.set(err.error?.message || 'No se pudo cargar el historial de pagos.');
+        },
+      });
   }
 
-  reimprimir(pago: Pago): void {
-    if (this.procesandoId()) return;
-    this.procesandoId.set(pago.id);
-    this.finanzas.getPago(pago.id).subscribe({
-      next: async (res) => {
-        const p = res.data;
+  reimprimir(recibo: Recibo): void {
+    if (this.procesando()) return;
+    this.procesando.set(this.clave(recibo));
+    this.finanzas.getComprobante(recibo.tipo, recibo.id).subscribe({
+      next: async (comprobante) => {
         try {
-          await this.pdf.imprimir({
-            numero: numeroRecibo(p.id),
-            fechaHora: formatearFecha(p.fecha_pago, 'conHora'),
-            comuneroNombre: p.comunero_nombre,
-            comuneroCedula: p.cedula,
-            lineas: p.detalles.map((d) => ({
-              concepto: d.concepto_nombre,
-              periodo: etiquetaPeriodo(d.periodo_anio, d.periodo_mes),
-              valor: Number(d.valor_pagado)
-            })),
-            total: Number(p.valor_total),
-            metodo: p.metodo,
-            referencia: p.referencia,
-            observacion: p.estado === 'ANULADO' ? `Anulado: ${p.motivo_anulacion ?? ''}` : p.observacion,
-            anulado: p.estado === 'ANULADO'
-          });
+          await this.pdf.imprimir(comprobante);
         } catch {
           this.notify.error('No se pudo generar el comprobante.');
         } finally {
-          this.procesandoId.set(null);
+          this.procesando.set(null);
         }
       },
       error: (err) => {
-        this.procesandoId.set(null);
+        this.procesando.set(null);
         this.notify.error(err.error?.message || 'No se pudo consultar el pago.');
-      }
+      },
     });
   }
 
-  async anular(pago: Pago): Promise<void> {
-    if (pago.estado === 'ANULADO' || this.procesandoId()) return;
+  async anular(recibo: Recibo): Promise<void> {
+    if (recibo.estado === 'ANULADO' || this.procesando()) return;
     const motivo = await this.dialog.solicitar({
-      titulo: `Anular ${numeroRecibo(pago.id)}`,
-      mensaje: `El pago de ${pago.comunero_nombre} por $${Number(pago.valor_total).toFixed(2)} quedará anulado y sus obligaciones volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
+      titulo: `Anular ${recibo.numero}`,
+      mensaje: `El pago de ${recibo.usuario_nombre} por $${recibo.valor_total.toFixed(2)} quedará anulado y sus obligaciones volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
       placeholder: 'Motivo de la anulación',
       textoConfirmar: 'Anular pago',
-      tipo: 'DANGER'
+      tipo: 'DANGER',
     });
     if (!motivo?.trim()) return;
     if (motivo.trim().length < 5) {
       this.notify.warning('Describa el motivo con al menos 5 caracteres.');
       return;
     }
-    this.procesandoId.set(pago.id);
-    this.finanzas.anularPago(pago.id, motivo.trim()).subscribe({
+    this.procesando.set(this.clave(recibo));
+    this.finanzas.anularRecibo(recibo.tipo, recibo.id, motivo.trim()).subscribe({
       next: (res) => {
-        this.procesandoId.set(null);
+        this.procesando.set(null);
         this.notify.success(res.message || 'Pago anulado.');
         this.cargar();
         this.anulado.emit();
       },
       error: (err) => {
-        this.procesandoId.set(null);
+        this.procesando.set(null);
         this.notify.error(err.error?.message || 'No se pudo anular el pago.');
-      }
+      },
     });
   }
 }

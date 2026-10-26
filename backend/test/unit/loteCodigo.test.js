@@ -8,6 +8,12 @@ test('conserva el prefijo fijo del sector y normaliza letras', () => {
   assert.equal(codigos.prefijoSector('Sector Las Jones Alto'), 'LJA');
   assert.equal(codigos.prefijoSector('La Jones Baja'), 'LJB');
   assert.equal(codigos.prefijoSector('Sector Las Jones Centro'), 'LJC');
+  assert.equal(codigos.prefijoSector('Patate Viejo'), 'PTV');
+  assert.equal(codigos.prefijoSector('Sector Patate Viejo'), 'PTV');
+  assert.equal(codigos.prefijoSector('La Merced'), 'LMC');
+  assert.equal(codigos.prefijoSector('Sector La Merced'), 'LMC');
+  assert.equal(codigos.prefijoSector('San Javier'), 'SJV');
+  assert.equal(codigos.prefijoSector('Sector San Javier'), 'SJV');
   assert.equal(codigos.prefijoSector('El Tambo'), 'ELT');
   assert.equal(codigos.prefijoSector('Los Cuyes'), 'LCU');
   assert.equal(codigos.prefijoSector('Sector Árbol del río'), 'ADR');

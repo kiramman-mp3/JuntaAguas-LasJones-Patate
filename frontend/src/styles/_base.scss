@@ -31,7 +31,9 @@ body {
   text-rendering: optimizeLegibility;
   min-height: 100vh;
   /* El cambio de tema se suaviza en lugar de un salto brusco de brillo. */
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* --- Jerarquía: tamaño, peso y tracking cambian juntos --- */
@@ -97,12 +99,24 @@ h5 {
 }
 
 /* --- Utilidades --- */
-.text-muted { color: var(--text-muted); }
-.text-primary { color: var(--color-primary); }
-.text-success { color: var(--color-success); }
-.text-danger { color: var(--color-danger); }
-.text-center { text-align: center; }
-.text-main { color: var(--text-main); }
+.text-muted {
+  color: var(--text-muted);
+}
+.text-primary {
+  color: var(--color-primary);
+}
+.text-success {
+  color: var(--color-success);
+}
+.text-danger {
+  color: var(--color-danger);
+}
+.text-center {
+  text-align: center;
+}
+.text-main {
+  color: var(--text-main);
+}
 
 .money {
   font-variant-numeric: tabular-nums;

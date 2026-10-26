@@ -30,17 +30,20 @@ export class DocumentosService {
   /** Devuelve un mensaje si el archivo no es aceptable, o null si es válido. */
   validarArchivo(archivo: File | undefined | null): string | null {
     if (!archivo || archivo.size === 0) return 'Seleccione un archivo.';
-    if (!TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) return 'Seleccione un PDF o una imagen JPG/PNG.';
+    if (!TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type))
+      return 'Seleccione un PDF o una imagen JPG/PNG.';
     if (archivo.size > TAMANO_MAXIMO_ARCHIVO) return 'El archivo supera los 10 MB permitidos.';
     return null;
   }
 
-  subir(eventoId: number, tipo: TipoDocumento, archivo: File, puntoId?: number): Observable<DocumentoSubido> {
+  subir(eventoId: number, tipo: TipoDocumento, archivo: File): Observable<DocumentoSubido> {
     const datos = new FormData();
     datos.append('tipo', tipo);
-    if (puntoId) datos.append('punto_id', String(puntoId));
     datos.append('archivo', archivo, archivo.name);
-    return this.http.post<DocumentoSubido>(`${environment.apiUrl}/eventos/${eventoId}/documentos`, datos);
+    return this.http.post<DocumentoSubido>(
+      `${environment.apiUrl}/eventos/${eventoId}/documentos`,
+      datos,
+    );
   }
 
   /** URL absoluta de un documento guardado ('/uploads/...' o ya absoluta). */
@@ -71,11 +74,14 @@ export class DocumentosService {
       },
       error: (error: HttpErrorResponse) => {
         ventana?.close();
-        const mensaje = error.status === 404 ? 'El documento ya no está disponible.'
-          : error.status === 401 || error.status === 403 ? 'No tiene permiso para ver este documento.'
-          : 'No se pudo abrir el documento.';
+        const mensaje =
+          error.status === 404
+            ? 'El documento ya no está disponible.'
+            : error.status === 401 || error.status === 403
+              ? 'No tiene permiso para ver este documento.'
+              : 'No se pudo abrir el documento.';
         this.notify.error(mensaje);
-      }
+      },
     });
   }
 }

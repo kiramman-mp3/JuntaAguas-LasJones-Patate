@@ -12,11 +12,11 @@ const { z } = s;
 const numeroOpcional = (esquema) => z.preprocess((v) => (v === '' || v === null ? undefined : v), esquema.optional()).transform((v) => v ?? null);
 const relacion = z.enum(['PROPIETARIO', 'REPRESENTANTE']).default('PROPIETARIO');
 
-/** Titularidad única: un lote pertenece al 100 % a un solo comunero. Se rechaza cualquier otro valor en lugar de ignorarlo. */
+/** Titularidad única: un lote pertenece al 100 % a un solo usuario. Se rechaza cualquier otro valor en lugar de ignorarlo. */
 const PORCENTAJE_TITULARIDAD = 100;
 const porcentajeTitularidad = z.coerce
   .number({ error: 'El porcentaje de propiedad debe ser 100.' })
-  .refine((v) => v === PORCENTAJE_TITULARIDAD, 'Un lote pertenece al 100 % a un solo comunero; no se admite propiedad compartida.')
+  .refine((v) => v === PORCENTAJE_TITULARIDAD, 'Un lote pertenece al 100 % a un solo usuario; no se admite propiedad compartida.')
   .optional();
 
 const sugerirQuery = z.object({ sector_id: z.coerce.number({ error: 'Seleccione un sector válido para sugerir el código.' }).int().positive('Seleccione un sector válido para sugerir el código.') });
@@ -62,7 +62,7 @@ const loteParam = z.object({ loteId: s.id });
 
 async function verificarPersonaActiva(conexion, personaId) {
   const [filas] = await conexion.query("SELECT id, CONCAT(nombres, ' ', apellidos) AS nombre FROM personas WHERE id = ? AND estado = 'ACTIVO'", [personaId]);
-  if (!filas.length) throw notFound('El comunero no existe o está inactivo.');
+  if (!filas.length) throw notFound('El usuario no existe o está inactivo.');
   return filas[0];
 }
 
@@ -112,7 +112,7 @@ async function createSector(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Sector creado exitosamente.', sectorId });
 }
 
-/** Lotes activos con su titular. Un comunero solo recibe los suyos. */
+/** Lotes activos con su titular. Un usuario solo recibe los suyos. */
 async function getLotes(req, res) {
   const filtros = lotesQuery.parse(req.query);
   const personaId = personaPermitida(req.user, filtros.persona_id);
@@ -208,7 +208,7 @@ async function linkPersonaLote(req, res) {
     const [previos] = await conexion.query('SELECT persona_id, tipo_relacion, fecha_desde FROM persona_lotes WHERE lote_id = ? FOR UPDATE', [loteId]);
     const anterior = previos[0] ?? null;
     if (anterior && Number(anterior.persona_id) === datos.persona_id && anterior.tipo_relacion === datos.tipo_relacion) {
-      throw badRequest('El lote ya pertenece a este comunero.');
+      throw badRequest('El lote ya pertenece a este usuario.');
     }
 
     await conexion.query('DELETE FROM persona_lotes WHERE lote_id = ?', [loteId]);
@@ -237,7 +237,7 @@ async function linkPersonaLote(req, res) {
   });
   const message = resultado.anterior
     ? `Titularidad transferida a ${resultado.nuevo.nombre}.${resultado.turnosReasignados ? ` ${resultado.turnosReasignados} turno(s) de riego pasaron al nuevo titular.` : ''}`
-    : 'Titularidad asignada correctamente. El lote ahora pertenece al comunero seleccionado.';
+    : 'Titularidad asignada correctamente. El lote ahora pertenece al usuario seleccionado.';
   return res.json({ status: 'OK', message, turnosReasignados: resultado.turnosReasignados });
 }
 

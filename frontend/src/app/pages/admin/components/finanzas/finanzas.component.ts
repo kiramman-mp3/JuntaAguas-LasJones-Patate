@@ -8,7 +8,7 @@ import { CobroCajaComponent } from './cobro-caja/cobro-caja.component';
 import { HistorialPagosComponent } from './historial-pagos/historial-pagos.component';
 import { HistorialFinancieroComponent } from './historial-financiero/historial-financiero.component';
 import { EgresosComponent } from './egresos/egresos.component';
-import { FacturacionMensualComponent } from './facturacion-mensual/facturacion-mensual.component';
+import { FacturacionAnualComponent } from './facturacion-anual/facturacion-anual.component';
 import { TarifasComponent } from './tarifas/tarifas.component';
 import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 import { GRUPOS_FINANZAS, GrupoFinanzas, SeccionFinanzas } from './grupos-finanzas';
@@ -23,8 +23,16 @@ interface Indicadores {
 @Component({
   selector: 'app-finanzas',
   standalone: true,
-  imports: [PageHeaderComponent, CobroCajaComponent, HistorialPagosComponent, EgresosComponent, HistorialFinancieroComponent, FacturacionMensualComponent, TarifasComponent],
-  templateUrl: './finanzas.component.html'
+  imports: [
+    PageHeaderComponent,
+    CobroCajaComponent,
+    HistorialPagosComponent,
+    EgresosComponent,
+    HistorialFinancieroComponent,
+    FacturacionAnualComponent,
+    TarifasComponent,
+  ],
+  templateUrl: './finanzas.component.html',
 })
 export class FinanzasComponent {
   private finanzas = inject(FinanzasService);
@@ -39,15 +47,21 @@ export class FinanzasComponent {
 
   readonly grupos = GRUPOS_FINANZAS;
 
-  readonly grupoActual = computed(() => this.grupos.find((g) => g.id === this.grupo()) ?? this.grupos[0]);
+  readonly grupoActual = computed(
+    () => this.grupos.find((g) => g.id === this.grupo()) ?? this.grupos[0],
+  );
 
   /** Una sección desconocida (o de otro apartado) muestra la primera del apartado. */
   readonly seccionActual = computed<SeccionFinanzas>(() => {
     const secciones = this.grupoActual().secciones;
     return secciones.find((s) => s.id === this.seccion())?.id ?? secciones[0].id;
   });
-  readonly indiceActual = computed(() => this.grupoActual().secciones.findIndex((s) => s.id === this.seccionActual()));
-  readonly abrirEgreso = computed(() => this.seccionActual() === 'egresos' && this.nuevo() === 'egreso');
+  readonly indiceActual = computed(() =>
+    this.grupoActual().secciones.findIndex((s) => s.id === this.seccionActual()),
+  );
+  readonly abrirEgreso = computed(
+    () => this.seccionActual() === 'egresos' && this.nuevo() === 'egreso',
+  );
 
   readonly indicadores = signal<Indicadores | null>(null);
   readonly errorIndicadores = signal(false);
@@ -76,10 +90,11 @@ export class FinanzasComponent {
     this.errorIndicadores.set(false);
     forkJoin({
       mes: this.finanzas.getBalance(`${hoy.slice(0, 7)}-01`, hoy),
-      historico: this.finanzas.getBalance()
+      historico: this.finanzas.getBalance(),
     }).subscribe({
-      next: ({ mes, historico }) => this.indicadores.set({ mes: mes.balance, historico: historico.balance }),
-      error: () => this.errorIndicadores.set(true)
+      next: ({ mes, historico }) =>
+        this.indicadores.set({ mes: mes.balance, historico: historico.balance }),
+      error: () => this.errorIndicadores.set(true),
     });
   }
 

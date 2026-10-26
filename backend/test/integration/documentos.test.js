@@ -13,7 +13,7 @@ const PDF = Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF');
 const HTML = Buffer.from('<html><script>alert(1)</script></html>');
 const DIR = path.join(process.env.UPLOADS_DIR, 'documentos');
 
-let admin, comunero;
+let admin, usuario;
 
 async function crearEvento({ estado = 'PROGRAMADO', tipo = 'ASAMBLEA' } = {}) {
   const [r] = await db.query(
@@ -33,7 +33,7 @@ const subir = (eventoId, campos, archivo = PDF, nombre = 'convocatoria firmada.p
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario();
+  usuario = await crearUsuario();
 });
 after(closeDatabase);
 
@@ -55,21 +55,27 @@ test('rechaza archivos que no son PDF o imagen aunque digan .pdf', async () => {
 test('no permite rutas en los campos del formulario (path traversal)', async () => {
   const eventoId = await crearEvento();
   const antes = fs.existsSync(DIR) ? fs.readdirSync(DIR).length : 0;
-  const punto = await subir(eventoId, { tipo: 'ACTA', punto_id: '../../../../src/controllers/x' });
-  assert.equal(punto.status, 400);
   const tipo = await subir(eventoId, { tipo: '../../x' });
   assert.equal(tipo.status, 400);
   const despues = fs.existsSync(DIR) ? fs.readdirSync(DIR).length : 0;
   assert.equal(despues, antes, 'no debe escribirse ningún archivo');
 });
 
-test('exige archivo, evento existente y un punto del mismo evento', async () => {
+test('exige archivo y evento existente', async () => {
   const eventoId = await crearEvento();
   assert.equal((await subir(eventoId, { tipo: 'ACTA' }, null)).status, 400);
   assert.equal((await subir(99999, { tipo: 'ACTA' })).status, 404);
-  const otro = await crearEvento();
-  const [p] = await db.query("INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar) VALUES (?, 1, 'Informe')", [otro]);
-  assert.equal((await subir(eventoId, { tipo: 'ACTA', punto_id: p.insertId })).status, 404);
+});
+
+test('el acta general firmada es un único documento por asamblea', async () => {
+  const eventoId = await crearEvento();
+  const primera = await subir(eventoId, { tipo: 'ACTA' });
+  assert.equal(primera.status, 200, JSON.stringify(primera.body));
+  const segunda = await subir(eventoId, { tipo: 'ACTA' });
+  assert.equal(segunda.status, 200, JSON.stringify(segunda.body));
+  const [actas] = await db.query("SELECT ruta_archivo_firmado FROM documentos_evento WHERE evento_id = ? AND tipo = 'ACTA'", [eventoId]);
+  assert.equal(actas.length, 1);
+  assert.equal(actas[0].ruta_archivo_firmado, segunda.body.url);
 });
 
 test('rechaza archivos de más de 10 MB', async () => {
@@ -105,8 +111,8 @@ test('acceso a documentos según su tipo', async () => {
 
   assert.equal((await request(app).get(convocatoriaBorrador)).status, 401);
   assert.equal((await request(app).get(acta)).status, 401);
-  assert.equal((await request(app).get(acta).set(auth(comunero))).status, 200);
-  assert.equal((await request(app).get(lista).set(auth(comunero))).status, 403);
+  assert.equal((await request(app).get(acta).set(auth(usuario))).status, 200);
+  assert.equal((await request(app).get(lista).set(auth(usuario))).status, 403);
   assert.equal((await request(app).get(lista).set(auth(admin))).status, 200);
 });
 

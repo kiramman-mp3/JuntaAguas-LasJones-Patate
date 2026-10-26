@@ -9,11 +9,11 @@ const router = express.Router();
  * /turnos:
  *   get:
  *     tags: [Turnos de Agua]
- *     summary: Turnos activos. El administrador ve todos; un comunero solo los suyos.
+ *     summary: Turnos activos. El administrador ve todos; un usuario solo los suyos.
  *     security: [{ bearerAuth: [] }]
  *   post:
  *     tags: [Turnos de Agua]
- *     summary: Asignar turno (genera cobro si es adicional)
+ *     summary: Asignar turno semanal (sin cruces de horario en el sector)
  *     security: [{ bearerAuth: [] }]
  * /turnos/{id}:
  *   put:
@@ -37,6 +37,8 @@ const router = express.Router();
  *       404:
  *         description: Turno no encontrado o ya desactivado
  */
+router.get('/cronograma', ...soloAdmin, turnoController.getCronogramaPorSectores);
+router.get('/cronograma-publico', turnoController.getCronogramaPublico);
 router.get('/', verificarToken, turnoController.getTurnos);
 router.post('/', ...soloAdmin, turnoController.createTurno);
 router.put('/:id', ...soloAdmin, turnoController.updateTurno);

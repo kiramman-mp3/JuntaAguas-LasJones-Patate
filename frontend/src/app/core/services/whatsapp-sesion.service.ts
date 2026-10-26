@@ -10,7 +10,8 @@ const EN_CURSO = ['INICIANDO', 'ESPERANDO_QR'];
 const INTERVALO_SONDEO_MS = 2000;
 
 /** Cuerpo de error de la API ({ message, codigo }) dentro de un HttpErrorResponse. */
-const cuerpoError = (err: unknown) => (err as { error?: { message?: string; codigo?: string } } | null)?.error;
+const cuerpoError = (err: unknown) =>
+  (err as { error?: { message?: string; codigo?: string } } | null)?.error;
 const mensajeDe = (err: unknown, respaldo: string): string => cuerpoError(err)?.message || respaldo;
 
 /**
@@ -54,7 +55,7 @@ export class WhatsAppSesionService implements OnDestroy {
     if (!silencioso) this.cargando.set(true);
     this.admin.getWhatsAppEstado().subscribe({
       next: (res) => this.aplicarEstado(res.data),
-      error: () => this.cargando.set(false)
+      error: () => this.cargando.set(false),
     });
   }
 
@@ -66,7 +67,7 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.cargando.set(false);
         this.notify.error(mensajeDe(err, 'No se pudo iniciar WhatsApp.'));
-      }
+      },
     });
   }
 
@@ -74,8 +75,9 @@ export class WhatsAppSesionService implements OnDestroy {
     const confirmado = await this.dialog.confirmar({
       tipo: 'DANGER',
       titulo: 'Desvincular WhatsApp',
-      mensaje: '¿Desvincular el teléfono de la Junta? Para volver a enviar convocatorias habrá que escanear un código QR nuevo.',
-      textoConfirmar: 'Desvincular'
+      mensaje:
+        '¿Desvincular el teléfono de la Junta? Para volver a enviar convocatorias habrá que escanear un código QR nuevo.',
+      textoConfirmar: 'Desvincular',
     });
     if (!confirmado) return;
     this.cargando.set(true);
@@ -87,7 +89,7 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.cargando.set(false);
         this.notify.error(mensajeDe(err, 'No se pudo cerrar la sesión de WhatsApp.'));
-      }
+      },
     });
   }
 
@@ -101,7 +103,7 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.cargandoGrupos.set(false);
         this.notify.error(mensajeDe(err, 'No se pudieron cargar los grupos de WhatsApp.'));
-      }
+      },
     });
   }
 
@@ -118,13 +120,13 @@ export class WhatsAppSesionService implements OnDestroy {
       error: (err) => {
         this.guardandoGrupo.set(false);
         this.notify.error(mensajeDe(err, 'No se pudo guardar el grupo.'));
-      }
+      },
     });
   }
 
   /**
-   * Confirma y publica la convocatoria en el grupo de WhatsApp. Si ya se había publicado,
-   * pregunta antes de repetirla; si no hay grupo elegido, abre el panel para elegirlo.
+   * Confirma y publica la convocatoria en el grupo de WhatsApp. Cada convocatoria se publica una sola vez:
+   * si ya se había publicado solo lo informa; si no hay grupo elegido, abre el panel para elegirlo.
    * @returns el resultado (con el nuevo estado del evento) o null si no se envió.
    */
   async convocar(evento: { id: number; titulo: string }): Promise<ConvocatoriaWhatsApp | null> {
@@ -135,46 +137,39 @@ export class WhatsAppSesionService implements OnDestroy {
         tipo: 'CONFIRM',
         titulo: 'Convocar por WhatsApp',
         mensaje: `¿Publicar la convocatoria de "${evento.titulo}" en el grupo de WhatsApp de la Junta?`,
-        textoConfirmar: 'Publicar convocatoria'
+        textoConfirmar: 'Publicar convocatoria',
       });
       if (!confirmado) return null;
-      return await this.enviar(evento.id, false);
+      return await this.enviar(evento.id);
     } catch (err) {
-      return await this.resolverError(evento.id, err);
+      return this.resolverError(err);
     } finally {
       this.enviandoEventoId.set(null);
     }
   }
 
-  private async enviar(eventoId: number, reenviar: boolean): Promise<ConvocatoriaWhatsApp> {
-    const res = await firstValueFrom(this.admin.enviarConvocatoriaWhatsApp(eventoId, reenviar));
+  private async enviar(eventoId: number): Promise<ConvocatoriaWhatsApp> {
+    const res = await firstValueFrom(this.admin.enviarConvocatoriaWhatsApp(eventoId));
     this.notify.success(res.message || 'Convocatoria publicada en el grupo de WhatsApp.');
     return res.data;
   }
 
-  private async resolverError(eventoId: number, err: unknown): Promise<ConvocatoriaWhatsApp | null> {
+  private resolverError(err: unknown): null {
     const codigo = cuerpoError(err)?.codigo;
     if (codigo === 'CONVOCATORIA_YA_ENVIADA') {
-      const repetir = await this.dialog.confirmar({
-        tipo: 'WARNING',
-        titulo: 'Convocatoria ya publicada',
-        mensaje: `${mensajeDe(err, 'Esta convocatoria ya se publicó.')} ¿Desea publicarla otra vez?`,
-        textoConfirmar: 'Publicar de nuevo'
-      });
-      if (!repetir) return null;
-      try {
-        return await this.enviar(eventoId, true);
-      } catch (otro) {
-        this.notify.error(mensajeDe(otro, 'No se pudo publicar la convocatoria.'));
-        return null;
-      }
+      this.notify.info(mensajeDe(err, 'Esta convocatoria ya se publicó en el grupo de WhatsApp.'));
+      return null;
     }
     if (codigo === 'GRUPO_NO_CONFIGURADO') {
-      this.notify.warning(mensajeDe(err, 'Elija primero el grupo de WhatsApp de las convocatorias.'));
+      this.notify.warning(
+        mensajeDe(err, 'Elija primero el grupo de WhatsApp de las convocatorias.'),
+      );
       this.abrir();
       return null;
     }
-    this.notify.error(mensajeDe(err, 'No se pudo publicar la convocatoria. Revise la conexión de WhatsApp.'));
+    this.notify.error(
+      mensajeDe(err, 'No se pudo publicar la convocatoria. Revise la conexión de WhatsApp.'),
+    );
     return null;
   }
 

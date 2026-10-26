@@ -8,19 +8,26 @@ import { NotificationService } from '../../../../../core/services/notification.s
 
 describe('Comprobante bancario', () => {
   function crear(existente = false) {
-    const api = { subirComprobante: vi.fn(() => of({ status: 'OK' })), descargarComprobante: vi.fn() };
+    const api = {
+      subirComprobante: vi.fn(() => of({ status: 'OK' })),
+      descargarComprobante: vi.fn(),
+    };
     const notify = { success: vi.fn(), error: vi.fn(), warning: vi.fn() };
     const dialog = { confirmar: vi.fn().mockResolvedValue(true) };
-    TestBed.configureTestingModule({ providers: [
-      { provide: FinanzasService, useValue: api }, { provide: NotificationService, useValue: notify },
-      { provide: DialogService, useValue: dialog }
-    ] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: FinanzasService, useValue: api },
+        { provide: NotificationService, useValue: notify },
+        { provide: DialogService, useValue: dialog },
+      ],
+    });
     const fixture = TestBed.createComponent(ComprobanteBancarioComponent);
     fixture.componentRef.setInput('pagoId', 42);
     fixture.componentRef.setInput('existente', existente);
     return { c: fixture.componentInstance, fixture, api, notify, dialog };
   }
-  const entrada = (file: File) => ({ files: [file], value: 'archivo' }) as unknown as HTMLInputElement;
+  const entrada = (file: File) =>
+    ({ files: [file], value: 'archivo' }) as unknown as HTMLInputElement;
   const pdf = () => new File(['%PDF-1.4'], 'banco.pdf', { type: 'application/pdf' });
 
   it('adjunta al pago registrado y permite descargar después de subir', async () => {
@@ -37,7 +44,11 @@ describe('Comprobante bancario', () => {
   it('rechaza tipos y tamaños inválidos sin enviar el archivo', async () => {
     const { c, api, notify } = crear();
     await c.subir(entrada(new File(['texto'], 'archivo.txt', { type: 'text/plain' })));
-    await c.subir(entrada(new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'grande.pdf', { type: 'application/pdf' })));
+    await c.subir(
+      entrada(
+        new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'grande.pdf', { type: 'application/pdf' }),
+      ),
+    );
     expect(api.subirComprobante).not.toHaveBeenCalled();
     expect(notify.warning).toHaveBeenCalledTimes(2);
   });

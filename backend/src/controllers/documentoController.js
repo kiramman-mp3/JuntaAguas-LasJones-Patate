@@ -3,7 +3,7 @@ const { rutaSegura, mimeDe, PREFIJO_URL } = require('../services/documentStorage
 const { notFound, unauthorized, forbidden } = require('../shared/errors');
 const { esAdmin } = require('../shared/roles');
 
-const ACCESO = Object.freeze({ PUBLICO: 'PUBLICO', COMUNEROS: 'COMUNEROS', ADMIN: 'ADMIN' });
+const ACCESO = Object.freeze({ PUBLICO: 'PUBLICO', USUARIOS: 'USUARIOS', ADMIN: 'ADMIN' });
 
 /**
  * Determina quién puede ver un documento según dónde está registrado:
@@ -18,17 +18,15 @@ async function nivelDeAcceso(url) {
      WHERE d.ruta_archivo_firmado = ? OR d.ruta_archivo_generado = ?`,
     [url, url]
   );
-  const [actas] = await db.query('SELECT id FROM puntos_asamblea WHERE acta_firmada_url = ? LIMIT 1', [url]);
 
   const niveles = documentos.map((d) => {
     if (d.tipo === 'CONVOCATORIA' && d.estado !== 'BORRADOR') return ACCESO.PUBLICO;
-    if (d.tipo === 'ACTA' || d.tipo === 'RESOLUCION') return ACCESO.COMUNEROS;
+    if (d.tipo === 'ACTA' || d.tipo === 'RESOLUCION') return ACCESO.USUARIOS;
     return ACCESO.ADMIN;
   });
-  if (actas.length) niveles.push(ACCESO.COMUNEROS);
   if (!niveles.length) return null;
   if (niveles.includes(ACCESO.PUBLICO)) return ACCESO.PUBLICO;
-  if (niveles.includes(ACCESO.COMUNEROS)) return ACCESO.COMUNEROS;
+  if (niveles.includes(ACCESO.USUARIOS)) return ACCESO.USUARIOS;
   return ACCESO.ADMIN;
 }
 

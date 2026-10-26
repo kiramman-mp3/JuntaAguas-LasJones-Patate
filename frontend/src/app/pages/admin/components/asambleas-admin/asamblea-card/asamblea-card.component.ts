@@ -19,7 +19,7 @@ export interface SubidaDocumento {
   selector: 'app-asamblea-card',
   standalone: true,
   imports: [FechaLocalPipe, MenuComponent],
-  templateUrl: './asamblea-card.component.html'
+  templateUrl: './asamblea-card.component.html',
 })
 export class AsambleaCardComponent {
   readonly asamblea = input.required<AsambleaItem>();
@@ -45,13 +45,18 @@ export class AsambleaCardComponent {
   readonly documentosAbiertos = signal(false);
 
   /** Documentos firmados de 2 (convocatoria y padrón). */
-  readonly firmados = computed(() =>
-    [this.asamblea().convocatoria_firmada_url, this.asamblea().lista_asistencia_firmada_url].filter(Boolean).length);
+  readonly firmados = computed(
+    () =>
+      [
+        this.asamblea().convocatoria_firmada_url,
+        this.asamblea().lista_asistencia_firmada_url,
+      ].filter(Boolean).length,
+  );
 
   readonly abierta = computed(() => !['CANCELADO', 'REALIZADO'].includes(this.asamblea().estado));
   readonly porcentajeAsistencia = computed(() => {
     const a = this.asamblea();
-    return a.totalComuneros ? Math.round((a.asistentes / a.totalComuneros) * 100) : 0;
+    return a.totalUsuarios ? Math.round((a.asistentes / a.totalUsuarios) * 100) : 0;
   });
 
   subir(tipo: TipoDocumentoAsamblea, input: HTMLInputElement): void {

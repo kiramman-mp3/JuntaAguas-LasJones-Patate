@@ -5,7 +5,7 @@ const ICONOS: Record<ToastTipo, string> = {
   success: 'ri-checkbox-circle-fill',
   error: 'ri-error-warning-fill',
   info: 'ri-information-fill',
-  warning: 'ri-alert-fill'
+  warning: 'ri-alert-fill',
 };
 
 /**
@@ -31,7 +31,12 @@ const ICONOS: Record<ToastTipo, string> = {
         >
           <span class="toast__icon" aria-hidden="true"><i [class]="iconos[t.tipo]"></i></span>
           <span class="toast__message">{{ t.mensaje }}</span>
-          <button type="button" class="toast__close" (click)="notificationService.cerrar(t.id)" aria-label="Cerrar notificación">
+          <button
+            type="button"
+            class="toast__close"
+            (click)="notificationService.cerrar(t.id)"
+            aria-label="Cerrar notificación"
+          >
             <i class="ri-close-line" aria-hidden="true"></i>
           </button>
         </div>
@@ -79,9 +84,18 @@ const ICONOS: Record<ToastTipo, string> = {
         font-weight: 500;
         line-height: 1.45;
       }
-      .toast--success { --tono: var(--color-success-strong); --tono-suave: var(--color-success-light); }
-      .toast--error { --tono: var(--color-danger); --tono-suave: var(--color-danger-light); }
-      .toast--warning { --tono: var(--color-warning-strong); --tono-suave: var(--color-warning-light); }
+      .toast--success {
+        --tono: var(--color-success-strong);
+        --tono-suave: var(--color-success-light);
+      }
+      .toast--error {
+        --tono: var(--color-danger);
+        --tono-suave: var(--color-danger-light);
+      }
+      .toast--warning {
+        --tono: var(--color-warning-strong);
+        --tono-suave: var(--color-warning-light);
+      }
       .toast__icon {
         display: grid;
         place-items: center;
@@ -111,7 +125,9 @@ const ICONOS: Record<ToastTipo, string> = {
         color: var(--text-muted);
         font-size: 1.05rem;
         cursor: pointer;
-        transition: background-color 0.15s ease, color 0.15s ease;
+        transition:
+          background-color 0.15s ease,
+          color 0.15s ease;
       }
       .toast__close:hover {
         background: var(--bg-surface-hover);
@@ -142,8 +158,8 @@ const ICONOS: Record<ToastTipo, string> = {
           -webkit-backdrop-filter: none;
         }
       }
-    `
-  ]
+    `,
+  ],
 })
 export class ToastContainerComponent {
   public notificationService = inject(NotificationService);

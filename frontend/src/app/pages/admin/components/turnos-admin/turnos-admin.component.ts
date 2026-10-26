@@ -7,22 +7,22 @@ import { PageHeaderComponent } from '../../../../shared/ui/page-header.component
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../shared/ui/paginador.component';
+import { SectorItem } from '../../../../core/models/api-payloads';
 import { DIAS_SEMANA, Turno, filtrarTurnos } from './turno.model';
 import { TurnosService } from './turnos.service';
 import { TurnosTablaComponent } from './turnos-tabla/turnos-tabla.component';
 import { TurnosCalendarioComponent } from './turnos-calendario/turnos-calendario.component';
+import { TurnosCronogramaComponent } from './turnos-cronograma/turnos-cronograma.component';
 import { TurnoAsignarComponent } from './turno-asignar/turno-asignar.component';
 import { TurnoEditarComponent } from './turno-editar/turno-editar.component';
 import { TurnoDetalleComponent } from './turno-detalle/turno-detalle.component';
 
-type Vista = 'TABLA' | 'CALENDARIO';
+type Vista = 'TABLA' | 'CALENDARIO' | 'CRONOGRAMA';
 const CLAVE_VISTA = 'turnos.vista';
 
 /**
- * Turnos semanales de riego. La tabla y el calendario son dos vistas de los mismos datos,
+ * Turnos semanales de riego. Tabla, calendario y cronograma por sectores son tres vistas de los mismos datos,
  * así que comparten la carga y los filtros; asignar, editar y ver detalle son componentes propios.
- * La tabla se pagina en el navegador: los filtros ya se aplican aquí y el calendario necesita todos
- * los turnos de la semana.
  */
 @Component({
   selector: 'app-turnos-admin',
@@ -35,11 +35,12 @@ const CLAVE_VISTA = 'turnos.vista';
     PaginadorComponent,
     TurnosTablaComponent,
     TurnosCalendarioComponent,
+    TurnosCronogramaComponent,
     TurnoAsignarComponent,
     TurnoEditarComponent,
-    TurnoDetalleComponent
+    TurnoDetalleComponent,
   ],
-  templateUrl: './turnos-admin.component.html'
+  templateUrl: './turnos-admin.component.html',
 })
 export class TurnosAdminComponent implements OnInit {
   private servicio = inject(TurnosService);
@@ -49,29 +50,40 @@ export class TurnosAdminComponent implements OnInit {
 
   readonly dias = DIAS_SEMANA;
   readonly turnos = signal<Turno[]>([]);
+  readonly sectores = signal<SectorItem[]>([]);
   readonly cargando = signal(true);
   readonly error = signal(false);
   readonly vista = signal<Vista>(this.vistaGuardada());
 
   readonly busqueda = signal('');
   readonly diaFiltro = signal('');
-  readonly tipoFiltro = signal('');
+  readonly sectorFiltro = signal('');
 
   readonly asignarAbierto = signal(false);
   readonly enEdicion = signal<Turno | null>(null);
   readonly enDetalle = signal<Turno | null>(null);
 
-  readonly filtrados = computed(() => filtrarTurnos(this.turnos(), { busqueda: this.busqueda(), dia: this.diaFiltro(), tipo: this.tipoFiltro() }));
-  readonly hayFiltros = computed(() => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.tipoFiltro());
+  readonly filtrados = computed(() =>
+    filtrarTurnos(this.turnos(), {
+      busqueda: this.busqueda(),
+      dia: this.diaFiltro(),
+      sector: this.sectorFiltro(),
+    }),
+  );
+  readonly hayFiltros = computed(
+    () => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.sectorFiltro(),
+  );
 
   readonly porPagina = signal(25);
   /** Vuelve a la primera página cada vez que cambia un filtro o la cantidad por página. */
   readonly pagina = linkedSignal({
-    source: () => [this.busqueda(), this.diaFiltro(), this.tipoFiltro(), this.porPagina()],
-    computation: () => 1
+    source: () => [this.busqueda(), this.diaFiltro(), this.sectorFiltro(), this.porPagina()],
+    computation: () => 1,
   });
   /** Página válida aunque la lista se acorte (por ejemplo, al eliminar el último turno de una página). */
-  readonly paginaActual = computed(() => Math.min(this.pagina(), Math.max(1, Math.ceil(this.filtrados().length / this.porPagina()))));
+  readonly paginaActual = computed(() =>
+    Math.min(this.pagina(), Math.max(1, Math.ceil(this.filtrados().length / this.porPagina()))),
+  );
   readonly turnosDeLaPagina = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.porPagina();
     return this.filtrados().slice(inicio, inicio + this.porPagina());
@@ -79,6 +91,7 @@ export class TurnosAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.cargarSectores();
   }
 
   cargar(): void {
@@ -92,8 +105,21 @@ export class TurnosAdminComponent implements OnInit {
       error: () => {
         this.error.set(true);
         this.cargando.set(false);
-      }
+      },
     });
+  }
+
+  cargarSectores(): void {
+    if (typeof this.admin?.getSectores === 'function') {
+      this.admin.getSectores().subscribe({
+        next: (res) => {
+          if (res?.data) this.sectores.set(res.data);
+        },
+        error: (err) => {
+          console.error('Error cargando sectores para turnos:', err);
+        },
+      });
+    }
   }
 
   cambiarVista(vista: Vista): void {
@@ -108,7 +134,7 @@ export class TurnosAdminComponent implements OnInit {
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.diaFiltro.set('');
-    this.tipoFiltro.set('');
+    this.sectorFiltro.set('');
   }
 
   onAsignado(): void {
@@ -131,7 +157,7 @@ export class TurnosAdminComponent implements OnInit {
       tipo: 'DANGER',
       titulo: 'Eliminar turno',
       mensaje: `¿Eliminar el turno de "${turno.usuario}" (${turno.dia} ${turno.horaInicio} – ${turno.horaFin})?`,
-      textoConfirmar: 'Eliminar'
+      textoConfirmar: 'Eliminar',
     });
     if (!confirmado) return;
     this.admin.eliminarTurno(turno.id).subscribe({
@@ -139,13 +165,14 @@ export class TurnosAdminComponent implements OnInit {
         this.turnos.update((lista) => lista.filter((t) => t.id !== turno.id));
         this.notify.success(res.message || 'Turno eliminado.');
       },
-      error: (err) => this.notify.error(err.error?.message || 'Error al eliminar el turno.')
+      error: (err) => this.notify.error(err.error?.message || 'Error al eliminar el turno.'),
     });
   }
 
   private vistaGuardada(): Vista {
     try {
-      return localStorage.getItem(CLAVE_VISTA) === 'CALENDARIO' ? 'CALENDARIO' : 'TABLA';
+      const v = localStorage.getItem(CLAVE_VISTA);
+      return v === 'CALENDARIO' ? 'CALENDARIO' : v === 'CRONOGRAMA' ? 'CRONOGRAMA' : 'TABLA';
     } catch {
       return 'TABLA';
     }

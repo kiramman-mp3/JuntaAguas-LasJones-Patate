@@ -26,8 +26,12 @@ docker compose down
 
 ## 🔐 Credenciales
 
+El contenedor solo escucha en `127.0.0.1`: no queda expuesto a la red local. Las credenciales y el
+puerto se configuran en `bd/.env` (copie `bd/.env.example`); si los cambia, use los mismos valores en
+`backend/.env`. Los valores por defecto son solo para desarrollo.
+
 - **Host:** `127.0.0.1` / `localhost`
-- **Puerto:** `3306`
+- **Puerto:** `3306` (o el valor de `MYSQL_PUERTO`, por ejemplo `3310` si ya tiene otro MySQL en el 3306)
 - **Base de Datos:** `junta_las_jones`
 - **Usuario Root:** `root`
 - **Contraseña Root:** `rootpassword`

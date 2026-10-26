@@ -1,6 +1,6 @@
 /**
  * Convocatorias de asambleas y mingas publicadas en el grupo de WhatsApp de la Junta:
- * un solo mensaje al grupo elegido en el panel, en lugar de uno por comunero.
+ * un solo mensaje al grupo elegido en el panel, en lugar de uno por usuario.
  */
 const db = require('../config/db');
 const whatsapp = require('./whatsappClient');
@@ -24,11 +24,15 @@ function textoConvocatoria(evento, puntos = []) {
     esMinga ? '📢 *CONVOCATORIA A MINGA COMUNITARIA*' : '📢 *CONVOCATORIA A ASAMBLEA GENERAL*',
     'Junta de Agua y Riego La Jones',
     '',
-    esMinga ? `📌 *Trabajo:* ${evento.titulo}` : `Se convoca a todos los comuneros a la asamblea: *${evento.titulo}*`,
+    esMinga ? `📌 *Trabajo:* ${evento.titulo}` : `Se convoca a todos los usuarios a la asamblea: *${evento.titulo}*`,
     `📅 *Fecha:* ${fechaLarga(evento.fecha)}`,
     `⏰ *Hora:* ${horario}`,
     `📍 *Lugar:* ${evento.lugar || LUGAR_POR_DEFECTO}`
   ];
+
+  if (esMinga) {
+    lineas.push(`🌱 *Sector:* ${evento.sector_nombre || 'Todos los sectores'}`);
+  }
 
   if (puntos.length) {
     lineas.push('', '*Orden del día:*', ...puntos.map((p, i) => `${i + 1}. ${recortar(p.punto_tratar.trim(), MAX_PUNTO)}`));
@@ -46,16 +50,6 @@ function textoConvocatoria(evento, puntos = []) {
   return recortar(lineas.join('\n'), MAX_TEXTO);
 }
 
-async function ultimoEnvioAlGrupo(eventoId) {
-  const [filas] = await db.query(
-    `SELECT fecha_envio, destino_nombre FROM envios_convocatoria
-     WHERE evento_id = ? AND canal = 'WHATSAPP' AND persona_id IS NULL AND estado = 'ENVIADO'
-     ORDER BY fecha_envio DESC LIMIT 1`,
-    [eventoId]
-  );
-  return filas[0] ?? null;
-}
-
 async function registrarEnvio({ eventoId, grupo, cuentaId, error = null }) {
   await db.query(
     `INSERT INTO envios_convocatoria (evento_id, persona_id, canal, destino, destino_nombre, estado, fecha_envio, detalle_error, enviado_por_cuenta_id)
@@ -65,17 +59,40 @@ async function registrarEnvio({ eventoId, grupo, cuentaId, error = null }) {
 }
 
 /**
- * Publica la convocatoria en el grupo de WhatsApp. Un evento ya convocado por este medio solo
- * se reenvía si se pide expresamente (`reenviar`). Tras enviarla, el evento pasa a CONVOCADO.
- * @returns {Promise<{ grupo: { id: string, nombre: string }, estado: string, reenvio: boolean }>}
+ * Reserva la convocatoria del evento con un UPDATE condicional: solo una petición puede conseguirla,
+ * aunque lleguen varias a la vez. Devuelve false si ya estaba publicada o en curso.
  */
-async function convocarPorWhatsApp({ eventoId, reenviar = false, cuentaId }) {
+async function reservarConvocatoria(eventoId) {
+  const [r] = await db.query(
+    'UPDATE eventos SET convocatoria_whatsapp_en = UTC_TIMESTAMP() WHERE id = ? AND convocatoria_whatsapp_en IS NULL',
+    [eventoId]
+  );
+  return r.affectedRows === 1;
+}
+
+async function liberarConvocatoria(eventoId) {
+  await db.query('UPDATE eventos SET convocatoria_whatsapp_en = NULL WHERE id = ?', [eventoId]);
+}
+
+/**
+ * Publica la convocatoria en el grupo de WhatsApp una sola vez: un evento ya convocado por este
+ * medio (o con un envío en curso) responde 409. Si WhatsApp falla, la reserva se libera para poder
+ * intentarlo de nuevo. Tras enviarla, el evento pasa a CONVOCADO.
+ * @returns {Promise<{ grupo: { id: string, nombre: string }, estado: string, estadoAnterior: string }>}
+ */
+async function convocarPorWhatsApp({ eventoId, cuentaId }) {
   const grupo = await grupoConvocatorias();
   if (!grupo) {
     throw conflict('Elija primero el grupo de WhatsApp de las convocatorias en el panel de WhatsApp.', { codigo: 'GRUPO_NO_CONFIGURADO' });
   }
 
-  const [eventos] = await db.query('SELECT * FROM eventos WHERE id = ?', [eventoId]);
+  const [eventos] = await db.query(
+    `SELECT e.*, s.nombre AS sector_nombre
+     FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
+     WHERE e.id = ?`,
+    [eventoId]
+  );
   const evento = eventos[0];
   if (!evento) throw notFound('Evento no encontrado.');
   const nombre = evento.tipo === 'MINGA' ? 'minga' : 'asamblea';
@@ -84,21 +101,21 @@ async function convocarPorWhatsApp({ eventoId, reenviar = false, cuentaId }) {
   }
   if (evento.fecha < hoy()) throw conflict(`La fecha de la ${nombre} ya pasó; no se puede convocar.`);
 
-  const previo = await ultimoEnvioAlGrupo(eventoId);
-  if (previo && !reenviar) {
-    throw conflict(`Esta convocatoria ya se publicó en el grupo "${previo.destino_nombre}".`, {
+  if (!(await reservarConvocatoria(eventoId))) {
+    const [[{ enviadaEn }]] = await db.query('SELECT convocatoria_whatsapp_en AS enviadaEn FROM eventos WHERE id = ?', [eventoId]);
+    throw conflict(`La convocatoria de esta ${nombre} ya se publicó en WhatsApp; no se envía dos veces.`, {
       codigo: 'CONVOCATORIA_YA_ENVIADA',
-      enviadaEn: previo.fecha_envio
+      enviadaEn
     });
   }
 
-  const [puntos] = evento.tipo === 'ASAMBLEA'
-    ? await db.query('SELECT punto_tratar FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden', [eventoId])
-    : [[]];
-
   try {
+    const [puntos] = evento.tipo === 'ASAMBLEA'
+      ? await db.query('SELECT punto_tratar FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden', [eventoId])
+      : [[]];
     await whatsapp.enviarAGrupo(grupo.id, textoConvocatoria(evento, puntos));
   } catch (error) {
+    await liberarConvocatoria(eventoId);
     await registrarEnvio({ eventoId, grupo, cuentaId, error: error.message });
     throw error;
   }
@@ -109,7 +126,7 @@ async function convocarPorWhatsApp({ eventoId, reenviar = false, cuentaId }) {
     await db.query("UPDATE eventos SET estado = 'CONVOCADO' WHERE id = ? AND estado IN ('BORRADOR', 'PROGRAMADO')", [eventoId]);
     estado = 'CONVOCADO';
   }
-  return { grupo, estado, estadoAnterior: evento.estado, reenvio: Boolean(previo) };
+  return { grupo, estado, estadoAnterior: evento.estado };
 }
 
 module.exports = { textoConvocatoria, convocarPorWhatsApp };

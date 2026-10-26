@@ -21,6 +21,7 @@ const crearSchema = z.object({
   lugar: textoOpcional(255),
   requiere_asistencia: z.boolean().default(true),
   genera_multa_ausencia: z.boolean().default(true),
+  sector_id: z.preprocess((v) => (v === '' || v === null || v === undefined ? null : v), z.coerce.number().int().positive().nullish()).transform((v) => v ?? null),
   // valor_multa no se recibe: se toma de la tarifa vigente del concepto de multa.
   puntos_orden_dia: z.array(z.union([
     z.string(),
@@ -36,28 +37,13 @@ const puntoSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   orden: z.coerce.number().int().min(1).max(200).optional(),
   punto_tratar: z.string().trim().max(5000).optional(),
-  titulo_acta: z.string().trim().max(255).nullish(),
   tratado: z.string().max(20000).nullish(),
-  resolucion: z.string().max(20000).nullish(),
-  responsables: z.string().trim().max(255).nullish(),
-  estado_acta: z.enum(['BORRADOR', 'APROBADA', 'FIRMADA']).optional(),
-  fecha_acta: z.string().nullish()
+  resolucion: z.string().max(20000).nullish()
 });
 const puntosSchema = z.object({ puntos: z.array(puntoSchema).max(100) });
 
-const actaPuntoSchema = z.object({
-  estado_acta: z.enum(['BORRADOR', 'APROBADA', 'FIRMADA']).optional(),
-  resolucion: z.string().max(20000).nullish(),
-  tratado: z.string().max(20000).nullish(),
-  responsables: z.string().trim().max(255).nullish(),
-  titulo_acta: z.string().trim().max(255).nullish()
-});
-
 const documentoSchema = z.object({
-  tipo: z.enum(['CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO'], { error: 'Tipo de documento inválido.' }),
-  punto_id: z.coerce.number().int().positive().optional()
+  tipo: z.enum(['CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO'], { error: 'Tipo de documento inválido.' })
 });
 
-const puntoParam = z.object({ id: z.coerce.number().int().positive(), puntoId: z.coerce.number().int().positive() });
-
-module.exports = { TIPOS, ESTADOS, listarSchema, crearSchema, puntosSchema, actaPuntoSchema, documentoSchema, puntoParam };
+module.exports = { TIPOS, ESTADOS, listarSchema, crearSchema, puntosSchema, documentoSchema };

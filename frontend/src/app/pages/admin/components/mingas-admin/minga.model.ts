@@ -7,10 +7,12 @@ export interface Minga {
   hora_inicio: string;
   lugar: string;
   estado: string;
+  sector_id?: number | null;
+  sector_nombre?: string | null;
   genera_multa_ausencia: boolean;
   valor_multa: number;
   asistentes: number;
-  totalComuneros: number;
+  totalUsuarios: number;
   lista_asistencia_firmada_url?: string;
 }
 
@@ -25,4 +27,3 @@ export interface AsistenciaMinga {
   archivo_justificacion_url?: string | null;
   archivo_justificacion_nombre?: string | null;
 }
-

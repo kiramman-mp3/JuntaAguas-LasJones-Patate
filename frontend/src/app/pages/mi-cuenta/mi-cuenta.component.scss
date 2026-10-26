@@ -55,6 +55,26 @@
       align-items: center;
       justify-content: center;
       font-size: 1.75rem;
+      flex-shrink: 0;
+    }
+
+    .user-info-text {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .user-info-actions {
+      margin-left: auto;
+
+      @media (max-width: 600px) {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 0.5rem;
+
+        .btn {
+          width: 100%;
+        }
+      }
     }
   }
 
@@ -74,17 +94,28 @@
 
 .kpi-card--danger {
   border-left: 5px solid var(--color-danger);
-  .kpi-card__icon { background: #fee2e2; color: var(--color-danger); }
-  .kpi-card__value { color: var(--color-danger); }
+  .kpi-card__icon {
+    background: #fee2e2;
+    color: var(--color-danger);
+  }
+  .kpi-card__value {
+    color: var(--color-danger);
+  }
 }
 
 .kpi-card--success {
   border-left: 5px solid var(--color-success);
-  .kpi-card__icon { background: #d1fae5; color: var(--color-success); }
-  .kpi-card__value { color: var(--color-success); }
+  .kpi-card__icon {
+    background: #d1fae5;
+    color: var(--color-success);
+  }
+  .kpi-card__value {
+    color: var(--color-success);
+  }
 }
 
-.success-empty-card, .error-card {
+.success-empty-card,
+.error-card {
   text-align: center;
   padding: 3rem 2rem;
 
@@ -129,6 +160,45 @@
       font-size: 0.9rem;
     }
   }
+}
+
+/* Estilos para Comprobantes y Recibos de Pago */
+.card__header--flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recibo-numero {
+  font-family: var(--font-mono, monospace);
+  color: var(--color-primary);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.pago-ref {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.pago-monto {
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.pago-acciones {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mt-4 {
+  margin-top: 1.25rem;
 }
 
 /* La animación .spin ahora es global (styles.scss) */

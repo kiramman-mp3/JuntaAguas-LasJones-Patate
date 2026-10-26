@@ -5,7 +5,7 @@
  */
 const { badRequest, notFound, conflict } = require('../shared/errors');
 const { hoy, yaOcurrio } = require('../shared/dates');
-const { conceptoPorCodigo, tarifaVigente } = require('./finanzasService');
+const { conceptoPorCodigo, tarifaVigente, vencimientoPorDefecto } = require('./finanzasService');
 const { guardarDocumento, eliminarDocumento } = require('./documentStorage');
 
 const ESTADOS_ABIERTOS = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO', 'REALIZADO'];
@@ -22,10 +22,13 @@ const TRANSICIONES = {
   CANCELADO: []
 };
 
-/** Carga y bloquea el evento. Si se indica `tipo`, exige que coincida. */
+/** Carga y bloquea el evento, con el nombre de su sector (la hoja de asistencia lo muestra). Si se indica `tipo`, exige que coincida. */
 async function obtenerEvento(conexion, id, { tipo } = {}) {
   if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0) throw badRequest('El identificador del evento no es válido.');
-  const [filas] = await conexion.query('SELECT * FROM eventos WHERE id = ? FOR UPDATE', [id]);
+  const [filas] = await conexion.query(
+    'SELECT e.*, s.nombre AS sector_nombre FROM eventos e LEFT JOIN sectores s ON s.id = e.sector_id WHERE e.id = ? FOR UPDATE OF e',
+    [id]
+  );
   if (!filas.length) throw notFound(tipo === 'MINGA' ? 'Minga no encontrada.' : 'Evento no encontrado.');
   const evento = filas[0];
   if (tipo && evento.tipo !== tipo) {
@@ -44,10 +47,21 @@ function exigirAbierto(evento) {
 }
 
 /**
- * Padrón de asistencia: comuneros activos más quien ya tenga un registro en el evento
+ * Padrón de asistencia: usuarios activos más quien ya tenga un registro en el evento
  * (por si fue desactivado después). Incluye el resumen por estado y archivos de justificación.
  */
 async function obtenerPadron(conexion, evento) {
+  let wherePersona = "p.estado = 'ACTIVO'";
+  const params = [evento.id];
+  if (evento.sector_id) {
+    wherePersona = `(p.estado = 'ACTIVO' AND p.id IN (
+      SELECT pl.persona_id FROM persona_lotes pl
+      JOIN lotes l ON l.id = pl.lote_id
+      WHERE l.sector_id = ? AND l.activo = TRUE
+    ))`;
+    params.push(evento.sector_id);
+  }
+
   const [personas] = await conexion.query(
     `SELECT p.id AS persona_id, CONCAT(p.apellidos, ' ', p.nombres) AS nombre, p.cedula,
             COALESCE(a.estado, 'PENDIENTE') AS estado, COALESCE(a.motivo_justificacion, '') AS motivo_justificacion,
@@ -55,9 +69,9 @@ async function obtenerPadron(conexion, evento) {
             a.hora_registro
      FROM personas p
      LEFT JOIN asistencias a ON a.persona_id = p.id AND a.evento_id = ?
-     WHERE p.estado = 'ACTIVO' OR a.id IS NOT NULL
+     WHERE ${wherePersona} OR a.id IS NOT NULL
      ORDER BY p.apellidos, p.nombres`,
-    [evento.id]
+    params
   );
   const resumen = { total: personas.length, presentes: 0, ausentes: 0, justificados: 0, pendientes: 0 };
   for (const persona of personas) {
@@ -205,7 +219,7 @@ async function finalizar(conexion, evento, ahora = new Date()) {
 
   const { personas, resumen } = await obtenerPadron(conexion, evento);
   if (!resumen.total || resumen.pendientes) {
-    throw conflict('Complete y guarde la asistencia de todos los comuneros antes de finalizar.', { resumen });
+    throw conflict('Complete y guarde la asistencia de todos los usuarios antes de finalizar.', { resumen });
   }
 
   let multasGeneradas = 0;
@@ -226,12 +240,12 @@ async function finalizar(conexion, evento, ahora = new Date()) {
 
     const filas = personas
       .filter((p) => p.estado === 'AUSENTE' && !yaMultadas.has(Number(p.persona_id)))
-      .map((p) => [p.persona_id, conceptoId, evento.id, Number(evento.fecha.slice(0, 4)), null, emision, valor, 'AUTOMATICA', 'PENDIENTE', observacion]);
+      .map((p) => [p.persona_id, conceptoId, evento.id, Number(evento.fecha.slice(0, 4)), null, emision, vencimientoPorDefecto(emision), valor, 'AUTOMATICA', 'PENDIENTE', observacion]);
 
     if (filas.length) {
       // periodo_mes NULL: la multa se identifica por el evento, así dos eventos del mismo mes generan sus propias multas.
       await conexion.query(
-        `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado, observacion)
+        `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, fecha_vencimiento, valor, origen, estado, observacion)
          VALUES ?`,
         [filas]
       );
@@ -263,15 +277,27 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
   if (desde) { filtros.push('e.fecha >= ?'); params.push(desde); }
   if (hasta) { filtros.push('e.fecha <= ?'); params.push(hasta); }
 
-  const [[{ totalComuneros }]] = await conexion.query("SELECT COUNT(*) AS totalComuneros FROM personas WHERE estado = 'ACTIVO'");
+  const [[{ totalUsuarios }]] = await conexion.query("SELECT COUNT(*) AS totalUsuarios FROM personas WHERE estado = 'ACTIVO'");
+  const [comunerosPorSector] = await conexion.query(
+    `SELECT l.sector_id, COUNT(DISTINCT pl.persona_id) AS total
+     FROM persona_lotes pl
+     JOIN lotes l ON l.id = pl.lote_id
+     JOIN personas p ON p.id = pl.persona_id
+     WHERE p.estado = 'ACTIVO' AND l.activo = TRUE
+     GROUP BY l.sector_id`
+  );
+  const mapaSectorTotal = Object.fromEntries(comunerosPorSector.map((s) => [s.sector_id, Number(s.total)]));
+
   const [filas] = await conexion.query(
     `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
+            e.sector_id, s.nombre AS sector_nombre,
             e.requiere_asistencia, e.genera_multa_ausencia, e.valor_multa, e.created_by_cuenta_id, e.created_at,
             CONCAT(p.nombres, ' ', p.apellidos) AS creado_por_usuario,
             COALESCE(a.presentes, 0) AS asistentes, COALESCE(a.registrados, 0) AS registrados,
             COALESCE(m.multas, 0) AS multas_generadas,
             ${COLUMNAS_DOCUMENTOS}
      FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
      LEFT JOIN cuentas c ON c.id = e.created_by_cuenta_id
      LEFT JOIN personas p ON p.id = c.persona_id
      LEFT JOIN (SELECT evento_id, SUM(estado = 'PRESENTE') AS presentes, COUNT(*) AS registrados
@@ -284,13 +310,17 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
   );
 
   // Eventos cerrados reportan su padrón real; los abiertos, los comuneros activos actuales.
-  const data = filas.map((e) => ({
-    ...e,
-    asistentes: Number(e.asistentes),
-    registrados: Number(e.registrados),
-    multas_generadas: Number(e.multas_generadas),
-    totalComuneros: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalComuneros
-  }));
+  const data = filas.map((e) => {
+    const totalSector = e.sector_id ? (mapaSectorTotal[e.sector_id] || 0) : totalUsuarios;
+    return {
+      ...e,
+      sector_id: e.sector_id ? Number(e.sector_id) : null,
+      asistentes: Number(e.asistentes),
+      registrados: Number(e.registrados),
+      multas_generadas: Number(e.multas_generadas),
+      totalUsuarios: ['REALIZADO', 'CANCELADO'].includes(e.estado) && Number(e.registrados) ? Number(e.registrados) : totalSector
+    };
+  });
   return data;
 }
 
@@ -298,10 +328,12 @@ async function listarEventos(conexion, { tipo, estado, desde, hasta }) {
 async function listarEventosPublicos(conexion, limite) {
   const [filas] = await conexion.query(
     `SELECT e.id, e.tipo, e.titulo, e.descripcion, e.fecha, e.hora_inicio, e.hora_fin, e.lugar, e.estado,
+            e.sector_id, s.nombre AS sector_nombre,
             e.genera_multa_ausencia, e.valor_multa,
             (SELECT d.ruta_archivo_firmado FROM documentos_evento d
               WHERE d.evento_id = e.id AND d.tipo = 'CONVOCATORIA' AND d.ruta_archivo_firmado IS NOT NULL LIMIT 1) AS convocatoria_firmada_url
      FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
      WHERE e.estado IN ('PROGRAMADO', 'CONVOCADO') AND e.fecha >= ?
      ORDER BY e.fecha ASC, e.hora_inicio ASC
      LIMIT ?`,
@@ -312,7 +344,13 @@ async function listarEventosPublicos(conexion, limite) {
 
 /** Detalle de un evento con sus puntos y el resumen de asistencia por estado. */
 async function detalleEvento(conexion, id) {
-  const [filas] = await conexion.query(`SELECT e.*, ${COLUMNAS_DOCUMENTOS} FROM eventos e WHERE e.id = ?`, [id]);
+  const [filas] = await conexion.query(
+    `SELECT e.*, s.nombre AS sector_nombre, ${COLUMNAS_DOCUMENTOS}
+     FROM eventos e
+     LEFT JOIN sectores s ON s.id = e.sector_id
+     WHERE e.id = ?`,
+    [id]
+  );
   if (!filas.length) throw notFound('Evento no encontrado.');
   const [puntos] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden ASC', [id]);
   const [asistenciaStats] = await conexion.query(
@@ -336,8 +374,8 @@ async function multaConfigurada(conexion, tipo, fecha) {
 
 /** Crea una asamblea o minga con sus puntos del orden del día. La multa se toma de las tarifas. */
 async function crearEvento(conexion, datos, cuentaId) {
-  if (datos.tipo === 'ASAMBLEA' && datos.fecha < hoy()) {
-    throw badRequest('La fecha de la asamblea no puede ser anterior a la fecha actual.');
+  if (datos.fecha < hoy()) {
+    throw badRequest(`La fecha de la ${datos.tipo === 'MINGA' ? 'minga' : 'asamblea'} no puede ser anterior a la fecha actual.`);
   }
   const valorMulta = datos.genera_multa_ausencia ? await multaConfigurada(conexion, datos.tipo, datos.fecha) : null;
   const puntos = datos.tipo === 'ASAMBLEA'
@@ -347,27 +385,33 @@ async function crearEvento(conexion, datos, cuentaId) {
       .filter((p) => p.punto_tratar)
     : [];
 
+  const sectorId = datos.tipo === 'MINGA' && datos.sector_id ? datos.sector_id : null;
+  if (sectorId) {
+    const [sectores] = await conexion.query('SELECT id FROM sectores WHERE id = ? AND activo = TRUE', [sectorId]);
+    if (!sectores.length) throw badRequest('El sector seleccionado no existe o está inactivo.');
+  }
+
   const [r] = await conexion.query(
-    `INSERT INTO eventos (tipo, titulo, descripcion, fecha, hora_inicio, hora_fin, lugar, requiere_asistencia,
+    `INSERT INTO eventos (tipo, titulo, descripcion, fecha, hora_inicio, hora_fin, lugar, sector_id, requiere_asistencia,
                           genera_multa_ausencia, valor_multa, created_by_cuenta_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [datos.tipo, datos.titulo, datos.descripcion, datos.fecha, datos.hora_inicio, datos.hora_fin,
-      datos.lugar || 'Casa Comunal Junta La Jones', datos.requiere_asistencia, datos.genera_multa_ausencia, valorMulta,
+      datos.lugar || 'Casa Comunal Junta La Jones', sectorId, datos.requiere_asistencia, datos.genera_multa_ausencia, valorMulta,
       cuentaId]
   );
   if (puntos.length) {
     await conexion.query(
-      'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion, titulo_acta) VALUES ?',
-      [puntos.map((p, i) => [r.insertId, i + 1, p.punto_tratar, p.tratado || null, p.resolucion || null, p.punto_tratar.slice(0, 255)])]
+      'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, tratado, resolucion) VALUES ?',
+      [puntos.map((p, i) => [r.insertId, i + 1, p.punto_tratar, p.tratado || null, p.resolucion || null])]
     );
   }
   return { eventoId: r.insertId, valorMulta, puntos: puntos.length };
 }
 
 /**
- * Guarda los puntos del orden del día y sus actas: actualiza los existentes por id,
- * crea los nuevos y elimina los que ya no se envían.
- * @returns {{ data: object[], archivosEliminados: string[] }} archivos firmados que quedaron huérfanos
+ * Guarda los puntos del orden del día y su desarrollo en el acta general: actualiza los
+ * existentes por id, crea los nuevos y elimina los que ya no se envían.
+ * @returns {{ data: object[] }} puntos resultantes, ordenados
  */
 async function guardarPuntos(conexion, id, puntos) {
   const evento = await obtenerEvento(conexion, id, { tipo: 'ASAMBLEA' });
@@ -376,7 +420,7 @@ async function guardarPuntos(conexion, id, puntos) {
   const [existentes] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? FOR UPDATE', [id]);
   const porId = new Map(existentes.map((p) => [p.id, p]));
   const validos = puntos
-    .map((p) => ({ ...p, texto: (p.punto_tratar || p.titulo_acta || '').trim() }))
+    .map((p) => ({ ...p, texto: (p.punto_tratar || '').trim() }))
     .filter((p) => p.texto)
     .map((p, i) => ({ ...p, orden: i + 1 }));
   if (validos.some((p) => p.id && !porId.has(p.id))) throw badRequest('Uno de los puntos no pertenece a esta asamblea.');
@@ -394,11 +438,8 @@ async function guardarPuntos(conexion, id, puntos) {
     const valores = {
       orden: p.orden,
       punto_tratar: p.texto,
-      titulo_acta: (p.titulo_acta || p.texto).slice(0, 255),
       tratado: p.tratado !== undefined ? p.tratado : previo?.tratado ?? null,
-      resolucion: p.resolucion !== undefined ? p.resolucion : previo?.resolucion ?? null,
-      responsables: p.responsables !== undefined ? p.responsables : previo?.responsables ?? null,
-      estado_acta: p.estado_acta || previo?.estado_acta || 'BORRADOR'
+      resolucion: p.resolucion !== undefined ? p.resolucion : previo?.resolucion ?? null
     };
     if (previo) {
       await conexion.query('UPDATE puntos_asamblea SET ? WHERE id = ?', [valores, previo.id]);
@@ -408,16 +449,7 @@ async function guardarPuntos(conexion, id, puntos) {
   }
 
   const [actualizados] = await conexion.query('SELECT * FROM puntos_asamblea WHERE evento_id = ? ORDER BY orden ASC', [id]);
-  return { data: actualizados, archivosEliminados: eliminados.map((p) => p.acta_firmada_url).filter(Boolean) };
-}
-
-/** Actualiza los datos del acta de un punto. */
-async function actualizarActaPunto(conexion, eventoId, puntoId, cambios) {
-  if (!Object.keys(cambios).length) throw badRequest('No se enviaron cambios para el acta.');
-  const [r] = await conexion.query('UPDATE puntos_asamblea SET ? WHERE id = ? AND evento_id = ?', [cambios, puntoId, eventoId]);
-  if (!r.affectedRows) throw notFound('Punto de asamblea no encontrado.');
-  const [[actualizado]] = await conexion.query('SELECT * FROM puntos_asamblea WHERE id = ?', [puntoId]);
-  return actualizado;
+  return { data: actualizados };
 }
 
 /**
@@ -489,7 +521,7 @@ async function eliminarJustificante(conexion, evento, personaId) {
 }
 
 module.exports = {
-  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos, actualizarActaPunto,
+  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos,
   ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto,
   guardarJustificante, eliminarJustificante
 };

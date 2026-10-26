@@ -19,7 +19,14 @@ const OPCIONES: Record<FormatoFecha, Intl.DateTimeFormatOptions> = {
   larga: { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
   mesAnio: { month: 'long', year: 'numeric' },
   diaMes: { day: 'numeric', month: 'short' },
-  conHora: { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }
+  conHora: {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  },
 };
 
 /** Indica si el valor es una fecha de calendario sin hora ('AAAA-MM-DD'). */
@@ -40,22 +47,34 @@ export function aFecha(valor: string | Date | null | undefined): Date | null {
 }
 
 /** Formatea una fecha de calendario o un instante para mostrarlo en la interfaz. */
-export function formatearFecha(valor: string | Date | null | undefined, formato: FormatoFecha = 'corta'): string {
+export function formatearFecha(
+  valor: string | Date | null | undefined,
+  formato: FormatoFecha = 'corta',
+): string {
   if (valor == null || valor === '') return '';
   if (esSoloFecha(valor)) {
     const [anio, mes, dia] = valor.split('-').map(Number);
     // Se formatea en UTC el mismo día de calendario, sin desplazamiento de zona. No tiene hora que mostrar.
     const opciones = formato === 'conHora' ? OPCIONES.corta : OPCIONES[formato];
-    return new Intl.DateTimeFormat('es-EC', { ...opciones, timeZone: 'UTC' }).format(new Date(Date.UTC(anio, mes - 1, dia)));
+    return new Intl.DateTimeFormat('es-EC', { ...opciones, timeZone: 'UTC' }).format(
+      new Date(Date.UTC(anio, mes - 1, dia)),
+    );
   }
   const fecha = aFecha(valor);
   if (!fecha) return typeof valor === 'string' ? valor : '';
-  return new Intl.DateTimeFormat('es-EC', { ...OPCIONES[formato], timeZone: ZONA_JUNTA }).format(fecha);
+  return new Intl.DateTimeFormat('es-EC', { ...OPCIONES[formato], timeZone: ZONA_JUNTA }).format(
+    fecha,
+  );
 }
 
 /** Fecha de hoy en Ecuador como 'AAAA-MM-DD' (para inputs type="date" y comparaciones). */
 export function hoyEnEcuador(ahora: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_JUNTA, year: 'numeric', month: '2-digit', day: '2-digit' }).format(ahora);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA_JUNTA,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(ahora);
 }
 
 /** Suma días a una fecha 'AAAA-MM-DD' sin pasar por la zona horaria. */
@@ -64,8 +83,12 @@ export function sumarDias(fecha: string, dias: number): string {
   return new Date(Date.UTC(anio, mes - 1, dia + dias)).toISOString().slice(0, 10);
 }
 
-/** Convierte un Date en 'AAAA-MM-DD' según su día local (sin pasar por UTC como toISOString). */
-export function aFechaIso(fecha: Date): string {
-  const dos = (n: number) => String(n).padStart(2, '0');
-  return `${fecha.getFullYear()}-${dos(fecha.getMonth() + 1)}-${dos(fecha.getDate())}`;
+/**
+ * Día de calendario en Ecuador ('AAAA-MM-DD') de una fecha o un instante, sin importar la zona del navegador.
+ * Una fecha sin hora ('2026-10-05') se respeta tal cual; un instante se convierte a la hora de Ecuador.
+ */
+export function diaEnEcuador(valor: string | Date): string {
+  if (esSoloFecha(valor)) return valor;
+  const fecha = valor instanceof Date ? valor : new Date(valor);
+  return Number.isNaN(fecha.getTime()) ? String(valor).slice(0, 10) : hoyEnEcuador(fecha);
 }

@@ -7,11 +7,12 @@
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
+    "dev": "node scripts/dev.js",
     "prod": "node scripts/prod.js",
     "prod:preparar": "node scripts/prod.js --preparar",
     "start": "npm --prefix backend start",
     "start:whatsapp": "npm --prefix whatsapp-service start",
     "test": "npm --prefix backend test && npm --prefix whatsapp-service test && npm --prefix frontend test -- --watch=false",
-    "lint": "npm --prefix backend run lint && npm --prefix whatsapp-service run lint && npm --prefix frontend run lint"
+    "lint": "npm --prefix backend run lint && npm --prefix whatsapp-service run lint && npm --prefix frontend run lint && npm --prefix frontend run format:check"
   }
 }

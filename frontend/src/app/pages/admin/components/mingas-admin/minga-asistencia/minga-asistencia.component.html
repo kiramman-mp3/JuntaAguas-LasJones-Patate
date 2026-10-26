@@ -1,6 +1,12 @@
 <app-modal
   titulo="Asistencia a minga"
-  [subtitulo]="minga().titulo + ' · ' + (minga().fecha | fechaLocal)"
+  [subtitulo]="
+    minga().titulo +
+    ' · ' +
+    (minga().fecha | fechaLocal) +
+    ' · ' +
+    (minga().sector_nombre || 'Todos los sectores')
+  "
   icono="ri-checkbox-circle-line"
   tono="success"
   tamano="lg"
@@ -9,41 +15,73 @@
 >
   <div class="modal__body form-stack">
     @if (cargando) {
-      <app-skeleton [filas]="6" mensaje="Cargando comuneros y asistencias registradas…" />
+      <app-skeleton [filas]="6" mensaje="Cargando usuarios y asistencias registradas…" />
     } @else if (!asistencias.length && error) {
-      <app-empty-state tono="error" icono="ri-wifi-off-line" titulo="No se pudo cargar la asistencia" [mensaje]="error">
-        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()"><i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button>
+      <app-empty-state
+        tono="error"
+        icono="ri-wifi-off-line"
+        titulo="No se pudo cargar la asistencia"
+        [mensaje]="error"
+      >
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">
+          <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar
+        </button>
       </app-empty-state>
     } @else if (!asistencias.length) {
-      <app-empty-state icono="ri-team-line" titulo="Sin comuneros activos" mensaje="No hay comuneros activos para registrar asistencia." />
+      <app-empty-state
+        icono="ri-team-line"
+        titulo="Sin usuarios activos"
+        mensaje="No hay usuarios activos para registrar asistencia."
+      />
     } @else {
       <div class="summary-chips" aria-live="polite">
-        <div class="summary-chip"><span>Padrón</span><strong>{{ asistencias.length }}</strong></div>
-        <div class="summary-chip summary-chip--present"><span>Presentes</span><strong>{{ totalPresentes }}</strong></div>
-        <div class="summary-chip summary-chip--justified"><span>Pendientes</span><strong>{{ totalPendientes }}</strong></div>
+        <div class="summary-chip">
+          <span>Padrón</span><strong>{{ asistencias.length }}</strong>
+        </div>
+        <div class="summary-chip summary-chip--present">
+          <span>Presentes</span><strong>{{ totalPresentes }}</strong>
+        </div>
+        <div class="summary-chip summary-chip--justified">
+          <span>Pendientes</span><strong>{{ totalPendientes }}</strong>
+        </div>
       </div>
 
       <div class="toolbar">
         <div class="search-field toolbar__grow">
           <i class="ri-search-line" aria-hidden="true"></i>
-          <input class="input input--sm" type="search" [(ngModel)]="buscar" placeholder="Nombre o cédula" aria-label="Buscar comunero" />
+          <input
+            class="input input--sm"
+            type="search"
+            [(ngModel)]="buscar"
+            placeholder="Nombre o cédula"
+            aria-label="Buscar usuario"
+          />
         </div>
         @if (!cerrada) {
           <div class="toolbar__group">
-            <button type="button" class="btn btn--ghost btn--sm" (click)="marcarPresentes()" [disabled]="guardando">
+            <button
+              type="button"
+              class="btn btn--ghost btn--sm"
+              (click)="marcarPresentes()"
+              [disabled]="guardando"
+            >
               <i class="ri-check-double-line" aria-hidden="true"></i> Marcar visibles presentes
             </button>
           </div>
         }
       </div>
-      <p class="text-muted small">Pulse un estado activo para devolver al comunero a pendiente.</p>
+      <p class="text-muted small">Pulse un estado activo para devolver al usuario a pendiente.</p>
 
       @if (error) {
         <div class="alert alert--danger" role="alert">{{ error }}</div>
       }
 
       @if (filtradas.length === 0) {
-        <app-empty-state icono="ri-user-search-line" titulo="Sin coincidencias" mensaje="Ningún comunero coincide con la búsqueda." />
+        <app-empty-state
+          icono="ri-user-search-line"
+          titulo="Sin coincidencias"
+          mensaje="Ningún usuario coincide con la búsqueda."
+        />
       } @else {
         <ul class="roster">
           @for (a of filtradas; track a.persona_id; let i = $index) {
@@ -55,41 +93,89 @@
                   <span class="roster__meta">{{ a.cedula }}</span>
                 </div>
               </div>
-              <div class="attendance-toggle" role="group" [attr.aria-label]="'Asistencia de ' + a.nombre">
-                <button type="button" class="attendance-toggle__btn attendance-toggle__btn--present" [class.is-active]="a.estado === 'PRESENTE'"
-                  [attr.aria-pressed]="a.estado === 'PRESENTE'" (click)="setEstado(a, 'PRESENTE')" [disabled]="cerrada || guardando">
+              <div
+                class="attendance-toggle"
+                role="group"
+                [attr.aria-label]="'Asistencia de ' + a.nombre"
+              >
+                <button
+                  type="button"
+                  class="attendance-toggle__btn attendance-toggle__btn--present"
+                  [class.is-active]="a.estado === 'PRESENTE'"
+                  [attr.aria-pressed]="a.estado === 'PRESENTE'"
+                  (click)="setEstado(a, 'PRESENTE')"
+                  [disabled]="cerrada || guardando"
+                >
                   <i class="ri-check-line" aria-hidden="true"></i><span>Presente</span>
                 </button>
-                <button type="button" class="attendance-toggle__btn attendance-toggle__btn--absent" [class.is-active]="a.estado === 'AUSENTE'"
-                  [attr.aria-pressed]="a.estado === 'AUSENTE'" (click)="setEstado(a, 'AUSENTE')" [disabled]="cerrada || guardando">
+                <button
+                  type="button"
+                  class="attendance-toggle__btn attendance-toggle__btn--absent"
+                  [class.is-active]="a.estado === 'AUSENTE'"
+                  [attr.aria-pressed]="a.estado === 'AUSENTE'"
+                  (click)="setEstado(a, 'AUSENTE')"
+                  [disabled]="cerrada || guardando"
+                >
                   <i class="ri-close-line" aria-hidden="true"></i><span>Ausente</span>
                 </button>
-                <button type="button" class="attendance-toggle__btn attendance-toggle__btn--justified" [class.is-active]="a.estado === 'JUSTIFICADO'"
-                  [attr.aria-pressed]="a.estado === 'JUSTIFICADO'" (click)="setEstado(a, 'JUSTIFICADO')" [disabled]="cerrada || guardando">
+                <button
+                  type="button"
+                  class="attendance-toggle__btn attendance-toggle__btn--justified"
+                  [class.is-active]="a.estado === 'JUSTIFICADO'"
+                  [attr.aria-pressed]="a.estado === 'JUSTIFICADO'"
+                  (click)="setEstado(a, 'JUSTIFICADO')"
+                  [disabled]="cerrada || guardando"
+                >
                   <i class="ri-information-line" aria-hidden="true"></i><span>Justificado</span>
                 </button>
               </div>
               @if (a.estado === 'JUSTIFICADO') {
                 <div class="roster__justification-block">
-                  <input class="input input--sm roster__reason" [(ngModel)]="a.motivo_justificacion" [disabled]="cerrada || guardando" maxlength="255"
-                    placeholder="Motivo de justificación" [attr.aria-label]="'Motivo de ' + a.nombre" />
+                  <input
+                    class="input input--sm roster__reason"
+                    [(ngModel)]="a.motivo_justificacion"
+                    [disabled]="cerrada || guardando"
+                    maxlength="255"
+                    placeholder="Motivo de justificación"
+                    [attr.aria-label]="'Motivo de ' + a.nombre"
+                  />
 
                   <div class="roster__attachment">
                     @if (a.archivo_justificacion_url) {
-                      <div class="roster__file-chip" [title]="a.archivo_justificacion_nombre || 'Archivo adjunto'">
+                      <div
+                        class="roster__file-chip"
+                        [title]="a.archivo_justificacion_nombre || 'Archivo adjunto'"
+                      >
                         <i class="ri-attachment-2" aria-hidden="true"></i>
-                        <span class="roster__file-name">{{ a.archivo_justificacion_nombre || 'Justificativo adjunto' }}</span>
-                        <button type="button" class="btn btn--ghost btn--xs" (click)="descargarArchivo(a)" title="Descargar comprobante" aria-label="Descargar comprobante">
+                        <span class="roster__file-name">{{
+                          a.archivo_justificacion_nombre || 'Justificativo adjunto'
+                        }}</span>
+                        <button
+                          type="button"
+                          class="btn btn--ghost btn--xs"
+                          (click)="descargarArchivo(a)"
+                          title="Descargar comprobante"
+                          aria-label="Descargar comprobante"
+                        >
                           <i class="ri-download-2-line" aria-hidden="true"></i>
                         </button>
                         @if (!cerrada) {
-                          <button type="button" class="btn btn--ghost btn--xs btn--danger" (click)="eliminarArchivo(a)" title="Quitar archivo adjunto" aria-label="Quitar archivo">
+                          <button
+                            type="button"
+                            class="btn btn--ghost btn--xs btn--danger"
+                            (click)="eliminarArchivo(a)"
+                            title="Quitar archivo adjunto"
+                            aria-label="Quitar archivo"
+                          >
                             <i class="ri-delete-bin-line" aria-hidden="true"></i>
                           </button>
                         }
                       </div>
                     } @else if (!cerrada) {
-                      <label class="btn btn--outline btn--xs roster__attach-btn" [class.is-loading]="subiendoPersonaId === a.persona_id">
+                      <label
+                        class="btn btn--outline btn--xs roster__attach-btn"
+                        [class.is-loading]="subiendoPersonaId === a.persona_id"
+                      >
                         @if (subiendoPersonaId === a.persona_id) {
                           <span class="spinner spinner--xs" aria-hidden="true"></span>
                           <span>Subiendo…</span>
@@ -97,8 +183,13 @@
                           <i class="ri-upload-cloud-line" aria-hidden="true"></i>
                           <span>Adjuntar archivo (opcional)</span>
                         }
-                        <input type="file" class="sr-only" (change)="adjuntarArchivo(a, $event)" [disabled]="subiendoPersonaId === a.persona_id"
-                          accept=".pdf,image/png,image/jpeg" />
+                        <input
+                          type="file"
+                          class="sr-only"
+                          (change)="adjuntarArchivo(a, $event)"
+                          [disabled]="subiendoPersonaId === a.persona_id"
+                          accept=".pdf,image/png,image/jpeg"
+                        />
                       </label>
                     }
                   </div>
@@ -112,9 +203,16 @@
   </div>
 
   <div class="modal__footer">
-    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando">Cerrar</button>
+    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando">
+      Cerrar
+    </button>
     @if (!cerrada) {
-      <button type="button" class="btn btn--primary" (click)="guardar()" [disabled]="guardando || cargando || !asistencias.length">
+      <button
+        type="button"
+        class="btn btn--primary"
+        (click)="guardar()"
+        [disabled]="guardando || cargando || !asistencias.length"
+      >
         @if (guardando) {
           <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
         } @else {

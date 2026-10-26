@@ -19,14 +19,14 @@ async function subir(req, res) {
       nuevo = await archivos.guardarDocumento(req.file?.buffer, 'pago_comprobante');
       anterior = pago.comprobante_url;
       await conexion.query('UPDATE pagos SET comprobante_url = ? WHERE id = ?', [nuevo.url, id]);
+      await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'pagos', entidadId: id,
+        ip: req.ip, detalle: { comprobanteBancario: true, reemplazado: Boolean(anterior) } });
     });
   } catch (error) {
     if (nuevo) await archivos.eliminarDocumento(nuevo.url);
     throw error;
   }
   if (anterior) await archivos.eliminarDocumento(anterior);
-  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'pagos', entidadId: id,
-    ip: req.ip, detalle: { comprobanteBancario: true, reemplazado: Boolean(anterior) } });
   return res.json({ status: 'OK', message: 'Comprobante bancario guardado.' });
 }
 

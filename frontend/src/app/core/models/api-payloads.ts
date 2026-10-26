@@ -3,7 +3,7 @@
  * Junta de Agua y Riego "La Jones" - Patate
  */
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   status: 'OK' | 'ERROR';
   message?: string;
   data?: T;
@@ -32,11 +32,11 @@ export interface LoteItem {
   id: number;
   sector_id: number;
   codigo: string;
-  superficie_m2: number;
+  superficie_m2: number | null;
   ancho_m?: number;
   largo_m?: number;
-  latitud_aproximada?: number;
-  longitud_aproximada?: number;
+  latitud_aproximada?: number | string | null;
+  longitud_aproximada?: number | string | null;
   radio_error_m?: number;
   referencia_ubicacion?: string;
   observacion?: string;
@@ -55,7 +55,6 @@ export interface TurnoItem {
   id: number;
   persona_id: number;
   lote_id: number;
-  tipo: 'REGULAR' | 'ADICIONAL';
   dia_semana: number;
   hora_inicio: string;
   hora_fin: string;
@@ -63,10 +62,14 @@ export interface TurnoItem {
   vigencia_hasta?: string;
   estado: 'ACTIVO' | 'INACTIVO';
   observacion?: string;
-  comunero_nombre?: string;
+  usuario_nombre?: string;
   cedula?: string;
   lote_codigo?: string;
+  sector_id?: number;
   sector_nombre?: string;
+  superficie_m2?: number | null;
+  nombres?: string;
+  apellidos?: string;
 }
 
 export interface EventoItem {
@@ -79,12 +82,44 @@ export interface EventoItem {
   hora_fin?: string;
   lugar?: string;
   estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO' | 'REALIZADO' | 'CANCELADO';
-  requiere_asistencia: boolean;
-  genera_multa_ausencia: boolean;
+  requiere_asistencia: boolean | number;
+  /** MySQL lo entrega como 0/1. */
+  genera_multa_ausencia: boolean | number;
   valor_multa?: number;
   asistentes?: number;
-  totalComuneros?: number;
+  registrados?: number;
+  multas_generadas?: number;
+  totalUsuarios?: number;
   creado_por_usuario?: string;
+  sector_id?: number | null;
+  sector_nombre?: string | null;
+  subtipo_asamblea?: string;
+  convocatoria_firmada_url?: string | null;
+  convocatoria_firmada_nombre?: string | null;
+  acta_firmada_url?: string | null;
+  acta_firmada_nombre?: string | null;
+  lista_asistencia_url?: string | null;
+  lista_asistencia_firmada_url?: string | null;
+}
+
+/** Turno del cronograma público: solo lote y horario, sin datos personales. */
+export interface TurnoCronogramaPublico {
+  id: number;
+  lote_codigo: string;
+  hora_inicio: string;
+  hora_fin: string;
+  duracion_minutos: number;
+}
+
+/** Sector del cronograma público de riego (GET /turnos/cronograma-publico). */
+export interface CronogramaSectorPublico {
+  sector_id: number;
+  sector_nombre: string;
+  sector_descripcion: string | null;
+  total_turnos: number;
+  total_horas: number;
+  total_lotes: number;
+  dias: { dia_semana: number; dia_nombre: string; turnos: TurnoCronogramaPublico[] }[];
 }
 
 export interface ObligacionItem {
@@ -102,7 +137,7 @@ export interface ObligacionItem {
   observacion?: string;
   concepto_codigo?: string;
   concepto_nombre?: string;
-  comunero_nombre?: string;
+  usuario_nombre?: string;
   cedula?: string;
 }
 
@@ -110,7 +145,7 @@ export interface ObligacionItem {
 export interface DashboardResumen {
   fecha: string;
   comunidad: {
-    comunerosActivos: number;
+    usuariosActivos: number;
     lotes: number;
     sectores: number;
     turnosActivos: number;
@@ -125,12 +160,19 @@ export interface DashboardResumen {
     saldoCaja: number;
     carteraPendiente: number;
     carteraVencida: number;
-    comunerosEnMora: number;
+    usuariosEnMora: number;
   };
   cobranza: { emitido: number; cobrado: number; porcentaje: number | null };
   asistencia: {
     promedio: number | null;
-    ultimosEventos: { id: number; tipo: 'ASAMBLEA' | 'MINGA'; titulo: string; fecha: string; presentes: number; registrados: number }[];
+    ultimosEventos: {
+      id: number;
+      tipo: 'ASAMBLEA' | 'MINGA';
+      titulo: string;
+      fecha: string;
+      presentes: number;
+      registrados: number;
+    }[];
   };
   proximosEventos: {
     id: number;
@@ -169,11 +211,19 @@ export interface RespuestaMensaje {
   message: string;
 }
 
+/** Respuesta de POST .../asistencias/:personaId/justificante. */
+export interface JustificanteSubido extends RespuestaMensaje {
+  url: string;
+  nombre: string;
+}
+
 /** Fila de GET /personas: incluye el estado de la cuenta de acceso. */
 export interface PersonaListado extends PersonaItem {
   created_at?: string;
   cuenta_estado: 'ACTIVA' | 'BLOQUEADA' | 'INACTIVA' | null;
   rol: 'ADMIN' | 'USUARIO' | null;
+  /** Sectores de los lotes del usuario, separados por coma. */
+  sector_nombre?: string | null;
 }
 
 export interface SectorItem {
@@ -207,7 +257,13 @@ export interface AsistenciaRegistro {
 }
 
 export interface PadronRespuesta extends RespuestaApi<AsistenciaPadron[]> {
-  resumen: { total: number; presentes: number; ausentes: number; justificados: number; pendientes: number };
+  resumen: {
+    total: number;
+    presentes: number;
+    ausentes: number;
+    justificados: number;
+    pendientes: number;
+  };
   estado: EventoItem['estado'];
 }
 
@@ -218,7 +274,8 @@ export interface FinalizacionRespuesta extends RespuestaMensaje {
 }
 
 /** NO_DISPONIBLE: el servicio de WhatsApp no responde. NO_CONFIGURADO: falta su token en el backend. */
-export type EstadoConexionWhatsApp = 'DESCONECTADO' | 'INICIANDO' | 'ESPERANDO_QR' | 'CONECTADO' | 'NO_DISPONIBLE' | 'NO_CONFIGURADO';
+export type EstadoConexionWhatsApp =
+  'DESCONECTADO' | 'INICIANDO' | 'ESPERANDO_QR' | 'CONECTADO' | 'NO_DISPONIBLE' | 'NO_CONFIGURADO';
 
 export interface GrupoWhatsApp {
   id: string;
@@ -239,5 +296,4 @@ export interface EstadoWhatsApp {
 export interface ConvocatoriaWhatsApp {
   grupo: GrupoWhatsApp;
   estado: 'BORRADOR' | 'PROGRAMADO' | 'CONVOCADO';
-  reenvio: boolean;
 }

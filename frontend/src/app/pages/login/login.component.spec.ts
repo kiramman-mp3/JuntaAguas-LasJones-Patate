@@ -8,7 +8,15 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ChangeDetectorRef } from '@angular/core';
 
 const usuario = (debeCambiarPassword: boolean, rol: 'ADMIN' | 'USUARIO' = 'USUARIO') => ({
-  cuentaId: 1, personaId: 1, cedula: '1803456789', nombres: 'Rosa', apellidos: 'Caiza', email: '', rol, rolNombre: '', debeCambiarPassword
+  cuentaId: 1,
+  personaId: 1,
+  cedula: '1803456789',
+  nombres: 'Rosa',
+  apellidos: 'Caiza',
+  email: '',
+  rol,
+  rolNombre: '',
+  debeCambiarPassword,
 });
 
 function crear(auth: Record<string, any>) {
@@ -17,11 +25,19 @@ function crear(auth: Record<string, any>) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
-      { provide: AuthService, useValue: { isLoggedIn: () => false, debeCambiarPassword: () => false, getUser: () => null, ...auth } },
+      {
+        provide: AuthService,
+        useValue: {
+          isLoggedIn: () => false,
+          debeCambiarPassword: () => false,
+          getUser: () => null,
+          ...auth,
+        },
+      },
       { provide: Router, useValue: router },
       { provide: ActivatedRoute, useValue: route },
-      { provide: ChangeDetectorRef, useValue: { detectChanges: vi.fn() } }
-    ]
+      { provide: ChangeDetectorRef, useValue: { detectChanges: vi.fn() } },
+    ],
   });
   const component = TestBed.runInInjectionContext(() => new LoginComponent());
   return { component, router };
@@ -32,7 +48,9 @@ describe('Login con contraseña temporal', () => {
   afterEach(() => vi.useRealTimers());
 
   it('pide el cambio y usa la contraseña ingresada como actual', () => {
-    const { component, router } = crear({ login: () => of({ status: 'OK', token: 't', user: usuario(true) }) });
+    const { component, router } = crear({
+      login: () => of({ status: 'OK', token: 't', user: usuario(true) }),
+    });
     component.usuario = '1803456789';
     component.password = 'Temporal7x';
     component.iniciarSesion();
@@ -56,7 +74,9 @@ describe('Login con contraseña temporal', () => {
   });
 
   it('tras el cambio entra con el rol devuelto por el servidor', () => {
-    const changePassword = vi.fn(() => of({ status: 'OK', token: 'nuevo', user: usuario(false, 'ADMIN') }));
+    const changePassword = vi.fn(() =>
+      of({ status: 'OK', token: 'nuevo', user: usuario(false, 'ADMIN') }),
+    );
     const { component, router } = crear({ changePassword, getUser: () => usuario(true) });
     component.requiereCambioPassword = true;
     component.passwordActual = 'Temporal7x';
@@ -68,7 +88,9 @@ describe('Login con contraseña temporal', () => {
   });
 
   it('muestra el error del servidor si la contraseña temporal es incorrecta', () => {
-    const changePassword = vi.fn(() => throwError(() => ({ error: { message: 'La contraseña actual ingresada es incorrecta.' } })));
+    const changePassword = vi.fn(() =>
+      throwError(() => ({ error: { message: 'La contraseña actual ingresada es incorrecta.' } })),
+    );
     const { component } = crear({ changePassword, getUser: () => usuario(true) });
     component.passwordActual = 'Otra1234';
     component.nuevaPassword1 = component.nuevaPassword2 = 'Riego2026';
@@ -96,7 +118,11 @@ describe('Login con contraseña temporal', () => {
   });
 
   it('al volver al login con una sesión temporal muestra directamente el cambio', () => {
-    const { component, router } = crear({ isLoggedIn: () => true, debeCambiarPassword: () => true, getUser: () => usuario(true) });
+    const { component, router } = crear({
+      isLoggedIn: () => true,
+      debeCambiarPassword: () => true,
+      getUser: () => usuario(true),
+    });
     component.ngOnInit();
     expect(component.requiereCambioPassword).toBe(true);
     expect(router.navigate).not.toHaveBeenCalled();

@@ -10,13 +10,13 @@ const env = require('../../src/config/env');
 const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, auth } = require('../helpers/fixtures');
 
-const GRUPO = { id: '120363000000000001@g.us', nombre: 'Comuneros La Jones', participantes: 120 };
+const GRUPO = { id: '120363000000000001@g.us', nombre: 'Usuarios La Jones', participantes: 120 };
 
 /** Servicio de WhatsApp simulado: responde como whatsapp-service y registra los mensajes. */
 const servicio = { estado: 'CONECTADO', grupos: [GRUPO], enviados: [], falloEnvio: null };
 let servidor;
 let admin;
-let comunero;
+let usuario;
 
 function iniciarServicioFalso() {
   const fake = express();
@@ -65,7 +65,7 @@ const convocar = (eventoId, extra = {}) =>
 before(async () => {
   await resetDatabase();
   admin = await crearUsuario({ rol: 'ADMIN' });
-  comunero = await crearUsuario();
+  usuario = await crearUsuario();
 });
 after(async () => {
   await new Promise((resolver) => (servidor ? servidor.close(resolver) : resolver()));
@@ -91,7 +91,7 @@ test('con el servicio apagado el estado lo informa sin fallar', async () => {
 });
 
 test('solo la directiva usa WhatsApp', async () => {
-  const r = await request(app).get('/api/whatsapp/estado').set(auth(comunero));
+  const r = await request(app).get('/api/whatsapp/estado').set(auth(usuario));
   assert.equal(r.status, 403);
 });
 
@@ -125,7 +125,6 @@ test('publica la convocatoria de una minga en el grupo y la marca convocada', as
   const r = await convocar(eventoId);
   assert.equal(r.status, 201);
   assert.equal(r.body.data.estado, 'CONVOCADO');
-  assert.equal(r.body.data.reenvio, false);
 
   assert.equal(servicio.enviados.length, 1);
   const { grupoId, texto } = servicio.enviados[0];
@@ -144,26 +143,33 @@ test('publica la convocatoria de una minga en el grupo y la marca convocada', as
   assert.equal(auditoria.length, 1);
 });
 
-test('no reenvía una convocatoria ya publicada salvo que se pida', async () => {
+test('una convocatoria se publica una sola vez, aunque se pida dos veces a la vez', async () => {
   const eventoId = await crearEvento();
-  assert.equal((await convocar(eventoId)).status, 201);
+  const respuestas = await Promise.all([convocar(eventoId), convocar(eventoId)]);
+  assert.deepEqual(respuestas.map((r) => r.status).sort(), [201, 409]);
+  assert.equal(servicio.enviados.length, 1, 'WhatsApp recibe un solo mensaje');
 
-  const repetida = await convocar(eventoId);
-  assert.equal(repetida.status, 409);
+  const repetida = await convocar(eventoId, { reenviar: true });
+  assert.equal(repetida.status, 409, 'ya no existe la opción de reenviar');
   assert.equal(repetida.body.codigo, 'CONVOCATORIA_YA_ENVIADA');
   assert.ok(repetida.body.enviadaEn);
+  assert.equal(servicio.enviados.length, 1);
+});
 
-  const reenvio = await convocar(eventoId, { reenviar: true });
-  assert.equal(reenvio.status, 201);
-  assert.equal(reenvio.body.data.reenvio, true);
-  assert.equal(servicio.enviados.length, 2);
+test('si WhatsApp falla, la convocatoria queda libre para intentarlo de nuevo', async () => {
+  const eventoId = await crearEvento();
+  servicio.falloEnvio = 'WhatsApp no aceptó el mensaje';
+  assert.equal((await convocar(eventoId)).status, 502);
+  servicio.falloEnvio = null;
+  assert.equal((await convocar(eventoId)).status, 201);
+  assert.equal(servicio.enviados.length, 1);
 });
 
 test('la convocatoria de una asamblea incluye el orden del día', async () => {
   const eventoId = await crearEvento({ tipo: 'ASAMBLEA', estado: 'BORRADOR', multa: 0 });
   await db.query(
-    'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar, titulo_acta) VALUES (?, 1, ?, ?), (?, 2, ?, ?)',
-    [eventoId, 'Informe de tesorería', 'Informe de tesorería', eventoId, 'Elección de directiva', 'Elección de directiva']
+    'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar) VALUES (?, 1, ?), (?, 2, ?)',
+    [eventoId, 'Informe de tesorería', eventoId, 'Elección de directiva']
   );
   const r = await convocar(eventoId);
   assert.equal(r.status, 201);

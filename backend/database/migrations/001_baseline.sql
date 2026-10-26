@@ -13,7 +13,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- DOMINIO 1: IDENTIDAD, ACCESO Y ORGANIZACIÓN
 -- ==============================================================================
 
--- 1. Tabla de Personas / Comuneros
+-- 1. Tabla de Personas / Usuarios
 CREATE TABLE IF NOT EXISTS personas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     cedula VARCHAR(10) UNIQUE NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS personas (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_personas_apellidos_nombres (apellidos, nombres),
     INDEX idx_personas_nombres_apellidos (nombres, apellidos)
-) ENGINE=InnoDB COMMENT='Miembros y comuneros registrados en la Junta de Agua';
+) ENGINE=InnoDB COMMENT='Usuarios registrados en la Junta de Agua';
 
 -- 2. Tabla de Roles de Acceso
 CREATE TABLE IF NOT EXISTS roles (
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS persona_lotes (
     INDEX idx_persona_lotes_relacion (persona_id, lote_id, fecha_desde),
     INDEX idx_persona_lotes_persona (persona_id),
     CONSTRAINT uq_lote_dueno_unico UNIQUE (lote_id)
-) ENGINE=InnoDB COMMENT='Titularidad única de lotes por comunero (1 terreno = 1 dueño)';
+) ENGINE=InnoDB COMMENT='Titularidad única de lotes por usuario (1 terreno = 1 dueño)';
 
 -- 9. Turnos y Horarios de Agua de Riego
 CREATE TABLE IF NOT EXISTS turnos_riego (
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS turnos_riego (
     INDEX idx_turnos_persona (persona_id),
     INDEX idx_turnos_lote (lote_id),
     INDEX idx_turnos_horario (dia_semana, hora_inicio, hora_fin, estado)
-) ENGINE=InnoDB COMMENT='Horarios asignados de agua de riego por comunero y lote';
+) ENGINE=InnoDB COMMENT='Horarios asignados de agua de riego por usuario y lote';
 
 -- ==============================================================================
 -- DOMINIO 3: ASAMBLEAS, MINGAS, ASISTENCIA Y COMUNICACIÓN
@@ -289,7 +289,7 @@ CREATE TABLE IF NOT EXISTS obligaciones (
     INDEX idx_obligaciones_evento (evento_id),
     CONSTRAINT uq_obligacion_persona_periodo UNIQUE (persona_id, concepto_id, periodo_anio, periodo_mes),
     CONSTRAINT uq_multa_persona_evento_concepto UNIQUE (persona_id, evento_id, concepto_id)
-) ENGINE=InnoDB COMMENT='Cuentas por cobrar pendientes por comunero (pago completo únicamente)';
+) ENGINE=InnoDB COMMENT='Cuentas por cobrar pendientes por usuario (pago completo únicamente)';
 
 -- 18. Registro de Pagos (Ingresos)
 CREATE TABLE IF NOT EXISTS pagos (
@@ -305,7 +305,7 @@ CREATE TABLE IF NOT EXISTS pagos (
     FOREIGN KEY (persona_id) REFERENCES personas(id),
     FOREIGN KEY (registrado_por_cuenta_id) REFERENCES cuentas(id),
     INDEX idx_pagos_persona_fecha (persona_id, fecha_pago)
-) ENGINE=InnoDB COMMENT='Transacciones de pago realizadas por comuneros';
+) ENGINE=InnoDB COMMENT='Transacciones de pago realizadas por usuarios';
 
 -- 19. Detalle de Aplicación de Pagos a Obligaciones Completas
 CREATE TABLE IF NOT EXISTS pago_detalles (
@@ -418,7 +418,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Roles
 INSERT INTO roles (codigo, nombre, descripcion) VALUES
 ('ADMIN', 'Administrador del Sistema', 'Acceso total a todos los módulos y configuración'),
-('USUARIO', 'Comunero / Usuario de Riego', 'Acceso a la consulta pública y su portal personal')
+('USUARIO', 'Usuario de Riego', 'Acceso a la consulta pública y su portal personal')
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
 -- Conceptos de Cobro

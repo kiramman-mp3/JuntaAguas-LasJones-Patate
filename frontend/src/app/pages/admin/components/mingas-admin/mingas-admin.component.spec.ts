@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MingasAdminComponent } from './mingas-admin.component';
 import { MingaFormComponent } from './minga-form/minga-form.component';
 import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.component';
@@ -8,6 +8,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { AdminService } from '../../../../core/services/admin.service';
 import { ConsultaService } from '../../../../core/services/consulta.service';
 import { DialogService } from '../../../../core/services/dialog.service';
+import { hoyEnEcuador } from '../../../../core/utils/fechas';
 
 const minga = {
   id: 1,
@@ -21,7 +22,7 @@ const minga = {
   genera_multa_ausencia: true,
   valor_multa: 10,
   asistentes: 0,
-  totalComuneros: 2,
+  totalUsuarios: 2,
 };
 
 describe('Gestión de Mingas', () => {
@@ -40,6 +41,14 @@ describe('Gestión de Mingas', () => {
   beforeEach(async () => {
     admin = {
       getEventos: vi.fn(() => of({ data: [minga] })),
+      getSectores: vi.fn(() =>
+        of({
+          data: [
+            { id: 1, nombre: 'Patate Viejo' },
+            { id: 2, nombre: 'La Merced' },
+          ],
+        }),
+      ),
       createEvento: vi.fn(() => of({ eventoId: 1 })),
       getPersonas: vi.fn(() =>
         of({
@@ -52,18 +61,40 @@ describe('Gestión de Mingas', () => {
       getAsistencias: vi.fn(() =>
         of({ data: [{ persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' }] }),
       ),
-      getAsistenciasMinga: vi.fn(() => of({
-        estado: 'BORRADOR', resumen: { total: 2, presentes: 0, ausentes: 0, justificados: 1, pendientes: 1 },
-        data: [
-          { persona_id: 1, nombre: 'Pérez Ana', cedula: '1800000001', estado: 'JUSTIFICADO', motivo_justificacion: 'Salud' },
-          { persona_id: 2, nombre: 'Mora Luis', cedula: '1800000002', estado: 'PENDIENTE', motivo_justificacion: '' },
-        ],
-      })),
+      getAsistenciasMinga: vi.fn(() =>
+        of({
+          estado: 'BORRADOR',
+          resumen: { total: 2, presentes: 0, ausentes: 0, justificados: 1, pendientes: 1 },
+          data: [
+            {
+              persona_id: 1,
+              nombre: 'Pérez Ana',
+              cedula: '1800000001',
+              estado: 'JUSTIFICADO',
+              motivo_justificacion: 'Salud',
+            },
+            {
+              persona_id: 2,
+              nombre: 'Mora Luis',
+              cedula: '1800000002',
+              estado: 'PENDIENTE',
+              motivo_justificacion: '',
+            },
+          ],
+        }),
+      ),
       registrarAsistencias: vi.fn(() => of({ status: 'OK' })),
       registrarAsistenciasMinga: vi.fn(() => of({ status: 'OK' })),
-      cambiarEstadoMinga: vi.fn((_id: number, estado: string) => of({ estado, message: 'Actualizado' })),
+      cambiarEstadoMinga: vi.fn((_id: number, estado: string) =>
+        of({ estado, message: 'Actualizado' }),
+      ),
       finalizarMinga: vi.fn(() => of({ estado: 'REALIZADO', message: 'Finalizada' })),
-      enviarConvocatoriaWhatsApp: vi.fn(() => of({ data: { grupo: { id: 'g@g.us', nombre: 'Comuneros' }, estado: 'CONVOCADO', reenvio: false }, message: 'Publicada' })),
+      enviarConvocatoriaWhatsApp: vi.fn(() =>
+        of({
+          data: { grupo: { id: 'g@g.us', nombre: 'Usuarios' }, estado: 'CONVOCADO' },
+          message: 'Publicada',
+        }),
+      ),
     };
     consulta = {
       subirDocumentoEvento: vi.fn(),
@@ -98,9 +129,10 @@ describe('Gestión de Mingas', () => {
     form.formulario = {
       titulo: ' Limpieza ',
       descripcion: ' Canal ',
-      fecha: '2026-10-03',
+      fecha: hoyEnEcuador(),
       hora_inicio: '08:00',
       lugar: ' Entrada ',
+      sector_id: null,
       genera_multa_ausencia: false,
     };
     form.guardar();
@@ -109,6 +141,7 @@ describe('Gestión de Mingas', () => {
       tipo: 'MINGA',
       titulo: 'Limpieza',
       lugar: 'Entrada',
+      sector_id: null,
     });
     expect(payload).not.toHaveProperty('valor_multa');
     expect(payload).not.toHaveProperty('subtipo_asamblea');
@@ -116,12 +149,60 @@ describe('Gestión de Mingas', () => {
     expect(admin.enviarConvocatoriaWhatsApp).not.toHaveBeenCalled();
   });
 
+  it('permite seleccionar un sector específico para la minga', () => {
+    const form = TestBed.createComponent(MingaFormComponent).componentInstance;
+    form.ngOnInit();
+    expect(admin.getSectores).toHaveBeenCalled();
+    expect(form.sectores).toHaveLength(2);
+
+    form.formulario = {
+      titulo: 'Minga de sector',
+      descripcion: 'Mantenimiento',
+      fecha: hoyEnEcuador(),
+      hora_inicio: '08:00',
+      lugar: 'Reservorio La Merced',
+      sector_id: 2,
+      genera_multa_ausencia: true,
+    };
+    form.guardar();
+    const payload = admin.createEvento.mock.calls[admin.createEvento.mock.calls.length - 1][0];
+    expect(payload.sector_id).toBe(2);
+  });
+
+  it('impide registrar una minga con fecha anterior a la actual', () => {
+    const form = TestBed.createComponent(MingaFormComponent).componentInstance;
+    form.formulario = {
+      titulo: 'Minga atrasada',
+      descripcion: 'Canal',
+      fecha: '2020-01-01',
+      hora_inicio: '08:00',
+      lugar: 'Entrada',
+      sector_id: null,
+      genera_multa_ausencia: false,
+    };
+    form.guardar();
+    expect(form.error).toBe('La fecha de la minga no puede ser anterior a la fecha actual.');
+    expect(admin.createEvento).not.toHaveBeenCalled();
+  });
+
   it('conserva justificaciones y deja sin marcar como pendiente', () => {
     const asistencia = abrirAsistencia();
     asistencia.guardar();
     expect(admin.registrarAsistenciasMinga).toHaveBeenCalledWith(1, [
-      { persona_id: 1, estado: 'JUSTIFICADO', motivo_justificacion: 'Salud', archivo_justificacion_url: null, archivo_justificacion_nombre: null },
-      { persona_id: 2, estado: 'PENDIENTE', motivo_justificacion: null, archivo_justificacion_url: null, archivo_justificacion_nombre: null },
+      {
+        persona_id: 1,
+        estado: 'JUSTIFICADO',
+        motivo_justificacion: 'Salud',
+        archivo_justificacion_url: null,
+        archivo_justificacion_nombre: null,
+      },
+      {
+        persona_id: 2,
+        estado: 'PENDIENTE',
+        motivo_justificacion: null,
+        archivo_justificacion_url: null,
+        archivo_justificacion_nombre: null,
+      },
     ]);
   });
 
@@ -176,7 +257,7 @@ describe('Gestión de Mingas', () => {
   it('refleja el estado convocado que devuelve el servidor sin otra petición', async () => {
     const m = { ...minga };
     await component.enviarConvocatoria(m);
-    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(1, false);
+    expect(admin.enviarConvocatoriaWhatsApp).toHaveBeenCalledWith(1);
     expect(m.estado).toBe('CONVOCADO');
     expect(admin.cambiarEstadoMinga).not.toHaveBeenCalled();
   });
@@ -197,7 +278,9 @@ describe('Gestión de Mingas', () => {
   });
 
   it('confirma el resumen guardado antes de finalizar', async () => {
-    admin.getAsistenciasMinga.mockReturnValue(of({ resumen: { total: 2, presentes: 1, ausentes: 1, justificados: 0, pendientes: 0 } }));
+    admin.getAsistenciasMinga.mockReturnValue(
+      of({ resumen: { total: 2, presentes: 1, ausentes: 1, justificados: 0, pendientes: 0 } }),
+    );
     const dialog = TestBed.inject(DialogService) as any;
     await component.finalizarMinga({ ...minga });
     expect(admin.finalizarMinga).toHaveBeenCalledWith(1);

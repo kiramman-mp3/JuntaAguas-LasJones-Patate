@@ -37,7 +37,7 @@
    - 5.2. Transición de `AUSENTE` a `JUSTIFICADO` / `PRESENTE` Post-Evento
    - 5.3. Transición de `PRESENTE` / `JUSTIFICADO` a `AUSENTE` Post-Evento
 6. [Diseño y Migración de Base de Datos](#6-diseño-y-migracion-de-base-de-datos)
-   - 6.1. Migración `013_asistencia_archivo_justificacion.js`
+   - 6.1. Migración `024_asistencia_archivo_justificacion.js`
    - 6.2. Diccionario de Datos Actualizado (`asistencias`)
    - 6.3. Integridad Referencial y Claves Únicas
 7. [Especificación de la API REST (Backend Express)](#7-especificacion-de-la-api-rest-backend-express)
@@ -71,7 +71,7 @@ El presente desarrollo atiende dos necesidades críticas para la administración
 
 ### Objetivos Específicos de Ingeniería
 
-- Implementar la migración de base de datos idempotente `013_asistencia_archivo_justificacion.js` para persistir los metadatos de los archivos probatorios.
+- Implementar la migración de base de datos idempotente `024_asistencia_archivo_justificacion.js` para persistir los metadatos de los archivos probatorios.
 - Extender el servicio `eventosService.js` en Node.js para permitir la edición continua de asistencia en eventos `REALIZADO`, manteniendo la coherencia financiera con la tabla de `obligaciones`.
 - Crear endpoints REST con subida multipart protegida mediante análisis de números mágicos (magic bytes) en memoria para evitar inyección de archivos maliciosos.
 - Modernizar la interfaz gráfica de usuario en Angular mediante botones contextuales de carga, previsualización en chips visuales y diálogo seguro de desvinculación de archivos.
@@ -266,7 +266,7 @@ Si un comunero fue marcado erróneamente como presente y el secretario corrige s
 
 ## 6. 🗄️ Diseño y Migración de Base de Datos
 
-### 6.1. Migración `013_asistencia_archivo_justificacion.js`
+### 6.1. Migración `024_asistencia_archivo_justificacion.js`
 
 Se creó el script de migración incremental en el directorio oficial `backend/database/migrations/`:
 

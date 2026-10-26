@@ -18,16 +18,16 @@ const NOMBRES_M = ['María', 'Rosa', 'Carmen', 'Blanca', 'Luz', 'Martha', 'Glori
 const APELLIDOS = ['Toapanta', 'Quispe', 'Chicaiza', 'Pilamunga', 'Masaquiza', 'Caiza', 'Tisalema', 'Sailema', 'Freire', 'Naranjo', 'Aldaz', 'Moreta', 'Lascano', 'Villacís', 'Sánchez', 'Jácome', 'Altamirano', 'Barona', 'Mayorga', 'Pérez', 'Tigse', 'Chango', 'Guamán', 'Llerena', 'Robalino', 'Salazar', 'Mejía', 'Paredes', 'Ortiz', 'Tamayo', 'Carvajal', 'Silva', 'Garcés', 'Núñez', 'Viteri', 'Acosta', 'Cobo', 'Medina', 'Pazmiño', 'Sisa'];
 
 const SECTORES = [
-  { nombre: 'La Jones Alta', descripcion: 'Parte alta, junto a la bocatoma y el canal matriz', lat: -1.3080, lng: -78.5000, barrio: 'Barrio La Jones Alta' },
-  { nombre: 'La Jones Baja', descripcion: 'Parte baja de la comunidad, hacia la quebrada', lat: -1.3260, lng: -78.5140, barrio: 'Barrio La Jones Baja' },
-  { nombre: 'El Tambo', descripcion: 'Sector El Tambo, colindante con el río Patate', lat: -1.3200, lng: -78.5230, barrio: 'Caserío El Tambo' },
-  { nombre: 'Los Cuyes', descripcion: 'Zona media, huertos de frutales y hortalizas', lat: -1.3130, lng: -78.5100, barrio: 'Sector Los Cuyes' }
+  { nombre: 'Patate Viejo', descripcion: 'Sector histórico, canal principal y tomas de cabecera', lat: -1.3080, lng: -78.5000, barrio: 'Sector Patate Viejo' },
+  { nombre: 'La Merced', descripcion: 'Zona centro-norte, distribución intermedia y reservorio La Merced', lat: -1.3260, lng: -78.5140, barrio: 'Barrio La Merced' },
+  { nombre: 'San Javier', descripcion: 'Sector bajo y fértil hacia la vega del río Patate', lat: -1.3200, lng: -78.5230, barrio: 'Sector San Javier' }
 ];
 const REFERENCIAS = ['Junto a la acequia principal', 'Frente a la casa comunal', 'Bajo el reservorio', 'Junto al camino vecinal', 'Cerca de la escuela', 'Al filo de la quebrada', 'Tras la capilla', 'Junto al tanque rompepresión'];
 
+// Pago anual de agua: el valor de cada año es la tarifa AGUA_ANUAL vigente al 1 de enero.
 const TARIFAS_AGUA = [
-  { mesesAtras: 24, valor: 3.00, observacion: 'Tarifa aprobada en asamblea general ordinaria' },
-  { mesesAtras: 9, valor: 3.50, observacion: 'Incremento aprobado en asamblea por mantenimiento del canal' }
+  { mesesAtras: 24, valor: 36.00, observacion: 'Tarifa anual aprobada en asamblea general ordinaria' },
+  { mesesAtras: 9, valor: 42.00, observacion: 'Incremento aprobado en asamblea por mantenimiento del canal' }
 ];
 const MULTA_ASAMBLEA = 10;
 const MULTA_MINGA = 15;
@@ -98,7 +98,7 @@ async function insertarFilas(conexion, sql, filas, lote = 500) {
   }
 }
 
-/** Comuneros con un perfil de pago y asistencia que guía la simulación. */
+/** Usuarios con un perfil de pago y asistencia que guía la simulación. */
 function generarPersonas(azar, total) {
   const cedulas = new Set();
   const personas = [];
@@ -132,13 +132,13 @@ function generarPersonas(azar, total) {
   return personas;
 }
 
-async function crearPersonasYCuentas(conexion, azar, { totalComuneros, password }) {
+async function crearPersonasYCuentas(conexion, azar, { totalUsuarios, password }) {
   // La directiva va primero: sus cuentas son las administradoras.
   const directiva = [
     { cargo: 'Presidente', nombres: 'Carlos Eduardo', apellidos: 'Moreta Salazar' },
     { cargo: 'Tesorera', nombres: 'María Rosa', apellidos: 'Quispe Toapanta' }
   ];
-  const personas = generarPersonas(azar, directiva.length + totalComuneros);
+  const personas = generarPersonas(azar, directiva.length + totalUsuarios);
   directiva.forEach((d, i) => Object.assign(personas[i], { nombres: d.nombres, apellidos: d.apellidos, perfil: 'PUNTUAL', cargo: d.cargo }));
 
   const [r] = await conexion.query(
@@ -151,7 +151,7 @@ async function crearPersonasYCuentas(conexion, azar, { totalComuneros, password 
   const rol = Object.fromEntries(roles.map((x) => [x.codigo, x.id]));
   const hash = await hashPassword(password);
 
-  // Cuentas: la directiva (ADMIN), un comunero de demostración y una parte de los comuneros,
+  // Cuentas: la directiva (ADMIN), un usuario de demostración y una parte de los usuarios,
   // estos últimos con contraseña temporal pendiente de cambio, como al crearlas desde la interfaz.
   const conCuenta = personas.slice(0, directiva.length + 1)
     .concat(personas.slice(directiva.length + 1).filter(() => azar.probabilidad(0.25)));
@@ -168,8 +168,24 @@ async function crearPersonasYCuentas(conexion, azar, { totalComuneros, password 
 }
 
 async function crearSectoresYLotes(conexion, azar, personas, fechaInicio) {
-  const [r] = await conexion.query('INSERT INTO sectores (nombre, descripcion) VALUES ?', [SECTORES.map((s) => [s.nombre, s.descripcion])]);
-  const sectores = SECTORES.map((s, i) => ({ ...s, id: r.insertId + i, prefijo: prefijoSector(s.nombre), siguiente: 1 }));
+  for (const s of SECTORES) {
+    await conexion.query(
+      `INSERT INTO sectores (nombre, descripcion, activo) VALUES (?, ?, TRUE)
+       ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion), activo = TRUE`,
+      [s.nombre, s.descripcion]
+    );
+  }
+  const [dbSectores] = await conexion.query(
+    'SELECT id, nombre, descripcion FROM sectores WHERE nombre IN (?) ORDER BY id ASC',
+    [SECTORES.map((s) => s.nombre)]
+  );
+  const mapaDb = new Map(dbSectores.map((row) => [row.nombre, row.id]));
+  const sectores = SECTORES.map((s) => ({
+    ...s,
+    id: mapaDb.get(s.nombre),
+    prefijo: prefijoSector(s.nombre),
+    siguiente: 1
+  }));
 
   const lotes = [];
   for (const persona of personas) {
@@ -226,11 +242,11 @@ async function crearTurnos(conexion, lotes, vigenciaDesde) {
       const duracion = Math.min(3, Math.max(1, Math.ceil(lote.superficie / 2500))) * 60;
       if (minuto + duracion > FIN) { dia++; minuto = INICIO; }
       if (dia > 7) break; // El ramal ya no tiene horas libres en la semana.
-      filas.push([lote.persona.id, lote.id, 'REGULAR', dia, hora(minuto), hora(minuto + duracion), vigenciaDesde, 'ACTIVO']);
+      filas.push([lote.persona.id, lote.id, dia, hora(minuto), hora(minuto + duracion), vigenciaDesde, 'ACTIVO']);
       minuto += duracion;
     }
   }
-  await insertarFilas(conexion, 'INSERT INTO turnos_riego (persona_id, lote_id, tipo, dia_semana, hora_inicio, hora_fin, vigencia_desde, estado) VALUES ?', filas);
+  await insertarFilas(conexion, 'INSERT INTO turnos_riego (persona_id, lote_id, dia_semana, hora_inicio, hora_fin, vigencia_desde, estado) VALUES ?', filas);
   return filas.length;
 }
 
@@ -245,7 +261,7 @@ function calendarioEventos(azar, meses, mesExtraordinaria) {
       lista.push({ tipo: 'ASAMBLEA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 0, 1)), hora: '08:00:00', horaFin: '12:00:00', titulo: `Asamblea General Ordinaria ${['enero', 'abril', 'julio', 'octubre'][[1, 4, 7, 10].indexOf(mes)]} ${anio}` });
     }
     if (i === mesExtraordinaria) {
-      lista.push({ tipo: 'ASAMBLEA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 0, 3)), hora: '14:00:00', horaFin: '17:00:00', titulo: `Asamblea Extraordinaria: incremento de la tarifa de agua ${anio}`, extraordinaria: true });
+      lista.push({ tipo: 'ASAMBLEA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 0, 3)), hora: '14:00:00', horaFin: '17:00:00', titulo: `Asamblea Extraordinaria: incremento del pago anual de agua ${anio}`, extraordinaria: true });
     }
     lista.push({ tipo: 'MINGA', fecha: fechaIso(anio, mes, enesimoDiaSemana(anio, mes, 6, 2)), hora: '07:00:00', horaFin: '13:00:00', titulo: azar.elegir(TRABAJOS_MINGA) });
   });
@@ -266,7 +282,7 @@ async function crearEvento(conexion, e, { cuentaId, estado }) {
     [e.tipo, e.titulo, descripcion, e.fecha, e.hora, e.horaFin, lugar, estado, valorMulta, cuentaId]
   );
   if (e.tipo === 'ASAMBLEA') {
-    const puntos = e.extraordinaria ? ['Constatación del quórum', 'Propuesta de incremento de la tarifa mensual de agua', 'Votación y resolución'] : ORDEN_DEL_DIA;
+    const puntos = e.extraordinaria ? ['Constatación del quórum', 'Propuesta de incremento del pago anual de agua', 'Votación y resolución'] : ORDEN_DEL_DIA;
     await conexion.query(
       'INSERT INTO puntos_asamblea (evento_id, orden, punto_tratar) VALUES ?',
       [puntos.map((p, i) => [r.insertId, i + 1, p])]
@@ -293,17 +309,16 @@ async function realizarEvento(conexion, azar, eventoId, personasPorId, cuentaId)
   if (evento.tipo === 'ASAMBLEA') {
     await conexion.query(
       `UPDATE puntos_asamblea SET tratado = 'Se trató el punto con la participación de los asistentes.',
-         resolucion = CASE WHEN orden = 1 THEN 'Se constató el quórum reglamentario.' ELSE 'Aprobado por mayoría de los asistentes.' END,
-         estado_acta = 'APROBADA', fecha_acta = ?
+         resolucion = CASE WHEN orden = 1 THEN 'Se constató el quórum reglamentario.' ELSE 'Aprobado por mayoría de los asistentes.' END
        WHERE evento_id = ?`,
-      [instante(evento.fecha, evento.hora_fin || '12:00:00'), eventoId]
+      [eventoId]
     );
   }
   const { multasGeneradas } = await eventos.finalizar(conexion, evento, instante(evento.fecha, '18:00:00'));
   return multasGeneradas;
 }
 
-/** El comunero paga en una sola transacción todo lo que adeuda a la fecha, como en ventanilla. */
+/** El usuario paga en una sola transacción todo lo que adeuda a la fecha, como en ventanilla. */
 async function pagarPendientes(conexion, azar, persona, fecha, cuentaId) {
   const [pendientes] = await conexion.query(
     "SELECT id FROM obligaciones WHERE persona_id = ? AND estado = 'PENDIENTE' AND fecha_emision <= ? ORDER BY fecha_emision",
@@ -322,6 +337,47 @@ async function pagarPendientes(conexion, azar, persona, fecha, cuentaId) {
 }
 
 const PROBABILIDAD_PAGO = { PUNTUAL: 0.95, REGULAR: 0.45, MOROSO: 0.12 };
+
+const PROBABILIDAD_PAGO_ANUAL = {
+  PUNTUAL: { anterior: 0.9, actual: 0.85 },
+  REGULAR: { anterior: 0.7, actual: 0.4 },
+  MOROSO: { anterior: 0.2, actual: 0.05 }
+};
+
+/**
+ * Pagos del agua anual: cada obligación emitida (en enero de su año, ver sembrar) se paga dentro de
+ * su año según el perfil del usuario, nunca después de ayer. Lo que no se paga queda en cartera.
+ */
+async function crearPagosAnualesAgua(conexion, azar, personasPorId, hoy, cuentaId) {
+  const anioActual = Number(hoy.slice(0, 4));
+
+  const [iniciadas] = await conexion.query(
+    'SELECT id, persona_id, periodo_anio, fecha_emision FROM obligacion_anual_agua WHERE periodo_anio <= ? ORDER BY id',
+    [anioActual]
+  );
+  let pagos = 0;
+  for (const obligacion of iniciadas) {
+    const persona = personasPorId.get(Number(obligacion.persona_id));
+    const probabilidad = PROBABILIDAD_PAGO_ANUAL[persona.perfil][obligacion.periodo_anio < anioActual ? 'anterior' : 'actual'];
+    if (!azar.probabilidad(probabilidad)) continue;
+
+    // El pago ocurre entre la emisión y el fin del año de la obligación, y nunca después de ayer.
+    const inicio = obligacion.fecha_emision;
+    const fin = [fechaIso(obligacion.periodo_anio, 12, 31), sumarDias(hoy, -1)].sort()[0];
+    const dias = Math.round((Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`)) / 86400000);
+    if (dias < 0) continue;
+    const fecha = sumarDias(inicio, azar.entero(0, dias));
+
+    const metodo = azar.probabilidad(0.75) ? 'TRANSFERENCIA' : 'DEPOSITO';
+    await finanzas.registrarPagoAnualAgua(conexion, {
+      personaId: persona.id, obligacionesIds: [obligacion.id], metodo, cuentaId,
+      referencia: `${metodo === 'TRANSFERENCIA' ? 'TRF' : 'DEP'}-${azar.entero(100000, 999999)}`,
+      fechaPago: instante(fecha, `${dosDigitos(azar.entero(8, 16))}:${dosDigitos(azar.entero(0, 59))}:00`)
+    });
+    pagos++;
+  }
+  return { pagos };
+}
 
 async function crearEgresos(conexion, azar, meses, hoy, cuentaId) {
   const filas = [];
@@ -389,13 +445,13 @@ async function crearPlanAnual(conexion, anio, hoy, cuentaId) {
 }
 
 /**
- * Siembra la base completa. Exige una base migrada y sin comuneros.
+ * Siembra la base completa. Exige una base migrada y sin usuarios.
  * @param {import('mysql2/promise').Connection} conexion conexión posicionada en la base, con dateStrings para DATE
- * @param {{ hoy?: string, semilla?: number, totalComuneros?: number, meses?: number, password: string, log?: Function }} opciones
+ * @param {{ hoy?: string, semilla?: number, totalUsuarios?: number, meses?: number, password: string, log?: Function }} opciones
  */
-async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComuneros = 120, meses: totalMeses = 22, password, log = console.log }) {
+async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsuarios = 120, meses: totalMeses = 22, password, log = console.log }) {
   const [[{ total }]] = await conexion.query('SELECT COUNT(*) AS total FROM personas');
-  if (total > 0) throw new Error('La base ya tiene comuneros registrados. Use --reset para recrearla antes de sembrar.');
+  if (total > 0) throw new Error('La base ya tiene usuarios registrados. Use --reset para recrearla antes de sembrar.');
 
   const azar = crearAzar(semilla);
   const actual = { anio: Number(hoy.slice(0, 4)), mes: Number(hoy.slice(5, 7)) };
@@ -404,14 +460,14 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
 
   await conexion.beginTransaction();
   try {
-    log('[seed] Comuneros, cuentas, sectores y lotes...');
-    const { personas, admin, demo, cuentas } = await crearPersonasYCuentas(conexion, azar, { totalComuneros, password });
+    log('[seed] Usuarios, cuentas, sectores y lotes...');
+    const { personas, admin, demo, cuentas } = await crearPersonasYCuentas(conexion, azar, { totalUsuarios, password });
     const personasPorId = new Map(personas.map((p) => [p.id, p]));
     const { lotes } = await crearSectoresYLotes(conexion, azar, personas, fechaInicio);
     const turnos = await crearTurnos(conexion, lotes, fechaInicio);
 
     log('[seed] Tarifas...');
-    const agua = await finanzas.conceptoPorCodigo(conexion, 'AGUA_MENSUAL');
+    const agua = await finanzas.conceptoPorCodigo(conexion, 'AGUA_ANUAL');
     for (const t of TARIFAS_AGUA) {
       const { anio, mes } = sumarMeses(actual, -t.mesesAtras);
       await finanzas.registrarTarifa(conexion, { conceptoId: agua.id, valor: t.valor, vigenciaDesde: fechaIso(anio, mes, 1), observacion: t.observacion });
@@ -424,21 +480,26 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
       await finanzas.registrarTarifa(conexion, { conceptoId: concepto.id, valor, vigenciaDesde: fechaIso(anioMultas, mesMultas, 1), observacion: 'Multa por inasistencia' });
     }
 
-    // Algunos comuneros dejan la Junta a mitad del período (venta del terreno, fallecimiento).
+    // Algunos usuarios dejan la Junta a mitad del período (venta del terreno, fallecimiento).
     const retiros = new Map();
     for (const p of personas.slice(3).filter(() => azar.probabilidad(0.03))) {
       retiros.set(p.id, azar.entero(Math.floor(totalMeses / 3), totalMeses - 2));
     }
 
-    log(`[seed] Simulando ${totalMeses} meses de facturación, eventos y pagos...`);
+    log(`[seed] Simulando ${totalMeses} meses de pago anual de agua, eventos y pagos...`);
     const calendario = calendarioEventos(azar, meses, totalMeses - TARIFAS_AGUA[1].mesesAtras - 2);
-    const resumen = { facturas: 0, eventosRealizados: 0, multas: 0, pagos: 0 };
+    const resumen = { obligacionesAnuales: 0, eventosRealizados: 0, multas: 0, pagos: 0 };
     for (const [i, periodo] of meses.entries()) {
       const retirados = [...retiros].filter(([, mes]) => mes === i).map(([id]) => id);
       if (retirados.length) await conexion.query("UPDATE personas SET estado = 'INACTIVO' WHERE id IN (?)", [retirados]);
 
-      const factura = await finanzas.generarFacturacionMensual(conexion, periodo);
-      resumen.facturas += factura.generadas;
+      // El pago anual se emite al empezar cada año (o al inicio de la historia simulada).
+      if (i === 0 || periodo.mes === 1) {
+        const anual = await finanzas.generarObligacionesAnualesAgua(conexion, {
+          anio: periodo.anio, fechaEmision: fechaIso(periodo.anio, periodo.mes, 1)
+        });
+        resumen.obligacionesAnuales += anual.generadas;
+      }
 
       const prefijo = `${periodo.anio}-${dosDigitos(periodo.mes)}`;
       for (const e of calendario.filter((x) => x.fecha.startsWith(prefijo) && x.fecha < hoy)) {
@@ -469,11 +530,22 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
       if (i > 0) await pagarPendientes(conexion, azar, personasPorId.get(Number(pago.persona_id)), hoy, admin.cuentaId);
     }
 
+    log('[seed] Pago anual de agua...');
+    const anualAgua = await crearPagosAnualesAgua(conexion, azar, personasPorId, hoy, admin.cuentaId);
+
     log('[seed] Próximos eventos, egresos, inventario y plan anual...');
     const proximos = [
-      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 12), hora: '08:00:00', horaFin: '12:00:00', titulo: 'Asamblea General Ordinaria', estado: 'CONVOCADO' },
-      { tipo: 'MINGA', fecha: sumarDias(hoy, 5), hora: '07:00:00', horaFin: '13:00:00', titulo: 'Limpieza del canal matriz antes del verano', estado: 'PROGRAMADO' },
-      { tipo: 'MINGA', fecha: sumarDias(hoy, 33), hora: '07:00:00', horaFin: '12:00:00', titulo: 'Reparación de la compuerta de El Tambo', estado: 'BORRADOR' }
+      // 4 próximas asambleas
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 8), hora: '08:00:00', horaFin: '12:00:00', titulo: 'Asamblea General Ordinaria: Rendición de Cuentas', estado: 'CONVOCADO' },
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 28), hora: '08:30:00', horaFin: '12:00:00', titulo: 'Asamblea Extraordinaria: Mantenimiento del Reservorio', estado: 'CONVOCADO' },
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 56), hora: '09:00:00', horaFin: '13:00:00', titulo: 'Asamblea General Ordinaria: Turnos de Riego de Verano', estado: 'PROGRAMADO' },
+      { tipo: 'ASAMBLEA', fecha: sumarDias(hoy, 84), hora: '08:00:00', horaFin: '12:00:00', titulo: 'Asamblea General Informativa y Evaluación de Cuotas', estado: 'PROGRAMADO' },
+
+      // 4 próximas mingas
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 4), hora: '07:00:00', horaFin: '13:00:00', titulo: 'Limpieza del canal matriz antes del verano', estado: 'CONVOCADO' },
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 18), hora: '07:30:00', horaFin: '12:30:00', titulo: 'Desbroce y mantenimiento de la acequia de La Jones Baja', estado: 'CONVOCADO' },
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 42), hora: '07:00:00', horaFin: '12:00:00', titulo: 'Reparación de la compuerta de El Tambo', estado: 'PROGRAMADO' },
+      { tipo: 'MINGA', fecha: sumarDias(hoy, 70), hora: '07:00:00', horaFin: '13:00:00', titulo: 'Limpieza y mantenimiento del desarenador de la bocatoma', estado: 'PROGRAMADO' }
     ];
     for (const e of proximos) await crearEvento(conexion, e, { cuentaId: admin.cuentaId, estado: e.estado });
 
@@ -483,7 +555,7 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalComu
 
     await conexion.commit();
     return {
-      ...resumen, comuneros: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades,
+      ...resumen, anualAgua, usuarios: personas.length, cuentas, lotes: lotes.length, turnos, egresos, bienes, actividades,
       anulaciones: recientes.length, retirados: retiros.size,
       admin: { cedula: admin.cedula, nombre: `${admin.nombres} ${admin.apellidos}` },
       demo: { cedula: demo.cedula, nombre: `${demo.nombres} ${demo.apellidos}` }

@@ -1,36 +1,57 @@
-@if (!comunero()) {
+@if (!usuario()) {
   <section class="fin-panel" aria-labelledby="cobro-buscar-titulo">
     <div class="fin-panel__head">
       <div>
-        <h3 class="fin-panel__title" id="cobro-buscar-titulo"><i class="ri-hand-coin-line" aria-hidden="true"></i> Cobrar a un comunero</h3>
-        <p class="fin-panel__desc">Busque por apellido, nombre o cédula. Se muestran todas sus obligaciones pendientes: cuotas de agua, multas y otros rubros.</p>
+        <h3 class="fin-panel__title" id="cobro-buscar-titulo">
+          <i class="ri-hand-coin-line" aria-hidden="true"></i> Cobrar a un usuario
+        </h3>
+        <p class="fin-panel__desc">
+          Busque por apellido, nombre o cédula. Se muestran todas sus obligaciones pendientes: el
+          pago anual de agua, multas y otros rubros.
+        </p>
       </div>
     </div>
 
     <div class="search-field">
       <i class="ri-search-line" aria-hidden="true"></i>
-      <input #campoBusqueda class="input" type="search" autocomplete="off"
+      <input
+        #campoBusqueda
+        class="input"
+        type="search"
+        autocomplete="off"
         placeholder="Ej.: Chicaiza o 1804567890"
-        aria-label="Buscar comunero" aria-describedby="cobro-busqueda-ayuda"
-        [ngModel]="termino()" (ngModelChange)="onBuscar($event)" />
+        aria-label="Buscar usuario"
+        aria-describedby="cobro-busqueda-ayuda"
+        [ngModel]="termino()"
+        (ngModelChange)="onBuscar($event)"
+      />
     </div>
     <p class="field__hint" id="cobro-busqueda-ayuda" aria-live="polite">
-      @if (buscando()) { Buscando… }
-      @else if (errorBusqueda()) { <span class="field__error">{{ errorBusqueda() }}</span> }
-      @else if (termino().trim().length >= 2 && !resultados().length) { No hay comuneros que coincidan con «{{ termino().trim() }}». }
-      @else if (termino().trim().length < 2) { Escriba al menos 2 caracteres. }
+      @if (buscando()) {
+        Buscando…
+      } @else if (errorBusqueda()) {
+        <span class="field__error">{{ errorBusqueda() }}</span>
+      } @else if (termino().trim().length >= 2 && !resultados().length) {
+        No hay usuarios que coincidan con «{{ termino().trim() }}».
+      } @else if (termino().trim().length < 2) {
+        Escriba al menos 2 caracteres.
+      }
     </p>
 
     @if (resultados().length) {
-      <ul class="result-list" aria-label="Comuneros encontrados">
+      <ul class="result-list" aria-label="Usuarios encontrados">
         @for (r of resultados(); track r.id) {
           <li class="result-list__item">
-            <button type="button" class="result-list__btn" (click)="seleccionarComunero(r)">
+            <button type="button" class="result-list__btn" (click)="seleccionarUsuario(r)">
               <span>
                 <strong>{{ r.apellidos }} {{ r.nombres }}</strong>
-                @if (r.estado === 'INACTIVO') { <span class="badge badge--warning">Inactivo</span> }
+                @if (r.estado === 'INACTIVO') {
+                  <span class="badge badge--warning">Inactivo</span>
+                }
               </span>
-              <span class="result-list__meta">{{ r.cedula }} <i class="ri-arrow-right-s-line" aria-hidden="true"></i></span>
+              <span class="result-list__meta"
+                >{{ r.cedula }} <i class="ri-arrow-right-s-line" aria-hidden="true"></i
+              ></span>
             </button>
           </li>
         }
@@ -43,60 +64,155 @@
     <section class="fin-panel" aria-labelledby="cobro-obligaciones-titulo">
       <div class="fin-panel__head">
         <div>
-          <h3 class="fin-panel__title" id="cobro-obligaciones-titulo">{{ comunero()!.apellidos }} {{ comunero()!.nombres }}</h3>
-          <p class="fin-panel__desc">Cédula {{ comunero()!.cedula }} · Pendiente total <strong class="money">${{ totalPendiente().toFixed(2) }}</strong></p>
+          <h3 class="fin-panel__title" id="cobro-obligaciones-titulo">
+            {{ usuario()!.apellidos }} {{ usuario()!.nombres }}
+          </h3>
+          <p class="fin-panel__desc">Cédula {{ usuario()!.cedula }}</p>
         </div>
-        <button type="button" class="btn btn--outline btn--sm pressable" (click)="cambiarComunero()">
-          <i class="ri-user-search-line" aria-hidden="true"></i> Cambiar comunero
+        <button type="button" class="btn btn--outline btn--sm pressable" (click)="cambiarUsuario()">
+          <i class="ri-user-search-line" aria-hidden="true"></i> Cambiar usuario
         </button>
       </div>
 
-      @if (cargandoObligaciones()) {
-        <div aria-live="polite">
-          <div class="skeleton skeleton--text"></div>
-          <div class="skeleton skeleton--text"></div>
-          <div class="skeleton skeleton--text"></div>
+      <div class="fin-panel__head">
+        <div class="chips" role="tablist" aria-label="Tipo de obligaciones">
+          <button
+            type="button"
+            class="chip"
+            role="tab"
+            [class.chip--active]="pestana() === 'AGUA'"
+            [attr.aria-selected]="pestana() === 'AGUA'"
+            (click)="pestana.set('AGUA')"
+          >
+            Agua anual
+            @if (obligacionesAgua().length) {
+              <span class="badge badge--info">{{ obligacionesAgua().length }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="chip"
+            role="tab"
+            [class.chip--active]="pestana() === 'OTRAS'"
+            [attr.aria-selected]="pestana() === 'OTRAS'"
+            (click)="pestana.set('OTRAS')"
+          >
+            Multas y otros
+            @if (obligaciones().length) {
+              <span class="badge badge--info">{{ obligaciones().length }}</span>
+            }
+          </button>
         </div>
-      } @else if (errorObligaciones()) {
-        <div class="alert alert--danger" role="alert">
-          {{ errorObligaciones() }}
-          <button type="button" class="btn btn--outline btn--sm" (click)="cargarObligaciones()">Reintentar</button>
-        </div>
-      } @else if (!obligaciones().length) {
-        <div class="empty-state">
-          <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
-          <strong>Al día</strong>
-          <p>Este comunero no tiene obligaciones pendientes.</p>
-        </div>
-      } @else {
-        <div class="fin-panel__head">
-          <div class="chips" role="group" aria-label="Filtrar obligaciones">
-            <button type="button" class="chip" [class.chip--active]="filtro() === 'TODAS'" [attr.aria-pressed]="filtro() === 'TODAS'" (click)="filtro.set('TODAS')">Todas</button>
-            <button type="button" class="chip" [class.chip--active]="filtro() === 'AGUA'" [attr.aria-pressed]="filtro() === 'AGUA'" (click)="filtro.set('AGUA')">Cuotas de agua</button>
-            <button type="button" class="chip" [class.chip--active]="filtro() === 'OTRAS'" [attr.aria-pressed]="filtro() === 'OTRAS'" (click)="filtro.set('OTRAS')">Multas y otros</button>
-          </div>
-          @if (visibles().length) {
-            <button type="button" class="btn btn--outline btn--sm" (click)="alternarVisibles()">
-              {{ todasVisiblesMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
-            </button>
-          }
-        </div>
+        @if (pestana() === 'AGUA' && obligacionesAgua().length) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="alternarTodasAgua()">
+            {{ todasAguaMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
+          </button>
+        } @else if (pestana() === 'OTRAS' && obligaciones().length) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="alternarTodasOtras()">
+            {{ todasOtrasMarcadas() ? 'Quitar selección' : 'Seleccionar todas' }}
+          </button>
+        }
+      </div>
 
-        @if (arbol().length) {
+      <!-- PESTAÑA: PAGO ANUAL DE AGUA -->
+      @if (pestana() === 'AGUA') {
+        @if (cargandoAgua()) {
+          <div aria-live="polite">
+            <div class="skeleton skeleton--text"></div>
+            <div class="skeleton skeleton--text"></div>
+          </div>
+        } @else if (errorAgua()) {
+          <div class="alert alert--danger" role="alert">
+            {{ errorAgua() }}
+            <button type="button" class="btn btn--outline btn--sm" (click)="cargarAgua()">
+              Reintentar
+            </button>
+          </div>
+        } @else if (!obligacionesAgua().length) {
+          <div class="empty-state">
+            <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+            <strong>Al día</strong>
+            <p>Este usuario no tiene pagos anuales de agua pendientes.</p>
+          </div>
+        } @else {
+          <ul class="check-list" aria-label="Pago anual de agua pendiente por año">
+            @for (o of obligacionesAgua(); track o.id) {
+              <li>
+                <label class="check-row" [class.check-row--checked]="seleccionAgua().has(o.id)">
+                  <input
+                    type="checkbox"
+                    [checked]="seleccionAgua().has(o.id)"
+                    (change)="alternarAgua(o.id)"
+                  />
+                  <span>
+                    <span class="check-row__title">Pago anual de agua · {{ o.periodo_anio }}</span>
+                  </span>
+                  <span class="check-row__value money">${{ o.valor_total.toFixed(2) }}</span>
+                </label>
+              </li>
+            }
+          </ul>
+          <div class="cobro-tree__resumen" aria-live="polite">
+            <span class="text-muted">Seleccionado</span>
+            <span
+              ><strong class="money">${{ totalSeleccionadoAgua().toFixed(2) }}</strong>
+              <span class="text-muted">de</span>
+              <span class="money">${{ totalAgua().toFixed(2) }}</span></span
+            >
+          </div>
+        }
+      }
+
+      <!-- PESTAÑA: MULTAS Y OTROS (ÁRBOL AÑO → MES → CONCEPTO) -->
+      @if (pestana() === 'OTRAS') {
+        @if (cargandoObligaciones()) {
+          <div aria-live="polite">
+            <div class="skeleton skeleton--text"></div>
+            <div class="skeleton skeleton--text"></div>
+            <div class="skeleton skeleton--text"></div>
+          </div>
+        } @else if (errorObligaciones()) {
+          <div class="alert alert--danger" role="alert">
+            {{ errorObligaciones() }}
+            <button type="button" class="btn btn--outline btn--sm" (click)="cargarOtras()">
+              Reintentar
+            </button>
+          </div>
+        } @else if (!obligaciones().length) {
+          <div class="empty-state">
+            <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+            <strong>Al día</strong>
+            <p>Este usuario no tiene multas ni otros rubros pendientes.</p>
+          </div>
+        } @else {
           <ul class="fin-tree cobro-tree" aria-label="Obligaciones pendientes por año y mes">
             @for (a of arbol(); track a.clave) {
               @let idsAnio = idsDe(a);
               @let estadoAnio = estadoSeleccion(idsAnio);
               <li class="fin-tree__anio">
                 <div class="cobro-tree__fila cobro-tree__fila--anio">
-                  <input type="checkbox" class="cobro-tree__check" [checked]="estadoAnio === 'todas'" [indeterminate]="estadoAnio === 'algunas'"
-                    (change)="alternarGrupo(idsAnio)" [attr.aria-label]="'Seleccionar todo ' + a.etiqueta" />
-                  <button type="button" class="fin-tree__nodo fin-tree__nodo--anio" [attr.aria-expanded]="estaAbierto(a.clave)"
-                    [attr.aria-controls]="'cobro-anio-' + a.clave" (click)="alternarNodo(a.clave)">
+                  <input
+                    type="checkbox"
+                    class="cobro-tree__check"
+                    [checked]="estadoAnio === 'todas'"
+                    [indeterminate]="estadoAnio === 'algunas'"
+                    (change)="alternarGrupo(idsAnio)"
+                    [attr.aria-label]="'Seleccionar todo ' + a.etiqueta"
+                  />
+                  <button
+                    type="button"
+                    class="fin-tree__nodo fin-tree__nodo--anio"
+                    [attr.aria-expanded]="estaAbierto(a.clave)"
+                    [attr.aria-controls]="'cobro-anio-' + a.clave"
+                    (click)="alternarNodo(a.clave)"
+                  >
                     <i class="ri-arrow-right-s-line fin-tree__chevron" aria-hidden="true"></i>
                     <span class="fin-tree__etiqueta">
                       {{ a.etiqueta }}
-                      <span class="check-row__meta">{{ a.cantidad }} {{ a.cantidad === 1 ? 'obligación' : 'obligaciones' }}</span>
+                      <span class="check-row__meta"
+                        >{{ a.cantidad }}
+                        {{ a.cantidad === 1 ? 'obligación' : 'obligaciones' }}</span
+                      >
                     </span>
                     <span class="cobro-tree__cifra">
                       <span class="cobro-tree__rotulo">Total del año</span>
@@ -112,11 +228,25 @@
                       @let estadoMes = estadoSeleccion(idsMes);
                       <li>
                         <div class="cobro-tree__fila">
-                          <input type="checkbox" class="cobro-tree__check" [checked]="estadoMes === 'todas'" [indeterminate]="estadoMes === 'algunas'"
-                            (change)="alternarGrupo(idsMes)" [attr.aria-label]="'Seleccionar todo ' + m.etiqueta + ' ' + a.etiqueta" />
-                          <button type="button" class="fin-tree__nodo" [attr.aria-expanded]="estaAbierto(m.clave)"
-                            [attr.aria-controls]="'cobro-mes-' + m.clave" (click)="alternarNodo(m.clave)">
-                            <i class="ri-arrow-right-s-line fin-tree__chevron" aria-hidden="true"></i>
+                          <input
+                            type="checkbox"
+                            class="cobro-tree__check"
+                            [checked]="estadoMes === 'todas'"
+                            [indeterminate]="estadoMes === 'algunas'"
+                            (change)="alternarGrupo(idsMes)"
+                            [attr.aria-label]="'Seleccionar todo ' + m.etiqueta + ' ' + a.etiqueta"
+                          />
+                          <button
+                            type="button"
+                            class="fin-tree__nodo"
+                            [attr.aria-expanded]="estaAbierto(m.clave)"
+                            [attr.aria-controls]="'cobro-mes-' + m.clave"
+                            (click)="alternarNodo(m.clave)"
+                          >
+                            <i
+                              class="ri-arrow-right-s-line fin-tree__chevron"
+                              aria-hidden="true"
+                            ></i>
                             <span class="fin-tree__etiqueta">{{ m.etiqueta }}</span>
                             <span class="cobro-tree__cifra">
                               <span class="cobro-tree__rotulo">Subtotal</span>
@@ -126,23 +256,41 @@
                         </div>
 
                         @if (estaAbierto(m.clave)) {
-                          <ul class="check-list cobro-tree__conceptos" [id]="'cobro-mes-' + m.clave">
+                          <ul
+                            class="check-list cobro-tree__conceptos"
+                            [id]="'cobro-mes-' + m.clave"
+                          >
                             @for (o of m.obligaciones; track o.id) {
                               <li>
-                                <label class="check-row" [class.check-row--checked]="seleccion().has(o.id)">
-                                  <input type="checkbox" [checked]="seleccion().has(o.id)" (change)="alternar(o.id)" />
+                                <label
+                                  class="check-row"
+                                  [class.check-row--checked]="seleccion().has(o.id)"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    [checked]="seleccion().has(o.id)"
+                                    (change)="alternar(o.id)"
+                                  />
                                   <span>
                                     <span class="check-row__title">{{ o.concepto_nombre }}</span>
                                     @if (o.fecha_vencimiento || o.observacion) {
                                       <br />
                                       <span class="check-row__meta">
-                                        @if (o.fecha_vencimiento) { Vence {{ o.fecha_vencimiento | fechaLocal }} }
-                                        @if (o.fecha_vencimiento && o.observacion) { · }
-                                        @if (o.observacion) { {{ o.observacion }} }
+                                        @if (o.fecha_vencimiento) {
+                                          Vence {{ o.fecha_vencimiento | fechaLocal }}
+                                        }
+                                        @if (o.fecha_vencimiento && o.observacion) {
+                                          ·
+                                        }
+                                        @if (o.observacion) {
+                                          {{ o.observacion }}
+                                        }
                                       </span>
                                     }
                                   </span>
-                                  <span class="check-row__value money">${{ o.valor.toFixed(2) }}</span>
+                                  <span class="check-row__value money"
+                                    >${{ o.valor.toFixed(2) }}</span
+                                  >
                                 </label>
                               </li>
                             }
@@ -157,10 +305,12 @@
           </ul>
           <div class="cobro-tree__resumen" aria-live="polite">
             <span class="text-muted">Seleccionado</span>
-            <span><strong class="money">${{ seleccionadoVisible().toFixed(2) }}</strong> <span class="text-muted">de</span> <span class="money">${{ totalVisible().toFixed(2) }}</span></span>
+            <span
+              ><strong class="money">${{ totalSeleccionadoOtras().toFixed(2) }}</strong>
+              <span class="text-muted">de</span>
+              <span class="money">${{ totalOtras().toFixed(2) }}</span></span
+            >
           </div>
-        } @else {
-          <p class="text-muted">No hay obligaciones de este tipo.</p>
         }
       }
     </section>
@@ -169,7 +319,11 @@
     <aside class="fin-panel" aria-labelledby="cobro-caja-titulo">
       @if (comprobante(); as c) {
         <div class="empty-state" role="status">
-          <i class="ri-checkbox-circle-fill" style="color: var(--color-success)" aria-hidden="true"></i>
+          <i
+            class="ri-checkbox-circle-fill"
+            style="color: var(--color-success)"
+            aria-hidden="true"
+          ></i>
           <strong>Pago {{ c.numero }} registrado</strong>
           <p>
             <span class="money">${{ c.total.toFixed(2) }}</span>
@@ -177,27 +331,54 @@
         </div>
         @if (pagoRegistradoId(); as id) {
           <app-comprobante-bancario [pagoId]="id" />
-          <p class="field__hint">Puede adjuntar el comprobante bancario ahora o desde el historial de pagos.</p>
+          <p class="field__hint">
+            Puede adjuntar el comprobante bancario ahora o desde el historial de pagos.
+          </p>
         }
         <div class="summary">
-          <button type="button" class="btn btn--primary btn--block pressable" [disabled]="imprimiendo()" (click)="imprimirComprobante()">
-            <i class="ri-printer-line" aria-hidden="true"></i> {{ imprimiendo() ? 'Preparando…' : 'Imprimir comprobante' }}
+          <button
+            type="button"
+            class="btn btn--primary btn--block pressable"
+            [disabled]="imprimiendo()"
+            (click)="imprimirComprobante()"
+          >
+            <i class="ri-printer-line" aria-hidden="true"></i>
+            {{ imprimiendo() ? 'Preparando…' : 'Imprimir comprobante' }}
           </button>
-          <button type="button" class="btn btn--outline btn--block pressable" [disabled]="imprimiendo()" (click)="imprimirComprobante(true)">
+          <button
+            type="button"
+            class="btn btn--outline btn--block pressable"
+            [disabled]="imprimiendo()"
+            (click)="imprimirComprobante(true)"
+          >
             <i class="ri-download-2-line" aria-hidden="true"></i> Descargar PDF
           </button>
-          <button type="button" class="btn btn--outline btn--block pressable" (click)="comprobante.set(null)">
-            Seguir cobrando a este comunero
+          <button
+            type="button"
+            class="btn btn--outline btn--block pressable"
+            (click)="comprobante.set(null)"
+          >
+            Seguir cobrando a este usuario
           </button>
-          <button type="button" class="btn btn--outline btn--block pressable" (click)="cambiarComunero()">
-            Cobrar a otro comunero
+          <button
+            type="button"
+            class="btn btn--outline btn--block pressable"
+            (click)="cambiarUsuario()"
+          >
+            Cobrar a otro usuario
           </button>
         </div>
       } @else {
-        <h3 class="fin-panel__title" id="cobro-caja-titulo"><i class="ri-safe-2-line" aria-hidden="true"></i> Caja</h3>
+        <h3 class="fin-panel__title" id="cobro-caja-titulo">
+          <i class="ri-safe-2-line" aria-hidden="true"></i> Caja
+        </h3>
         <div class="summary" style="margin-top: 1rem">
           <div class="summary__row">
-            <span class="text-muted">{{ seleccionadas().length }} {{ seleccionadas().length === 1 ? 'obligación' : 'obligaciones' }}</span>
+            <span class="text-muted"
+              >{{ cantidadSeleccionada() }}
+              {{ cantidadSeleccionada() === 1 ? 'obligación' : 'obligaciones' }} ·
+              {{ pestana() === 'AGUA' ? 'agua anual' : 'multas y otros' }}</span
+            >
           </div>
           <div class="summary__total money" aria-live="polite">${{ total().toFixed(2) }}</div>
           <hr class="summary__divider" />
@@ -206,27 +387,57 @@
             <span class="field__label" id="cobro-metodo">Forma de pago</span>
             <div class="chips" role="radiogroup" aria-labelledby="cobro-metodo">
               @for (m of metodos; track m.valor) {
-                <button type="button" class="chip" role="radio" [class.chip--active]="metodo() === m.valor" [attr.aria-checked]="metodo() === m.valor" (click)="metodo.set(m.valor)">{{ m.etiqueta }}</button>
+                <button
+                  type="button"
+                  class="chip"
+                  role="radio"
+                  [class.chip--active]="metodo() === m.valor"
+                  [attr.aria-checked]="metodo() === m.valor"
+                  (click)="metodo.set(m.valor)"
+                >
+                  {{ m.etiqueta }}
+                </button>
               }
             </div>
           </div>
 
           <div class="field">
             <label for="cobro-referencia">Número de referencia</label>
-            <input id="cobro-referencia" class="input" type="text" maxlength="100" placeholder="Referencia bancaria"
-              [ngModel]="referencia()" (ngModelChange)="referencia.set($event)" />
+            <input
+              id="cobro-referencia"
+              class="input"
+              type="text"
+              maxlength="100"
+              placeholder="Referencia bancaria"
+              [ngModel]="referencia()"
+              (ngModelChange)="referencia.set($event)"
+            />
           </div>
 
           <div class="field">
-            <label for="cobro-observacion">Observación <span class="text-muted">(opcional)</span></label>
-            <input id="cobro-observacion" class="input" type="text" maxlength="255"
-              [ngModel]="observacion()" (ngModelChange)="observacion.set($event)" />
+            <label for="cobro-observacion"
+              >Observación <span class="text-muted">(opcional)</span></label
+            >
+            <input
+              id="cobro-observacion"
+              class="input"
+              type="text"
+              maxlength="255"
+              [ngModel]="observacion()"
+              (ngModelChange)="observacion.set($event)"
+            />
           </div>
 
-          <button type="button" class="btn btn--primary btn--lg btn--block pressable" [disabled]="!!bloqueo() || procesando()" (click)="cobrar()">
-            <i class="ri-check-line" aria-hidden="true"></i> {{ procesando() ? 'Registrando…' : 'Registrar pago' }}
+          <button
+            type="button"
+            class="btn btn--primary btn--lg btn--block pressable"
+            [disabled]="!!bloqueo() || procesando()"
+            (click)="cobrar()"
+          >
+            <i class="ri-check-line" aria-hidden="true"></i>
+            {{ procesando() ? 'Registrando…' : 'Registrar pago' }}
           </button>
-          @if (bloqueo() && obligaciones().length) {
+          @if (bloqueo() && cantidadSeleccionada()) {
             <p class="field__hint" aria-live="polite">{{ bloqueo() }}</p>
           }
         </div>
