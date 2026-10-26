@@ -11,6 +11,15 @@ async function filtrar(page, { accion = '', entidad = '', desde, hasta } = {}) {
   await page.locator('#aud-hasta').fill(hasta ?? fechaEcuador(0));
   await page.locator('#aud-accion').selectOption(accion);
   await page.locator('#aud-entidad').fill(entidad);
+  // La entidad se aplica al pulsar Enter (o al salir del campo); las demás, al cambiar.
+  await Promise.all([page.waitForResponse((r) => r.url().includes('/api/auditoria')), page.locator('#aud-entidad').press('Enter')]);
+}
+
+/** Todas las filas visibles cumplen el filtro (la tabla ya se volvió a consultar). */
+async function soloFilas(page, { accion, entidad }) {
+  if (accion) await expect(filas(page).filter({ hasNotText: accion })).toHaveCount(0);
+  if (entidad) await expect(filas(page).filter({ hasNotText: entidad })).toHaveCount(0);
+  await expect(filas(page).first()).toBeVisible();
 }
 
 test('el registro lista quién hizo qué, con fecha, entidad e IP', async ({ page }) => {
@@ -25,41 +34,42 @@ test('el registro lista quién hizo qué, con fecha, entidad e IP', async ({ pag
 
 test('los inicios de sesión de las pruebas quedaron registrados', async ({ page }) => {
   await filtrar(page, { accion: 'LOGIN' });
-  await expect(filas(page).first()).toBeVisible();
+  await soloFilas(page, { accion: 'LOGIN' });
   expect(await filas(page).count()).toBeGreaterThan(5);
-  for (const texto of await filas(page).locator('td:nth-child(3)').allInnerTexts()) expect(texto.trim()).toBe('LOGIN');
 });
 
 test('el bloqueo de la cuenta tras cinco intentos fallidos quedó auditado', async ({ page }) => {
   const { bloqueable } = leerEstado();
   await filtrar(page, { accion: 'BLOQUEO' });
-  await expect(filas(page).first()).toBeVisible();
-  // Los datos del bloqueo apuntan a la cuenta del usuario de prueba.
-  await expect(filas(page).first()).toContainText('cuentas');
+  await soloFilas(page, { accion: 'BLOQUEO', entidad: 'cuentas' });
   expect(bloqueable.cedula).toBeTruthy();
 });
 
 test('las anulaciones de pago se registran con su motivo', async ({ page }) => {
   await filtrar(page, { accion: 'ANULAR', entidad: 'pagos' });
+  await soloFilas(page, { accion: 'ANULAR', entidad: 'pagos' });
   const fila = filas(page).filter({ hasText: 'Referencia bancaria mal digitada (prueba E2E)' });
   await expect(fila).toHaveCount(1);
   await expect(fila).toContainText('pagos');
 });
 
-test('los cobros, las altas y los cambios de tarifa dejan su rastro', async ({ page }) => {
-  await filtrar(page, { accion: 'CREAR', entidad: 'pagos' });
-  await expect(filas(page).first()).toBeVisible();
-  await filtrar(page, { accion: 'CREAR', entidad: 'tarifas' });
-  await expect(filas(page).first()).toBeVisible();
-  await filtrar(page, { accion: 'CREAR', entidad: 'personas' });
-  await expect(filas(page).first()).toBeVisible();
+test('cada operación importante dejó su rastro: cobros, altas, tarifas, egresos, lotes, eventos e inventario', async ({ page }) => {
+  const rastros = [
+    ['PAGO', 'pagos'], ['PAGO', 'pago_anual_agua'], ['CREAR', 'tarifas'], ['CREAR', 'personas'], ['CREAR', 'egresos'],
+    ['CREAR', 'sectores'], ['CREAR', 'lotes'], ['CREAR', 'eventos'], ['CREAR', 'bienes_inventario'], ['CREAR', 'planes_anuales'],
+    ['CREAR', 'obligacion_anual_agua'], ['MODIFICAR', 'pagos']
+  ];
+  for (const [accion, entidad] of rastros) {
+    await filtrar(page, { accion, entidad });
+    await soloFilas(page, { accion, entidad });
+  }
 });
 
 test('el filtro por entidad muestra solo esa entidad y avisa cuando no hay registros', async ({ page }) => {
   await filtrar(page, { entidad: 'pagos' });
-  await expect(filas(page).first()).toBeVisible();
-  for (const texto of await filas(page).locator('td:nth-child(4)').allInnerTexts()) expect(texto.trim()).toMatch(new RegExp('^pagos'));
+  await soloFilas(page, { entidad: 'pagos' });
   await page.locator('#aud-entidad').fill('entidad-que-no-existe');
+  await page.locator('#aud-entidad').press('Enter');
   await expect(page.getByText('Sin registros')).toBeVisible();
 });
 
