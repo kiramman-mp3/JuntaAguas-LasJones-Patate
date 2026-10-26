@@ -595,4 +595,17 @@ async function sembrar(conexion, { hoy = hoyEcuador(), semilla = 2026, totalUsua
   }
 }
 
-module.exports = { sembrar, generarCedula, crearAzar };
+/**
+ * Agrega solo las noticias de ejemplo a una base que ya tiene datos (no toca nada más).
+ * No hace nada si ya existe alguna noticia. Devuelve cuántas creó.
+ */
+async function sembrarNoticias(conexion) {
+  const [[{ total }]] = await conexion.query('SELECT COUNT(*) AS total FROM noticias');
+  if (total > 0) return 0;
+  const [admin] = await conexion.query(
+    "SELECT c.id FROM cuentas c JOIN roles r ON r.id = c.rol_id WHERE r.codigo = 'ADMIN' AND c.estado = 'ACTIVA' ORDER BY c.id LIMIT 1"
+  );
+  return crearNoticias(conexion, hoyEcuador(), admin[0]?.id ?? null);
+}
+
+module.exports = { sembrar, sembrarNoticias, generarCedula, crearAzar };

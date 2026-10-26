@@ -65,6 +65,7 @@ El seed simula unos dos años de operación de la Junta con las mismas reglas de
 ```bash
 npm run db:seed              # siembra una base vacía (aplica las migraciones pendientes)
 npm run db:seed -- --reset   # elimina y recrea la base antes de sembrar
+npm run db:seed-noticias     # agrega solo 8 noticias de ejemplo a una base que ya tiene datos (no borra nada)
 ```
 
 - Se niega a ejecutarse en producción o sobre una base que ya tiene usuarios.
