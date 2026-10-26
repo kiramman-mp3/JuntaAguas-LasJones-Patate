@@ -494,6 +494,9 @@
 }
 
 .table-scroll {
+  // Los textos .sr-only de las tablas son absolutos: sin un contenedor posicionado escapan del
+  // scroll y ensanchan toda la página en pantallas estrechas.
+  position: relative;
   overflow-x: auto;
   margin: 0 -1.25rem;
   padding: 0 1.25rem;
