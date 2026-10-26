@@ -1,0 +1,30 @@
+# HTTPS con Caddy (certificados automáticos de Let's Encrypt).
+# Copie como /etc/caddy/Caddyfile, cambie el dominio y recargue: sudo systemctl reload caddy
+# Requisitos: el dominio apunta a este servidor y los puertos 80 y 443 están abiertos.
+# En backend/.env: HOST=127.0.0.1, TRUST_PROXY=1 y FRONTEND_URL=https://agua.ejemplo.ec
+agua.ejemplo.ec {
+	encode zstd gzip
+
+	# Los documentos firmados y comprobantes pueden pesar varios MB.
+	request_body {
+		max_size 12MB
+	}
+
+	reverse_proxy 127.0.0.1:3000 {
+		# Caddy ya envía X-Forwarded-For y X-Forwarded-Proto; el backend los lee con TRUST_PROXY=1.
+		health_uri /api/health
+		health_interval 30s
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/junta.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

@@ -47,7 +47,30 @@ tar -xzf backups/junta-20261026-023000.uploads.tar.gz -C backend
 
 Un respaldo que nunca se restauró no está comprobado. Una vez al mes restaure el último en una base de prueba (`DB_NAME=junta_prueba npm run respaldo -- --restaurar <archivo>`, creando antes la base vacía) y compruebe que los conteos de `personas` y `pagos` coinciden.
 
-## 2. Dependencias con avisos conocidos
+## 2. HTTPS
+
+Sin HTTPS, la contraseña, el token de sesión y las cédulas viajan en claro por la red. El backend no termina TLS: se pone un proxy inverso delante que obtiene el certificado y le reenvía el tráfico por `127.0.0.1`.
+
+1. Consiga un dominio (por ejemplo `agua.ejemplo.ec`) que apunte a la IP pública del servidor y abra los puertos 80 y 443.
+2. Instale **Caddy** (recomendado: renueva el certificado solo) y copie [`deploy/Caddyfile.example`](../deploy/Caddyfile.example) como `/etc/caddy/Caddyfile` cambiando el dominio. Con **Nginx** use [`deploy/nginx.conf.example`](../deploy/nginx.conf.example) y `certbot`.
+3. En `backend/.env` configure:
+
+   ```env
+   HOST=127.0.0.1                    # el puerto 3000 deja de ser accesible desde la red
+   TRUST_PROXY=1                     # el backend lee la IP real del cliente (auditoría y límite de intentos)
+   FRONTEND_URL=https://agua.ejemplo.ec
+   ```
+
+4. Reinicie el backend y verifique:
+
+   ```bash
+   curl -I https://agua.ejemplo.ec/api/health      # 200 y Strict-Transport-Security
+   curl -m 3 http://IP_DEL_SERVIDOR:3000/api/health  # debe fallar: el puerto ya no es público
+   ```
+
+5. Cierre en el firewall todo salvo 80 y 443 (y SSH). MySQL (3306) y el servicio de WhatsApp (3100) nunca deben ser accesibles desde fuera.
+
+## 3. Dependencias con avisos conocidos
 
 `npm audit --omit=dev` en `whatsapp-service/` informa avisos que **no se pueden corregir** sin bajar `whatsapp-web.js` a una versión anterior y peor:
 
