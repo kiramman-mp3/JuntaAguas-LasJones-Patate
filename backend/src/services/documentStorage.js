@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const multer = require('multer');
 const env = require('../config/env');
+const logger = require('../shared/logger');
 const { badRequest } = require('../shared/errors');
 
 const DIRECTORIO = path.resolve(env.UPLOADS_DIR, 'documentos');
@@ -65,7 +66,7 @@ async function eliminarDocumento(url) {
   const ruta = rutaSegura(nombreDesdeUrl(url));
   if (!ruta) return;
   await fs.unlink(ruta).catch((error) => {
-    if (error.code !== 'ENOENT') console.error('[Documentos] No se pudo eliminar el archivo anterior:', error.message);
+    if (error.code !== 'ENOENT') logger.error('no se pudo eliminar el documento anterior', { err: error });
   });
 }
 

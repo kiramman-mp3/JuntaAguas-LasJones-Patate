@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const logger = require('../shared/logger');
 const { withTransaction } = require('../shared/transaction');
 
 /**
@@ -28,7 +29,7 @@ async function registrarAuditoria({ conexion = null, cuentaId = null, accion, en
   try {
     await db.query(sql, valores);
   } catch (error) {
-    console.error('[Audit Error] No se pudo registrar la auditoría:', error.message);
+    logger.error('no se pudo registrar la auditoría', { accion, entidad, err: error });
   }
 }
 
