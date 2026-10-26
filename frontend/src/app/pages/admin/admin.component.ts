@@ -75,6 +75,12 @@ export class AdminComponent {
       corta: 'Gestión',
       icono: 'ri-briefcase-4-line',
     },
+    {
+      ruta: '/admin/noticias',
+      etiqueta: 'Noticias',
+      corta: 'Noticias',
+      icono: 'ri-newspaper-line',
+    },
   ];
 
   /** Panel de la barra inferior (móvil) con los apartados financieros y la gestión interna. */
