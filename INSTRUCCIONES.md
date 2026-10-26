@@ -158,3 +158,4 @@ No hace falta borrar el contenedor ni perder datos. Para crear una migración nu
   ```
   Luego vuelve a ejecutar `npm run db:migrate` (y, si quieres datos de prueba, `npm run db:seed`) en `backend`.
 - Asegúrate de tener los puertos `3000` (Backend), `4200` (Frontend), `3100` (servicio de WhatsApp) y `3306` (MySQL) libres antes de levantar los servicios.
+- **Producción:** respaldos, restauración, HTTPS y monitoreo están en [`docs/operacion.md`](docs/operacion.md). Programe `npm run respaldo` antes de usar el sistema con datos reales.
