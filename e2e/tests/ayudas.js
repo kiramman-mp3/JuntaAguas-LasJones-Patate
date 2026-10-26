@@ -70,7 +70,7 @@ async function crearUsuarioConCuenta(request, { nombres = unico('Api'), apellido
   });
   expect(r.ok(), await r.text()).toBeTruthy();
   const cuerpo = await r.json();
-  return { cedula, nombres, apellidos, passwordTemporal: cuerpo.passwordTemporal };
+  return { id: cuerpo.personaId, cedula, nombres, apellidos, passwordTemporal: cuerpo.passwordTemporal };
 }
 
 /** Padrón de usuarios filtrado por cédula, con la fila del usuario ya cargada. */
@@ -87,6 +87,39 @@ async function buscarEnPadron(page, cedula) {
 async function abrirEdicion(page, cedula) {
   const fila = await buscarEnPadron(page, cedula);
   await fila.getByRole('button', { name: /^Editar a / }).click();
+}
+
+/** Id numérico de una persona a partir de su cédula (consulta administrativa). */
+async function personaIdPorCedula(request, cedula) {
+  const r = await request.get('/api/personas', {
+    headers: { Authorization: `Bearer ${tokenAdmin()}` },
+    params: { busqueda: cedula, limit: 5 }
+  });
+  expect(r.ok(), await r.text()).toBeTruthy();
+  const { data } = await r.json();
+  const persona = data.find((p) => p.cedula === cedula);
+  expect(persona, `no existe la persona ${cedula}`).toBeTruthy();
+  return persona.id;
+}
+
+/**
+ * Crea por API una obligación manual pendiente (cuota extraordinaria, reposición…): la interfaz no tiene
+ * pantalla para ello, pero sí la cobra y la muestra. Devuelve su id.
+ */
+async function crearObligacionManual(request, { personaId, valor, observacion, vencimiento = fechaEcuador(30) }) {
+  const cabeceras = { Authorization: `Bearer ${tokenAdmin()}` };
+  const conceptos = await (await request.get('/api/financiero/conceptos', { headers: cabeceras })).json();
+  const concepto = conceptos.data.find((c) => c.codigo === 'MULTA_ASAMBLEA') ?? conceptos.data[0];
+  const hoy = fechaEcuador(0);
+  const r = await request.post('/api/financiero/obligaciones', {
+    headers: cabeceras,
+    data: {
+      persona_id: personaId, concepto_id: concepto.id, periodo_anio: Number(hoy.slice(0, 4)), periodo_mes: Number(hoy.slice(5, 7)),
+      fecha_emision: hoy, fecha_vencimiento: vencimiento, valor, observacion
+    }
+  });
+  expect(r.status(), await r.text()).toBe(201);
+  return (await r.json()).obligacionId;
 }
 
 /** Abre una URL del panel y espera a que cargue su título principal. */
@@ -123,6 +156,7 @@ async function pdfEnPestana(page, patron, accion) {
 }
 
 module.exports = {
+  personaIdPorCedula, crearObligacionManual,
   pdfEnPestana,
   fixture,
   buscarEnPadron, abrirEdicion,
