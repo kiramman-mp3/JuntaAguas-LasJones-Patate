@@ -44,7 +44,7 @@ test('el resumen operativo concuerda con lo que ve el público', async ({ page, 
   const anonima = await publico.newPage();
   await anonima.goto('http://127.0.0.1:3210/');
   const textoInicio = await anonima.locator('body').innerText();
-  expect(Number(textoInicio.match(/(\d+)\s*Usuarios activos/)[1])).toBe(Number(activos));
+  expect(Number(textoInicio.match(/Usuarios activos\s*(\d+)/)[1])).toBe(Number(activos));
   await publico.close();
 });
 

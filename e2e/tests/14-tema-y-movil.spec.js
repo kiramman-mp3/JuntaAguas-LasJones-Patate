@@ -50,7 +50,7 @@ test.describe('teléfono (390 px)', () => {
     await expect(menu).toBeVisible();
     await menu.click();
     await expect(menu).toHaveAttribute('aria-expanded', 'true');
-    await page.getByRole('link', { name: 'Eventos y Actas' }).click();
+    await page.getByRole('navigation', { name: 'Navegación principal' }).getByRole('link', { name: 'Eventos y Actas' }).click();
     await expect(page).toHaveURL(/\/eventos$/);
   });
 
