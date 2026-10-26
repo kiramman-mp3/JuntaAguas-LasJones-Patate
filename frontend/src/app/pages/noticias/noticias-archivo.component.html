@@ -1,0 +1,131 @@
+<div class="container noticias">
+  <nav class="noticias__migas" aria-label="Ruta de navegación">
+    <a routerLink="/noticias"><i class="ri-arrow-left-line" aria-hidden="true"></i> Noticias</a>
+  </nav>
+
+  <header class="noticias__cabecera">
+    <span class="badge badge--info"
+      ><i class="ri-archive-line" aria-hidden="true"></i> Archivo de noticias</span
+    >
+    <h1 class="noticias__titulo">Todas las noticias</h1>
+    <p class="noticias__lead">Busque por tema, etiqueta o fecha de publicación.</p>
+  </header>
+
+  <form class="card noticias__filtros" role="search" (submit)="$event.preventDefault()">
+    <div class="field noticias__campo-busqueda">
+      <label for="noticias-q">Buscar</label>
+      <input
+        id="noticias-q"
+        class="input"
+        type="search"
+        name="q"
+        placeholder="Título, descripción o etiqueta"
+        [ngModel]="q()"
+        (ngModelChange)="escribir($event)"
+      />
+    </div>
+    <div class="field">
+      <label for="noticias-tag">Etiqueta</label>
+      <select
+        id="noticias-tag"
+        class="input"
+        name="tag"
+        [ngModel]="tag()"
+        (ngModelChange)="aplicar({ tag: $event })"
+      >
+        <option value="">Todas</option>
+        @for (e of etiquetas(); track e.etiqueta) {
+          <option [value]="e.etiqueta">{{ e.etiqueta }} ({{ e.cantidad }})</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label for="noticias-desde">Desde</label>
+      <input
+        id="noticias-desde"
+        class="input"
+        type="date"
+        name="desde"
+        [ngModel]="desde()"
+        (ngModelChange)="aplicar({ desde: $event })"
+      />
+    </div>
+    <div class="field">
+      <label for="noticias-hasta">Hasta</label>
+      <input
+        id="noticias-hasta"
+        class="input"
+        type="date"
+        name="hasta"
+        [ngModel]="hasta()"
+        (ngModelChange)="aplicar({ hasta: $event })"
+      />
+    </div>
+    @if (hayFiltros()) {
+      <button type="button" class="btn btn--outline noticias__limpiar" (click)="limpiar()">
+        <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros
+      </button>
+    }
+  </form>
+
+  @if (rangoInvertido()) {
+    <p class="alert alert--warning" role="alert">
+      La fecha inicial es posterior a la final: no puede haber resultados.
+    </p>
+  }
+
+  @if (cargando() && !noticias().length) {
+    <app-skeleton variante="tarjetas" [filas]="3" mensaje="Cargando noticias…" />
+  } @else if (error()) {
+    <app-empty-state
+      tono="error"
+      icono="ri-wifi-off-line"
+      titulo="No se pudieron cargar las noticias"
+      mensaje="Revise su conexión e intente de nuevo."
+    >
+      <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </app-empty-state>
+  } @else if (!noticias().length) {
+    @if (hayFiltros()) {
+      <app-empty-state
+        icono="ri-filter-off-line"
+        titulo="Sin coincidencias"
+        mensaje="Ninguna noticia coincide con los filtros elegidos."
+      >
+        <button type="button" class="btn btn--outline btn--sm" (click)="limpiar()">
+          Limpiar filtros
+        </button>
+      </app-empty-state>
+    } @else {
+      <app-empty-state
+        icono="ri-newspaper-line"
+        titulo="Aún no hay noticias"
+        mensaje="Cuando la directiva publique una, aparecerá aquí."
+      />
+    }
+  } @else {
+    <p class="noticias__resumen" aria-live="polite">
+      {{ total() }} {{ total() === 1 ? 'noticia' : 'noticias' }}
+      @if (tag()) {
+        con la etiqueta <strong>{{ tag() }}</strong>
+      }
+    </p>
+    <section aria-label="Resultados" [class.is-refreshing]="cargando()">
+      <div class="noticias__rejilla">
+        @for (noticia of noticias(); track noticia.id) {
+          <app-noticia-tarjeta [noticia]="noticia" />
+        }
+      </div>
+    </section>
+    <app-paginador
+      etiqueta="noticias"
+      [pagina]="pagina()"
+      [porPagina]="limite()"
+      [total]="total()"
+      [opciones]="opcionesPorPagina"
+      [cargando]="cargando()"
+      (paginaChange)="aplicar({ pagina: $event })"
+      (porPaginaChange)="cambiarLimite($event)"
+    />
+  }
+</div>

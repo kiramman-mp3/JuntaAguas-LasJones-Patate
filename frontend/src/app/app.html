@@ -12,6 +12,7 @@
           >Inicio</a
         >
       </li>
+      <li><a routerLink="/noticias" routerLinkActive="active">Noticias</a></li>
       <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
       <li><a routerLink="/informacion" routerLinkActive="active">Información de la Junta</a></li>
       @if (authService.isLoggedIn()) {
@@ -74,6 +75,9 @@
             (click)="cerrarMenu()"
             >Inicio</a
           >
+        </li>
+        <li>
+          <a routerLink="/noticias" routerLinkActive="active" (click)="cerrarMenu()">Noticias</a>
         </li>
         <li>
           <a routerLink="/eventos" routerLinkActive="active" (click)="cerrarMenu()"

@@ -10,6 +10,25 @@ export const routes: Routes = [
   { path: '', component: InicioComponent },
   { path: 'eventos', component: EventosComponent },
   {
+    path: 'noticias',
+    title: 'Noticias · Junta La Jones',
+    loadComponent: () =>
+      import('./pages/noticias/noticias.component').then((m) => m.NoticiasComponent),
+  },
+  // "todas" va antes de ":id" para que no se lea como el identificador de una noticia.
+  {
+    path: 'noticias/todas',
+    title: 'Todas las noticias · Junta La Jones',
+    loadComponent: () =>
+      import('./pages/noticias/noticias-archivo.component').then((m) => m.NoticiasArchivoComponent),
+  },
+  {
+    path: 'noticias/:id',
+    title: 'Noticia · Junta La Jones',
+    loadComponent: () =>
+      import('./pages/noticias/noticia-detalle.component').then((m) => m.NoticiaDetalleComponent),
+  },
+  {
     path: 'informacion',
     loadComponent: () =>
       import('./pages/informacion/informacion.component').then((m) => m.InformacionComponent),

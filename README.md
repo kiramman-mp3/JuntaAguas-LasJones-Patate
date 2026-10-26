@@ -32,6 +32,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 | `/admin/finanzas/egresos` | Registro y consulta de egresos (proveedor, RUC, factura). |
 | `/admin/finanzas/facturacion` | Pago anual del agua: estado del año (emitidas, cobradas, pendientes), vista previa y emisión de la obligación anual a los usuarios con lote. |
 | `/admin/gestion` | Gestión interna de la directiva: registro de auditoría (filtros por día de Ecuador), inventario de bienes y plan anual de actividades. |
+| `/admin/noticias` | Noticias del portal: crear, editar y eliminar con título, etiquetas, descripción corta, descripción larga e imagen. |
 | `/admin/finanzas/tarifas` | Tarifas por concepto con su historial de vigencias. |
 
 ### Usuario (rol USUARIO)
@@ -39,6 +40,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 
 ### Portal público
 - **Inicio** y **Eventos** (`/eventos`): próximas asambleas y mingas, y convocatorias firmadas. No expone datos personales.
+- **Noticias** (`/noticias`): las 5 más recientes y el botón *Ver más noticias*, que lleva al archivo (`/noticias/todas`) con filtros por texto, etiqueta y fechas, y paginación. Cada noticia tiene su página (`/noticias/:id`).
 
 ### Solo API (sin pantalla todavía)
 - Inventario de bienes (`/api/inventario`), plan anual con actividades (`/api/planes`) y auditoría (`/api/auditoria`).

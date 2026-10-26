@@ -1,0 +1,225 @@
+.noticias {
+  padding-top: 2.5rem;
+  padding-bottom: 4rem;
+
+  &__migas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+
+    a {
+      color: var(--color-primary);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  &__cabecera {
+    margin-bottom: 2rem;
+  }
+
+  &__titulo {
+    margin: 0.75rem 0 0.75rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  &__lead {
+    max-width: 60rem;
+    font-size: 1.05rem;
+    color: var(--text-muted);
+  }
+
+  &__rejilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: 1.5rem;
+
+    // En la portada, la primera noticia ocupa todo el ancho y las demás se reparten debajo.
+    &--portada > .destacada {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__mas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2.5rem;
+  }
+
+  &__filtros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    align-items: end;
+    gap: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__campo-busqueda {
+    grid-column: span 2;
+  }
+
+  &__limpiar {
+    align-self: end;
+  }
+
+  &__resumen {
+    margin: 0 0 1rem;
+    color: var(--text-muted);
+  }
+}
+
+@media (max-width: 640px) {
+  .noticias__campo-busqueda {
+    grid-column: 1 / -1;
+  }
+}
+
+.is-refreshing {
+  opacity: 0.6;
+  transition: opacity var(--duration-fast, 150ms) ease;
+}
+
+// El anfitrión de la tarjeta es el elemento de la rejilla.
+:host {
+  display: block;
+}
+
+.noticia-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+
+  &__imagen {
+    display: block;
+    aspect-ratio: 16 / 9;
+    background: var(--bg-surface-hover);
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  &__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    flex: 1;
+    padding: 1.1rem 1.25rem 1.25rem;
+  }
+
+  &__meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    a {
+      text-decoration: none;
+    }
+  }
+
+  &__titulo {
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+
+    a {
+      color: var(--text-main);
+      text-decoration: none;
+
+      &:hover {
+        color: var(--color-primary);
+      }
+    }
+  }
+
+  &__resumen {
+    margin: 0;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  &__mas {
+    margin-top: auto;
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &--destacada {
+    @media (min-width: 900px) {
+      flex-direction: row;
+
+      .noticia-card__imagen {
+        flex: 1 1 55%;
+        aspect-ratio: auto;
+        min-height: 18rem;
+      }
+
+      .noticia-card__cuerpo {
+        flex: 1 1 45%;
+        justify-content: center;
+        padding: 2rem;
+      }
+
+      .noticia-card__titulo {
+        font-size: 1.6rem;
+      }
+    }
+  }
+}
+
+.noticia-detalle {
+  max-width: 52rem;
+  margin: 0 auto;
+
+  &__imagen {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    margin: 1.5rem 0;
+    background: var(--bg-surface-hover);
+  }
+
+  &__texto {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    // Respeta los saltos de línea que escribió la directiva.
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+}

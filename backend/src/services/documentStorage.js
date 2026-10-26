@@ -35,12 +35,15 @@ function detectarTipo(buffer) {
  * Valida y guarda un documento subido. El nombre en disco lo genera el servidor.
  * @param {Buffer} buffer contenido del archivo
  * @param {string} prefijo identificador legible (solo letras minúsculas y guion bajo)
+ * @param {{ soloImagen?: boolean }} [opciones] con soloImagen se rechaza el PDF (p. ej. la foto de una noticia)
  * @returns {{ url: string, mime: string }}
  */
-async function guardarDocumento(buffer, prefijo) {
+async function guardarDocumento(buffer, prefijo, { soloImagen = false } = {}) {
   if (!buffer || !buffer.length) throw badRequest('Debe adjuntar un archivo.');
   const tipo = detectarTipo(buffer);
-  if (!tipo) throw badRequest('Formato no permitido. Suba un PDF o una imagen JPG/PNG.');
+  if (!tipo || (soloImagen && tipo.ext === 'pdf')) {
+    throw badRequest(soloImagen ? 'Formato no permitido. Suba una imagen JPG o PNG.' : 'Formato no permitido. Suba un PDF o una imagen JPG/PNG.');
+  }
   if (!/^[a-z_]{1,40}$/.test(prefijo)) throw new Error(`Prefijo de documento inválido: ${prefijo}`);
 
   await fs.mkdir(DIRECTORIO, { recursive: true });

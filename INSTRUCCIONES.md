@@ -136,7 +136,7 @@ Las pruebas del backend usan su propia base (`junta_las_jones_test`), que crean 
 
 ### Pruebas de extremo a extremo (navegador real)
 
-`e2e/` maneja la aplicación como un usuario con Playwright y cubre todo el sistema (unos 130 casos, ~5 minutos):
+`e2e/` maneja la aplicación como un usuario con Playwright y cubre todo el sistema (unos 160 casos, ~5 minutos):
 
 | Archivo | Qué recorre |
 |---|---|
@@ -151,6 +151,7 @@ Las pruebas del backend usan su propia base (`junta_las_jones_test`), que crean 
 | `10-mi-cuenta` | Portal del usuario y aislamiento de sus datos |
 | `11-gestion-interna` / `12-tablero-y-navegacion` / `13-auditoria` | Inventario, plan anual, tablero, menú y registro de auditoría |
 | `14-tema-y-movil` | Modo oscuro y todas las pantallas en 390 px |
+| `15-noticias` | Portada (5 recientes), archivo con filtros, detalle y administración (crear, editar, reemplazar imagen y eliminar) |
 
 Los archivos dependen entre sí en orden numérico (comparten el estado de `e2e/.auth/estado.json`): ejecute la suite completa. Una prueba marcada `test.fail` documenta un defecto conocido (el subtipo "Extraordinaria" de la asamblea no se guarda); cuando se corrija, Playwright avisará de quitar la marca.
 
