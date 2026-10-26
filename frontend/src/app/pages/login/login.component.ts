@@ -1,4 +1,5 @@
 import { Component, ChangeDetectorRef, OnInit, inject } from '@angular/core';
+import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,7 +24,7 @@ export function mensajeDeError(err: HttpErrorResponse, porDefecto: string): stri
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, CurvasNivelComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
