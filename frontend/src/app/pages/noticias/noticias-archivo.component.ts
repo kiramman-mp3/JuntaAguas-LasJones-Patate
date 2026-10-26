@@ -120,7 +120,9 @@ export class NoticiasArchivoComponent implements OnInit {
 
   cambiarLimite(limite: number): void {
     this.limite.set(limite);
-    this.aplicar({ pagina: 1 });
+    // En la primera página la dirección no cambia y no habría recarga: se consulta directamente.
+    if (this.pagina() === 1) this.cargar();
+    else this.aplicar({ pagina: 1 });
   }
 
   cargar(): void {

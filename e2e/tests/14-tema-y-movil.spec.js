@@ -40,7 +40,7 @@ test.describe('teléfono (390 px)', () => {
   test('las páginas públicas no desbordan la pantalla y el menú se abre', async ({ browser }) => {
     const contexto = await browser.newContext({ viewport: VISTA_MOVIL, baseURL: 'http://127.0.0.1:3210', storageState: { cookies: [], origins: [] } });
     const page = await contexto.newPage();
-    for (const ruta of ['/', '/eventos', '/informacion', '/login']) {
+    for (const ruta of ['/', '/noticias', '/noticias/todas', '/eventos', '/informacion', '/login']) {
       await page.goto(ruta);
       const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(desborde, `${ruta} desborda horizontalmente`).toBeLessThanOrEqual(1);
@@ -69,7 +69,7 @@ test.describe('teléfono (390 px)', () => {
     await expect(page).toHaveURL(/\/admin\/cobros\/cobrar/);
   });
 
-  for (const ruta of ['/admin/dashboard', '/admin/usuarios/padron', '/admin/usuarios/lotes', '/admin/asistencias/asambleas', '/admin/asistencias/mingas', '/admin/turnos', '/admin/cobros/cobrar', '/admin/cobros/egresos', '/admin/ajustes/tarifas', '/admin/ajustes/facturacion', '/admin/historial/pagos', '/admin/historial/historial', '/admin/gestion/auditoria', '/admin/gestion/inventario', '/admin/gestion/plan-anual']) {
+  for (const ruta of ['/admin/dashboard', '/admin/usuarios/padron', '/admin/usuarios/lotes', '/admin/asistencias/asambleas', '/admin/asistencias/mingas', '/admin/turnos', '/admin/cobros/cobrar', '/admin/cobros/egresos', '/admin/ajustes/tarifas', '/admin/ajustes/facturacion', '/admin/historial/pagos', '/admin/historial/historial', '/admin/gestion/auditoria', '/admin/gestion/inventario', '/admin/gestion/plan-anual', '/admin/noticias']) {
     test(`${ruta} cabe en la pantalla del teléfono`, async ({ page }) => {
       await page.goto(ruta);
       await expect(page.locator('main')).toBeVisible();

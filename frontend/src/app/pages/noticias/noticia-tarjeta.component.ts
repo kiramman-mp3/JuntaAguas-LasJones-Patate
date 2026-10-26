@@ -10,14 +10,13 @@ import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
   imports: [RouterLink, FechaLocalPipe],
   template: `
     <article class="card noticia-card" [class.noticia-card--destacada]="destacada()">
-      <a class="noticia-card__imagen" [routerLink]="['/noticias', noticia().id]" tabindex="-1">
-        <img
-          [src]="urlImagen()"
-          [alt]="'Imagen de la noticia: ' + noticia().titulo"
-          loading="lazy"
-          width="960"
-          height="540"
-        />
+      <a
+        class="noticia-card__imagen"
+        [routerLink]="['/noticias', noticia().id]"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <img [src]="urlImagen()" alt="" loading="lazy" width="960" height="540" />
       </a>
       <div class="noticia-card__cuerpo">
         <div class="noticia-card__meta">
