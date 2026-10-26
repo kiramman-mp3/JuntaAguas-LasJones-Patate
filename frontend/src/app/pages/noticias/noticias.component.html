@@ -1,0 +1,45 @@
+<div class="container noticias">
+  <header class="noticias__cabecera">
+    <span class="badge badge--info"
+      ><i class="ri-newspaper-line" aria-hidden="true"></i> Noticias de la Junta</span
+    >
+    <h1 class="noticias__titulo">Noticias</h1>
+    <p class="noticias__lead">
+      Avisos, trabajos en el canal y novedades de la Junta de Agua y Riego La Jones.
+    </p>
+  </header>
+
+  @if (cargando()) {
+    <app-skeleton variante="tarjetas" [filas]="3" mensaje="Cargando noticias…" />
+  } @else if (error()) {
+    <app-empty-state
+      tono="error"
+      icono="ri-wifi-off-line"
+      titulo="No se pudieron cargar las noticias"
+      mensaje="Revise su conexión e intente de nuevo."
+    >
+      <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </app-empty-state>
+  } @else if (!noticias().length) {
+    <app-empty-state
+      icono="ri-newspaper-line"
+      titulo="Aún no hay noticias"
+      mensaje="Cuando la directiva publique una, aparecerá aquí."
+    />
+  } @else {
+    <section aria-label="Noticias más recientes">
+      <div class="noticias__rejilla noticias__rejilla--portada">
+        @for (noticia of noticias(); track noticia.id; let primera = $first) {
+          <app-noticia-tarjeta [noticia]="noticia" [destacada]="primera" />
+        }
+      </div>
+    </section>
+
+    <div class="noticias__mas">
+      <a class="btn btn--primary btn--lg" routerLink="/noticias/todas">
+        <i class="ri-archive-line" aria-hidden="true"></i> Ver más noticias
+      </a>
+      <span class="caption">{{ total() }} noticias publicadas</span>
+    </div>
+  }
+</div>
