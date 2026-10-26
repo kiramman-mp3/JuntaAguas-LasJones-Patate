@@ -44,7 +44,7 @@ async function iniciarSesion(page, { cedula, password, recordar = false }) {
 }
 
 /** Diálogo de confirmación o de motivo (el último abierto). */
-const dialogo = (page) => page.getByRole('alertdialog').or(page.getByRole('dialog')).last();
+const dialogo = (page) => page.locator('[aria-labelledby="dialogo-titulo"]');
 
 /** Aviso emergente (toast) con el texto indicado. */
 const aviso = (page, texto) => page.locator('.toast__message', { hasText: texto }).first();
@@ -53,6 +53,41 @@ const aviso = (page, texto) => page.locator('.toast__message', { hasText: texto 
 const ARCHIVO_ESTADO = require('path').join(__dirname, '..', '.auth', 'estado.json');
 const leerEstado = () => (fs.existsSync(ARCHIVO_ESTADO) ? JSON.parse(fs.readFileSync(ARCHIVO_ESTADO, 'utf8')) : {});
 const guardarEstado = (parcial) => fs.writeFileSync(ARCHIVO_ESTADO, JSON.stringify({ ...leerEstado(), ...parcial }, null, 2));
+
+/** Token de la sesión de administrador guardada por el paso de login. */
+function tokenAdmin() {
+  const sesion = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', '.auth', 'admin.json'), 'utf8'));
+  const item = sesion.origins.flatMap((o) => o.localStorage).find((i) => i.name === 'junta_token');
+  return item.value;
+}
+
+/** Crea por API un usuario con cuenta y devuelve sus datos y su contraseña temporal. */
+async function crearUsuarioConCuenta(request, { nombres = unico('Api'), apellidos = 'Prueba E2E' } = {}) {
+  const cedula = cedulaNueva();
+  const r = await request.post('/api/personas', {
+    headers: { Authorization: `Bearer ${tokenAdmin()}` },
+    data: { cedula, nombres, apellidos, estado: 'ACTIVO', crearCuenta: true, rol: 'USUARIO' }
+  });
+  expect(r.ok(), await r.text()).toBeTruthy();
+  const cuerpo = await r.json();
+  return { cedula, nombres, apellidos, passwordTemporal: cuerpo.passwordTemporal };
+}
+
+/** Padrón de usuarios filtrado por cédula, con la fila del usuario ya cargada. */
+async function buscarEnPadron(page, cedula) {
+  await page.goto('/admin/usuarios/padron');
+  await page.getByLabel('Buscar usuario').fill(cedula);
+  const filas = page.locator('tbody tr');
+  await expect(filas).toHaveCount(1);
+  await expect(filas.first()).toContainText(cedula);
+  return filas.first();
+}
+
+/** Abre el formulario de edición del usuario con esa cédula. */
+async function abrirEdicion(page, cedula) {
+  const fila = await buscarEnPadron(page, cedula);
+  await fila.getByRole('button', { name: /^Editar a / }).click();
+}
 
 /** Abre una URL del panel y espera a que cargue su título principal. */
 async function irA(page, ruta, titulo) {
@@ -69,6 +104,7 @@ async function descargarPdf(page, accion) {
 }
 
 module.exports = {
-  descargarPdf,
+  buscarEnPadron, abrirEdicion,
+  descargarPdf, tokenAdmin, crearUsuarioConCuenta,
   credenciales, fechaEcuador, unico, cedulaValida, cedulaNueva, iniciarSesion, dialogo, aviso, leerEstado, guardarEstado, irA, ZONA
 };
