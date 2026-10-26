@@ -6,8 +6,9 @@
 const { badRequest, notFound, conflict } = require('../shared/errors');
 const { hoy, yaOcurrio } = require('../shared/dates');
 const { conceptoPorCodigo, tarifaVigente, vencimientoPorDefecto } = require('./finanzasService');
+const { guardarDocumento, eliminarDocumento } = require('./documentStorage');
 
-const ESTADOS_ABIERTOS = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO'];
+const ESTADOS_ABIERTOS = ['BORRADOR', 'PROGRAMADO', 'CONVOCADO', 'REALIZADO'];
 const ESTADOS_ASISTENCIA = ['PENDIENTE', 'PRESENTE', 'AUSENTE', 'JUSTIFICADO'];
 const CONCEPTO_MULTA = { ASAMBLEA: 'MULTA_ASAMBLEA', MINGA: 'MULTA_MINGA' };
 const NOMBRE = { ASAMBLEA: 'asamblea', MINGA: 'minga' };
@@ -37,14 +38,17 @@ async function obtenerEvento(conexion, id, { tipo } = {}) {
 }
 
 function exigirAbierto(evento) {
+  if (evento.estado === 'CANCELADO') {
+    throw conflict(`La ${NOMBRE[evento.tipo]} está cancelada; su registro de asistencia está cerrado.`);
+  }
   if (!ESTADOS_ABIERTOS.includes(evento.estado)) {
-    throw conflict(`La ${NOMBRE[evento.tipo]} ya está realizada o cancelada; su registro de asistencia está cerrado.`);
+    throw conflict(`La ${NOMBRE[evento.tipo]} no admite registro de asistencia en su estado actual.`);
   }
 }
 
 /**
  * Padrón de asistencia: usuarios activos más quien ya tenga un registro en el evento
- * (por si fue desactivado después). Incluye el resumen por estado.
+ * (por si fue desactivado después). Incluye el resumen por estado y archivos de justificación.
  */
 async function obtenerPadron(conexion, evento) {
   let wherePersona = "p.estado = 'ACTIVO'";
@@ -61,6 +65,7 @@ async function obtenerPadron(conexion, evento) {
   const [personas] = await conexion.query(
     `SELECT p.id AS persona_id, CONCAT(p.apellidos, ' ', p.nombres) AS nombre, p.cedula,
             COALESCE(a.estado, 'PENDIENTE') AS estado, COALESCE(a.motivo_justificacion, '') AS motivo_justificacion,
+            a.archivo_justificacion_url, a.archivo_justificacion_nombre,
             a.hora_registro
      FROM personas p
      LEFT JOIN asistencias a ON a.persona_id = p.id AND a.evento_id = ?
@@ -93,7 +98,7 @@ async function cambiarEstado(conexion, evento, estado, { cuentaId } = {}) {
   return { cambiado: true, estadoAnterior: evento.estado, cuentaId };
 }
 
-/** Valida y guarda (upsert) una lista de asistencias del evento. */
+/** Valida y guarda (upsert) una lista de asistencias del evento. Mantiene el registro abierto y sincroniza multas si está realizado. */
 async function registrarAsistencias(conexion, evento, asistencias, cuentaId) {
   exigirAbierto(evento);
   if (!Array.isArray(asistencias) || !asistencias.length) throw badRequest('Se requiere una lista de asistencias.');
@@ -122,15 +127,77 @@ async function registrarAsistencias(conexion, evento, asistencias, cuentaId) {
 
   const ahora = new Date();
   const filas = asistencias.map((a) => [
-    evento.id, Number(a.persona_id), a.estado, ahora, a.estado === 'JUSTIFICADO' ? a.motivo_justificacion.trim() : null, cuentaId
+    evento.id,
+    Number(a.persona_id),
+    a.estado,
+    ahora,
+    a.estado === 'JUSTIFICADO' ? a.motivo_justificacion.trim() : null,
+    a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_url || null) : null,
+    a.estado === 'JUSTIFICADO' ? (a.archivo_justificacion_nombre || null) : null,
+    cuentaId
   ]);
   await conexion.query(
-    `INSERT INTO asistencias (evento_id, persona_id, estado, hora_registro, motivo_justificacion, registrado_por_cuenta_id)
+    `INSERT INTO asistencias (evento_id, persona_id, estado, hora_registro, motivo_justificacion, archivo_justificacion_url, archivo_justificacion_nombre, registrado_por_cuenta_id)
      VALUES ?
      ON DUPLICATE KEY UPDATE estado = VALUES(estado), hora_registro = VALUES(hora_registro),
-       motivo_justificacion = VALUES(motivo_justificacion), registrado_por_cuenta_id = VALUES(registrado_por_cuenta_id)`,
+       motivo_justificacion = VALUES(motivo_justificacion),
+       archivo_justificacion_url = CASE
+         WHEN VALUES(estado) = 'JUSTIFICADO' THEN COALESCE(VALUES(archivo_justificacion_url), asistencias.archivo_justificacion_url)
+         ELSE NULL
+       END,
+       archivo_justificacion_nombre = CASE
+         WHEN VALUES(estado) = 'JUSTIFICADO' THEN COALESCE(VALUES(archivo_justificacion_nombre), asistencias.archivo_justificacion_nombre)
+         ELSE NULL
+       END,
+       registrado_por_cuenta_id = VALUES(registrado_por_cuenta_id)`,
     [filas]
   );
+
+  // Si el evento ya fue finalizado y genera multas, sincronizar las multas ante correcciones
+  if (evento.estado === 'REALIZADO' && evento.genera_multa_ausencia) {
+    const justificadosOPresentes = asistencias
+      .filter((a) => a.estado === 'JUSTIFICADO' || a.estado === 'PRESENTE')
+      .map((a) => Number(a.persona_id));
+    if (justificadosOPresentes.length) {
+      await conexion.query(
+        `UPDATE obligaciones SET estado = 'ANULADA', motivo_anulacion = 'Inasistencia corregida o justificada',
+         fecha_anulacion = ?, anulada_por_cuenta_id = ?
+         WHERE evento_id = ? AND persona_id IN (?) AND origen = 'AUTOMATICA' AND estado = 'PENDIENTE'`,
+        [ahora, cuentaId, evento.id, justificadosOPresentes]
+      );
+    }
+
+    const nuevosAusentes = asistencias.filter((a) => a.estado === 'AUSENTE').map((a) => Number(a.persona_id));
+    if (nuevosAusentes.length) {
+      const valor = Number(evento.valor_multa);
+      if (Number.isFinite(valor) && valor > 0) {
+        const codigo = CONCEPTO_MULTA[evento.tipo];
+        const [conceptos] = await conexion.query('SELECT id FROM conceptos_cobro WHERE codigo = ? AND activo = TRUE', [codigo]);
+        if (conceptos.length) {
+          const conceptoId = conceptos[0].id;
+          const [existentes] = await conexion.query(
+            'SELECT persona_id FROM obligaciones WHERE evento_id = ? AND concepto_id = ? AND estado <> ?',
+            [evento.id, conceptoId, 'ANULADA']
+          );
+          const conObligacion = new Set(existentes.map((o) => Number(o.persona_id)));
+          const sinMulta = nuevosAusentes.filter((pid) => !conObligacion.has(pid));
+          if (sinMulta.length) {
+            const observacion = `Multa por ausencia a ${evento.tipo} (${evento.fecha}): ${evento.titulo}`.slice(0, 255);
+            const emision = hoy(ahora);
+            const filasMultas = sinMulta.map((pid) => [
+              pid, conceptoId, evento.id, Number(evento.fecha.slice(0, 4)), null, emision, valor, 'AUTOMATICA', 'PENDIENTE', observacion
+            ]);
+            await conexion.query(
+              `INSERT INTO obligaciones (persona_id, concepto_id, evento_id, periodo_anio, periodo_mes, fecha_emision, valor, origen, estado, observacion)
+               VALUES ?`,
+              [filasMultas]
+            );
+          }
+        }
+      }
+    }
+  }
+
   return { registradas: filas.length };
 }
 
@@ -385,7 +452,76 @@ async function guardarPuntos(conexion, id, puntos) {
   return { data: actualizados };
 }
 
+/**
+ * Guarda o actualiza el archivo de justificación (opcional) de un comunero para un evento.
+ * Marca la asistencia como JUSTIFICADO y sincroniza multas si el evento ya fue realizado.
+ */
+async function guardarJustificante(conexion, evento, personaId, { buffer, nombreOriginal, motivo }, cuentaId) {
+  exigirAbierto(evento);
+  const { personas } = await obtenerPadron(conexion, evento);
+  const persona = personas.find((p) => Number(p.persona_id) === Number(personaId));
+  if (!persona) throw badRequest(`La persona no pertenece al padrón de esta ${NOMBRE[evento.tipo]}.`);
+
+  const nuevo = await guardarDocumento(buffer, 'justificante_asistencia');
+  const [existente] = await conexion.query(
+    'SELECT archivo_justificacion_url, motivo_justificacion FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+    [evento.id, personaId]
+  );
+  const anteriorUrl = existente[0]?.archivo_justificacion_url;
+  const motivoFinal = (motivo?.trim() || existente[0]?.motivo_justificacion?.trim() || 'Inasistencia justificada con documento').slice(0, 255);
+  const ahora = new Date();
+
+  await conexion.query(
+    `INSERT INTO asistencias (evento_id, persona_id, estado, hora_registro, motivo_justificacion, archivo_justificacion_url, archivo_justificacion_nombre, registrado_por_cuenta_id)
+     VALUES (?, ?, 'JUSTIFICADO', ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       estado = 'JUSTIFICADO',
+       hora_registro = VALUES(hora_registro),
+       motivo_justificacion = VALUES(motivo_justificacion),
+       archivo_justificacion_url = VALUES(archivo_justificacion_url),
+       archivo_justificacion_nombre = VALUES(archivo_justificacion_nombre),
+       registrado_por_cuenta_id = VALUES(registrado_por_cuenta_id)`,
+    [evento.id, personaId, ahora, motivoFinal, nuevo.url, (nombreOriginal || 'documento').slice(0, 255), cuentaId]
+  );
+
+  if (evento.estado === 'REALIZADO' && evento.genera_multa_ausencia) {
+    await conexion.query(
+      `UPDATE obligaciones SET estado = 'ANULADA', motivo_anulacion = 'Inasistencia justificada con documento',
+       fecha_anulacion = ?, anulada_por_cuenta_id = ?
+       WHERE evento_id = ? AND persona_id = ? AND origen = 'AUTOMATICA' AND estado = 'PENDIENTE'`,
+      [ahora, cuentaId, evento.id, personaId]
+    );
+  }
+
+  if (anteriorUrl && anteriorUrl !== nuevo.url) {
+    await eliminarDocumento(anteriorUrl);
+  }
+
+  return { url: nuevo.url, nombre: nombreOriginal };
+}
+
+/**
+ * Elimina el archivo de justificación adjunto a la asistencia, manteniendo el motivo y estado.
+ */
+async function eliminarJustificante(conexion, evento, personaId) {
+  exigirAbierto(evento);
+  const [existente] = await conexion.query(
+    'SELECT archivo_justificacion_url FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+    [evento.id, personaId]
+  );
+  const anteriorUrl = existente[0]?.archivo_justificacion_url;
+  if (anteriorUrl) {
+    await conexion.query(
+      'UPDATE asistencias SET archivo_justificacion_url = NULL, archivo_justificacion_nombre = NULL WHERE evento_id = ? AND persona_id = ?',
+      [evento.id, personaId]
+    );
+    await eliminarDocumento(anteriorUrl);
+  }
+  return { eliminado: Boolean(anteriorUrl) };
+}
+
 module.exports = {
   listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos,
-  ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto
+  ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto,
+  guardarJustificante, eliminarJustificante
 };

@@ -52,6 +52,8 @@ async function finalizar(req, res) {
   });
 }
 
+const eventoController = require('./eventoController');
+
 async function registrarAsistencias(req, res) {
   const { registradas } = await enMinga(req, (conexion, minga) =>
     eventos.registrarAsistencias(conexion, minga, req.body?.asistencias, req.user.cuentaId)
@@ -63,4 +65,25 @@ async function registrarAsistencias(req, res) {
   return res.json({ status: 'OK', message: 'Asistencias de la minga guardadas.', registradas });
 }
 
-module.exports = { cambiarEstado, finalizar, registrarAsistencias, getAsistencias };
+async function subirJustificante(req, res) {
+  return eventoController.subirJustificante(req, res);
+}
+
+async function descargarJustificante(req, res) {
+  return eventoController.descargarJustificante(req, res);
+}
+
+async function eliminarJustificante(req, res) {
+  return eventoController.eliminarJustificante(req, res);
+}
+
+module.exports = {
+  cambiarEstado,
+  finalizar,
+  registrarAsistencias,
+  getAsistencias,
+  subirJustificante,
+  descargarJustificante,
+  eliminarJustificante
+};
+
