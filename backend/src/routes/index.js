@@ -13,6 +13,7 @@ const planificacionRoutes = require('./planificacionRoutes');
 const auditoriaRoutes = require('./auditoriaRoutes');
 const whatsappRoutes = require('./whatsappRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
+const noticiaRoutes = require('./noticiaRoutes');
 
 // Montaje de rutas funcionales API v1
 router.use('/auth', authRoutes);
@@ -27,6 +28,7 @@ router.use('/planes', planificacionRoutes);
 router.use('/auditoria', auditoriaRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/noticias', noticiaRoutes);
 
 module.exports = router;
 
