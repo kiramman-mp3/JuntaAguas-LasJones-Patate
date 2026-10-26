@@ -92,3 +92,32 @@ export function diaEnEcuador(valor: string | Date): string {
   const fecha = valor instanceof Date ? valor : new Date(valor);
   return Number.isNaN(fecha.getTime()) ? String(valor).slice(0, 10) : hoyEnEcuador(fecha);
 }
+
+/** Partes de una fecha para mostrarla en un riel o calendario: día '24', mes corto 'oct' y año '2026'. */
+export function partesFecha(valor: string | Date | null | undefined): {
+  dia: string;
+  mes: string;
+  anio: string;
+} {
+  const vacio = { dia: '', mes: '', anio: '' };
+  if (valor == null || valor === '') return vacio;
+  let instante: Date;
+  let zona = ZONA_JUNTA;
+  if (esSoloFecha(valor)) {
+    const [anio, mes, dia] = valor.split('-').map(Number);
+    instante = new Date(Date.UTC(anio, mes - 1, dia));
+    zona = 'UTC';
+  } else {
+    const fecha = aFecha(valor);
+    if (!fecha) return vacio;
+    instante = fecha;
+  }
+  const partes = new Intl.DateTimeFormat('es-EC', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: zona,
+  }).formatToParts(instante);
+  const de = (tipo: string) => (partes.find((p) => p.type === tipo)?.value ?? '').replace('.', '');
+  return { dia: de('day'), mes: de('month'), anio: de('year') };
+}

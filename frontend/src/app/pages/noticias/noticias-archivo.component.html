@@ -1,71 +1,83 @@
-<div class="container noticias">
-  <nav class="noticias__migas" aria-label="Ruta de navegación">
+<div class="portal">
+  <nav class="portal-migas" aria-label="Ruta de navegación">
     <a routerLink="/noticias"><i class="ri-arrow-left-line" aria-hidden="true"></i> Noticias</a>
   </nav>
 
-  <header class="noticias__cabecera">
-    <span class="badge badge--info"
-      ><i class="ri-archive-line" aria-hidden="true"></i> Archivo de noticias</span
-    >
-    <h1 class="noticias__titulo">Todas las noticias</h1>
-    <p class="noticias__lead">Busque por tema, etiqueta o fecha de publicación.</p>
+  <header class="portal-cabecera">
+    <app-curvas-nivel />
+    <h1 class="portal-cabecera__titulo">Todas las noticias</h1>
+    <p class="portal-cabecera__lead">Busque por tema, por etiqueta o por fecha de publicación.</p>
   </header>
 
-  <form class="card noticias__filtros" role="search" (submit)="$event.preventDefault()">
-    <div class="field noticias__campo-busqueda">
-      <label for="noticias-q">Buscar</label>
+  <form class="filtros" role="search" (submit)="$event.preventDefault()">
+    <div class="filtros__busqueda">
+      <i class="ri-search-line" aria-hidden="true"></i>
+      <label class="sr-only" for="noticias-q">Buscar</label>
       <input
         id="noticias-q"
         class="input"
         type="search"
         name="q"
-        placeholder="Título, descripción o etiqueta"
+        placeholder="Buscar por título, descripción o etiqueta"
         [ngModel]="q()"
         (ngModelChange)="escribir($event)"
       />
     </div>
-    <div class="field">
-      <label for="noticias-tag">Etiqueta</label>
-      <select
-        id="noticias-tag"
-        class="input"
-        name="tag"
-        [ngModel]="tag()"
-        (ngModelChange)="aplicar({ tag: $event })"
-      >
-        <option value="">Todas</option>
+
+    @if (etiquetas().length) {
+      <div class="filtros__etiquetas" role="group" aria-label="Etiquetas">
+        <button
+          type="button"
+          class="ficha"
+          [class.ficha--activa]="!tag()"
+          [attr.aria-pressed]="!tag()"
+          (click)="aplicar({ tag: '' })"
+        >
+          Todas
+        </button>
         @for (e of etiquetas(); track e.etiqueta) {
-          <option [value]="e.etiqueta">{{ e.etiqueta }} ({{ e.cantidad }})</option>
+          <button
+            type="button"
+            class="ficha"
+            [class.ficha--activa]="tag() === e.etiqueta"
+            [attr.aria-pressed]="tag() === e.etiqueta"
+            (click)="alternarEtiqueta(e.etiqueta)"
+          >
+            {{ e.etiqueta }} <small>{{ e.cantidad }}</small>
+          </button>
         }
-      </select>
-    </div>
-    <div class="field">
-      <label for="noticias-desde">Desde</label>
-      <input
-        id="noticias-desde"
-        class="input"
-        type="date"
-        name="desde"
-        [ngModel]="desde()"
-        (ngModelChange)="aplicar({ desde: $event })"
-      />
-    </div>
-    <div class="field">
-      <label for="noticias-hasta">Hasta</label>
-      <input
-        id="noticias-hasta"
-        class="input"
-        type="date"
-        name="hasta"
-        [ngModel]="hasta()"
-        (ngModelChange)="aplicar({ hasta: $event })"
-      />
-    </div>
-    @if (hayFiltros()) {
-      <button type="button" class="btn btn--outline noticias__limpiar" (click)="limpiar()">
-        <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros
-      </button>
+      </div>
     }
+
+    <div class="filtros__fechas">
+      <label for="noticias-desde">
+        Publicadas desde
+        <input
+          id="noticias-desde"
+          class="input"
+          type="date"
+          name="desde"
+          [ngModel]="desde()"
+          (ngModelChange)="aplicar({ desde: $event })"
+        />
+      </label>
+      <label for="noticias-hasta">
+        hasta
+        <input
+          id="noticias-hasta"
+          class="input"
+          type="date"
+          name="hasta"
+          [ngModel]="hasta()"
+          (ngModelChange)="aplicar({ hasta: $event })"
+        />
+      </label>
+      @if (hayFiltros()) {
+        <button type="button" class="btn btn--outline" (click)="limpiar()">
+          <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros
+        </button>
+      }
+    </div>
   </form>
 
   @if (rangoInvertido()) {
@@ -104,18 +116,29 @@
       />
     }
   } @else {
-    <p class="noticias__resumen" aria-live="polite">
+    <p class="resultados__resumen" aria-live="polite">
       {{ total() }} {{ total() === 1 ? 'noticia' : 'noticias' }}
       @if (tag()) {
         con la etiqueta <strong>{{ tag() }}</strong>
       }
     </p>
-    <section aria-label="Resultados" [class.is-refreshing]="cargando()">
-      <div class="noticias__rejilla">
-        @for (noticia of noticias(); track noticia.id) {
-          <app-noticia-tarjeta [noticia]="noticia" />
-        }
-      </div>
+    <section class="resultados" aria-label="Resultados" [class.is-refreshing]="cargando()">
+      @for (grupo of grupos(); track grupo.clave) {
+        <section class="mes" [attr.aria-label]="grupo.etiqueta">
+          <h2 class="mes__titulo">
+            {{ grupo.etiqueta }}
+            <small
+              >{{ grupo.noticias.length }}
+              {{ grupo.noticias.length === 1 ? 'noticia' : 'noticias' }}</small
+            >
+          </h2>
+          <div class="mes__rejilla">
+            @for (noticia of grupo.noticias; track noticia.id) {
+              <app-noticia-tarjeta [noticia]="noticia" />
+            }
+          </div>
+        </section>
+      }
     </section>
     <app-paginador
       etiqueta="noticias"
