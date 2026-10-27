@@ -78,14 +78,22 @@ export class FinanzasService {
     return this.http.post<PagoRegistrado>(`${this.url}/pagos`, pago);
   }
 
-  subirComprobante(id: number, archivo: File): Observable<Respuesta<unknown>> {
-    const datos = new FormData();
-    datos.append('archivo', archivo);
-    return this.http.post<Respuesta<unknown>>(`${this.url}/pagos/${id}/comprobante`, datos);
+  private rutaComprobante(tipo: TipoRecibo, id: number): string {
+    return `${this.url}/${tipo === 'AGUA' ? 'agua-anual/pagos' : 'pagos'}/${id}/comprobante`;
   }
 
-  descargarComprobante(id: number): Observable<Blob> {
-    return this.http.get(`${this.url}/pagos/${id}/comprobante`, { responseType: 'blob' });
+  subirComprobante(
+    id: number,
+    archivo: File,
+    tipo: TipoRecibo = 'GENERAL',
+  ): Observable<Respuesta<unknown>> {
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    return this.http.post<Respuesta<unknown>>(this.rutaComprobante(tipo, id), datos);
+  }
+
+  descargarComprobante(id: number, tipo: TipoRecibo = 'GENERAL'): Observable<Blob> {
+    return this.http.get(this.rutaComprobante(tipo, id), { responseType: 'blob' });
   }
 
   getPagos(

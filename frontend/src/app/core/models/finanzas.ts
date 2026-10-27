@@ -60,6 +60,7 @@ export interface PagoAnual {
   referencia: string | null;
   estado: EstadoPago;
   observacion: string | null;
+  comprobante_url?: string | null;
   motivo_anulacion: string | null;
   fecha_anulacion: string | null;
   usuario_nombre: string;
@@ -128,7 +129,7 @@ export function reciboDePagoAnual(p: PagoAnual): Recibo {
     valor_total: Number(p.valor_total),
     estado: p.estado,
     motivo_anulacion: p.motivo_anulacion,
-    comprobante_url: null,
+    comprobante_url: p.comprobante_url ?? null,
     registrado_por_usuario: p.registrado_por_usuario,
   };
 }

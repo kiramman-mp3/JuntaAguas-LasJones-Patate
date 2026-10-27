@@ -147,7 +147,7 @@ async function listarPagosAnuales(conexion, { personaId, estado, desde, hasta })
   filtroFechaPago('p.fecha_pago', { desde, hasta }, condiciones, params);
   const [filas] = await conexion.query(
     `SELECT p.id, p.persona_id, p.valor_total, p.metodo, p.referencia, p.observacion, p.fecha_pago, p.estado,
-            p.motivo_anulacion, p.fecha_anulacion,
+            p.motivo_anulacion, p.fecha_anulacion, p.comprobante_url,
             CONCAT(per.nombres, ' ', per.apellidos) AS usuario_nombre, per.cedula,
             CONCAT(reg.nombres, ' ', reg.apellidos) AS registrado_por_usuario,
             (SELECT GROUP_CONCAT(o.periodo_anio ORDER BY o.periodo_anio SEPARATOR ', ')

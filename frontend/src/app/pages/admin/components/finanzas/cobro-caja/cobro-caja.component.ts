@@ -36,6 +36,7 @@ import {
   ObligacionAnualAgua,
   ObligacionItem,
   PagoRegistrado,
+  TipoRecibo,
   etiquetaPeriodo,
   numeroRecibo,
   numeroReciboAgua,
@@ -121,6 +122,7 @@ export class CobroCajaComponent {
   readonly procesando = signal(false);
   readonly comprobante = signal<Comprobante | null>(null);
   readonly pagoRegistradoId = signal<number | null>(null);
+  readonly pagoRegistradoTipo = signal<TipoRecibo>('GENERAL');
   readonly imprimiendo = signal(false);
 
   readonly metodos: { valor: MetodoPagoNuevo; etiqueta: string }[] = [
@@ -417,8 +419,8 @@ export class CobroCajaComponent {
       next: (res) => {
         this.procesando.set(false);
         const numero = anual ? numeroReciboAgua(res.pagoId) : numeroRecibo(res.pagoId);
-        // El respaldo bancario (archivo) solo se adjunta a los pagos de multas y otros cobros.
-        this.pagoRegistradoId.set(anual ? null : res.pagoId);
+        this.pagoRegistradoId.set(res.pagoId);
+        this.pagoRegistradoTipo.set(anual ? 'AGUA' : 'GENERAL');
         this.comprobante.set({
           numero,
           fechaHora: formatearFecha(new Date(), 'conHora'),

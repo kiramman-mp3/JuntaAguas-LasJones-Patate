@@ -108,8 +108,8 @@ router.get('/pagos/:id', verificarToken, financieroController.getPagoById);
  *     responses:
  *       '200': { description: Archivo del comprobante bancario }
  */
-router.post('/pagos/:id/comprobante', ...soloAdmin, recibirArchivo, comprobantes.subir);
-router.get('/pagos/:id/comprobante', verificarToken, comprobantes.descargar);
+router.post('/pagos/:id/comprobante', ...soloAdmin, recibirArchivo, comprobantes.general.subir);
+router.get('/pagos/:id/comprobante', verificarToken, comprobantes.general.descargar);
 router.post('/pagos', ...soloAdmin, financieroController.registrarPago);
 router.post('/pagos/:id/anular', ...soloAdmin, financieroController.anularPago);
 
@@ -196,6 +196,8 @@ router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
  *     summary: Anular una obligación anual de agua pendiente (ADMIN)
  *     security: [{ bearerAuth: [] }]
  */
+router.post('/agua-anual/pagos/:id/comprobante', ...soloAdmin, recibirArchivo, comprobantes.agua.subir);
+router.get('/agua-anual/pagos/:id/comprobante', verificarToken, comprobantes.agua.descargar);
 router.get('/agua-anual/resumen', ...soloAdmin, financieroController.getResumenAnualAgua);
 router.post('/agua-anual/obligaciones', ...soloAdmin, financieroController.generarObligacionesAnualesAgua);
 router.get('/agua-anual/obligaciones/:personaId', ...soloAdmin, financieroController.getObligacionesAnualesAgua);

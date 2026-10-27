@@ -134,11 +134,10 @@
                 }
               </td>
               <td class="acciones">
-                @if (
-                  r.tipo === 'GENERAL' && (r.metodo === 'TRANSFERENCIA' || r.metodo === 'DEPOSITO')
-                ) {
+                @if (r.metodo === 'TRANSFERENCIA' || r.metodo === 'DEPOSITO') {
                   <app-comprobante-bancario
                     [pagoId]="r.id"
+                    [tipo]="r.tipo"
                     [existente]="!!r.comprobante_url"
                     [editable]="r.estado === 'VIGENTE'"
                     (subido)="cargar()"
