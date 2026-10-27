@@ -12,6 +12,10 @@ const SECRETOS_COMPROMETIDOS = new Set([
 const esquema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
+  // Interfaz donde escucha el servidor. Detrás de Nginx/Caddy use 127.0.0.1 para que solo el proxy llegue al puerto.
+  HOST: z.string().default('0.0.0.0'),
+  // Sin valor: "info" (en pruebas, "silent"). Use "debug" para ver también las consultas de salud.
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
   DB_HOST: z.string().default('127.0.0.1'),
   DB_PORT: z.coerce.number().int().positive().default(3306),
   DB_USER: z.string().default('root'),
@@ -48,6 +52,7 @@ const env = resultado.data;
 
 module.exports = {
   ...env,
+  LOG_LEVEL: env.LOG_LEVEL ?? (env.NODE_ENV === 'test' ? 'silent' : 'info'),
   esProduccion: env.NODE_ENV === 'production',
   esTest: env.NODE_ENV === 'test'
 };

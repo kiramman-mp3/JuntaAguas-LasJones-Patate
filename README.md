@@ -12,7 +12,7 @@ La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INST
 - **Backend:** Node.js 26, Express 5, mysql2 (SQL parametrizado), zod para validar la entrada, JWT, bcryptjs, helmet, multer, pdfkit y Swagger (solo fuera de producción).
 - **Servicio de WhatsApp** (`whatsapp-service/`): proceso aparte con Express 5 y whatsapp-web.js (Edge o Chromium sin interfaz). Publica las convocatorias en el grupo de WhatsApp de la Junta; si se detiene, el resto del sistema sigue funcionando.
 - **Base de datos:** MySQL 8 (InnoDB, utf8mb4) en Docker, con migraciones versionadas.
-- **Calidad:** ESLint en backend, servicio de WhatsApp y frontend; pruebas de integración contra MySQL real; GitHub Actions (`.github/workflows/ci.yml`).
+- **Calidad:** ESLint en backend, servicio de WhatsApp y frontend; pruebas de integración contra MySQL real; pruebas E2E con Playwright (`e2e/`); GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
 
@@ -32,6 +32,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 | `/admin/finanzas/egresos` | Registro y consulta de egresos (proveedor, RUC, factura). |
 | `/admin/finanzas/facturacion` | Pago anual del agua: estado del año (emitidas, cobradas, pendientes), vista previa y emisión de la obligación anual a los usuarios con lote. |
 | `/admin/gestion` | Gestión interna de la directiva: registro de auditoría (filtros por día de Ecuador), inventario de bienes y plan anual de actividades. |
+| `/admin/noticias` | Noticias del portal: crear, editar y eliminar con título, etiquetas, descripción corta, descripción larga e imagen. |
 | `/admin/finanzas/tarifas` | Tarifas por concepto con su historial de vigencias. |
 
 ### Usuario (rol USUARIO)
@@ -39,6 +40,7 @@ Cada sección tiene su propia URL y se carga bajo demanda.
 
 ### Portal público
 - **Inicio** y **Eventos** (`/eventos`): próximas asambleas y mingas, y convocatorias firmadas. No expone datos personales.
+- **Noticias** (`/noticias`): las 5 más recientes y el botón *Ver más noticias*, que lleva al archivo (`/noticias/todas`) con filtros por texto, etiqueta y fechas, y paginación. Cada noticia tiene su página (`/noticias/:id`).
 
 ### Solo API (sin pantalla todavía)
 - Inventario de bienes (`/api/inventario`), plan anual con actividades (`/api/planes`) y auditoría (`/api/auditoria`).

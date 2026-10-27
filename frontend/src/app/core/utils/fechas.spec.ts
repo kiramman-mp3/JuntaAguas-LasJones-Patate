@@ -1,4 +1,11 @@
-import { aFecha, diaEnEcuador, formatearFecha, hoyEnEcuador, sumarDias } from './fechas';
+import {
+  aFecha,
+  diaEnEcuador,
+  formatearFecha,
+  hoyEnEcuador,
+  partesFecha,
+  sumarDias,
+} from './fechas';
 
 describe('fechas de la Junta', () => {
   it('una fecha AAAA-MM-DD se muestra el mismo día, sin restar un día por la zona horaria', () => {
@@ -31,5 +38,12 @@ describe('fechas de la Junta', () => {
   it('suma días cruzando meses y años', () => {
     expect(sumarDias('2026-12-28', 7)).toBe('2027-01-04');
     expect(sumarDias('2026-03-01', -1)).toBe('2026-02-28');
+  });
+
+  it('separa día, mes corto y año en la zona de la Junta', () => {
+    // 03:30 UTC del 6 de octubre son las 22:30 del 5 de octubre en Ecuador.
+    expect(partesFecha('2026-10-06T03:30:00.000Z')).toEqual({ dia: '5', mes: 'oct', anio: '2026' });
+    expect(partesFecha('2026-03-01')).toEqual({ dia: '1', mes: 'mar', anio: '2026' });
+    expect(partesFecha('')).toEqual({ dia: '', mes: '', anio: '' });
   });
 });

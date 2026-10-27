@@ -122,6 +122,14 @@ export const ADMIN_ROUTES: Routes = [
       ),
     children: seccionesGestionInterna,
   },
+  {
+    path: 'noticias',
+    title: 'Noticias · Junta La Jones',
+    loadComponent: () =>
+      import('./components/noticias-admin/noticias-admin.component').then(
+        (m) => m.NoticiasAdminComponent,
+      ),
+  },
   // Finanzas se divide en tres apartados del menú; cada uno usa el mismo componente con su grupo.
   { path: 'cobros', pathMatch: 'full', redirectTo: 'cobros/cobrar' },
   {

@@ -1,0 +1,154 @@
+<div class="portal">
+  <nav class="portal-migas" aria-label="Ruta de navegación">
+    <a routerLink="/noticias"><i class="ri-arrow-left-line" aria-hidden="true"></i> Noticias</a>
+  </nav>
+
+  <header class="portal-cabecera">
+    <app-curvas-nivel />
+    <h1 class="portal-cabecera__titulo">Todas las noticias</h1>
+    <p class="portal-cabecera__lead">Busque por tema, por etiqueta o por fecha de publicación.</p>
+  </header>
+
+  <form class="filtros" role="search" (submit)="$event.preventDefault()">
+    <div class="filtros__busqueda">
+      <i class="ri-search-line" aria-hidden="true"></i>
+      <label class="sr-only" for="noticias-q">Buscar</label>
+      <input
+        id="noticias-q"
+        class="input"
+        type="search"
+        name="q"
+        placeholder="Buscar por título, descripción o etiqueta"
+        [ngModel]="q()"
+        (ngModelChange)="escribir($event)"
+      />
+    </div>
+
+    @if (etiquetas().length) {
+      <div class="filtros__etiquetas" role="group" aria-label="Etiquetas">
+        <button
+          type="button"
+          class="ficha"
+          [class.ficha--activa]="!tag()"
+          [attr.aria-pressed]="!tag()"
+          (click)="aplicar({ tag: '' })"
+        >
+          Todas
+        </button>
+        @for (e of etiquetas(); track e.etiqueta) {
+          <button
+            type="button"
+            class="ficha"
+            [class.ficha--activa]="tag() === e.etiqueta"
+            [attr.aria-pressed]="tag() === e.etiqueta"
+            (click)="alternarEtiqueta(e.etiqueta)"
+          >
+            {{ e.etiqueta }} <small>{{ e.cantidad }}</small>
+          </button>
+        }
+      </div>
+    }
+
+    <div class="filtros__fechas">
+      <label for="noticias-desde">
+        Publicadas desde
+        <input
+          id="noticias-desde"
+          class="input"
+          type="date"
+          name="desde"
+          [ngModel]="desde()"
+          (ngModelChange)="aplicar({ desde: $event })"
+        />
+      </label>
+      <label for="noticias-hasta">
+        hasta
+        <input
+          id="noticias-hasta"
+          class="input"
+          type="date"
+          name="hasta"
+          [ngModel]="hasta()"
+          (ngModelChange)="aplicar({ hasta: $event })"
+        />
+      </label>
+      @if (hayFiltros()) {
+        <button type="button" class="btn btn--outline" (click)="limpiar()">
+          <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros
+        </button>
+      }
+    </div>
+  </form>
+
+  @if (rangoInvertido()) {
+    <p class="alert alert--warning" role="alert">
+      La fecha inicial es posterior a la final: no puede haber resultados.
+    </p>
+  }
+
+  @if (cargando() && !noticias().length) {
+    <app-skeleton variante="tarjetas" [filas]="3" mensaje="Cargando noticias…" />
+  } @else if (error()) {
+    <app-empty-state
+      tono="error"
+      icono="ri-wifi-off-line"
+      titulo="No se pudieron cargar las noticias"
+      mensaje="Revise su conexión e intente de nuevo."
+    >
+      <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </app-empty-state>
+  } @else if (!noticias().length) {
+    @if (hayFiltros()) {
+      <app-empty-state
+        icono="ri-filter-off-line"
+        titulo="Sin coincidencias"
+        mensaje="Ninguna noticia coincide con los filtros elegidos."
+      >
+        <button type="button" class="btn btn--outline btn--sm" (click)="limpiar()">
+          Limpiar filtros
+        </button>
+      </app-empty-state>
+    } @else {
+      <app-empty-state
+        icono="ri-newspaper-line"
+        titulo="Aún no hay noticias"
+        mensaje="Cuando la directiva publique una, aparecerá aquí."
+      />
+    }
+  } @else {
+    <p class="resultados__resumen" aria-live="polite">
+      {{ total() }} {{ total() === 1 ? 'noticia' : 'noticias' }}
+      @if (tag()) {
+        con la etiqueta <strong>{{ tag() }}</strong>
+      }
+    </p>
+    <section class="resultados" aria-label="Resultados" [class.is-refreshing]="cargando()">
+      @for (grupo of grupos(); track grupo.clave) {
+        <section class="mes" [attr.aria-label]="grupo.etiqueta">
+          <h2 class="mes__titulo">
+            {{ grupo.etiqueta }}
+            <small
+              >{{ grupo.noticias.length }}
+              {{ grupo.noticias.length === 1 ? 'noticia' : 'noticias' }}</small
+            >
+          </h2>
+          <div class="mes__rejilla">
+            @for (noticia of grupo.noticias; track noticia.id) {
+              <app-noticia-tarjeta [noticia]="noticia" />
+            }
+          </div>
+        </section>
+      }
+    </section>
+    <app-paginador
+      etiqueta="noticias"
+      [pagina]="pagina()"
+      [porPagina]="limite()"
+      [total]="total()"
+      [opciones]="opcionesPorPagina"
+      [cargando]="cargando()"
+      (paginaChange)="aplicar({ pagina: $event })"
+      (porPaginaChange)="cambiarLimite($event)"
+    />
+  }
+</div>

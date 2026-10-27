@@ -5,6 +5,8 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
+import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
+import { partesFecha } from '../../core/utils/fechas';
 import {
   ApiResponse,
   CronogramaSectorPublico,
@@ -25,9 +27,9 @@ interface StatsPublicos {
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [CommonModule, FormsModule, FechaLocalPipe, RouterLink],
+  imports: [CommonModule, FormsModule, FechaLocalPipe, RouterLink, CurvasNivelComponent],
   templateUrl: './inicio.component.html',
-  styleUrls: ['./inicio.component.scss'],
+  styleUrls: ['./inicio.portada.scss', './inicio.component.scss'],
 })
 export class InicioComponent implements OnInit {
   private readonly http = inject(HttpClient);
@@ -45,6 +47,16 @@ export class InicioComponent implements OnInit {
   diaSeleccionadoModal = 'TODOS';
   busquedaModal = '';
   vistaCronograma: 'tabla' | 'tarjetas' = 'tabla';
+
+  fecha(ev: EventoItem): { dia: string; mes: string; anio: string } {
+    return partesFecha(ev.fecha);
+  }
+
+  /** Proporción (0 a 1) de lotes del sector respecto al más grande: el nivel de su barra. */
+  nivel(sector: SectorItem): number {
+    const mayor = Math.max(0, ...this.sectores.map((s) => Number(s.lotesCount) || 0));
+    return mayor ? (Number(sector.lotesCount) || 0) / mayor : 0;
+  }
 
   ngOnInit() {
     this.http.get<ApiResponse<StatsPublicos>>(`${environment.apiUrl}/personas/stats`).subscribe({

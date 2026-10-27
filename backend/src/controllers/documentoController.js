@@ -7,12 +7,16 @@ const ACCESO = Object.freeze({ PUBLICO: 'PUBLICO', USUARIOS: 'USUARIOS', ADMIN: 
 
 /**
  * Determina quién puede ver un documento según dónde está registrado:
- * - convocatoria de un evento ya anunciado: pública,
+ * - imagen de una noticia y convocatoria de un evento ya anunciado: públicas,
  * - actas y resoluciones: cualquier persona con sesión,
  * - listas de asistencia (contienen el padrón) u otros: solo administración.
  * Un archivo que no está registrado en la base no se sirve.
  */
 async function nivelDeAcceso(url) {
+  // La imagen de una noticia es pública como la noticia misma.
+  const [noticias] = await db.query('SELECT 1 FROM noticias WHERE imagen_url = ? LIMIT 1', [url]);
+  if (noticias.length) return ACCESO.PUBLICO;
+
   const [documentos] = await db.query(
     `SELECT d.tipo, e.estado FROM documentos_evento d JOIN eventos e ON e.id = d.evento_id
      WHERE d.ruta_archivo_firmado = ? OR d.ruta_archivo_generado = ?`,

@@ -1,7 +1,7 @@
 const { ZodError } = require('zod');
 const multer = require('multer');
 const { HttpError } = require('../shared/errors');
-const env = require('../config/env');
+const logger = require('../shared/logger');
 
 function mensajeZod(error) {
   const primero = error.issues[0];
@@ -44,9 +44,9 @@ function errorHandler(err, req, res, next) {
     return res.status(400).json({ status: 'ERROR', message: 'Una de las referencias enviadas no existe.' });
   }
 
-  if (!env.esTest) console.error('[Error no controlado]', err);
+  logger.error('error no controlado', { reqId: req.id, metodo: req.method, ruta: req.originalUrl.split('?')[0], err });
 
-  return res.status(500).json({ status: 'ERROR', message: 'Error interno del servidor.' });
+  return res.status(500).json({ status: 'ERROR', message: 'Error interno del servidor.', requestId: req.id });
 }
 
 function notFoundHandler(req, res) {

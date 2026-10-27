@@ -1,0 +1,253 @@
+// Estilos de las tres páginas de noticias (portada, archivo y detalle). La tarjeta tiene los suyos.
+
+.noticias__principal {
+  margin-bottom: clamp(3rem, 6vw, 5rem);
+}
+
+.noticias__canal {
+  max-width: 62rem;
+}
+
+// --- Archivo -------------------------------------------------------------------------------------
+
+.filtros {
+  display: grid;
+  gap: 1.25rem;
+  padding: 0 0 2rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border-color);
+
+  &__busqueda {
+    position: relative;
+    max-width: 40rem;
+
+    i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.85rem 1rem 0.85rem 2.75rem;
+      font-size: 1.05rem;
+      border-radius: var(--radius-full);
+    }
+  }
+
+  &__etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__fechas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem 1.5rem;
+
+    label {
+      display: grid;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    input {
+      min-width: 10.5rem;
+    }
+  }
+}
+
+.ficha {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.4rem 0.95rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+
+  small {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  &--activa {
+    border-color: var(--color-primary-solid);
+    background: var(--color-primary-solid);
+    color: var(--text-white);
+
+    small {
+      color: inherit;
+      opacity: 0.85;
+    }
+
+    &:hover {
+      color: var(--text-white);
+      background: var(--color-primary-solid-hover);
+    }
+  }
+}
+
+.resultados {
+  &__resumen {
+    margin: 0 0 2rem;
+    color: var(--text-muted);
+  }
+
+  &.is-refreshing {
+    opacity: 0.55;
+    transition: opacity var(--duration-fast) ease;
+  }
+}
+
+.mes {
+  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+
+  &__titulo {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin: 0 0 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+
+    &::first-letter {
+      text-transform: uppercase;
+    }
+
+    small {
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0;
+      color: var(--text-muted);
+    }
+  }
+
+  &__rejilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 2.5rem 2rem;
+  }
+}
+
+// --- Detalle -------------------------------------------------------------------------------------
+
+.detalle {
+  &__cabecera {
+    position: relative;
+    padding: clamp(1.5rem, 4vw, 2.75rem) 0 1.5rem;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    margin-bottom: 1.25rem;
+    color: var(--text-muted);
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__titulo {
+    max-width: 24ch;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 1.3rem + 3.2vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.032em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  &__lead {
+    max-width: 52ch;
+    margin: 1.25rem 0 0;
+    font-size: clamp(1.1rem, 1.02rem + 0.4vw, 1.35rem);
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  &__imagen {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: 34rem;
+    object-fit: cover;
+    margin: 1rem 0 clamp(2rem, 4vw, 3rem);
+    border-radius: clamp(1rem, 2vw, 1.75rem);
+    background: var(--bg-surface-hover);
+    box-shadow: var(--shadow-md);
+  }
+
+  &__texto {
+    max-width: 68ch;
+    font-size: 1.12rem;
+    line-height: 1.8;
+    // Respeta los saltos de línea que escribió la directiva.
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  &__mas {
+    margin-top: clamp(3rem, 7vw, 5rem);
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+
+    &-rejilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+      gap: 2.5rem 2rem;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ficha,
+  .resultados.is-refreshing {
+    transition: none;
+  }
+}

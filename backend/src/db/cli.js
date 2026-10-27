@@ -8,6 +8,8 @@
  *   node src/db/cli.js drop --yes       Elimina la base de datos (solo fuera de producción).
  *   node src/db/cli.js seed [--reset]   Siembra datos de prueba realistas (solo fuera de producción).
  *                                       --reset recrea la base antes de sembrar.
+ *   node src/db/cli.js seed-noticias    Agrega solo las noticias de ejemplo a una base con datos (no borra nada;
+ *                                       no hace nada si ya hay noticias). Solo fuera de producción.
  */
 const env = require('../config/env');
 const { conectarServidor, conectarBase } = require('./connection');
@@ -40,7 +42,7 @@ async function sembrarBase(flags) {
     const r = await sembrar(conexion, { password });
     console.log(`[seed] ${r.usuarios} usuarios (${r.retirados} retirados), ${r.cuentas} cuentas, ${r.lotes} lotes, ${r.turnos} turnos.`);
     console.log(`[seed] ${r.obligacionesAnuales} obligaciones anuales de agua, ${r.eventosRealizados} eventos realizados, ${r.multas} multas, ${r.pagos} pagos (${r.anulaciones} anulados).`);
-    console.log(`[seed] ${r.egresos} egresos, ${r.bienes} bienes de inventario, ${r.actividades} actividades del plan anual.`);
+    console.log(`[seed] ${r.egresos} egresos, ${r.bienes} bienes de inventario, ${r.actividades} actividades del plan anual, ${r.noticias} noticias.`);
     console.log('[seed] Credenciales (todas las cuentas sembradas usan la misma contraseña):');
     console.log(`         Administrador: ${r.admin.cedula} (${r.admin.nombre})`);
     console.log(`         Usuario:       ${r.demo.cedula} (${r.demo.nombre})`);
@@ -100,7 +102,21 @@ async function main() {
     return;
   }
 
-  throw new Error('Uso: node src/db/cli.js <migrate|setup|drop --yes|seed [--reset]>');
+  if (comando === 'seed-noticias') {
+    if (env.esProduccion) throw new Error('No se permite sembrar datos de prueba en producción.');
+    const conexion = await conectarBase();
+    try {
+      await migrate(conexion);
+      const { sembrarNoticias } = require('./seed');
+      const creadas = await sembrarNoticias(conexion);
+      console.log(creadas ? `[seed] ${creadas} noticias de ejemplo agregadas.` : '[seed] Ya hay noticias: no se agregó ninguna.');
+    } finally {
+      await conexion.end();
+    }
+    return;
+  }
+
+  throw new Error('Uso: node src/db/cli.js <migrate|setup|drop --yes|seed [--reset]|seed-noticias>');
 }
 
 main().catch((error) => {

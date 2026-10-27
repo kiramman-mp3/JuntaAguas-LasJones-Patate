@@ -65,6 +65,7 @@ El seed simula unos dos años de operación de la Junta con las mismas reglas de
 ```bash
 npm run db:seed              # siembra una base vacía (aplica las migraciones pendientes)
 npm run db:seed -- --reset   # elimina y recrea la base antes de sembrar
+npm run db:seed-noticias     # agrega solo 8 noticias de ejemplo a una base que ya tiene datos (no borra nada)
 ```
 
 - Se niega a ejecutarse en producción o sobre una base que ya tiene usuarios.
@@ -134,6 +135,35 @@ cd frontend         && npm run lint && npm test -- --watch=false && npm run buil
 
 Las pruebas del backend usan su propia base (`junta_las_jones_test`), que crean y borran; no tocan `junta_las_jones`.
 
+### Pruebas de extremo a extremo (navegador real)
+
+`e2e/` maneja la aplicación como un usuario con Playwright y cubre todo el sistema (unos 160 casos, ~5 minutos):
+
+| Archivo | Qué recorre |
+|---|---|
+| `01-publico` | Inicio, eventos (PDF de convocatoria), información, 404, rutas protegidas y API sin sesión |
+| `02-usuarios-y-sesion` | Alta de usuarios, contraseña temporal, primer ingreso, bloqueo, límite de intentos, restablecimiento, baja y permisos |
+| `03-sectores-y-lotes` | Sectores, lotes (mapa), asignación y transferencia de titularidad |
+| `04-asambleas` / `05-mingas` | Convocatoria, orden del día, documentos firmados, asistencia, actas, cierre con multas, corrección posterior y cancelación |
+| `06-turnos` | Asignación, cruces de horario, vistas, edición y baja |
+| `07-whatsapp` | Vinculación, grupo, publicación, reintento tras fallo y servicio caído (servicio real con teléfono simulado, `e2e/whatsapp-simulado.js`) |
+| `08-flujos-criticos` | Multa por ausencia → cobro en caja → anulación |
+| `09-finanzas` | Egresos, tarifas, pago anual de agua, historial y comprobante bancario |
+| `10-mi-cuenta` | Portal del usuario y aislamiento de sus datos |
+| `11-gestion-interna` / `12-tablero-y-navegacion` / `13-auditoria` | Inventario, plan anual, tablero, menú y registro de auditoría |
+| `14-tema-y-movil` | Modo oscuro y todas las pantallas en 390 px |
+| `15-noticias` | Portada (5 recientes), archivo con filtros, detalle y administración (crear, editar, reemplazar imagen y eliminar) |
+
+Los archivos dependen entre sí en orden numérico (comparten el estado de `e2e/.auth/estado.json`): ejecute la suite completa. Una prueba marcada `test.fail` documenta un defecto conocido (el subtipo "Extraordinaria" de la asamblea no se guarda); cuando se corrija, Playwright avisará de quitar la marca.
+
+Usan su propia base (`junta_las_jones_e2e`, sembrada de nuevo en cada ejecución), un backend en el puerto 3210 y un servicio de WhatsApp simulado en el 3199; no tocan `junta_las_jones`. Con MySQL levantado:
+
+```bash
+npm --prefix e2e install
+E2E_CHANNEL=msedge npm run test:e2e              # usa el Edge instalado (o chrome); compila el frontend antes
+npm --prefix e2e run browsers                     # alternativa: descargar Chromium (lo que hace el CI)
+```
+
 ---
 
 ## 8. Actualizar la base de datos tras un `git pull`
@@ -158,3 +188,4 @@ No hace falta borrar el contenedor ni perder datos. Para crear una migración nu
   ```
   Luego vuelve a ejecutar `npm run db:migrate` (y, si quieres datos de prueba, `npm run db:seed`) en `backend`.
 - Asegúrate de tener los puertos `3000` (Backend), `4200` (Frontend), `3100` (servicio de WhatsApp) y `3306` (MySQL) libres antes de levantar los servicios.
+- **Producción:** respaldos, restauración, HTTPS y monitoreo están en [`docs/operacion.md`](docs/operacion.md). Programe `npm run respaldo` antes de usar el sistema con datos reales.

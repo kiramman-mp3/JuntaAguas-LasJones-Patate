@@ -1,0 +1,59 @@
+<div class="portal">
+  <header class="portal-cabecera">
+    <app-curvas-nivel />
+    <h1 class="portal-cabecera__titulo">Noticias</h1>
+    <p class="portal-cabecera__lead">
+      Avisos, trabajos en el canal y novedades de la Junta de Agua y Riego La Jones.
+    </p>
+  </header>
+
+  @if (cargando()) {
+    <app-skeleton variante="tarjetas" [filas]="3" mensaje="Cargando noticias…" />
+  } @else if (error()) {
+    <app-empty-state
+      tono="error"
+      icono="ri-wifi-off-line"
+      titulo="No se pudieron cargar las noticias"
+      mensaje="Revise su conexión e intente de nuevo."
+    >
+      <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">Reintentar</button>
+    </app-empty-state>
+  } @else if (!principal()) {
+    <app-empty-state
+      icono="ri-newspaper-line"
+      titulo="Aún no hay noticias"
+      mensaje="Cuando la directiva publique una, aparecerá aquí."
+    />
+  } @else {
+    <section aria-label="Noticia más reciente" class="noticias__principal">
+      <app-noticia-tarjeta [noticia]="principal()!" variante="destacada" />
+    </section>
+
+    <section class="noticias__canal" aria-labelledby="recientes-titulo">
+      @if (canal().length) {
+        <h2 id="recientes-titulo" class="portal-subtitulo">Antes en el canal</h2>
+      }
+      <ol class="canal">
+        @for (noticia of canal(); track noticia.id) {
+          <li class="canal__item">
+            <time class="canal__fecha" [attr.datetime]="noticia.publicada_en">
+              <strong>{{ fecha(noticia).dia }}</strong>
+              <span>{{ fecha(noticia).mes }}</span>
+              <small>{{ fecha(noticia).anio }}</small>
+            </time>
+            <app-noticia-tarjeta [noticia]="noticia" variante="fila" />
+          </li>
+        }
+        <li class="canal__item canal__item--fin">
+          <span class="canal__fecha" aria-hidden="true"></span>
+          <div class="canal__cierre">
+            <a class="btn btn--primary btn--lg" routerLink="/noticias/todas">
+              <i class="ri-archive-line" aria-hidden="true"></i> Ver más noticias
+            </a>
+            <span class="caption">{{ total() }} noticias publicadas</span>
+          </div>
+        </li>
+      </ol>
+    </section>
+  }
+</div>

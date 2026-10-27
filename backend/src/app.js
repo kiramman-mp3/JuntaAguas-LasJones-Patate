@@ -10,6 +10,8 @@ const apiRouter = require('./routes/index');
 const errorHandler = require('./middlewares/errorHandler');
 const { autenticacionOpcional } = require('./middlewares/authMiddleware');
 const { servirDocumento } = require('./controllers/documentoController');
+const requestLogger = require('./middlewares/requestLogger');
+const logger = require('./shared/logger');
 
 const app = express();
 
@@ -22,10 +24,12 @@ let avisoProxy = false;
 app.use((req, res, next) => {
   if (!avisoProxy && env.esProduccion && !env.TRUST_PROXY && req.headers['x-forwarded-for']) {
     avisoProxy = true;
-    console.warn('[Servidor Backend] Llegan peticiones con X-Forwarded-For pero TRUST_PROXY=0. Si hay un proxy delante, configure TRUST_PROXY=1 en backend/.env.');
+    logger.warn('Llegan peticiones con X-Forwarded-For pero TRUST_PROXY=0. Si hay un proxy delante, configure TRUST_PROXY=1 en backend/.env.');
   }
   next();
 });
+
+app.use(requestLogger());
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },

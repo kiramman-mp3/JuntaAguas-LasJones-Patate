@@ -1,0 +1,94 @@
+.noticia-miniatura {
+  display: block;
+  width: 6rem;
+  height: 3.375rem;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--bg-surface-hover);
+}
+
+.noticia-titulo {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.noticia-resumen {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 34rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.noticia-etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.etiquetas-campo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+
+  &:focus-within {
+    border-color: var(--color-primary);
+  }
+
+  &__entrada {
+    flex: 1 1 10rem;
+    min-width: 8rem;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+  }
+}
+
+.etiqueta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  &__quitar {
+    display: inline-flex;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+}
+
+.noticia-previa {
+  margin: 0.75rem 0 0;
+
+  img {
+    display: block;
+    width: 100%;
+    max-width: 20rem;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+  }
+
+  figcaption {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+}

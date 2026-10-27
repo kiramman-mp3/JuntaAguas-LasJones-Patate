@@ -12,6 +12,7 @@
           >Inicio</a
         >
       </li>
+      <li><a routerLink="/noticias" routerLinkActive="active">Noticias</a></li>
       <li><a routerLink="/eventos" routerLinkActive="active">Eventos y Actas</a></li>
       <li><a routerLink="/informacion" routerLinkActive="active">Información de la Junta</a></li>
       @if (authService.isLoggedIn()) {
@@ -40,12 +41,14 @@
 
       @if (!authService.isLoggedIn()) {
         <a routerLink="/login" class="btn btn--primary btn--sm">
-          <i class="ri-login-circle-line" aria-hidden="true"></i> Iniciar Sesión
+          <i class="ri-login-circle-line" aria-hidden="true"></i>
+          <span class="main-nav__texto">Iniciar Sesión</span>
         </a>
       }
       @if (authService.isLoggedIn()) {
         <button type="button" (click)="cerrarSesion()" class="btn btn--primary btn--sm">
-          <i class="ri-logout-circle-line" aria-hidden="true"></i> Cerrar Sesión
+          <i class="ri-logout-circle-line" aria-hidden="true"></i>
+          <span class="main-nav__texto">Cerrar Sesión</span>
         </button>
       }
 
@@ -74,6 +77,9 @@
             (click)="cerrarMenu()"
             >Inicio</a
           >
+        </li>
+        <li>
+          <a routerLink="/noticias" routerLinkActive="active" (click)="cerrarMenu()">Noticias</a>
         </li>
         <li>
           <a routerLink="/eventos" routerLinkActive="active" (click)="cerrarMenu()"
@@ -118,33 +124,34 @@
   <footer class="footer-global">
     <div class="footer-container">
       <div class="footer-brand">
-        <h4>
-          <i class="ri-drop-fill text-primary" aria-hidden="true"></i> Junta de Agua y Riego "La
-          Jones"
-        </h4>
-        <p class="caption">
+        <p class="footer-marca">
+          <i class="ri-drop-fill" aria-hidden="true"></i> Junta de Agua y Riego "La Jones"
+        </p>
+        <p class="footer-lema">
           Garantizando la administración eficiente, transparente y equitativa del agua de riego para
           nuestros usuarios en Patate.
         </p>
       </div>
 
+      <nav class="footer-links" aria-label="Pie de página">
+        <strong>Navegar</strong>
+        <ul>
+          <li><a routerLink="/">Inicio</a></li>
+          <li><a routerLink="/noticias">Noticias</a></li>
+          <li><a routerLink="/eventos">Eventos y Actas</a></li>
+          <li><a routerLink="/informacion">Información de la Junta</a></li>
+          <li><a routerLink="/mi-cuenta">Consulta de Multas / Deudas</a></li>
+          <li><a routerLink="/admin">Panel de Directiva</a></li>
+        </ul>
+      </nav>
+
       <div class="footer-links">
-        <div>
-          <strong>Módulos</strong>
-          <ul>
-            <li><a routerLink="/">Inicio & Convocatorias</a></li>
-            <li><a routerLink="/informacion">Información de la Junta</a></li>
-            <li><a routerLink="/mi-cuenta">Consulta de Multas / Deudas</a></li>
-            <li><a routerLink="/admin">Panel de Directiva</a></li>
-          </ul>
-        </div>
-        <div>
-          <strong>Ubicación</strong>
-          <p class="caption">
-            <i class="ri-map-pin-line" aria-hidden="true"></i> Sector Las Jones, Cantón Patate,
-            Provincia de Tungurahua, Ecuador.
-          </p>
-        </div>
+        <strong>Ubicación</strong>
+        <p>
+          <i class="ri-map-pin-line" aria-hidden="true"></i> Sector Las Jones, Cantón Patate,
+          Provincia de Tungurahua, Ecuador.
+        </p>
+        <p><i class="ri-time-line" aria-hidden="true"></i> Atención: sábados de 08:00 a 12:00.</p>
       </div>
     </div>
     <div class="footer-bottom">

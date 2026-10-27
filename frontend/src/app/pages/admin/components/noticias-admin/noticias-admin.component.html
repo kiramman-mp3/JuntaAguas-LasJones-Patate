@@ -1,0 +1,288 @@
+<section class="module" aria-labelledby="noticias-admin-titulo">
+  <div class="section-head">
+    <div>
+      <h3 id="noticias-admin-titulo" class="section-head__title">Noticias</h3>
+      <p class="section-head__subtitle">
+        {{ total() }} {{ total() === 1 ? 'noticia publicada' : 'noticias publicadas' }} en el
+        portal. Las cinco más recientes se ven en la portada de Noticias.
+      </p>
+    </div>
+    <div class="section-head__actions">
+      <button type="button" class="btn btn--primary" (click)="abrirNueva()">
+        <i class="ri-add-line" aria-hidden="true"></i> Nueva noticia
+      </button>
+    </div>
+  </div>
+
+  <div class="surface">
+    <div class="surface__head">
+      <div class="toolbar toolbar--flush">
+        <div class="search-field toolbar__grow">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input
+            type="search"
+            class="input"
+            placeholder="Buscar por título, descripción o etiqueta…"
+            [ngModel]="busqueda()"
+            (ngModelChange)="escribirBusqueda($event)"
+            aria-label="Buscar noticia"
+          />
+        </div>
+      </div>
+    </div>
+
+    @if (cargando() && !noticias().length) {
+      <app-skeleton [filas]="5" mensaje="Cargando noticias…" />
+    } @else if (error()) {
+      <app-empty-state
+        tono="error"
+        icono="ri-wifi-off-line"
+        titulo="No se pudieron cargar las noticias"
+        [mensaje]="error()"
+      >
+        <button type="button" class="btn btn--outline btn--sm" (click)="cargar()">
+          Reintentar
+        </button>
+      </app-empty-state>
+    } @else if (!noticias().length) {
+      @if (busqueda()) {
+        <app-empty-state
+          icono="ri-filter-off-line"
+          titulo="Sin coincidencias"
+          mensaje="Ninguna noticia coincide con la búsqueda."
+        />
+      } @else {
+        <app-empty-state
+          icono="ri-newspaper-line"
+          titulo="Todavía no hay noticias"
+          mensaje="Publique la primera para que aparezca en el portal."
+        >
+          <button type="button" class="btn btn--primary btn--sm" (click)="abrirNueva()">
+            Nueva noticia
+          </button>
+        </app-empty-state>
+      }
+    } @else {
+      <div class="table-container table-container--flush" [class.is-refreshing]="cargando()">
+        <table class="table-custom table-custom--stack">
+          <thead>
+            <tr>
+              <th><span class="sr-only">Imagen</span></th>
+              <th>Noticia</th>
+              <th>Etiquetas</th>
+              <th>Publicada</th>
+              <th><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (n of noticias(); track n.id) {
+              <tr>
+                <td data-label="Imagen">
+                  <img
+                    class="noticia-miniatura"
+                    [src]="urlImagen(n.imagen_url)"
+                    alt=""
+                    width="96"
+                    height="54"
+                    loading="lazy"
+                  />
+                </td>
+                <td data-label="Noticia">
+                  <strong class="noticia-titulo">{{ n.titulo }}</strong>
+                  <span class="noticia-resumen">{{ n.descripcion_corta }}</span>
+                </td>
+                <td data-label="Etiquetas">
+                  <ul class="noticia-etiquetas">
+                    @for (t of n.tags; track t) {
+                      <li class="badge badge--info">{{ t }}</li>
+                    }
+                  </ul>
+                </td>
+                <td data-label="Publicada">{{ n.publicada_en | fechaLocal }}</td>
+                <td class="cell-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    title="Editar noticia"
+                    [attr.aria-label]="'Editar noticia ' + n.titulo"
+                    [disabled]="abriendo() === n.id"
+                    (click)="abrirEdicion(n)"
+                  >
+                    <i class="ri-edit-line" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--danger"
+                    title="Eliminar noticia"
+                    [attr.aria-label]="'Eliminar noticia ' + n.titulo"
+                    [disabled]="eliminando() === n.id"
+                    (click)="eliminar(n)"
+                  >
+                    <i class="ri-delete-bin-line" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginador
+        etiqueta="noticias"
+        [pagina]="pagina()"
+        [porPagina]="porPagina()"
+        [total]="total()"
+        [opciones]="[10, 25, 50]"
+        [cargando]="cargando()"
+        (paginaChange)="cambiarPagina($event)"
+        (porPaginaChange)="cambiarPorPagina($event)"
+      />
+    }
+  </div>
+</section>
+
+@if (formulario()) {
+  <app-modal
+    [titulo]="editando ? 'Editar noticia' : 'Nueva noticia'"
+    subtitulo="Se publica en el portal apenas se guarda."
+    icono="ri-newspaper-line"
+    tamano="lg"
+    [bloqueado]="guardando()"
+    (cerrar)="cerrarFormulario()"
+  >
+    <form (ngSubmit)="guardar()" novalidate>
+      <div class="modal__body form-stack">
+        <div class="form-group">
+          <label for="noticia-titulo">Título *</label>
+          <input
+            id="noticia-titulo"
+            name="titulo"
+            class="input"
+            [maxlength]="limites.titulo.max"
+            [(ngModel)]="form.titulo"
+          />
+          <small class="field-hint"
+            >{{ form.titulo.trim().length }} / {{ limites.titulo.max }}</small
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="noticia-etiqueta">Etiquetas *</label>
+          <div class="etiquetas-campo">
+            @for (t of form.tags; track t) {
+              <span class="badge badge--info etiqueta-chip">
+                {{ t }}
+                <button
+                  type="button"
+                  class="etiqueta-chip__quitar"
+                  [attr.aria-label]="'Quitar etiqueta ' + t"
+                  (click)="quitarEtiqueta(t)"
+                >
+                  <i class="ri-close-line" aria-hidden="true"></i>
+                </button>
+              </span>
+            }
+            <input
+              id="noticia-etiqueta"
+              name="etiqueta"
+              class="etiquetas-campo__entrada"
+              placeholder="Escriba y pulse Enter"
+              [maxlength]="limites.etiqueta.max"
+              [(ngModel)]="etiquetaNueva"
+              (keydown)="teclaEtiqueta($event)"
+              (blur)="agregarEtiqueta()"
+            />
+          </div>
+          <small class="field-hint"
+            >Hasta {{ limites.etiquetas }} etiquetas, en minúsculas ({{
+              form.tags.length
+            }}
+            agregadas). Sirven para filtrar en el archivo.</small
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="noticia-corta">Descripción corta *</label>
+          <textarea
+            id="noticia-corta"
+            name="corta"
+            class="input"
+            rows="2"
+            [maxlength]="limites.corta.max"
+            [(ngModel)]="form.descripcion_corta"
+          ></textarea>
+          <small class="field-hint"
+            >Aparece en las tarjetas. {{ form.descripcion_corta.trim().length }} /
+            {{ limites.corta.max }}</small
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="noticia-larga">Descripción larga *</label>
+          <textarea
+            id="noticia-larga"
+            name="larga"
+            class="input"
+            rows="7"
+            [maxlength]="limites.larga.max"
+            [(ngModel)]="form.descripcion_larga"
+          ></textarea>
+          <small class="field-hint"
+            >Texto completo de la noticia; respeta los saltos de línea.
+            {{ form.descripcion_larga.trim().length }} / {{ limites.larga.max }}</small
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="noticia-imagen"
+            >Imagen {{ editando ? '(opcional: deje vacío para conservar la actual)' : '*' }}</label
+          >
+          <input
+            #archivo
+            id="noticia-imagen"
+            name="imagen"
+            type="file"
+            class="input"
+            accept="image/jpeg,image/png"
+            (change)="elegirImagen(archivo)"
+          />
+          <small class="field-hint"
+            >JPG o PNG de hasta 10 MB. Se recomienda formato horizontal 16:9.</small
+          >
+          @if (errorImagen()) {
+            <small class="field-error" role="alert">{{ errorImagen() }}</small>
+          }
+          @if (vistaPrevia() || editando) {
+            <figure class="noticia-previa">
+              <img
+                [src]="vistaPrevia() ?? urlImagen(editando!.imagen_url)"
+                alt="Vista previa de la imagen de la noticia"
+                width="320"
+                height="180"
+              />
+              <figcaption>{{ vistaPrevia() ? 'Imagen nueva' : 'Imagen actual' }}</figcaption>
+            </figure>
+          }
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button
+          type="button"
+          class="btn btn--outline"
+          [disabled]="guardando()"
+          (click)="cerrarFormulario()"
+        >
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn--primary" [disabled]="guardando()">
+          @if (guardando()) {
+            <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
+          } @else {
+            <i class="ri-save-line" aria-hidden="true"></i>
+            {{ editando ? 'Guardar cambios' : 'Publicar noticia' }}
+          }
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
