@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { DialogService } from '../../../../../core/services/dialog.service';
+import { TipoRecibo } from '../../../../../core/models/finanzas';
 
 @Component({
   selector: 'app-comprobante-bancario',
@@ -48,6 +49,7 @@ import { DialogService } from '../../../../../core/services/dialog.service';
 })
 export class ComprobanteBancarioComponent {
   readonly pagoId = input.required<number>();
+  readonly tipo = input<TipoRecibo>('GENERAL');
   readonly existente = input(false);
   readonly editable = input(true);
   readonly subido = output<void>();
@@ -87,7 +89,7 @@ export class ComprobanteBancarioComponent {
       if (this.destroyRef.destroyed) return;
       await new Promise<void>((resolve) => {
         this.api
-          .subirComprobante(this.pagoId(), archivo)
+          .subirComprobante(this.pagoId(), archivo, this.tipo())
           .pipe(takeUntilDestroyed(this.destroyRef), finalize(resolve))
           .subscribe({
             next: () => {
@@ -111,7 +113,7 @@ export class ComprobanteBancarioComponent {
     if (this.ocupado()) return;
     this.ocupado.set(true);
     this.api
-      .descargarComprobante(this.pagoId())
+      .descargarComprobante(this.pagoId(), this.tipo())
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.ocupado.set(false)),

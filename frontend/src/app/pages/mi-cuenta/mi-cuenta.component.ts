@@ -6,7 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { FinanzasService } from '../../core/services/finanzas.service';
 import { ComprobantePdfService } from '../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { Recibo, TipoRecibo, numeroRecibo } from '../../core/models/finanzas';
+import { Recibo, TipoRecibo, numeroRecibo, numeroReciboAgua } from '../../core/models/finanzas';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
 import { iniciales } from '../../core/utils/personas';
@@ -171,14 +171,14 @@ export class MiCuentaComponent implements OnInit {
     });
   }
 
-  descargarComprobanteBancario(pagoId: number): void {
-    this.finanzasService.descargarComprobante(pagoId).subscribe({
+  descargarComprobanteBancario(tipo: TipoRecibo, pagoId: number): void {
+    this.finanzasService.descargarComprobante(pagoId, tipo).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         const ext = blob.type.includes('pdf') ? 'pdf' : blob.type.includes('png') ? 'png' : 'jpg';
-        a.download = `Comprobante_bancario_${numeroRecibo(pagoId)}.${ext}`;
+        a.download = `Comprobante_bancario_${tipo === 'AGUA' ? numeroReciboAgua(pagoId) : numeroRecibo(pagoId)}.${ext}`;
         a.click();
         URL.revokeObjectURL(url);
       },
