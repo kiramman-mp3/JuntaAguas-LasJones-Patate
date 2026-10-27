@@ -1,4 +1,5 @@
 import { Component, input } from '@angular/core';
+import { CurvasNivelComponent } from './curvas-nivel.component';
 
 /**
  * Encabezado de un módulo del panel: título con tracking negativo, descripción breve
@@ -7,8 +8,10 @@ import { Component, input } from '@angular/core';
 @Component({
   selector: 'app-page-header',
   standalone: true,
+  imports: [CurvasNivelComponent],
   template: `
     <header class="page-header">
+      <app-curvas-nivel />
       <div class="page-header__text">
         @if (icono()) {
           <span class="page-header__icon" aria-hidden="true"><i [class]="icono()"></i></span>

@@ -14,9 +14,10 @@
 
   &__title {
     margin: 0;
-    font-size: 1.15rem;
+    font-family: var(--font-display);
+    font-size: 1.4rem;
     font-weight: 700;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.025em;
   }
 
   &__subtitle {
@@ -653,7 +654,7 @@ label.icon-btn:focus-within,
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--text-muted);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.04em;
   }
 

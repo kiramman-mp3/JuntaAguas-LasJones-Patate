@@ -1,150 +1,108 @@
-<!-- HERO SECTION -->
-<section class="hero hero-carousel" id="inicio">
-  <div class="hero__overlay"></div>
-  <div class="hero__container">
-    <div class="hero__content">
-      <span class="badge badge--info mb-3"
-        ><i aria-hidden="true" class="ri-calendar-event-line"></i> Junta La Jones</span
-      >
-      <h1 class="hero__title">Gestión del Agua de Riego y Servicios Comunitarios</h1>
-      <p class="hero__description">
-        Plataforma oficial para la administración de los usuarios, turnos de agua, convocatorias a
-        mingas y consulta pública de obligaciones.
-      </p>
-    </div>
-    <div class="hero__card-preview">
-      <div class="card card--glass">
-        <div class="preview-header">
-          <div class="preview-icon">
-            <i aria-hidden="true" class="ri-water-flash-fill"></i>
-          </div>
-          <div>
-            <h4>Canal de Riego La Jones</h4>
-          </div>
-        </div>
-        <div class="preview-stats">
-          <div class="stat-box">
-            <span class="stat-number">{{ totalUsuarios || 0 }}</span>
-            <span class="stat-label">Usuarios activos</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-number">3</span>
-            <span class="stat-label">Sectores</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-number">55.7 L/s</span>
-            <span class="stat-label">Caudal Total</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- PORTADA: el agua del canal, con las cifras de la Junta -->
+<section class="hero" id="inicio">
+  <app-curvas-nivel class="hero__curvas" />
+  <div class="portal hero__contenido">
+    <h1 class="hero__titulo">Gestión del Agua de Riego y Servicios Comunitarios</h1>
+    <p class="hero__lead">
+      Plataforma oficial para la administración de los usuarios, turnos de agua, convocatorias a
+      mingas y consulta pública de obligaciones.
+    </p>
 
-  <!-- SECCIÓN DE CONSULTA RÁPIDA DENTRO DEL HERO -->
-  <div class="quick-search-section container">
-    <div class="search-banner card card--glass hover-effect">
-      <div class="search-banner__text">
-        <h3>
-          <i aria-hidden="true" class="ri-shield-user-line"></i> ¿Deseas verificar el estado de tus
-          obligaciones?
-        </h3>
+    <dl class="hero__cifras" aria-label="Canal de Riego La Jones">
+      <div>
+        <dt>Usuarios activos</dt>
+        <dd>{{ totalUsuarios || 0 }}</dd>
+      </div>
+      <div>
+        <dt>Sectores</dt>
+        <dd>{{ sectores.length || 3 }}</dd>
+      </div>
+      <div>
+        <dt>Caudal total</dt>
+        <dd>55.7 <small>L/s</small></dd>
+      </div>
+    </dl>
+
+    <div class="hero__consulta">
+      <div>
+        <h2 class="hero__consulta-titulo">¿Deseas verificar el estado de tus obligaciones?</h2>
         <p>
           Inicia sesión para consultar tus pagos pendientes de agua de riego, asistencia a mingas y
           asambleas.
         </p>
       </div>
-      <a routerLink="/login" class="btn btn--secondary btn--lg">
+      <a routerLink="/login" class="btn btn--lg hero__boton">
         <i aria-hidden="true" class="ri-user-settings-line"></i> Inicia sesión para verificarlas
       </a>
     </div>
   </div>
 </section>
 
-<!-- SECCIÓN DE PRÓXIMOS EVENTOS -->
+<!-- PRÓXIMOS EVENTOS: en el canal, por fecha -->
 @if (proximosEventos.length > 0) {
-  <section class="section-events" id="eventos">
-    <div class="container">
-      <div class="section-header">
-        <div>
-          <span class="badge badge--warning"
-            ><i aria-hidden="true" class="ri-notification-3-line"></i> Avisos Importantes</span
-          >
-          <h2>Próximas Mingas y Asambleas</h2>
-        </div>
-      </div>
-      <div class="events-grid">
-        @for (ev of proximosEventos; track ev) {
-          <div class="card event-card">
-            <div class="event-card__header">
-              <span
-                class="badge"
-                [ngClass]="ev.tipo === 'ASAMBLEA' ? 'badge--info' : 'badge--success'"
-              >
-                {{ ev.tipo }}
-              </span>
-              <span class="event-date"
-                ><i aria-hidden="true" class="ri-calendar-2-line"></i>
-                {{ ev.fecha | fechaLocal: 'larga' }}</span
-              >
-            </div>
-            <h3>{{ ev.titulo }}</h3>
-            <p class="event-time">
-              <i aria-hidden="true" class="ri-time-line"></i> Hora de inicio: {{ ev.hora_inicio }}
+  <section class="portal inicio__seccion" id="eventos" aria-labelledby="eventos-titulo">
+    <h2 id="eventos-titulo" class="portal-subtitulo">Próximas Mingas y Asambleas</h2>
+    <ol class="canal">
+      @for (ev of proximosEventos; track ev) {
+        <li class="canal__item">
+          <time class="canal__fecha" [attr.datetime]="ev.fecha">
+            <strong>{{ fecha(ev).dia }}</strong>
+            <span>{{ fecha(ev).mes }}</span>
+            <small>{{ fecha(ev).anio }}</small>
+          </time>
+          <article class="evento">
+            <p
+              class="evento__tipo"
+              [class.evento__tipo--asamblea]="ev.tipo === 'ASAMBLEA'"
+              [class.evento__tipo--minga]="ev.tipo !== 'ASAMBLEA'"
+            >
+              {{ ev.tipo === 'ASAMBLEA' ? 'Asamblea' : 'Minga' }}
             </p>
-            <p class="event-location">
-              <i aria-hidden="true" class="ri-map-pin-line"></i> {{ ev.lugar }}
-            </p>
-          </div>
-        }
-      </div>
-    </div>
+            <h3 class="evento__titulo">{{ ev.titulo }}</h3>
+            <p class="evento__fecha-larga">{{ ev.fecha | fechaLocal: 'larga' }}</p>
+            <ul class="evento__datos">
+              <li>
+                <i aria-hidden="true" class="ri-time-line"></i> Hora de inicio: {{ ev.hora_inicio }}
+              </li>
+              <li><i aria-hidden="true" class="ri-map-pin-line"></i> {{ ev.lugar }}</li>
+            </ul>
+          </article>
+        </li>
+      }
+    </ol>
   </section>
 }
 
-<!-- SECTORES Y CANALES -->
-<section class="section-sectors" id="sectores">
-  <div class="container">
-    <div class="section-header">
-      <div>
-        <span class="badge badge--success"
-          ><i aria-hidden="true" class="ri-map-2-line"></i> Geografía y Riego</span
-        >
-        <h2>Sectores y Distribución de Agua</h2>
-      </div>
-    </div>
-
-    <div class="sectors-grid">
-      @for (s of sectores; track s) {
-        <div class="card sector-card">
-          <div class="sector-card__icon">
-            <i aria-hidden="true" class="ri-drop-line"></i>
-          </div>
-          <h3>{{ s.nombre }}</h3>
+<!-- SECTORES Y CANALES: la barra de cada sector se llena según sus lotes -->
+<section class="portal inicio__seccion" id="sectores" aria-labelledby="sectores-titulo">
+  <h2 id="sectores-titulo" class="portal-subtitulo">Sectores y Distribución de Agua</h2>
+  <p class="inicio__nota">La barra compara el tamaño de cada sector según sus lotes.</p>
+  <ul class="sectores">
+    @for (s of sectores; track s) {
+      <li class="sectores__item" [style.--nivel]="nivel(s)" [style.--orden]="$index">
+        <div class="sectores__texto">
+          <h3 class="sectores__nombre">{{ s.nombre }}</h3>
           @if (s.descripcion) {
-            <p class="caption">{{ s.descripcion }}</p>
+            <p class="sectores__descripcion">{{ s.descripcion }}</p>
           }
-          <div class="sector-card__info">
-            <div>
-              <small>Lotes Registrados</small>
-              <strong>{{ s.lotesCount }} lotes</strong>
-            </div>
-            <div>
-              <small>Superficie regada</small>
-              <strong>{{ s.superficieHa | number: '1.1-1' }} ha</strong>
-            </div>
-          </div>
-          <button
-            type="button"
-            class="btn btn--outline btn--sm"
-            style="width: 100%; margin-top: 1.25rem"
-            (click)="verCronograma(s.id, s.nombre)"
-          >
-            <i class="ri-calendar-schedule-line" aria-hidden="true"></i> Ver cronograma de riego
-          </button>
         </div>
-      }
-    </div>
-  </div>
+        <div class="sectores__datos">
+          <span class="niveles__barra" aria-hidden="true"><span></span></span>
+          <p>
+            <strong>{{ s.lotesCount }} lotes</strong> · {{ s.superficieHa | number: '1.1-1' }} ha
+            regadas
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn--outline btn--sm sectores__cronograma"
+          (click)="verCronograma(s.id, s.nombre)"
+        >
+          <i class="ri-calendar-schedule-line" aria-hidden="true"></i> Ver cronograma de riego
+        </button>
+      </li>
+    }
+  </ul>
 </section>
 
 <!-- MODAL CRONOGRAMA DE AGUA POR SECTOR (DISEÑADO PARA ADULTOS MAYORES Y USUARIOS DE PATATE) -->

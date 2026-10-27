@@ -8,6 +8,8 @@ import { ComprobantePdfService } from '../../core/services/comprobante-pdf.servi
 import { NotificationService } from '../../core/services/notification.service';
 import { Recibo, TipoRecibo, numeroRecibo } from '../../core/models/finanzas';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
+import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
+import { iniciales } from '../../core/utils/personas';
 
 interface UsuarioResultado {
   cedula: string;
@@ -21,11 +23,13 @@ interface UsuarioResultado {
 @Component({
   selector: 'app-mi-cuenta',
   standalone: true,
-  imports: [CommonModule, FechaLocalPipe],
+  imports: [CommonModule, FechaLocalPipe, CurvasNivelComponent],
   templateUrl: './mi-cuenta.component.html',
   styleUrls: ['./mi-cuenta.component.scss'],
 })
 export class MiCuentaComponent implements OnInit {
+  readonly iniciales = iniciales;
+
   cargando = true;
   resultado: UsuarioResultado | null = null;
   errorMensaje = '';

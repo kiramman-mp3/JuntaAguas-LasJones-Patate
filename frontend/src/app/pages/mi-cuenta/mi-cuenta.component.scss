@@ -1,28 +1,19 @@
-.consulta-page {
-  padding: 3rem 0;
+// Mi cuenta: la misma maquetación editorial del portal, con los datos del usuario sin cajas.
 
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-  }
+.consulta-page {
+  padding-bottom: 5rem;
 }
 
-.search-header {
-  padding: 2rem 2.5rem;
-  margin-bottom: 2.5rem;
+.consulta-cabecera {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
   flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
 
-  h2 {
-    color: var(--text-main);
-  }
-
-  @media (max-width: 520px) {
-    padding: 1.5rem;
+  .portal-cabecera__titulo {
+    max-width: 18ch;
+    font-size: clamp(2rem, 1.3rem + 3vw, 3.4rem);
   }
 }
 
@@ -35,32 +26,91 @@
 .search-results {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: clamp(2.5rem, 5vw, 3.5rem);
 }
 
+// Las secciones dejan de ser tarjetas: título, filete y contenido.
+.table-card,
+.payment-info-card,
+.success-empty-card {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.table-card {
+  .card__header {
+    padding: 0 0 0.9rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+  }
+
+  .card__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 1.2rem + 0.6vw, 1.7rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+
+    i {
+      display: none;
+    }
+  }
+
+  .caption {
+    margin: 0.3rem 0 0;
+  }
+}
+
+// --- Titular --------------------------------------------------------------------------------------
 .user-info-card {
+  padding: 0 0 1.5rem;
+  border: 0;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+
   .user-info-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
 
     .user-avatar {
-      width: 3.5rem;
-      height: 3.5rem;
+      display: grid;
+      place-items: center;
+      flex: none;
+      width: 4.25rem;
+      height: 4.25rem;
       border-radius: var(--radius-full);
       background: var(--color-primary-light);
-      color: var(--color-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.75rem;
-      flex-shrink: 0;
+      color: var(--color-info-strong);
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
     }
 
     .user-info-text {
       flex: 1;
-      min-width: 200px;
+      min-width: 14rem;
+
+      h3 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.9rem);
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        overflow-wrap: anywhere;
+      }
+
+      .caption {
+        margin: 0.35rem 0 0;
+      }
     }
 
     .user-info-actions {
@@ -69,7 +119,6 @@
       @media (max-width: 600px) {
         width: 100%;
         margin-left: 0;
-        margin-top: 0.5rem;
 
         .btn {
           width: 100%;
@@ -80,60 +129,92 @@
 
   .user-location-info {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
+    gap: 1rem 2rem;
 
     small {
       display: block;
+      margin-bottom: 0.2rem;
       color: var(--text-muted);
-      font-size: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    strong {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
     }
   }
 }
 
-.kpi-card--danger {
-  border-left: 5px solid var(--color-danger);
-  .kpi-card__icon {
-    background: #fee2e2;
-    color: var(--color-danger);
+// --- Saldo: la cifra que importa, grande y con su color ---------------------------------------------
+.kpi-card {
+  display: block;
+  padding: 0 0 0 1.5rem;
+  border: 0;
+  border-left: 4px solid var(--border-strong);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+
+  &__icon {
+    display: none;
   }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__value {
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 1.8rem + 3.5vw, 4.25rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__label {
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+}
+
+.kpi-card--danger {
+  border-left-color: var(--color-danger);
+
   .kpi-card__value {
-    color: var(--color-danger);
+    color: var(--color-danger-strong);
   }
 }
 
 .kpi-card--success {
-  border-left: 5px solid var(--color-success);
-  .kpi-card__icon {
-    background: #d1fae5;
-    color: var(--color-success);
-  }
+  border-left-color: var(--color-success);
+
   .kpi-card__value {
-    color: var(--color-success);
+    color: var(--color-success-strong);
   }
 }
 
-.success-empty-card,
-.error-card {
-  text-align: center;
-  padding: 3rem 2rem;
+// --- Estados vacíos y de error ---------------------------------------------------------------------
+.success-empty-card {
+  max-width: 40rem;
+  text-align: left;
 
   .success-icon {
-    font-size: 4rem;
+    margin-bottom: 0.75rem;
+    font-size: 2.75rem;
     color: var(--color-success);
-    margin-bottom: 1rem;
-  }
-
-  .error-icon {
-    font-size: 4rem;
-    color: var(--color-danger);
-    margin-bottom: 1rem;
   }
 
   h3 {
-    margin-bottom: 0.5rem;
-    color: var(--text-main);
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 
   p {
@@ -141,48 +222,79 @@
   }
 }
 
+.error-card {
+  max-width: 40rem;
+  padding: 2rem 0;
+  text-align: left;
+
+  .error-icon {
+    margin-bottom: 0.75rem;
+    font-size: 2.75rem;
+    color: var(--color-danger);
+  }
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  p {
+    margin-bottom: 1.25rem;
+    color: var(--text-muted);
+  }
+}
+
+// --- Cómo pagar ----------------------------------------------------------------------------------
 .payment-info-card {
-  border-top: 3px solid var(--color-primary);
+  max-width: 52rem;
+  padding-left: 1.5rem;
+  border-left: 4px solid var(--color-primary);
 
   h4 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   .payment-list {
-    margin-top: 1rem;
+    margin: 1rem 0 0;
     padding-left: 1.25rem;
 
     li {
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
+      margin-bottom: 0.6rem;
+      line-height: 1.55;
     }
   }
 }
 
-/* Estilos para Comprobantes y Recibos de Pago */
+// --- Comprobantes y recibos ------------------------------------------------------------------------
 .card__header--flex {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
 .recibo-numero {
-  font-family: var(--font-mono, monospace);
   color: var(--color-primary);
+  font-family: var(--font-mono, monospace);
   font-weight: 700;
   letter-spacing: 0.5px;
 }
 
 .pago-ref {
   display: block;
+  margin-top: 0.25rem;
   font-size: 0.75rem;
   color: var(--text-muted);
-  margin-top: 0.25rem;
 }
 
 .pago-monto {
@@ -192,13 +304,22 @@
 
 .pago-acciones {
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .mt-4 {
   margin-top: 1.25rem;
 }
 
-/* La animación .spin ahora es global (styles.scss) */
+// Las tablas son parte de la página, no una tarjeta aparte.
+.table-card .table-container {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.table-card .table-custom th {
+  background: transparent;
+}

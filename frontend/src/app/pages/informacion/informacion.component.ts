@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, SectorItem } from '../../core/models/api-payloads';
 import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
+import { iniciales } from '../../core/utils/personas';
 import { INFORMACION_JUNTA } from './informacion-junta.data';
 
 /** Página pública con la información general de la Junta: quiénes son, directiva, sectores y contacto. */
@@ -44,11 +45,5 @@ export class InformacionComponent implements OnInit {
     return mayor ? (Number(sector.lotesCount) || 0) / mayor : 0;
   }
 
-  /** Iniciales para el monograma: primer nombre y primer apellido ("Luis Alberto Paredes Moreta" → "LP"). */
-  iniciales(nombre: string): string {
-    const palabras = nombre.trim().split(/\s+/).filter(Boolean);
-    if (palabras.length < 2) return (palabras[0] ?? '').slice(0, 2).toUpperCase();
-    const apellido = palabras.length >= 4 ? palabras[2] : palabras[1];
-    return (palabras[0][0] + apellido[0]).toUpperCase();
-  }
+  iniciales = iniciales;
 }

@@ -83,3 +83,289 @@
     color: var(--text-white);
   }
 }
+
+/* ---- Canal y niveles: patrones compartidos (noticias, inicio, eventos, tablero) ---- */
+
+// El canal: una línea de tiempo por donde "corre" el agua --------------------------------------
+// Cada noticia cuelga de la línea con una gota y la fecha a la izquierda; la última gota es el
+// acceso al archivo. El trazo es azul agua que se vuelve turquesa hacia abajo.
+.canal {
+  --riel: 4.5rem; // ancho de la columna de fechas
+  --separacion: 2.25rem; // espacio entre la fecha y el texto; la línea corre por su centro
+  --gota: 0.95rem;
+  --altura-gota: 0.7rem; // distancia desde el borde superior de cada elemento hasta la gota
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--riel) minmax(0, 1fr);
+    column-gap: var(--separacion);
+    padding-bottom: clamp(2rem, 4vw, 3rem);
+
+    // La línea
+    &::before {
+      content: '';
+      position: absolute;
+      left: calc(var(--riel) + var(--separacion) / 2 - 1px);
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-primary), var(--color-secondary));
+      opacity: 0.4;
+    }
+
+    &:first-child::before {
+      top: var(--altura-gota);
+    }
+
+    // La gota
+    &::after {
+      content: '';
+      position: absolute;
+      left: calc(var(--riel) + var(--separacion) / 2 - var(--gota) / 2);
+      top: var(--altura-gota);
+      width: var(--gota);
+      height: var(--gota);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      background: var(--color-primary);
+      // El anillo del color del fondo "corta" la línea alrededor de la gota.
+      box-shadow: 0 0 0 5px var(--bg-app);
+    }
+
+    // El último elemento cierra la línea en su gota.
+    &:last-child {
+      padding-bottom: 0;
+
+      &::before {
+        bottom: auto;
+        height: var(--altura-gota);
+      }
+    }
+
+    &--fin::after {
+      background: var(--color-secondary);
+    }
+  }
+
+  &__fecha {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    line-height: 1;
+    color: var(--text-muted);
+
+    strong {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+    }
+
+    span {
+      margin-top: 0.2rem;
+      font-weight: 600;
+    }
+
+    small {
+      margin-top: 0.15rem;
+      font-size: 0.75rem;
+    }
+  }
+
+  &__cierre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    padding-top: 0.1rem;
+  }
+
+  @media (max-width: 719px) {
+    --riel: 0rem;
+    --separacion: 1.75rem;
+
+    &__item {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0.75rem;
+      padding-left: var(--separacion);
+
+      &::before {
+        left: 0.4rem;
+      }
+
+      &::after {
+        left: calc(0.4rem - var(--gota) / 2 + 1px);
+      }
+    }
+
+    &__fecha {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.4rem;
+      text-align: left;
+
+      strong {
+        font-size: 1.6rem;
+      }
+
+      span,
+      small {
+        margin: 0;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// Niveles: barras de agua que se llenan según una proporción (--nivel de 0 a 1) ------------------------------------------------------------
+.niveles {
+  display: grid;
+  gap: 1.15rem;
+  max-width: 52rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__sector {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 11rem) minmax(0, 1fr) 5.5rem;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  &__nombre {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  &__barra {
+    display: block;
+    height: 0.85rem;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+      transform-origin: left center;
+      transform: scaleX(var(--nivel, 0));
+      // Una sola entrada al cargar la página: el agua "llena" cada barra, una tras otra.
+      animation: llenar 1.1s var(--ease-out) both;
+      animation-delay: calc(var(--orden, 0) * 140ms);
+    }
+  }
+
+  &__lotes {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 560px) {
+    &__sector {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: 0.4rem;
+    }
+
+    &__barra {
+      grid-column: 1 / -1;
+      order: 3;
+    }
+  }
+}
+
+@keyframes llenar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .niveles__barra span {
+    animation: none;
+  }
+}
+
+/* Un evento (asamblea o minga) dentro del canal o de una lista. */
+.evento {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+
+  &__tipo {
+    align-self: flex-start;
+    margin: 0;
+    padding: 0.1rem 0.65rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    &--asamblea {
+      background: var(--color-primary-light);
+      color: var(--color-info-strong);
+    }
+
+    &--minga {
+      background: var(--color-success-light);
+      color: var(--color-success-strong);
+    }
+  }
+
+  &__titulo {
+    margin: 0.15rem 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  &__fecha-larga {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  &__datos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.5rem;
+    margin: 0.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+
+    i {
+      margin-right: 0.3rem;
+      color: var(--color-primary);
+    }
+  }
+
+  &__multa {
+    color: var(--color-danger-strong);
+    font-weight: 600;
+
+    i {
+      color: inherit;
+    }
+  }
+
+  &__accion {
+    align-self: flex-start;
+    margin-top: 0.6rem;
+  }
+}

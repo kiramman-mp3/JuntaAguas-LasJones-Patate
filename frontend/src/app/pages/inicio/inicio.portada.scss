@@ -1,0 +1,209 @@
+// Portada de Inicio: cabecera con las cifras de la Junta, próximos eventos y sectores.
+// (Los estilos del cronograma de riego, que se abre en un modal, están en inicio.component.scss.)
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(3rem, 8vw, 6.5rem) 0 clamp(2.5rem, 5vw, 4rem);
+  color: var(--text-white);
+  // El agua del canal: de azul profundo a turquesa, siempre con texto blanco legible.
+  background: linear-gradient(135deg, #075985 0%, #0284c7 52%, #0891b2 100%);
+
+  &__curvas {
+    color: #fff;
+    z-index: 0;
+
+    ::ng-deep svg {
+      opacity: 0.32;
+    }
+  }
+
+  &__contenido {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 0;
+  }
+
+  &__titulo {
+    max-width: 16ch;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 1.4rem + 5vw, 5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+
+  &__lead {
+    max-width: 52ch;
+    margin: 1.5rem 0 0;
+    font-size: clamp(1.05rem, 1rem + 0.35vw, 1.3rem);
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  // Tres cifras en línea, separadas por un filete: datos, no tarjetas.
+  &__cifras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem clamp(2rem, 5vw, 4rem);
+    margin: clamp(2.25rem, 5vw, 3.5rem) 0 0;
+
+    > div {
+      min-width: 7rem;
+      padding-left: 1.1rem;
+      border-left: 2px solid rgba(255, 255, 255, 0.45);
+    }
+
+    dt {
+      order: 2;
+      margin-top: 0.25rem;
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    dd {
+      order: 1;
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 1.6rem + 2vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+
+      small {
+        font-size: 0.45em;
+        font-weight: 600;
+        letter-spacing: 0;
+      }
+    }
+
+    > div {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  &__consulta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    padding-top: 1.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+
+    p {
+      max-width: 52ch;
+      margin: 0.35rem 0 0;
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  &__consulta-titulo {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-white);
+  }
+
+  &__boton {
+    background: #fff;
+    color: #075985;
+    font-weight: 700;
+    box-shadow: var(--shadow-md);
+
+    &:hover {
+      background: #e0f2fe;
+      color: #075985;
+    }
+  }
+}
+
+.inicio {
+  &__seccion {
+    padding-top: clamp(3.5rem, 7vw, 5.5rem);
+    padding-bottom: 0;
+
+    &:last-of-type {
+      padding-bottom: clamp(3rem, 6vw, 5rem);
+    }
+  }
+
+  &__nota {
+    max-width: 60ch;
+    margin: -0.75rem 0 1.75rem;
+    color: var(--text-muted);
+  }
+}
+
+// El canal de eventos usa el ancho de lectura de la portada.
+#eventos .canal {
+  max-width: 62rem;
+}
+
+// --- Sectores -------------------------------------------------------------------------------------
+.sectores {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) auto;
+    align-items: center;
+    gap: 1rem clamp(1.25rem, 3vw, 2.5rem);
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border-color);
+
+    &:last-child {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    @media (max-width: 899px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__nombre {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  &__descripcion {
+    max-width: 42ch;
+    margin: 0.3rem 0 0;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  &__datos {
+    display: grid;
+    gap: 0.55rem;
+
+    p {
+      margin: 0;
+      color: var(--text-muted);
+
+      strong {
+        color: var(--text-main);
+      }
+    }
+  }
+
+  &__cronograma {
+    justify-self: start;
+    white-space: nowrap;
+  }
+}

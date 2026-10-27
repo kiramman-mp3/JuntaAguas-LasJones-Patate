@@ -2,13 +2,15 @@ import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConsultaService, EventoPublico } from '../../core/services/consulta.service';
 import { ActasService } from '../../core/services/actas.service';
-import { hoyEnEcuador } from '../../core/utils/fechas';
+import { hoyEnEcuador, partesFecha } from '../../core/utils/fechas';
+import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 
 @Component({
   selector: 'app-eventos',
   standalone: true,
-  imports: [CommonModule, FechaLocalPipe],
+  imports: [CommonModule, FechaLocalPipe, CurvasNivelComponent, EmptyStateComponent],
   templateUrl: './eventos.component.html',
   styleUrls: ['./eventos.component.scss'],
 })
@@ -21,6 +23,15 @@ export class EventosComponent implements OnInit {
   private readonly consultaService = inject(ConsultaService);
   private readonly actasService = inject(ActasService);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  /** Los eventos de la pestaña activa. */
+  get lista(): EventoPublico[] {
+    return this.tabActivo === 'MINGA' ? this.mingasFuturas : this.asambleasFuturas;
+  }
+
+  fecha(ev: EventoPublico): { dia: string; mes: string; anio: string } {
+    return partesFecha(ev.fecha);
+  }
 
   ngOnInit() {
     this.consultaService.getEventosPublicos().subscribe({
