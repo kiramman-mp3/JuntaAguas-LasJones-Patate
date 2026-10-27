@@ -35,7 +35,7 @@ describe('Comprobante bancario', () => {
     const file = pdf();
     const input = entrada(file);
     await c.subir(input);
-    expect(api.subirComprobante).toHaveBeenCalledWith(42, file);
+    expect(api.subirComprobante).toHaveBeenCalledWith(42, file, 'GENERAL');
     expect(input.value).toBe('');
     expect(c.existe()).toBe(true);
     expect(c.ocupado()).toBe(false);

@@ -330,7 +330,7 @@
           </p>
         </div>
         @if (pagoRegistradoId(); as id) {
-          <app-comprobante-bancario [pagoId]="id" />
+          <app-comprobante-bancario [pagoId]="id" [tipo]="pagoRegistradoTipo()" />
           <p class="field__hint">
             Puede adjuntar el comprobante bancario ahora o desde el historial de pagos.
           </p>

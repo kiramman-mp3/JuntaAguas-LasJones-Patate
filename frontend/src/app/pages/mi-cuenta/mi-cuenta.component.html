@@ -234,11 +234,11 @@
                           ></i>
                           {{ descargando === clave(p.tipo, p.id) ? 'Descargando…' : 'PDF' }}
                         </button>
-                        @if (p.tipo === 'GENERAL' && p.comprobante_url) {
+                        @if (p.comprobante_url) {
                           <button
                             type="button"
                             class="btn btn--outline btn--sm pressable"
-                            (click)="descargarComprobanteBancario(p.id)"
+                            (click)="descargarComprobanteBancario(p.tipo, p.id)"
                             title="Descargar respaldo bancario adjunto"
                           >
                             <i class="ri-attachment-line" aria-hidden="true"></i> Respaldo

@@ -173,7 +173,7 @@ describe('Cobro en caja', () => {
     }
   });
 
-  it('el pago anual de agua usa su propio servicio y no ofrece adjuntar comprobante a un pago de otra tabla', () => {
+  it('el pago anual de agua usa su propio servicio y permite adjuntar el comprobante bancario a su pago', () => {
     const { c, registrarPago, registrarPagoAnualAgua } = crear();
     expect(c.bloqueo()).toContain('referencia');
     c.referencia.set(' 778899 ');
@@ -187,7 +187,8 @@ describe('Cobro en caja', () => {
     });
     expect(registrarPago).not.toHaveBeenCalled();
     expect(c.comprobante()?.numero).toBe('REC-AGUA-000021');
-    expect(c.pagoRegistradoId()).toBeNull();
+    expect(c.pagoRegistradoId()).toBe(21);
+    expect(c.pagoRegistradoTipo()).toBe('AGUA');
   });
 
   it('las multas y otros rubros se cobran con el pago general y permiten adjuntar el comprobante bancario', () => {
