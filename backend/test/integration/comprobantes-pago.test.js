@@ -94,3 +94,23 @@ test('pagos históricos en efectivo siguen consultables y no admiten comprobante
   assert.equal(detalle.body.data.metodo, 'EFECTIVO');
   assert.equal((await request(app).post(`/api/financiero/pagos/${r.insertId}/comprobante`).set(auth(admin)).attach('archivo', pdf, 'banco.pdf')).status, 409);
 });
+
+test('el pago anual de agua admite comprobante bancario: solo admin sube, admin o titular descargan', async () => {
+  const anio = new Date().getFullYear();
+  const [{ insertId }] = await db.query("INSERT INTO obligacion_anual_agua (persona_id, periodo_anio, valor_total, fecha_emision, fecha_vencimiento) VALUES (?, ?, 12, CURDATE(), CURDATE())", [titular.personaId, anio]);
+  const ob = { id: insertId };
+  const pago = await request(app).post('/api/financiero/agua-anual/pagos').set(auth(admin))
+    .send({ persona_id: titular.personaId, obligacionesIds: [ob.id], metodo: 'TRANSFERENCIA', referencia: 'TRF-9' });
+  assert.equal(pago.status, 201, JSON.stringify(pago.body));
+  const url = `/api/financiero/agua-anual/pagos/${pago.body.pagoId}/comprobante`;
+  assert.equal((await request(app).post(url).set(auth(titular)).attach('archivo', pdf, 'banco.pdf')).status, 403);
+  assert.equal((await request(app).post(url).set(auth(admin)).attach('archivo', pdf, 'banco.pdf')).status, 200);
+  for (const usuario of [admin, titular]) {
+    const res = await request(app).get(url).set(auth(usuario));
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body, pdf);
+  }
+  assert.equal((await request(app).get(url).set(auth(vecino))).status, 404);
+  const lista = await request(app).get('/api/financiero/agua-anual/pagos').set(auth(admin));
+  assert.ok(lista.body.data.find((p) => p.id === pago.body.pagoId).comprobante_url);
+});
