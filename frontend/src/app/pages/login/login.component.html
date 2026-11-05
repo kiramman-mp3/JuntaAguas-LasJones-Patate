@@ -21,15 +21,6 @@
       </div>
     }
 
-    @if (mostrarAyudaPassword) {
-      <div class="alert alert--info" role="status">
-        <i aria-hidden="true" class="ri-information-line"></i>
-        Para restablecer su contraseña, acérquese a la secretaría de la Junta o comuníquese con la
-        directiva al WhatsApp de la organización. Por seguridad, la contraseña temporal se entrega
-        de forma presencial.
-      </div>
-    }
-
     <!-- FLUJO LOGIN NORMAL -->
     @if (!requiereCambioPassword) {
       <form (submit)="iniciarSesion(); $event.preventDefault()" class="login-form">
@@ -195,4 +186,31 @@
       <small>© 2026 Junta de Agua y Riego "La Jones" — Patate</small>
     </div>
   </div>
+
+  @if (mostrarAyudaPassword) {
+    <app-modal
+      titulo="¿Olvidó su contraseña?"
+      subtitulo="Recuperación de acceso"
+      icono="ri-lock-password-line"
+      tono="primary"
+      tamano="sm"
+      (cerrar)="cerrarAyudaPassword()"
+    >
+      <div class="modal__body">
+        <div class="alert alert--info" role="status" style="margin: 0">
+          <i aria-hidden="true" class="ri-information-line"></i>
+          <span>
+            Para restablecer su contraseña, acérquese a la secretaría de la Junta o comuníquese con
+            la directiva al WhatsApp de la organización. Por seguridad, la contraseña temporal se
+            entrega de forma presencial.
+          </span>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--primary" (click)="cerrarAyudaPassword()">
+          Entendido
+        </button>
+      </div>
+    </app-modal>
+  }
 </div>
