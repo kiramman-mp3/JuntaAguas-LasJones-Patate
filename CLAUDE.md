@@ -201,6 +201,17 @@ No hagas push --force sobre main o develop.
 
 Regla para Claude Code
 
+Autoría de commits
+
+* Todos los commits deben utilizar exclusivamente la identidad Git configurada por el usuario.
+* No incluir a Claude Code, Anthropic ni a ninguna herramienta de IA como coautor.
+* No añadir trailers `Co-Authored-By` ni variantes equivalentes que atribuyan coautoría a una IA.
+* No añadir líneas de atribución de IA en los mensajes de commit.
+* Antes de crear un commit, verificar que el mensaje cumpla estas reglas.
+* No modificar `user.name`, `user.email` ni la configuración global de Git.
+* No reescribir ni modificar commits existentes para eliminar coautorías sin autorización explícita del usuario.
+* Estas reglas se aplican a todos los commits, independientemente de la rama o del tipo de tarea.
+
 Claude debe mantener este workflow durante toda la sesión.
 
 Cuando complete una etapa importante del trabajo:
@@ -228,3 +239,42 @@ Verificaciones:
 - Build: PASS/FAIL
 
 La prioridad es mantener un historial Git limpio, entendible y fácil de revertir.
+
+README
+
+Cuando se pida crear o actualizar el README.md de un proyecto, seguir esta estructura. Está escrito en español, con títulos con emoji y bloques de Markdown de GitHub. Los datos (versiones, cantidades, comandos, rutas) se sacan siempre del código y de git, nunca se inventan: si algo no existe en el repo (por ejemplo un archivo LICENSE), no se afirma.
+
+Encabezado
+
+* Título con un emoji: `# 💼 Nombre del Proyecto`.
+* Una fila de insignias de shields.io con `style=flat-square`: framework principal, lenguaje, base de datos, versión de Node o del runtime, plataforma de despliegue y licencia. Cada insignia enlaza a la página oficial de la tecnología; la de licencia enlaza al archivo `LICENSE`.
+* Un párrafo que empieza con el nombre del proyecto en negrita y dice qué es y para quién, y otro con el contexto (para qué curso, guía o cliente se hizo).
+* Un bloque `> [!TIP]` con la forma más rápida de ver el proyecto funcionando: el enlace a la demo o, si no hay, los comandos mínimos de arranque.
+
+Secciones, en este orden (cada una separada por `---` y con emoji en el título)
+
+1. Descripción: tres subtítulos `###` — ¿Qué problema resuelve?, ¿Qué hace? (lista numerada de lo que ocurre paso a paso) y ¿Para quién está pensado?
+2. Capturas: tabla de dos columnas con imágenes `<img width="420">` y un pie `<sub>` en cada una. Las imágenes viven en `docs/capturas/` dentro del repo; se generan con el proyecto corriendo en local y base de datos de ejemplo, en pantalla completa y sin datos reales.
+3. Características: lista con viñetas; cada una lleva el nombre de la característica en negrita, dos puntos y una explicación de una o dos frases.
+4. Tecnologías Utilizadas: lista agrupada por frontend, backend, base de datos, pruebas y despliegue.
+5. Arquitectura: un diagrama `mermaid` (`graph TD`) con el flujo real entre los módulos, y una o dos frases que expliquen la idea principal.
+6. Estructura del Proyecto: árbol de carpetas en un bloque `bash`, con un comentario a la derecha de cada archivo o carpeta importante.
+7. Requisitos del Sistema: versiones mínimas y lo que se necesita solo en producción.
+8. Instalación y Configuración: pasos numerados, cada uno con su bloque de código. Incluir las variables de entorno y avisar que los secretos nunca se guardan en el repositorio.
+9. Uso y Ejecución: un subtítulo por modo (producción local, desarrollo) y una tabla de scripts con el comando y lo que hace.
+10. Despliegue: cómo se publica y qué variables hay que definir en la plataforma.
+11. Secciones técnicas propias del proyecto (recorrido, API, reglas de negocio, migraciones, diseño, lo que queda por confirmar): tablas para endpoints y reglas, y un subtítulo `###` por tema.
+12. Roadmap de Funcionalidades: lista de tareas con `- [x]` para lo hecho y `- [ ]` para lo pendiente.
+13. Contribuidores: tabla con nombre y número de commits, tomados de `git shortlog -sn`.
+14. Fuentes o referencias, si las hay: dentro de un bloque `<details><summary>` para que no alargue la página.
+15. Licencia: una frase y un enlace a `LICENSE`. Solo si el archivo existe.
+16. Autor: una línea con el nombre que usa el autor en git.
+
+Reglas de estilo
+
+* Todo el texto en español. Los nombres técnicos, comandos y rutas van en `código`.
+* Los emojis solo van en los títulos de sección, no en el cuerpo del texto.
+* Las tablas se usan para comparar o enumerar (comandos, endpoints, reglas); la prosa, para explicar.
+* No se enlazan anclas de títulos con emoji (se rompen); se nombra la sección en el texto.
+* Al agregar o quitar un archivo, un script, un endpoint o una migración, se actualiza el README en el mismo cambio, igual que el árbol de la estructura y el número de contribuidores.
+* El README se cambia en una rama `docs/*` con commits `docs:` y se integra a `develop` como el resto del trabajo.
