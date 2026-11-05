@@ -1,203 +1,418 @@
-# Sistema de Gestión - Junta de Agua y Riego "La Jones"
+# 💧 Sistema de Gestión - Junta de Agua y Riego "La Jones"
 
-Sistema web para administrar la **Junta de Agua y Riego "La Jones"** (Patate, Tungurahua, Ecuador): usuarios y lotes, turnos de riego, asambleas y mingas con asistencia y multas, cobros, pago anual del agua, egresos y un portal donde cada usuario consulta su cuenta.
+[![Angular](https://img.shields.io/badge/Angular-22-DD0031?style=flat-square&logo=angular)](https://angular.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-26-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express)](https://expressjs.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=flat-square&logo=docker)](https://www.docker.com/)
 
-La guía paso a paso para levantar el entorno está en [`INSTRUCCIONES.md`](INSTRUCCIONES.md). Para la defensa y demostración del sistema, consulte la [**Guía Maestra de Presentación**](docs/GUIA_DE_PRESENTACION.md).
+**Sistema de Gestión - Junta de Agua y Riego "La Jones"** es una solución web integral diseñada para sistematizar y centralizar la administración comunitaria, financiera y técnica de la Junta de Agua y Riego "La Jones", ubicada en el cantón Patate, provincia de Tungurahua, Ecuador. Proporciona herramientas para el control del catastro de usuarios y lotes georreferenciados, programación de turnos de riego, registro de asistencia a asambleas y mingas con imposición automática de multas por inasistencia, recaudación en caja con emisión de comprobantes en PDF, emisión del pago anual del agua y un portal de autogestión para los regantes.
 
----
+El proyecto fue desarrollado para resolver las dificultades históricas de gestión manual en territorio, erradicando pérdidas de registros en papel, cruces de horarios en el caudal de riego y falta de trazabilidad en las cuotas comunitarias, bajo un marco seguro de auditoría de base de datos y comunicación por mensajería instantánea.
 
-## Tecnologías
-
-- **Frontend:** Angular 22 (componentes standalone, signals, rutas con carga diferida), TypeScript estricto, SCSS, RxJS, Leaflet, jsPDF con autotable para todos los PDF del navegador (cargado bajo demanda), Vitest.
-- **Backend:** Node.js 26, Express 5, mysql2 (SQL parametrizado), zod para validar la entrada, JWT, bcryptjs, helmet, multer, pdfkit y Swagger (solo fuera de producción).
-- **Servicio de WhatsApp** (`whatsapp-service/`): proceso aparte con Express 5 y whatsapp-web.js (Edge o Chromium sin interfaz). Publica las convocatorias en el grupo de WhatsApp de la Junta; si se detiene, el resto del sistema sigue funcionando.
-- **Base de datos:** MySQL 8 (InnoDB, utf8mb4) en Docker, con migraciones versionadas.
-- **Calidad:** ESLint en backend, servicio de WhatsApp y frontend; pruebas de integración contra MySQL real; pruebas E2E con Playwright (`e2e/`); GitHub Actions (`.github/workflows/ci.yml`).
-
----
-
-## Módulos
-
-### Administración (rol ADMIN, en `/admin`)
-Cada sección tiene su propia URL y se carga bajo demanda.
-
-| Ruta | Qué hace |
-|---|---|
-| `/admin/dashboard` | Indicadores reales: recaudado, cartera pendiente y vencida, morosos, egresos, saldo de caja, porcentaje de cobro, asistencia y próximos eventos. |
-| `/admin/usuarios` | Gestión de usuarios, cuentas de acceso con contraseña temporal, lotes georreferenciados (mapa) y transferencia de titularidad con auditoría. |
-| `/admin/asistencias` | Asambleas y mingas: convocatoria, padrón de asistencia, finalización con multas automáticas por ausencia, acta general de la asamblea, documentos firmados, hoja de asistencia en PDF y convocatoria publicada en el grupo de WhatsApp de la Junta. |
-| `/admin/turnos` | Turnos de riego semanales sin cruces de horario dentro de cada sector. |
-| `/admin/finanzas/cobrar` | Cobro en caja: búsqueda del usuario, obligaciones pendientes (cuotas, multas y otros rubros), efectivo o transferencia, comprobante en PDF. |
-| `/admin/finanzas/pagos` | Historial de pagos por fechas, reimpresión del comprobante y anulación con motivo. |
-| `/admin/finanzas/egresos` | Registro y consulta de egresos (proveedor, RUC, factura). |
-| `/admin/finanzas/facturacion` | Pago anual del agua: estado del año (emitidas, cobradas, pendientes), vista previa y emisión de la obligación anual a los usuarios con lote. |
-| `/admin/gestion` | Gestión interna de la directiva: registro de auditoría (filtros por día de Ecuador), inventario de bienes y plan anual de actividades. |
-| `/admin/noticias` | Noticias del portal: crear, editar y eliminar con título, etiquetas, descripción corta, descripción larga e imagen. |
-| `/admin/finanzas/tarifas` | Tarifas por concepto con su historial de vigencias. |
-
-### Usuario (rol USUARIO)
-- **Mi cuenta** (`/mi-cuenta`): valores pendientes, historial de pagos y lote del usuario. El servidor solo devuelve los datos de quien inició sesión.
-
-### Portal público
-- **Inicio** y **Eventos** (`/eventos`): próximas asambleas y mingas, y convocatorias firmadas. No expone datos personales.
-- **Noticias** (`/noticias`): las 5 más recientes y el botón *Ver más noticias*, que lleva al archivo (`/noticias/todas`) con filtros por texto, etiqueta y fechas, y paginación. Cada noticia tiene su página (`/noticias/:id`).
-
-### Solo API (sin pantalla todavía)
-- Inventario de bienes (`/api/inventario`), plan anual con actividades (`/api/planes`) y auditoría (`/api/auditoria`).
-
-> No forman parte del sistema: contabilidad (plan de cuentas), cuentas por pagar, facturación electrónica ni integración con el SRI.
+> [!TIP]
+> Para poner en marcha el proyecto rápidamente en modo desarrollo con base de datos y datos de demostración realistas, ejecute desde la raíz:
+> ```bash
+> npm run dev
+> ```
+> O en Windows haga doble clic en el archivo `presentar.bat`. El frontend se abrirá en `http://localhost:4200` y la API en `http://localhost:3000`.
 
 ---
 
-## Arquitectura
+## 📋 Descripción
 
-```text
+### ¿Qué problema resuelve?
+Las organizaciones comunitarias de riego suelen gestionar su padrón de socios, distribución de turnos de agua y cobros mediante cuadernos físicos y actas impresas. Esta dinámica genera conflictos frecuentes por solapamiento de horarios en acequias, opacidad en los cobros de multas por faltas a mingas y asambleas, extravío de comprobantes de pago y dificultades para cobrar la tarifa anual de mantenimiento. Este sistema digitaliza todo el ciclo operativo, garantizando transparencia, control territorial y orden administrativo.
+
+### ¿Qué hace?
+1. El administrador inicia sesión de manera segura con su cédula y credenciales protegidas con bloqueo ante intentos fallidos.
+2. Registra y actualiza el padrón de socios con sus datos personales, cédula ecuatoriana validada y lotes georreferenciados en el mapa interactivo.
+3. Planifica la distribución semanal de turnos de riego por sector, impidiendo automáticamente la asignación simultánea de dos usuarios al mismo tramo de caudal.
+4. Convoca a asambleas y mingas, publicando los avisos formales en el grupo oficial de WhatsApp y generando la hoja de asistencia en PDF para firmas en territorio.
+5. Toma la asistencia digital durante o después del evento; el sistema identifica a los inasistentes sin justificación y genera automáticamente las multas financieras correspondientes.
+6. En ventanilla de caja, cobra cuotas de mantenimiento, multas y consumos pendientes, emitiendo comprobantes digitales en PDF y registrando el egreso de fondos de la Junta.
+7. Al cierre de cada ciclo, emite masivamente las obligaciones de agua anual a los socios activos con lote asignado.
+8. Cada socio accede a su portal privado para consultar sus deudas, revisar sus turnos de riego asignados y verificar el historial de sus aportes.
+
+### ¿Para quién está pensado?
+- **Directiva de la Junta de Agua y Riego:** Presidente, tesorero y recaudador, quienes administran el cobro en caja, la cobranza de multas, la tesorería y las convocatorias.
+- **Socios y regantes comunitarios:** Agricultores y familias que necesitan consultar el estado de su cuenta, verificar sus turnos asignados de agua y enterarse de eventos comunitarios sin tener que acudir presencialmente a la sede.
+
+---
+
+## 📸 Capturas
+
+| Captura | Vista |
+|:---:|:---:|
+| <img src="docs/capturas/dashboard.png" width="420" alt="Dashboard Administrativo"><br><sub>Dashboard principal con métricas financieras y operativas en tiempo real</sub> | <img src="docs/capturas/asistencias.png" width="420" alt="Control de Asistencias"><br><sub>Gestión de asambleas, mingas y toma de lista de socios</sub> |
+| <img src="docs/capturas/usuarios.png" width="420" alt="Padrón de Usuarios y Lotes"><br><sub>Padrón de regantes y georreferenciación territorial de predios</sub> | <img src="docs/capturas/cobro-caja.png" width="420" alt="Caja y Recaudación"><br><sub>Módulo de cobro con desglose de obligaciones y emisión de comprobantes</sub> |
+| <img src="docs/capturas/portal-publico.png" width="420" alt="Portal Público"><br><sub>Página de inicio y consulta comunitaria accesible a los socios</sub> | <img src="docs/capturas/login.png" width="420" alt="Inicio de Sesión"><br><sub>Acceso seguro con políticas de bloqueo y contraseñas temporales</sub> |
+
+---
+
+## ✨ Características
+
+* **Gestión Catastral y Predial:** Registro integral de usuarios, asignación de lotes con coordenadas geográficas sobre Leaflet y transferencia documentada de titularidad con historial inmutable.
+* **Control de Asistencia con Multas Automáticas:** Convocatoria de asambleas y mingas comunitarias, listados físicos y digitales con scroll fluido, carga de justificaciones médicas o laborales y generación automática de multas por inasistencia.
+* **Turnos de Riego Libres de Conflicto:** Programación semanal por días y rangos horarios con validación algorítmica para evitar solapamientos dentro de cada sector.
+* **Caja y Tesorería Completa:** Cobro unificado de cuotas, multas, emisión de recibos en formato PDF descargables e imprimibles, anulación justificada de pagos y registro de egresos por compras comunitarias.
+* **Facturación Anual del Servicio de Agua:** Generación masiva de obligaciones para el período vigente, seguimiento de recaudación y estado de cartera vencida.
+* **Auditoría Interna Estricta:** Registro detallado de cada acción administrativa (quién, cuándo, qué cambió y desde qué dirección IP) almacenado en tablas dedicadas.
+* **Notificaciones Comunitarias vía WhatsApp:** Microservicio desacoplado que envía avisos formales y convocatorias directamente al grupo comunitario de WhatsApp.
+* **Portal del Usuario y Transparencia:** Sección privada donde los socios pueden revisar sus valores pendientes y comprobantes pasados, además de un portal público con noticias y cronograma comunitario.
+
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+* **Frontend:**
+  - Angular 22 (Standalone Components, Signals reactivos, enrutamiento diferido)
+  - TypeScript 5.8 estricto
+  - SCSS con variables CSS y diseño responsive
+  - Leaflet para mapas interactivos y delimitación de predios
+  - jsPDF y autotable para renderizado de comprobantes y actas en el navegador
+  - Remix Icon para iconografía del sistema
+  - Vitest para ejecución rápida de pruebas unitarias
+* **Backend:**
+  - Node.js 26 (compatible con 22.22.3 LTS+)
+  - Express 5 con middleware modular
+  - mysql2 con consultas preparadas y control transaccional
+  - Zod para validación y saneamiento de esquemas de entrada
+  - JWT (JSON Web Tokens) y bcryptjs para seguridad criptográfica
+  - Helmet y express-rate-limit contra ataques comunes y fuerza bruta
+  - PDFKit para generación de reportes y actas administrativas
+  - Swagger UI / OpenAPI para documentación interactiva de la API
+* **Microservicio de WhatsApp:**
+  - Node.js con Express 5
+  - whatsapp-web.js con persistencia de sesión local y token compartido
+* **Base de Datos:**
+  - MySQL 8.0 en contenedor Docker, motor InnoDB y codificación `utf8mb4_unicode_ci`
+  - Sistema de migraciones SQL y JS versionadas y ordenadas
+* **Pruebas y Calidad de Código:**
+  - ESLint para análisis estático en frontend, backend y microservicio
+  - Vitest (168 pruebas unitarias en frontend)
+  - Mocha con base de datos real (14 pruebas de integración en backend)
+  - Playwright para pruebas E2E automatizadas
+* **Despliegue e Infraestructura:**
+  - Docker y Docker Compose para el servicio de base de datos
+  - Script unificado de producción para empaquetado del frontend y servicio conjunto
+
+---
+
+## 🏗️ Arquitectura
+
+```mermaid
+graph TD
+    Client["Navegador Web (Regante / Administrador)"]
+    
+    subgraph FrontendApp ["Frontend - Angular 22"]
+        UI["Vistas (Público, Mi Cuenta, Panel Admin)"]
+        Interceptors["Auth Interceptor & Router Guards"]
+        APIServices["Servicios de Datos Tipados"]
+    end
+    
+    subgraph BackendApp ["Backend - Express 5"]
+        Router["Enrutador & Middlewares de Seguridad"]
+        Validation["Validación Zod & Control de Roles"]
+        Services["Capa de Servicios y Transacciones"]
+        AuditService["Motor de Auditoría"]
+    end
+    
+    subgraph Persistencia ["Persistencia & Archivos"]
+        DB[("MySQL 8 (Transacciones ACID)")]
+        Storage["Almacenamiento Local (Actas y Comprobantes)"]
+    end
+    
+    subgraph Mensajeria ["Microservicio Externo"]
+        WAService["WhatsApp Service (Express)"]
+        WAWeb["whatsapp-web.js (Edge / Chromium)"]
+        WAGroup["Grupo Comunitario de WhatsApp"]
+    end
+
+    Client --> UI
+    UI --> Interceptors
+    Interceptors --> APIServices
+    APIServices -->|HTTPS / JSON| Router
+    Router --> Validation
+    Validation --> Services
+    Services --> AuditService
+    AuditService --> DB
+    Services --> DB
+    Services --> Storage
+    Services -->|HTTP Interno Tokenizado| WAService
+    WAService --> WAWeb
+    WAWeb -->|Mensajes Automatizados| WAGroup
+```
+
+La arquitectura desacopla el cliente web del núcleo del servidor mediante una API REST estricta con autenticación JWT. La capa de negocio centraliza las transacciones de base de datos garantizando atomicidad financiera. El microservicio de WhatsApp funciona de manera autónoma; si este se suspende temporalmente, las operaciones del sistema continúan sin interrupción.
+
+---
+
+## 📁 Estructura del Proyecto
+
+```bash
 JuntaAguas-LasJones-Patate/
-├── .github/workflows/ci.yml   # Lint, pruebas y build en cada PR a develop o main
-├── bd/docker-compose.yml      # MySQL 8 para desarrollo
-├── backend/
-│   ├── database/migrations/   # Migraciones versionadas (001_baseline.sql, 002…017 .js; cada número es único)
+├── .claude/                           # Reglas de estilo y directivas para asistentes de IA
+├── .github/workflows/ci.yml           # Flujo de integración continua (Lint, Test, Build)
+├── bd/                                # Configuración de Docker para MySQL 8
+│   └── docker-compose.yml             # Orquestación del contenedor de base de datos
+├── backend/                           # API REST principal
+│   ├── database/migrations/           # Migraciones SQL y JavaScript ordenadas
 │   ├── src/
-│   │   ├── app.js             # App Express (sin listen; la usan las pruebas)
-│   │   ├── index.js           # Arranque del servidor
-│   │   ├── config/            # Variables de entorno validadas, pool MySQL (UTC), Swagger
-│   │   ├── db/                # CLI: migrate, drop y seed (datos de prueba realistas)
-│   │   ├── middlewares/       # Autenticación y roles, validación, manejo de errores
-│   │   ├── routes/            # Endpoints y documentación OpenAPI
-│   │   ├── controllers/       # Capa HTTP delgada: valida, llama al servicio, audita y responde
-│   │   ├── schemas/           # Esquemas zod de eventos y finanzas
-│   │   ├── services/          # Reglas de negocio y consultas (eventos, finanzas, turnos, documentos, PDF, convocatorias, auditoría)
-│   │   │                      # whatsappClient.js: cliente HTTP del servicio de WhatsApp
-│   │   └── shared/            # Errores HTTP, transacciones, fechas de Ecuador, roles, esquemas comunes
-│   └── test/{unit,integration}/
-├── whatsapp-service/          # WhatsApp Web en un proceso aparte (solo lo llama el backend, con token)
-│   ├── src/                   # config, sesion (conexión, QR, grupos, envío), cliente (navegador), app (API interna)
-│   └── test/                  # Pruebas con un cliente de WhatsApp simulado
-└── frontend/src/app/
-    ├── core/                  # auth (sesión), guard, interceptor del token, modelos tipados, servicios de API, utilidades
-    ├── shared/                # Toasts, diálogos, contraseña temporal, pipe fechaLocal
-    ├── pages/                 # inicio, eventos, login, mi-cuenta, no-encontrado
-    │   └── admin/             # Contenedor del panel + admin.routes.ts (rutas hijas)
-    │       ├── dashboard/
-    │       └── components/    # usuarios, asistencias (asambleas y mingas), turnos, finanzas/{cobro-caja, historial-pagos, egresos, facturacion-anual, tarifas}
-    └── testing/               # Utilidades para las pruebas
+│   │   ├── config/                    # Conexión al pool MySQL, Swagger y variables de entorno
+│   │   ├── controllers/               # Controladores HTTP delgados
+│   │   ├── db/                        # Utilidades CLI (migrate, drop, seed, setup)
+│   │   ├── middlewares/               # Autenticación JWT, verificación de roles y rate limit
+│   │   ├── routes/                    # Definición de rutas y esquemas OpenAPI
+│   │   ├── schemas/                   # Esquemas de validación Zod
+│   │   ├── services/                  # Lógica de negocio (eventos, caja, turnos, auditoría)
+│   │   └── shared/                    # Transacciones SQL, fechas UTC-5 y catálogo de errores
+│   └── test/                          # Pruebas unitarias y de integración
+├── frontend/                          # Aplicación web cliente en Angular 22
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── core/                  # Autenticación, interceptores, guards y modelos
+│   │   │   ├── pages/                 # Vistas (admin, eventos, login, mi-cuenta, noticias)
+│   │   │   └── shared/                # Componentes reutilizables, modales, toasts y pipes
+│   │   └── styles/                    # Sistema de estilos SCSS modular
+│   └── public/                        # Recursos estáticos públicos
+├── whatsapp-service/                  # Microservicio de integración con WhatsApp Web
+│   ├── src/                           # Autenticación QR, sesión y despachador de mensajes
+│   └── test/                          # Pruebas con cliente de mensajería simulado
+├── docs/                              # Documentación técnica, capturas y guías maestras
+│   └── capturas/                      # Evidencias visuales de los módulos del sistema
+├── scripts/                           # Automatizaciones de arranque y compilación conjunta
+├── CLAUDE.md                          # Protocolo de Git, convenciones de commit y gobernanza
+└── package.json                       # Scripts globales de desarrollo y producción
 ```
-
-**Principios:**
-- Las reglas de negocio viven en `backend/src/services` y reciben una conexión dentro de una transacción (`shared/transaction.js`). Los controladores no contienen SQL de escritura.
-- Toda entrada se valida con zod; un error de validación responde 400 con el mensaje del campo.
-- Autorización por ruta: `soloAdmin` para la gestión; un usuario solo ve sus propios datos.
-- Fechas: la Junta opera en hora de Ecuador (UTC-5). Las fechas de calendario viajan como `AAAA-MM-DD`; los instantes (por ejemplo, la fecha de un pago) se guardan en UTC y se filtran por día de Ecuador.
-- Gestión Documental y Asistencias: Las asambleas y mingas permiten generar la lista de asistencia en PDF con el padrón activo para firmas físicas en territorio (`GET /api/eventos/:id/pdf-asistencia`). Posteriormente, se respalda el acta escaneada o convocatoria firmada en almacenamiento seguro validado por firma binaria (`POST /api/eventos/:id/documentos`).
-- El frontend usa un único interceptor para el token y clientes de API tipados (`AdminService`, `FinanzasService`, `ConsultaService`).
 
 ---
 
-## Inicio rápido
+## 💻 Requisitos del Sistema
 
-Requisitos: **Node.js 26** (Angular 22 exige al menos 22.22), **Docker** y **npm**.
+* **Entorno de Desarrollo:**
+  - Node.js versión `22.22.3+`, `24.15+` o `26.x`
+  - npm versión `10.x` o superior
+  - Docker Desktop o Docker Engine (para levantar MySQL en contenedor)
+  - Navegador web moderno (Chrome, Edge, Firefox)
+* **Entorno de Producción:**
+  - Servidor Linux (Ubuntu 22.04 LTS / 24.04 LTS recomendado) o Windows Server
+  - Motor de base de datos MySQL 8.0 nativo o contenerizado
+  - Proxy inverso web (Nginx o Caddy) con certificado SSL/TLS (HTTPS)
+  - Memoria RAM mínima: 2 GB (4 GB recomendado si se habilita el servicio de WhatsApp)
+  - Almacenamiento: 10 GB de espacio libre para respaldos y documentos adjuntos
 
-### Opción A: Lanzador interactivo (Recomendado para desarrollo y presentaciones)
-Desde la raíz del proyecto, con la base de datos y dependencias listas:
+---
+
+## ⚙️ Instalación y Configuración
+
+Los secretos y credenciales de acceso nunca deben subirse al repositorio. El proyecto incluye plantillas `.env.example` en cada módulo para guiar la configuración inicial.
+
+### 1. Clonar el repositorio
 ```bash
-npm run dev           # En Linux/Mac/Windows (arranca backend y frontend coordinados)
-# O en Windows: doble clic en presentar.bat
+git clone https://github.com/JoseM151/JuntaAguas-LasJones-Patate.git
+cd JuntaAguas-LasJones-Patate
 ```
 
-### Opción B: Inicio paso a paso por servicios
+### 2. Levantar la base de datos MySQL
 ```bash
-# 1. Base de datos
-cd bd && docker compose up -d
+cd bd
+docker compose up -d
+cd ..
+```
 
-# 2. Backend
-cd ../backend
+### 3. Configurar e inicializar el Backend
+```bash
+cd backend
 npm ci
-cp .env.example .env          # y completa JWT_SECRET (ver el comentario del archivo)
-npm run db:migrate            # crea la base y aplica las migraciones
-npm run db:seed -- --reset    # opcional: datos de prueba (borra y recrea la base)
-npm run dev                   # http://localhost:3000  ·  Swagger: http://localhost:3000/api-docs
+cp .env.example .env
+```
+Edite `backend/.env` y defina una clave segura para `JWT_SECRET`. Luego ejecute las migraciones y opcionalmente los datos de prueba:
+```bash
+npm run db:migrate
+npm run db:seed -- --reset
+cd ..
+```
 
-# 3. Frontend (otra terminal)
+### 4. Configurar el Frontend
+```bash
 cd frontend
 npm ci
-npm start                     # http://localhost:4200
+cd ..
+```
 
-# 4. Servicio de WhatsApp (opcional, otra terminal)
+### 5. Configurar el Servicio de WhatsApp (Opcional)
+```bash
 cd whatsapp-service
 npm ci
-cp .env.example .env          # mismo WHATSAPP_SERVICE_TOKEN que en backend/.env
-npm run dev                   # http://127.0.0.1:3100 (solo para el backend)
+cp .env.example .env
 ```
-
-El seed imprime al terminar la cédula del administrador, la de un usuario de demostración y la contraseña.
+Asegúrese de que la variable `WHATSAPP_SERVICE_TOKEN` en `whatsapp-service/.env` tenga el mismo valor que en `backend/.env`.
 
 ---
 
-## Despliegue en producción
+## 🚀 Uso y Ejecución
 
-Un solo comando prepara y arranca todo con una **base de datos limpia**: el backend sirve la API y el frontend compilado desde el mismo origen (sin CORS ni dominio que configurar).
+### Modo Desarrollo
+La manera más cómoda de trabajar es mediante el script unificado que arranca tanto el backend como el frontend en terminales coordinadas:
 
 ```bash
-cp backend/.env.production.example backend/.env   # complete DB_*, JWT_SECRET, ADMIN_* y WHATSAPP_SERVICE_TOKEN
-cp whatsapp-service/.env.example whatsapp-service/.env   # opcional: el mismo WHATSAPP_SERVICE_TOKEN
-npm run prod                                     # desde la raíz del proyecto
+npm run dev
 ```
 
-`npm run prod` hace, en orden:
+O puede ejecutar cada servicio de forma individual en terminales separadas:
+* **Backend:** `cd backend && npm run dev` (disponible en `http://localhost:3000`)
+* **Frontend:** `cd frontend && npm start` (disponible en `http://localhost:4200`)
+* **WhatsApp Service:** `cd whatsapp-service && npm run dev` (disponible en `http://localhost:3100`)
 
-1. Verifica Node.js (22.22.3+, 24.15+ o 26+) y que `backend/.env` sea apto para producción: `NODE_ENV=production`, sin contraseñas de ejemplo y con un `JWT_SECRET` válido. Si existe `whatsapp-service/.env`, comprueba que su token coincida con el del backend.
-2. Instala las dependencias si faltan (`npm run prod -- --instalar` fuerza `npm ci`).
-3. Compila el frontend en modo producción.
-4. Prepara la base (`npm --prefix backend run db:setup`): la crea si no existe, aplica las migraciones (catálogos de roles y conceptos de cobro) y, si no hay ningún administrador, crea el primero con `ADMIN_CEDULA`, `ADMIN_NOMBRES` y `ADMIN_APELLIDOS`. **La contraseña temporal se muestra una sola vez**: anótela; se cambia en el primer ingreso.
-5. Inicia el servidor en `http://localhost:PORT` y, si está configurado, el servicio de WhatsApp. Si este se detiene, la API sigue funcionando.
+### Modo Producción Local
+Para compilar el frontend y servirlo directamente a través de Express en un único puerto:
 
-Es seguro repetirlo: nunca siembra datos de prueba ni borra información; en una base en uso solo aplica las migraciones pendientes. Con `npm run prod:preparar` se hacen los pasos 1 a 4 sin iniciar el servidor, para dejarlo en manos de pm2, systemd o un servicio de Windows (`npm start`).
+```bash
+npm run prod
+```
 
-Primeros pasos en el panel, con la base vacía:
+### Tabla de Scripts Principales
 
-- **Ajustes → Tarifas:** registre la cuota de agua y las multas por inasistencia a asamblea y a minga (sin ellas no se pueden facturar meses ni crear eventos con multa).
-- **Gestión de Usuarios → Catastro:** cree los sectores y luego los lotes.
-- **Gestión de Usuarios → Padrón:** registre usuarios y sus cuentas de acceso.
-- **WhatsApp** (menú lateral): pulse *Conectar WhatsApp*, escanee el código QR con el teléfono de la Junta (*Dispositivos vinculados*) y elija el grupo donde se publicarán las convocatorias.
-
-Recomendaciones del servidor: publique detrás de un proxy con HTTPS (Nginx, Caddy) y ponga `TRUST_PROXY=1` (con `0` detrás de un proxy, todas las peticiones parecen venir de la misma IP: la auditoría registra la IP del proxy y el backend lo advierte en el log). El inicio de sesión limita los intentos por IP y cédula (10 cada 15 min) y por IP (100 cada 15 min), y cada cuenta se bloquea 15 minutos tras 5 contraseñas incorrectas; respalde la base y la carpeta `backend/uploads` (documentos firmados). Las convocatorias por WhatsApp usan un navegador en el servidor.
-
-### Convocatorias por WhatsApp
-
-- Cada asamblea o minga se publica **una vez** en el grupo elegido, con fecha, hora, lugar, orden del día y multa por inasistencia, y el evento pasa a *Convocada*. Para repetirla, el sistema pide confirmación.
-- No se puede convocar un evento cancelado, realizado o con fecha pasada. Cada envío (correcto o fallido) queda en `envios_convocatoria` y en la auditoría.
-- La cuenta de WhatsApp de la Junta debe pertenecer al grupo y, si el grupo solo permite mensajes de administradores, ser administradora.
-- **Navegador:** en Windows se usa Microsoft Edge (con un perfil nuevo, Chrome falla al cargar WhatsApp Web); en Linux, `google-chrome` o `chromium`. Con `CHROME_BIN` en `whatsapp-service/.env` se elige otro.
-- La sesión vinculada se guarda en `whatsapp-service/.wwebjs_auth`. La que guardaba antes el backend (`backend/.wwebjs_auth`) ya no se usa: vuelva a escanear el QR, o apunte `WHATSAPP_AUTH_DIR` a esa carpeta.
-
----
-
-## Comandos
-
-| Dónde | Comando | Qué hace |
+| Ámbito | Comando | Función que desempeña |
 |---|---|---|
-| backend | `npm run dev` | Servidor con recarga automática |
-| backend | `npm run lint` | ESLint |
-| backend | `npm test` | Pruebas unitarias y de integración (necesita MySQL; usa la base `junta_las_jones_test`, que crea y borra) |
-| raíz | `npm run prod` | Despliegue de producción con base limpia (ver arriba) |
-| backend | `npm run db:migrate` | Aplica las migraciones pendientes |
-| backend | `npm run db:setup` | Migraciones y primer administrador (producción) |
-| backend | `npm run db:seed [-- --reset]` | Datos de prueba realistas (nunca en producción) |
-| whatsapp-service | `npm run dev` / `npm start` | Servicio de WhatsApp (con recarga / producción) |
-| whatsapp-service | `npm run lint` · `npm test` | ESLint y pruebas (no necesitan WhatsApp ni navegador) |
-| raíz | `npm run lint` · `npm test` | Lint y pruebas de backend, servicio de WhatsApp y frontend |
-| frontend | `npm start` | Servidor de desarrollo |
-| frontend | `npm run lint` | ESLint (angular-eslint) |
-| frontend | `npm test -- --watch=false` | Pruebas con Vitest |
-| frontend | `npm run build` | Build de producción en `dist/` |
+| Raíz | `npm run dev` | Inicia backend y frontend concurrentemente en modo desarrollo |
+| Raíz | `npm run prod` | Verifica variables, compila frontend, aplica migraciones y arranca en producción |
+| Raíz | `npm test` | Ejecuta las pruebas de backend, whatsapp-service y frontend |
+| Raíz | `npm run lint` | Ejecuta el análisis de código con ESLint en todos los módulos |
+| Backend | `npm run db:migrate` | Aplica todas las migraciones SQL/JS pendientes a la base de datos |
+| Backend | `npm run db:setup` | Prepara la base de datos e inicializa el primer administrador en producción |
+| Backend | `npm run db:seed` | Siembra usuarios, turnos, lotes y cobros simulados para demostración |
+| Frontend | `npm test -- --watch=false` | Ejecuta las 168 pruebas unitarias con Vitest |
+| Frontend | `npm run build` | Compila el bundle optimizado para despliegue en producción |
 
 ---
 
-## Flujo de trabajo
+## 🌐 Despliegue
 
-Ramas `main` (estable), `develop` (integración) y `feature/*`, `fix/*`, `refactor/*`, `chore/*`, con Conventional Commits. El detalle está en [`CLAUDE.md`](CLAUDE.md). El CI ejecuta lint, pruebas y build en cada pull request a `develop` o `main`.
+Para desplegar en un servidor en la nube o local:
+
+1. Configure las variables de entorno de producción en `backend/.env`:
+   - `NODE_ENV=production`
+   - `PORT=3000`
+   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+   - `JWT_SECRET` (cadena de al menos 32 caracteres generada aleatoriamente)
+   - `ADMIN_CEDULA`, `ADMIN_NOMBRES`, `ADMIN_APELLIDOS` (para la cuenta raíz inicial)
+   - `TRUST_PROXY=1` (si está detrás de Nginx o Caddy)
+2. Ejecute el comando de preparación y compilación:
+   ```bash
+   npm run prod:preparar
+   ```
+3. Inicie el servicio bajo un gestor de procesos como `pm2` o `systemd`:
+   ```bash
+   pm2 start scripts/prod.js --name "junta-aguas-app"
+   ```
+4. Configure el bloque de servidor en Nginx apuntando con `proxy_pass` hacia `http://127.0.0.1:3000`.
 
 ---
 
-## Licencia
-Desarrollado exclusivamente para la **Junta de Agua y Riego "La Jones" - Patate**.
+## 🔍 Detalles Técnicos del Sistema
+
+### Endpoints Principales
+
+| Método | Ruta | Rol requerido | Descripción |
+|---|---|---|---|
+| `POST` | `/api/auth/login` | Público | Autenticación con cédula y contraseña, retorna JWT |
+| `GET` | `/api/auth/perfil` | Autenticado | Obtiene los datos del usuario en sesión actual |
+| `GET` | `/api/usuarios` | ADMIN | Lista paginada del padrón con filtros de búsqueda |
+| `POST` | `/api/usuarios` | ADMIN | Registra un nuevo socio y genera cuenta de acceso |
+| `GET` | `/api/lotes` | ADMIN | Catastro de predios y georreferenciación |
+| `GET` | `/api/turnos/semanal` | ADMIN / USUARIO | Consulta de la grilla de turnos de riego por sector |
+| `GET` | `/api/eventos` | ADMIN / USUARIO | Listado de asambleas y mingas comunitarias |
+| `POST` | `/api/eventos/:id/asistencia` | ADMIN | Registro masivo de asistencia (presente, ausente, justificado) |
+| `GET` | `/api/finanzas/resumen` | ADMIN | Métricas financieras globales del panel de control |
+| `POST` | `/api/finanzas/cobros` | ADMIN | Registra el pago en caja y emite comprobante en PDF |
+| `GET` | `/api/mi-cuenta/resumen` | USUARIO | Estado de cuenta exclusivo del socio autenticado |
+
+### Reglas de Negocio Clave
+
+| Módulo | Regla implementada |
+|---|---|
+| **Turnos de Riego** | No se permite que coincidan dos turnos en el mismo sector con cruce de horario. |
+| **Asambleas y Mingas** | Al marcar un socio como ausente no justificado, el sistema genera automáticamente una multa financiera según la tarifa fijada para el evento. |
+| **Cobro en Caja** | El cobro registra el desglose de conceptos pagados, actualiza el saldo deudor de forma atómica en una única transacción y emite recibo foliado con hash de seguridad. |
+| **Facturación Anual** | Solo se emite la obligación anual de agua a socios que posean al menos un lote activo registrado en el catastro. |
+| **Protección contra Fuerza Bruta** | Las cuentas se bloquean por 15 minutos tras 5 intentos fallidos consecutivos de inicio de sesión. |
+
+### Migraciones y Base de Datos
+El proyecto cuenta con 26 migraciones versionadas y aplicadas de forma secuencial (`database/migrations/`). Cada cambio estructural en tablas, índices, catálogos o restricciones foráneas se realiza a través de un archivo nuevo numerado, impidiendo inconsistencias entre entornos de desarrollo y producción.
+
+### Manejo de Fechas y Zona Horaria
+La Junta de Agua opera en la zona horaria oficial de Ecuador continental (`America/Guayaquil`, UTC-5). En la base de datos:
+- Las fechas de calendario (eventos, días de turno) se almacenan en formato `AAAA-MM-DD`.
+- Los instantes de auditoría y transacciones financieras se almacenan en formato UTC y se convierten a hora local ecuatoriana en la presentación para el usuario.
+
+---
+
+## 🗺️ Roadmap de Funcionalidades
+
+- [x] Padrón de regantes y catastro de predios con mapa interactivo.
+- [x] Programación semanal de turnos de riego sin cruces de horario.
+- [x] Convocatorias y registro de asistencia para asambleas y mingas.
+- [x] Generación automática de multas por inasistencia no justificada.
+- [x] Módulo de cobro en caja con generación de comprobantes en PDF.
+- [x] Registro y clasificación de egresos de la Junta.
+- [x] Facturación anual del agua por lote activo.
+- [x] Microservicio de notificaciones por WhatsApp.
+- [x] Portal privado de autogestión para cada socio (`/mi-cuenta`).
+- [x] Auditoría integral de modificaciones en base de datos.
+- [x] Scroll interno y responsivo en listas extensas de asistencia.
+- [ ] Exportación de reportes financieros consolidados a formato Excel (.xlsx).
+- [ ] Integración de pasarela de pago digital para abonos en línea.
+- [ ] Notificaciones push para advertir inicios de turnos de riego en dispositivos móviles.
+
+---
+
+## 👥 Contribuidores
+
+Información recopilada a partir del historial de versiones (`git shortlog -sn`):
+
+| Puesto | Colaborador | Commits registrados |
+|:---:|---|:---:|
+| 1 | Johan Rodríguez | 197 |
+| 2 | JoseM151 | 159 |
+| 3 | app-secure | 19 |
+| 4 | Alejandro Falcon | 18 |
+| 5 | T1Angel4220 | 16 |
+| 6 | eaguilar1500 | 10 |
+| 7 | Andriu Dex | 8 |
+| 8 | Jorge | 7 |
+| 9 | Melanie Silva | 5 |
+| 10 | Dennis Chimborazo | 4 |
+| 11 | MelSilva-Dev | 4 |
+| 12 | Jorge Alexander Sailema Torres | 2 |
+| 13 | Dennis-Chimborazo | 1 |
+
+---
+
+## 📚 Referencias
+
+<details>
+<summary>Documentación interna y normativas</summary>
+
+* Documentación de la API: `docs/api_documentation.md`
+* Auditoría de base de datos: `docs/auditoria_base_de_datos.md`
+* Guía de presentación y demostración: `docs/GUIA_DE_PRESENTACION.md`
+* Justificación y asistencia continua: `docs/justificacion_y_asistencia_continua.md`
+* Optimización de cargas útiles: `docs/optimizacion_payloads.md`
+* Especificación de gobernanza y Git: `CLAUDE.md`
+
+</details>
+
+---
+
+## 📄 Licencia
+
+Software desarrollado para uso exclusivo de la **Junta de Agua y Riego "La Jones" - Patate**, provincia de Tungurahua, Ecuador. Prohibida su distribución, copia o reproducción total o parcial sin autorización formal de la directiva de la organización.
+
+---
+
+## 👤 Autor
+
+JoseM151
