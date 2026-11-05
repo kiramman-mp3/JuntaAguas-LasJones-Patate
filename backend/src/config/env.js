@@ -9,6 +9,13 @@ const SECRETOS_COMPROMETIDOS = new Set([
   'f2241147ea97aa0b03e3af33b5918847cada0c597146336bef29185403b95c9d'
 ]);
 
+const jwtBase = z.string({ error: 'JWT_SECRET es obligatorio' })
+  .min(32, 'JWT_SECRET debe tener al menos 32 caracteres')
+  .refine(
+    (s) => !SECRETOS_COMPROMETIDOS.has(crypto.createHash('sha256').update(s).digest('hex')),
+    'JWT_SECRET usa un valor que fue publicado en el repositorio; genera uno nuevo'
+  );
+
 const esquema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -21,12 +28,9 @@ const esquema = z.object({
   DB_USER: z.string().default('root'),
   DB_PASSWORD: z.string().default(''),
   DB_NAME: z.string().regex(/^[A-Za-z0-9_]+$/, 'DB_NAME solo admite letras, números y guion bajo').default('junta_las_jones'),
-  JWT_SECRET: z.string({ error: 'JWT_SECRET es obligatorio' })
-    .min(32, 'JWT_SECRET debe tener al menos 32 caracteres')
-    .refine(
-      (s) => !SECRETOS_COMPROMETIDOS.has(crypto.createHash('sha256').update(s).digest('hex')),
-      'JWT_SECRET usa un valor que fue publicado en el repositorio; genera uno nuevo'
-    ),
+  JWT_SECRET: process.env.NODE_ENV === 'test'
+    ? jwtBase.default('secreto-exclusivo-de-pruebas-0123456789abcdef')
+    : jwtBase,
   JWT_EXPIRES_IN: z.string().default('8h'),
   FRONTEND_URL: z.string().default('http://localhost:4200'),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
