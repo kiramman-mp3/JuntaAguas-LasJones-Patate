@@ -136,6 +136,17 @@ describe('Login con contraseña temporal', () => {
     expect(logout).toHaveBeenCalled();
     expect(component.requiereCambioPassword).toBe(false);
   });
+
+  it('controla la visibilidad del modal de recuperación de contraseña', () => {
+    const { component } = crear({});
+    expect(component.mostrarAyudaPassword).toBe(false);
+    component.alternarAyudaPassword();
+    expect(component.mostrarAyudaPassword).toBe(true);
+    component.cerrarAyudaPassword();
+    expect(component.mostrarAyudaPassword).toBe(false);
+    component.abrirAyudaPassword();
+    expect(component.mostrarAyudaPassword).toBe(true);
+  });
 });
 
 describe('Política de contraseñas', () => {
