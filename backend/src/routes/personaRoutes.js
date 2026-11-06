@@ -59,6 +59,7 @@ router.post('/', ...soloAdmin, personaController.createPersona);
  */
 router.get('/:id', verificarToken, personaController.getPersonaById);
 router.put('/:id', ...soloAdmin, personaController.updatePersona);
+router.delete('/:id', ...soloAdmin, personaController.deletePersona);
 
 /**
  * @openapi

@@ -35,6 +35,7 @@ const crearSchema = z.object({
 });
 
 const actualizarSchema = z.object({
+  cedula: s.cedula.optional(),
   ...datosPersona,
   estado: z.enum(['ACTIVO', 'INACTIVO']).optional()
 });
@@ -316,16 +317,25 @@ async function createPersona(req, res) {
   });
 }
 
-/** Actualizar datos personales de un usuario. */
+/** Actualizar datos personales de un usuario (incluyendo corrección auditada de cédula). */
 async function updatePersona(req, res) {
   const { id } = s.idParam.parse(req.params);
   const datos = actualizarSchema.parse(req.body);
 
   await withTransaction(async (conexion) => {
-    const [personaRows] = await conexion.query('SELECT estado FROM personas WHERE id = ? FOR UPDATE', [id]);
+    const [personaRows] = await conexion.query('SELECT id, cedula, estado FROM personas WHERE id = ? FOR UPDATE', [id]);
     if (!personaRows.length) throw notFound('Usuario no encontrado.');
-    const estadoActual = personaRows[0].estado;
+    const personaActual = personaRows[0];
+    const estadoActual = personaActual.estado;
     const nuevoEstado = datos.estado ?? estadoActual;
+    const nuevaCedula = datos.cedula ? datos.cedula.trim() : personaActual.cedula;
+
+    if (nuevaCedula !== personaActual.cedula) {
+      const [existeCedula] = await conexion.query('SELECT id FROM personas WHERE cedula = ? AND id <> ?', [nuevaCedula, id]);
+      if (existeCedula.length) {
+        throw conflict(`Ya existe otro usuario registrado con la cédula ${nuevaCedula}.`);
+      }
+    }
 
     if (nuevoEstado === 'INACTIVO' && estadoActual === 'ACTIVO') {
       if (id === req.user.personaId) {
@@ -339,17 +349,68 @@ async function updatePersona(req, res) {
 
     await conexion.query(
       `UPDATE personas
-       SET nombres = ?, apellidos = ?, direccion = ?, telefono = ?, celular = ?, email = ?, fecha_nacimiento = ?, estado = ?
+       SET cedula = ?, nombres = ?, apellidos = ?, direccion = ?, telefono = ?, celular = ?, email = ?, fecha_nacimiento = ?, estado = ?
        WHERE id = ?`,
-      [datos.nombres, datos.apellidos, datos.direccion, datos.telefono, datos.celular, datos.email, datos.fecha_nacimiento, nuevoEstado, id]
+      [nuevaCedula, datos.nombres, datos.apellidos, datos.direccion, datos.telefono, datos.celular, datos.email, datos.fecha_nacimiento, nuevoEstado, id]
     );
     await registrarAuditoria({
       conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'personas', entidadId: id, ip: req.ip,
-      detalle: { nombres: datos.nombres, apellidos: datos.apellidos, estado: nuevoEstado }
+      detalle: {
+        nombres: datos.nombres,
+        apellidos: datos.apellidos,
+        estado: nuevoEstado,
+        ...(nuevaCedula !== personaActual.cedula ? { cedulaAnterior: personaActual.cedula, cedulaNueva: nuevaCedula } : {})
+      }
     });
   });
 
   return res.json({ status: 'OK', message: 'Datos del usuario actualizados correctamente.' });
+}
+
+/**
+ * Eliminación física de una persona erróneamente registrada.
+ * Por estricta regla institucional, solo se permite si NO tiene ningún historial
+ * (0 lotes, 0 obligaciones emitidas, 0 asistencias a eventos, 0 turnos).
+ * Si tiene historial, se rechaza y se exige baja lógica (estado = INACTIVO).
+ */
+async function deletePersona(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  if (id === req.user.personaId) {
+    throw forbidden('No puede eliminar su propio registro.');
+  }
+
+  await withTransaction(async (conexion) => {
+    const [personaRows] = await conexion.query('SELECT id, cedula, nombres, apellidos FROM personas WHERE id = ? FOR UPDATE', [id]);
+    if (!personaRows.length) throw notFound('Usuario no encontrado.');
+    const persona = personaRows[0];
+
+    const [[{ lotesCount }]] = await conexion.query('SELECT COUNT(*) AS lotesCount FROM persona_lotes WHERE persona_id = ?', [id]);
+    const [[{ obligCount }]] = await conexion.query('SELECT COUNT(*) AS obligCount FROM obligaciones WHERE persona_id = ?', [id]);
+    const [[{ obligAguaCount }]] = await conexion.query('SELECT COUNT(*) AS obligAguaCount FROM obligacion_anual_agua WHERE persona_id = ?', [id]);
+    const [[{ asistenciasCount }]] = await conexion.query('SELECT COUNT(*) AS asistenciasCount FROM asistencias_eventos WHERE persona_id = ?', [id]);
+    const [[{ turnosCount }]] = await conexion.query('SELECT COUNT(*) AS turnosCount FROM turnos_riego WHERE persona_id = ?', [id]);
+    const [[{ pagosCount }]] = await conexion.query('SELECT COUNT(*) AS pagosCount FROM pagos WHERE persona_id = ?', [id]);
+
+    const totalVinculos = Number(lotesCount) + Number(obligCount) + Number(obligAguaCount) + Number(asistenciasCount) + Number(turnosCount) + Number(pagosCount);
+
+    if (totalVinculos > 0) {
+      throw conflict(
+        `No se puede eliminar físicamente al usuario porque registra historial activo ` +
+        `(${lotesCount} lotes, ${Number(obligCount) + Number(obligAguaCount)} obligaciones, ${asistenciasCount} asistencias, ${turnosCount} turnos). ` +
+        `Para preservar la trazabilidad institucional de la Junta, cambie su estado a INACTIVO.`
+      );
+    }
+
+    await conexion.query('DELETE FROM cuentas WHERE persona_id = ?', [id]);
+    await conexion.query('DELETE FROM personas WHERE id = ?', [id]);
+
+    await registrarAuditoria({
+      conexion, cuentaId: req.user.cuentaId, accion: 'ELIMINAR', entidad: 'personas', entidadId: id, ip: req.ip,
+      detalle: { cedula: persona.cedula, nombres: `${persona.nombres} ${persona.apellidos}` }
+    });
+  });
+
+  return res.json({ status: 'OK', message: 'Usuario eliminado exitosamente del padrón.' });
 }
 
 /** Crear la cuenta de acceso de un usuario que aún no la tiene. */
@@ -432,6 +493,7 @@ module.exports = {
   consultaPublicaPorCedula,
   createPersona,
   updatePersona,
+  deletePersona,
   crearCuenta,
   actualizarCuenta,
   restablecerPassword,
