@@ -118,7 +118,7 @@ En Windows el servicio usa Microsoft Edge. Si prefieres otro navegador, indica s
 
 Al terminar, `npm run db:seed` imprime las credenciales: la cédula del **administrador** (Carlos Eduardo Moreta Salazar, presidente), la de un **usuario de demostración** y la contraseña común de todas las cuentas sembradas.
 
-- La contraseña es aleatoria en cada ejecución. Para fijarla, define `SEED_PASSWORD` (mínimo 8 caracteres, con letras y números) antes de ejecutar el seed, por ejemplo `SEED_PASSWORD=Junta2026 npm run db:seed -- --reset`.
+- La contraseña es aleatoria en cada ejecución. Para fijarla, define `SEED_PASSWORD` (mínimo 10 caracteres, con letras y números) antes de ejecutar el seed, por ejemplo `SEED_PASSWORD=Junta2026 npm run db:seed -- --reset`.
 - El administrador y el usuario de demostración entran directamente. El resto de usuarios con cuenta debe cambiar la contraseña en su primer inicio de sesión, igual que una cuenta creada desde el sistema.
 
 ---

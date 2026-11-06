@@ -66,7 +66,7 @@ describe('Login con contraseña temporal', () => {
     component.passwordActual = 'Temporal7x';
     component.nuevaPassword1 = component.nuevaPassword2 = 'abcdef';
     component.cambiarPassword();
-    expect(component.errorMensaje).toContain('8 caracteres');
+    expect(component.errorMensaje).toContain('10 caracteres');
     component.nuevaPassword1 = component.nuevaPassword2 = 'x1803456789';
     component.cambiarPassword();
     expect(component.errorMensaje).toContain('cédula');
@@ -80,9 +80,9 @@ describe('Login con contraseña temporal', () => {
     const { component, router } = crear({ changePassword, getUser: () => usuario(true) });
     component.requiereCambioPassword = true;
     component.passwordActual = 'Temporal7x';
-    component.nuevaPassword1 = component.nuevaPassword2 = 'Riego2026';
+    component.nuevaPassword1 = component.nuevaPassword2 = 'Canal-Matriz-0417';
     component.cambiarPassword();
-    expect(changePassword).toHaveBeenCalledWith('Temporal7x', 'Riego2026');
+    expect(changePassword).toHaveBeenCalledWith('Temporal7x', 'Canal-Matriz-0417');
     vi.runAllTimers();
     expect(router.navigate).toHaveBeenCalledWith(['/admin']);
   });
@@ -93,7 +93,7 @@ describe('Login con contraseña temporal', () => {
     );
     const { component } = crear({ changePassword, getUser: () => usuario(true) });
     component.passwordActual = 'Otra1234';
-    component.nuevaPassword1 = component.nuevaPassword2 = 'Riego2026';
+    component.nuevaPassword1 = component.nuevaPassword2 = 'Canal-Matriz-0417';
     component.cambiarPassword();
     expect(component.errorMensaje).toBe('La contraseña actual ingresada es incorrecta.');
   });
@@ -101,7 +101,7 @@ describe('Login con contraseña temporal', () => {
   it('distingue una falla de red de una contraseña incorrecta', () => {
     const { component } = crear({ login: () => throwError(() => ({ status: 0, error: null })) });
     component.usuario = '1803456789';
-    component.password = 'Riego2026';
+    component.password = 'Canal-Matriz-0417';
     component.iniciarSesion();
     expect(component.errorMensaje).toContain('No hay conexión con el servidor');
     expect(component.cargando).toBe(false);
@@ -111,10 +111,10 @@ describe('Login con contraseña temporal', () => {
     const login = vi.fn(() => of({ status: 'OK', token: 't', user: usuario(false) }));
     const { component } = crear({ login });
     component.usuario = '1803456789';
-    component.password = 'Riego2026';
+    component.password = 'Canal-Matriz-0417';
     component.recordarSesion = false;
     component.iniciarSesion();
-    expect(login).toHaveBeenCalledWith('1803456789', 'Riego2026', false);
+    expect(login).toHaveBeenCalledWith('1803456789', 'Canal-Matriz-0417', false);
   });
 
   it('al volver al login con una sesión temporal muestra directamente el cambio', () => {
@@ -151,9 +151,11 @@ describe('Login con contraseña temporal', () => {
 
 describe('Política de contraseñas', () => {
   it('coincide con la del backend', () => {
-    expect(problemaConPassword('Riego2026')).toBeNull();
+    expect(problemaConPassword('Canal-Matriz-0417')).toBeNull();
     expect(problemaConPassword('soloLetras')).toContain('letras y números');
-    expect(problemaConPassword('12345678')).toContain('letras y números');
-    expect(problemaConPassword('Riego2026', { actual: 'Riego2026' })).toContain('distinta');
+    expect(problemaConPassword('1234567890')).toContain('letras y números');
+    expect(problemaConPassword('Canal-Matriz-0417', { actual: 'Canal-Matriz-0417' })).toContain(
+      'distinta',
+    );
   });
 });

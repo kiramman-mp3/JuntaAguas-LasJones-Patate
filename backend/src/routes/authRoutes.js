@@ -77,7 +77,7 @@ router.get('/me', verificarToken, authController.getMe);
  *             required: [actualPassword, nuevaPassword]
  *             properties:
  *               actualPassword: { type: string }
- *               nuevaPassword: { type: string, description: 'Mínimo 8 caracteres, letras y números.' }
+ *               nuevaPassword: { type: string, description: 'Mínimo 10 caracteres, letras y números, sin ser una contraseña común.' }
  */
 /**
  * @openapi
