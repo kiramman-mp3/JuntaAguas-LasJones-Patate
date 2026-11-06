@@ -94,9 +94,9 @@ async function getPersonas(req, res) {
     params.push(sector_id);
   }
   if (busqueda) {
-    where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ?)';
+    where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ? OR CONCAT(p.apellidos, \' \', p.nombres) LIKE ?)';
     const term = `%${busqueda}%`;
-    params.push(term, term, term, term);
+    params.push(term, term, term, term, term);
   }
 
   const [personas] = await db.query(
