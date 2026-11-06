@@ -166,7 +166,7 @@ export class ComprobantePdfService {
       ['Fecha / hora:', c.fechaHora],
       [
         'Forma de pago:',
-        c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'EFECTIVO'),
+        c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'No registrada'),
       ],
     ];
     let y = 36;
