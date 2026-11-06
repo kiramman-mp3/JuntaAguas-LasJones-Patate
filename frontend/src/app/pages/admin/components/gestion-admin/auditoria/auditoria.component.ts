@@ -123,7 +123,7 @@ const ACCIONES = [
           mensaje="No hay acciones registradas con esos filtros."
         />
       } @else {
-        <div class="table-scroll">
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de auditoría">
           <table class="fin-table">
             <thead>
               <tr>

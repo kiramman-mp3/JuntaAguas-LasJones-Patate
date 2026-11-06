@@ -77,7 +77,7 @@ const formularioVacio = (): NuevoBien => ({
           mensaje="Registre las herramientas y equipos de la Junta."
         />
       } @else {
-        <div class="table-scroll">
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de inventario">
           <table class="fin-table">
             <thead>
               <tr>
