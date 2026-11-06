@@ -8,7 +8,7 @@ Lista ordenada para un servidor Linux con dominio propio. Cada paso evita un err
 
 1. **DNS:** registros `A` de `@` y `www` hacia la IP del servidor, sin registros `ALIAS`/`CNAME` de aparcamiento ni redirecciones del registrador. Compruebe con `nslookup su-dominio`.
 2. **Servidor:** actualice (`apt update && apt upgrade -y`, reinicie si lo pide), cree un usuario sin privilegios (`adduser junta`) y abra solo SSH, 80 y 443: `ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw enable`. Instale Node (la versión de `engines` de `package.json`), `git`, `mysql-server` y Caddy.
-3. **Acceso SSH seguro:** copie su clave pública (`ssh-copy-id junta@IP`), compruebe que entra sin contraseña y desactive la contraseña en `/etc/ssh/sshd_config.d/` con `PasswordAuthentication no` y `PermitRootLogin no` (después `systemctl restart ssh`). Instale `fail2ban` y `unattended-upgrades`.
+3. **Acceso SSH seguro:** copie su clave pública (`ssh-copy-id junta@IP`), compruebe que entra sin contraseña y desactive la contraseña con `PasswordAuthentication no` y `PermitRootLogin no` en un archivo de `/etc/ssh/sshd_config.d/` cuyo nombre ordene **antes** de `50-cloud-init.conf` (por ejemplo `00-hardening.conf`; en Contabo ese archivo activa la contraseña y gana si el suyo llega después). Luego `systemctl restart ssh`. Instale `fail2ban` y `unattended-upgrades`. El procedimiento completo, con los problemas frecuentes en Windows, está en [`acceso-servidor.md`](acceso-servidor.md).
 4. **Base de datos:** la guía no puede usar `root`. Cree la base y un usuario propio, con una contraseña larga y aleatoria:
 
    ```sql

@@ -311,7 +311,7 @@ Para desplegar en un servidor en la nube o local:
    ```
 4. Configure el bloque de servidor en Nginx apuntando con `proxy_pass` hacia `http://127.0.0.1:3000`.
 
-La lista completa para un VPS (DNS, usuario de MySQL, SSH, HTTPS, primer ingreso y comprobaciones) está en `docs/operacion.md`, sección 0.
+La lista completa para un VPS (DNS, usuario de MySQL, SSH, HTTPS, primer ingreso y comprobaciones) está en `docs/operacion.md`, sección 0. La creación y autorización de llaves SSH está en `docs/acceso-servidor.md`.
 
 ---
 
@@ -405,6 +405,7 @@ Información recopilada a partir del historial de versiones (`git shortlog -sn`)
 <details>
 <summary>Documentación interna y normativas</summary>
 
+* Acceso al servidor por SSH y primeros pasos para programadores nuevos: `docs/acceso-servidor.md`
 * Documentación de la API: `docs/api_documentation.md`
 * Auditoría de base de datos: `docs/auditoria_base_de_datos.md`
 * Guía de presentación y demostración: `docs/GUIA_DE_PRESENTACION.md`
