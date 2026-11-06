@@ -5,6 +5,7 @@ import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { LoteItem, PersonaListado, TurnoItem } from '../../../../../core/models/api-payloads';
+import { errorHorarioTurno } from '../../../../../core/utils/turnos';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA } from '../turno.model';
 
@@ -98,8 +99,8 @@ export class TurnoAsignarComponent implements OnInit {
     if (!t.lote_id) return this.notify.warning('Debe seleccionar un lote para asignar el turno.');
     if (!t.hora_inicio || !t.hora_fin)
       return this.notify.warning('Debe definir la hora de inicio y fin.');
-    if (t.hora_inicio >= t.hora_fin)
-      return this.notify.warning('La hora de fin debe ser posterior a la de inicio.');
+    const errorHorario = errorHorarioTurno(t.hora_inicio, t.hora_fin);
+    if (errorHorario) return this.notify.warning(errorHorario);
 
     this.guardando.set(true);
     this.admin.asignarTurno(t).subscribe({
