@@ -91,8 +91,8 @@ Las organizaciones comunitarias de riego suelen gestionar su padrón de socios, 
   - Sistema de migraciones SQL y JS versionadas y ordenadas
 * **Pruebas y Calidad de Código:**
   - ESLint para análisis estático en frontend, backend y microservicio
-  - Vitest (200 pruebas unitarias en frontend)
-  - Runner nativo de Node (`node --test`) con base de datos real (198 pruebas unitarias y de integración en backend)
+  - Vitest (203 pruebas unitarias en frontend)
+  - Runner nativo de Node (`node --test`) con base de datos real (206 pruebas unitarias y de integración en backend)
   - Playwright para pruebas E2E automatizadas (186 pruebas, con revisión de accesibilidad WCAG AA mediante axe-core en ambos temas)
 * **Despliegue e Infraestructura:**
   - Docker y Docker Compose para el servicio de base de datos
@@ -154,7 +154,7 @@ La arquitectura desacopla el cliente web del núcleo del servidor mediante una A
 ```bash
 JuntaAguas-LasJones-Patate/
 ├── .claude/                           # Reglas de estilo y directivas para asistentes de IA
-├── .github/workflows/ci.yml           # Flujo de integración continua (Lint, Test, Build)
+├── .github/                           # Integración continua (Lint, Test, Build), auditoría semanal de dependencias y Dependabot
 ├── bd/                                # Configuración de Docker para MySQL 8
 │   └── docker-compose.yml             # Orquestación del contenedor de base de datos
 ├── backend/                           # API REST principal
@@ -283,8 +283,9 @@ npm run prod
 | Raíz | `npm run lint` | Ejecuta el análisis de código con ESLint en todos los módulos |
 | Backend | `npm run db:migrate` | Aplica todas las migraciones SQL/JS pendientes a la base de datos |
 | Backend | `npm run db:setup` | Prepara la base de datos e inicializa el primer administrador en producción |
+| Backend | `npm run db:reset-admin -- <cédula>` | Recupera a un administrador que perdió su contraseña (genera una temporal; solo con acceso al servidor) |
 | Backend | `npm run db:seed` | Siembra usuarios, turnos, lotes y cobros simulados para demostración |
-| Frontend | `npm test -- --watch=false` | Ejecuta las 200 pruebas unitarias con Vitest |
+| Frontend | `npm test -- --watch=false` | Ejecuta las 203 pruebas unitarias con Vitest |
 | Frontend | `npm run build` | Compila el bundle optimizado para despliegue en producción |
 
 ---
@@ -299,7 +300,7 @@ Para desplegar en un servidor en la nube o local:
    - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
    - `JWT_SECRET` (cadena de al menos 32 caracteres generada aleatoriamente)
    - `ADMIN_CEDULA`, `ADMIN_NOMBRES`, `ADMIN_APELLIDOS` (para la cuenta raíz inicial)
-   - `TRUST_PROXY=1` (si está detrás de Nginx o Caddy)
+   - `HOST=127.0.0.1` y `TRUST_PROXY=1` (detrás de Nginx o Caddy), y `FRONTEND_URL` con la dirección pública (`https://su-dominio`)
 2. Ejecute el comando de preparación y compilación:
    ```bash
    npm run prod:preparar
@@ -309,6 +310,8 @@ Para desplegar en un servidor en la nube o local:
    pm2 start scripts/prod.js --name "junta-aguas-app"
    ```
 4. Configure el bloque de servidor en Nginx apuntando con `proxy_pass` hacia `http://127.0.0.1:3000`.
+
+La lista completa para un VPS (DNS, usuario de MySQL, SSH, HTTPS, primer ingreso y comprobaciones) está en `docs/operacion.md`, sección 0.
 
 ---
 
@@ -340,6 +343,7 @@ Para desplegar en un servidor en la nube o local:
 | **Facturación Anual** | Solo se emite la obligación anual de agua a socios que posean al menos un lote activo registrado en el catastro. |
 | **Protección contra Fuerza Bruta** | Tras 5 intentos fallidos consecutivos, el inicio de sesión de esa cuenta queda bloqueado 15 minutos **desde esa IP** (tabla `intentos_login`); el dueño legítimo puede entrar desde otra red. La directiva ve las cuentas bloqueadas en el padrón de usuarios y puede desbloquearlas sin cambiar la contraseña. |
 | **Cierre de Sesión** | Cerrar sesión invalida todas las sesiones de la cuenta en todos los dispositivos; la interfaz lo avisa. |
+| **Contraseñas** | Mínimo 10 caracteres con letras y números, sin incluir la cédula y sin ser una contraseña común (`password123`, `Junta2026`…). Se valida en el servidor y en el formulario. |
 | **Edad Mínima** | Una persona registrada debe tener al menos 18 años (fecha de nacimiento opcional, validada en el servidor y en el formulario). |
 | **Búsquedas** | Los comodines `%` y `_` de una búsqueda se tratan como texto, no como patrones. |
 
@@ -380,7 +384,7 @@ Información recopilada a partir del historial de versiones (`git shortlog -sn`)
 |:---:|---|:---:|
 | 1 | Johan Rodríguez | 197 |
 | 2 | JoseM151 | 165 |
-| 3 | kiramman-mp3 | 88 |
+| 3 | kiramman-mp3 | 102 |
 | 4 | app-secure | 19 |
 | 5 | Alejandro Falcon | 18 |
 | 6 | T1Angel4220 | 16 |
