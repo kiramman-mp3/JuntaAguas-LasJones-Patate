@@ -7,11 +7,11 @@
 
 :root {
   /* --- Marca: agua y vertiente --- */
-  --color-primary: #0284c7;
+  --color-primary: #0276b3;
   --color-primary-hover: #0369a1;
   --color-primary-light: #e0f2fe;
-  /* Relleno de botones: mantiene contraste con texto blanco en ambos temas */
-  --color-primary-solid: #0284c7;
+  /* Relleno de botones: contraste mínimo 4.5:1 con texto blanco (WCAG AA) en ambos temas */
+  --color-primary-solid: #0276b3;
   --color-primary-solid-hover: #0369a1;
   --color-secondary: #06b6d4;
   --color-secondary-hover: #0891b2;
@@ -41,7 +41,7 @@
 
   /* --- Texto --- */
   --text-main: #0f172a;
-  --text-muted: #64748b;
+  --text-muted: #5b6a7f;
   --text-white: #ffffff;
 
   /* --- Tipografía: Inter para la interfaz, Outfit para títulos --- */
