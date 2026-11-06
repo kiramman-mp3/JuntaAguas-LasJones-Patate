@@ -149,7 +149,12 @@ async function pdfEnPestana(page, patron, accion) {
     accion()
   ]);
   expect(respuesta.status()).toBe(200);
-  const cuerpo = await respuesta.body();
+  // Si el navegador ya soltó el cuerpo (la pestaña nueva lo consumió), se repite la misma petición.
+  const cuerpo = await respuesta.body().catch(async () => {
+    const repetida = await page.request.get(respuesta.url(), { headers: await respuesta.request().allHeaders() });
+    expect(repetida.status()).toBe(200);
+    return repetida.body();
+  });
   expect(cuerpo.subarray(0, 4).toString(), 'la respuesta es un PDF').toBe('%PDF');
   for (const otra of page.context().pages()) if (otra !== page) await otra.close();
   return cuerpo;
