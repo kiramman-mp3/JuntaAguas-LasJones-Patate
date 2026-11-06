@@ -178,7 +178,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (p of recibos; track clave(p.tipo, p.id)) {
+                @for (p of recibosPagina; track clave(p.tipo, p.id)) {
                   <tr>
                     <td>
                       <strong class="recibo-numero">{{ p.numero }}</strong>
@@ -251,6 +251,15 @@
               </tbody>
             </table>
           </div>
+          <app-paginador
+            etiqueta="comprobantes"
+            [pagina]="paginaRecibos"
+            [porPagina]="porPaginaRecibos"
+            [total]="recibos.length"
+            [opciones]="opcionesPorPagina"
+            (paginaChange)="cambiarPaginaRecibos($event)"
+            (porPaginaChange)="cambiarPorPaginaRecibos($event)"
+          />
         </div>
       }
 

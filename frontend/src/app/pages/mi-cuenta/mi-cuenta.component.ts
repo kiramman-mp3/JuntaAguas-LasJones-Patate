@@ -9,6 +9,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { Recibo, TipoRecibo, numeroRecibo, numeroReciboAgua } from '../../core/models/finanzas';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
+import { PaginadorComponent } from '../../shared/ui/paginador.component';
 import { iniciales } from '../../core/utils/personas';
 
 interface UsuarioResultado {
@@ -23,7 +24,7 @@ interface UsuarioResultado {
 @Component({
   selector: 'app-mi-cuenta',
   standalone: true,
-  imports: [CommonModule, FechaLocalPipe, CurvasNivelComponent],
+  imports: [CommonModule, FechaLocalPipe, CurvasNivelComponent, PaginadorComponent],
   templateUrl: './mi-cuenta.component.html',
   styleUrls: ['./mi-cuenta.component.scss'],
 })
@@ -36,6 +37,9 @@ export class MiCuentaComponent implements OnInit {
 
   /** Recibos vigentes del usuario: multas y otros (REC-…) y pago anual de agua (REC-AGUA-…). */
   recibos: Recibo[] = [];
+  paginaRecibos = 1;
+  porPaginaRecibos = 10;
+  readonly opcionesPorPagina = [10, 20, 50];
   cargandoPagos = false;
   /** Clave (tipo-id) del recibo que se está imprimiendo o descargando. */
   imprimiendo: string | null = null;
@@ -85,11 +89,15 @@ export class MiCuentaComponent implements OnInit {
   }
 
   cargarPagos(): void {
+    const user = this.authService.getUser();
+    if (!user) return;
     this.cargandoPagos = true;
-    this.finanzasService.getRecibos({ estado: 'VIGENTE' }).subscribe({
+    // Un directivo también ve aquí solo lo suyo: sin persona_id el servidor devolvería los de toda la Junta.
+    this.finanzasService.getRecibos({ estado: 'VIGENTE', persona_id: user.personaId }).subscribe({
       next: (recibos) => {
         this.cargandoPagos = false;
         this.recibos = recibos;
+        this.paginaRecibos = 1;
         this.cdr.detectChanges();
       },
       error: () => {
@@ -122,6 +130,23 @@ export class MiCuentaComponent implements OnInit {
 
   get ultimoRecibo(): Recibo | null {
     return this.recibos[0] ?? null;
+  }
+
+  /** Recibos de la página actual: se pintan pocos a la vez para no cargar el DOM con todo el historial. */
+  get recibosPagina(): Recibo[] {
+    const desde = (this.paginaRecibos - 1) * this.porPaginaRecibos;
+    return this.recibos.slice(desde, desde + this.porPaginaRecibos);
+  }
+
+  cambiarPaginaRecibos(pagina: number): void {
+    this.paginaRecibos = pagina;
+    this.cdr.detectChanges();
+  }
+
+  cambiarPorPaginaRecibos(cantidad: number): void {
+    this.porPaginaRecibos = cantidad;
+    this.paginaRecibos = 1;
+    this.cdr.detectChanges();
   }
 
   clave(tipo: TipoRecibo, id: number): string {
