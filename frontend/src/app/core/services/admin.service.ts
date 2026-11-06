@@ -191,6 +191,10 @@ export class AdminService {
     );
   }
 
+  updateEvento(id: number, payload: object): Observable<RespuestaMensaje> {
+    return this.http.put<RespuestaMensaje>(`${this.baseUrl}/eventos/${id}`, payload);
+  }
+
   registrarAsistencias(
     id: number,
     asistencias: AsistenciaRegistro[],

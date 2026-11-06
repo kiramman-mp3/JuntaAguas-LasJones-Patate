@@ -331,3 +331,54 @@ test('rechaza justificar o cambiar asistencia si la multa ya fue pagada en tesor
   assert.match(intento.body.message, /ya fue pagada y registrada en contabilidad/i);
 });
 
+test('edita un evento antes de finalizar con validación horaria y bloqueo si ya finalizó (H-20)', async () => {
+  const usuarioComun = await crearUsuario({ rol: 'USUARIO' });
+  const eventoId = await request(app).post('/api/eventos').set(auth(admin)).send({
+    tipo: 'ASAMBLEA',
+    titulo: 'Asamblea con error tipográfico',
+    descripcion: 'Borrador inicial',
+    fecha: enDias(10),
+    hora_inicio: '10:00'
+  }).then(r => r.body.eventoId);
+
+  // Usuario común no puede editar
+  const resNoAdmin = await request(app).put(`/api/eventos/${eventoId}`).set(auth(usuarioComun)).send({ titulo: 'Intento usuario' });
+  assert.equal(resNoAdmin.status, 403);
+
+  // Rechaza hora_fin <= hora_inicio
+  const resHoraInvalida = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({
+    hora_inicio: '11:00',
+    hora_fin: '10:00'
+  });
+  assert.equal(resHoraInvalida.status, 400);
+
+  // Rechaza fecha en el pasado
+  const resFechaPasada = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({
+    fecha: enDias(-3)
+  });
+  assert.equal(resFechaPasada.status, 400);
+
+  // Edición exitosa
+  const resOk = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({
+    titulo: 'Asamblea General Ordinaria Corregida',
+    descripcion: 'Descripción ampliada',
+    hora_inicio: '09:30',
+    hora_fin: '12:00',
+    lugar: 'Sede Principal'
+  });
+  assert.equal(resOk.status, 200);
+
+  const [[eventoDb]] = await db.query('SELECT titulo, descripcion, hora_inicio, hora_fin, lugar FROM eventos WHERE id = ?', [eventoId]);
+  assert.equal(eventoDb.titulo, 'Asamblea General Ordinaria Corregida');
+  assert.equal(eventoDb.descripcion, 'Descripción ampliada');
+  assert.equal(eventoDb.hora_inicio, '09:30:00');
+  assert.equal(eventoDb.hora_fin, '12:00:00');
+  assert.equal(eventoDb.lugar, 'Sede Principal');
+
+  // Cancelar el evento y verificar que no se puede editar
+  const resEstado = await request(app).post(`/api/eventos/${eventoId}/estado`).set(auth(admin)).send({ estado: 'CANCELADO' });
+  assert.equal(resEstado.status, 200);
+  const resCancelado = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({ titulo: 'Intento en cancelado' });
+  assert.equal(resCancelado.status, 409);
+});
+

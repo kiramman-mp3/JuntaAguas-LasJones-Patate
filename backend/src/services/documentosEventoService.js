@@ -61,4 +61,21 @@ async function listarDocumentos(eventoId) {
   return documentos;
 }
 
-module.exports = { nombreVisible, guardarDocumentoFirmado, listarDocumentos };
+/** Elimina un documento firmado de un evento, tanto de la base de datos como del almacenamiento en disco. */
+async function eliminarDocumentoFirmado({ eventoId, documentoId }) {
+  const [doc] = await db.query(
+    'SELECT id, tipo, ruta_archivo_firmado FROM documentos_evento WHERE id = ? AND evento_id = ?',
+    [documentoId, eventoId]
+  );
+  if (!doc.length) throw notFound('Documento no encontrado.');
+
+  const ruta = doc[0].ruta_archivo_firmado;
+  await db.query('DELETE FROM documentos_evento WHERE id = ?', [documentoId]);
+
+  if (ruta) {
+    await eliminarDocumento(ruta);
+  }
+  return { documento: doc[0] };
+}
+
+module.exports = { nombreVisible, guardarDocumentoFirmado, listarDocumentos, eliminarDocumentoFirmado };
