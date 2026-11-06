@@ -62,6 +62,7 @@ export interface ActividadPlan {
   fecha_fin: string;
   estado: EstadoActividad;
   fecha_cumplimiento: string | null;
+  observacion_resultado: string | null;
 }
 
 export interface PlanAnual {

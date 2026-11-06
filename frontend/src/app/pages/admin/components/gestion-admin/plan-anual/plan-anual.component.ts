@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  ActividadPlan,
   EstadoActividad,
   GestionService,
   NuevaActividad,
@@ -91,6 +92,9 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
                       <th scope="col">Desde</th>
                       <th scope="col">Hasta</th>
                       <th scope="col">Estado</th>
+                      @if (p.estado !== 'CERRADO') {
+                        <th scope="col">Acciones</th>
+                      }
                     </tr>
                   </thead>
                   <tbody>
@@ -114,7 +118,29 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
                             "
                             >{{ etiquetas[a.estado] }}</span
                           >
+                          @if (a.fecha_cumplimiento) {
+                            <br /><span class="fin-table__muted"
+                              >Cumplida el {{ a.fecha_cumplimiento | fechaLocal }}</span
+                            >
+                          }
+                          @if (a.observacion_resultado) {
+                            <br /><span class="fin-table__muted">{{
+                              a.observacion_resultado
+                            }}</span>
+                          }
                         </td>
+                        @if (p.estado !== 'CERRADO') {
+                          <td>
+                            <button
+                              type="button"
+                              class="btn btn--ghost btn--sm"
+                              [attr.aria-label]="'Editar actividad ' + a.nombre"
+                              (click)="editarActividad(p, a)"
+                            >
+                              <i class="ri-edit-line" aria-hidden="true"></i> Editar
+                            </button>
+                          </td>
+                        }
                       </tr>
                     }
                   </tbody>
@@ -180,8 +206,8 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
 
     @if (planDeActividad(); as plan) {
       <app-modal
-        [titulo]="'Actividad del plan ' + plan.anio"
-        icono="ri-add-line"
+        [titulo]="(editandoId() ? 'Editar actividad del plan ' : 'Actividad del plan ') + plan.anio"
+        [icono]="editandoId() ? 'ri-edit-line' : 'ri-add-line'"
         [bloqueado]="guardando()"
         (cerrar)="planDeActividad.set(null)"
       >
@@ -229,6 +255,39 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
                 [(ngModel)]="actividad.descripcion"
               ></textarea>
             </div>
+            @if (editandoId()) {
+              <div class="form-group">
+                <label for="act-estado">Estado *</label>
+                <select id="act-estado" name="estado" class="input" [(ngModel)]="edicion.estado">
+                  @for (e of estados; track e.valor) {
+                    <option [ngValue]="e.valor">{{ e.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+              @if (edicion.estado === 'CUMPLIDA') {
+                <div class="form-group">
+                  <label for="act-cumplimiento">Fecha de cumplimiento *</label>
+                  <input
+                    id="act-cumplimiento"
+                    name="cumplimiento"
+                    class="input"
+                    type="date"
+                    [max]="hoy"
+                    [(ngModel)]="edicion.fecha_cumplimiento"
+                  />
+                </div>
+              }
+              <div class="form-group">
+                <label for="act-resultado">Resultado u observación</label>
+                <textarea
+                  id="act-resultado"
+                  name="resultado"
+                  class="input"
+                  rows="2"
+                  [(ngModel)]="edicion.observacion_resultado"
+                ></textarea>
+              </div>
+            }
           </div>
           <div class="modal__footer">
             <button
@@ -240,7 +299,9 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
               Cancelar
             </button>
             <button type="submit" class="btn btn--primary" [disabled]="guardando()">
-              {{ guardando() ? 'Guardando…' : 'Agregar actividad' }}
+              {{
+                guardando() ? 'Guardando…' : editandoId() ? 'Guardar cambios' : 'Agregar actividad'
+              }}
             </button>
           </div>
         </form>
@@ -253,16 +314,28 @@ export class PlanAnualComponent {
   private notify = inject(NotificationService);
 
   readonly etiquetas = ETIQUETA_ESTADO;
+  readonly estados = (Object.keys(ETIQUETA_ESTADO) as EstadoActividad[]).map((valor) => ({
+    valor,
+    etiqueta: ETIQUETA_ESTADO[valor],
+  }));
+  readonly hoy = hoyEnEcuador();
   readonly planes = signal<PlanAnual[]>([]);
   readonly cargando = signal(false);
   readonly error = signal('');
   readonly guardando = signal(false);
   readonly planAbierto = signal(false);
   readonly planDeActividad = signal<PlanAnual | null>(null);
+  /** Id de la actividad que se edita; null cuando el formulario agrega una nueva. */
+  readonly editandoId = signal<number | null>(null);
 
   anio = Number(hoyEnEcuador().slice(0, 4));
   descripcion = '';
   actividad: NuevaActividad = { nombre: '', fecha_inicio: '', fecha_fin: '', descripcion: '' };
+  edicion: {
+    estado: EstadoActividad;
+    fecha_cumplimiento: string;
+    observacion_resultado: string;
+  } = { estado: 'PENDIENTE', fecha_cumplimiento: '', observacion_resultado: '' };
 
   constructor() {
     this.cargar();
@@ -289,7 +362,24 @@ export class PlanAnualComponent {
     this.planAbierto.set(true);
   }
 
+  editarActividad(plan: PlanAnual, act: ActividadPlan): void {
+    this.editandoId.set(act.id);
+    this.actividad = {
+      nombre: act.nombre,
+      fecha_inicio: act.fecha_inicio,
+      fecha_fin: act.fecha_fin,
+      descripcion: act.descripcion ?? '',
+    };
+    this.edicion = {
+      estado: act.estado,
+      fecha_cumplimiento: act.fecha_cumplimiento ?? '',
+      observacion_resultado: act.observacion_resultado ?? '',
+    };
+    this.planDeActividad.set(plan);
+  }
+
   abrirActividad(plan: PlanAnual): void {
+    this.editandoId.set(null);
     this.actividad = {
       nombre: '',
       fecha_inicio: `${plan.anio}-01-01`,
@@ -316,6 +406,8 @@ export class PlanAnualComponent {
       return this.notify.warning('Describa la actividad (mínimo 3 caracteres).');
     if (!a.fecha_inicio || !a.fecha_fin || a.fecha_inicio > a.fecha_fin)
       return this.notify.warning('La fecha de inicio debe ser anterior o igual a la de fin.');
+    const id = this.editandoId();
+    if (id) return this.actualizarActividad(plan, id);
     this.guardando.set(true);
     this.gestion
       .agregarActividad(plan.id, {
@@ -327,6 +419,32 @@ export class PlanAnualComponent {
         next: (res) =>
           this.terminar(res.message || 'Actividad añadida.', () => this.planDeActividad.set(null)),
         error: (err) => this.fallo(err, 'No se pudo agregar la actividad.'),
+      });
+  }
+
+  private actualizarActividad(plan: PlanAnual, id: number): void {
+    const a = this.actividad;
+    const e = this.edicion;
+    const cumplida = e.estado === 'CUMPLIDA';
+    if (cumplida && !e.fecha_cumplimiento)
+      return this.notify.warning('Indique la fecha en que se cumplió la actividad.');
+    this.guardando.set(true);
+    this.gestion
+      .actualizarActividad(plan.id, id, {
+        nombre: a.nombre.trim(),
+        descripcion: a.descripcion?.trim() ?? '',
+        fecha_inicio: a.fecha_inicio,
+        fecha_fin: a.fecha_fin,
+        estado: e.estado,
+        fecha_cumplimiento: cumplida ? e.fecha_cumplimiento : null,
+        observacion_resultado: e.observacion_resultado.trim() || null,
+      })
+      .subscribe({
+        next: (res) =>
+          this.terminar(res.message || 'Actividad actualizada.', () =>
+            this.planDeActividad.set(null),
+          ),
+        error: (err) => this.fallo(err, 'No se pudo actualizar la actividad.'),
       });
   }
 
