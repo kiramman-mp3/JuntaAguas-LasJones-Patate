@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { RespuestaApi } from '../models/api-payloads';
+import { RespuestaApi, RespuestaPaginada } from '../models/api-payloads';
 
 /** Registro de GET /auditoria: quién hizo qué, sobre qué y cuándo (fecha en UTC). */
 export interface RegistroAuditoria {
@@ -23,6 +23,7 @@ export interface FiltrosAuditoria {
   accion?: string;
   desde?: string;
   hasta?: string;
+  page?: number;
   limit?: number;
 }
 
@@ -96,8 +97,8 @@ export class GestionService {
   private http = inject(HttpClient);
   private url = environment.apiUrl;
 
-  getAuditoria(filtros: FiltrosAuditoria = {}): Observable<RespuestaApi<RegistroAuditoria[]>> {
-    return this.http.get<RespuestaApi<RegistroAuditoria[]>>(`${this.url}/auditoria`, {
+  getAuditoria(filtros: FiltrosAuditoria = {}): Observable<RespuestaPaginada<RegistroAuditoria>> {
+    return this.http.get<RespuestaPaginada<RegistroAuditoria>>(`${this.url}/auditoria`, {
       params: parametros(filtros),
     });
   }

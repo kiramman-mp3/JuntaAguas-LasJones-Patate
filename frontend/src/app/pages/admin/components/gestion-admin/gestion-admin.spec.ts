@@ -14,7 +14,8 @@ function configurar(api: Partial<Record<keyof GestionService, unknown>>) {
       {
         provide: GestionService,
         useValue: {
-          getAuditoria: () => of({ status: 'OK', data: [] }),
+          getAuditoria: () =>
+            of({ status: 'OK', data: [], pagination: { total: 0, page: 1, limit: 25 } }),
           getInventario: () => of({ status: 'OK', data: [] }),
           getPlanes: () => of({ status: 'OK', data: [] }),
           ...api,
@@ -28,11 +29,13 @@ function configurar(api: Partial<Record<keyof GestionService, unknown>>) {
 
 describe('Gestión interna', () => {
   it('la auditoría filtra por días y resume el detalle en una línea', () => {
-    const getAuditoria = vi.fn(() => of({ status: 'OK' as const, data: [] }));
+    const getAuditoria = vi.fn(() =>
+      of({ status: 'OK' as const, data: [], pagination: { total: 0, page: 1, limit: 25 } }),
+    );
     configurar({ getAuditoria });
     const c = TestBed.createComponent(AuditoriaComponent).componentInstance;
     expect(getAuditoria).toHaveBeenCalledWith(
-      expect.objectContaining({ desde: c.desde(), hasta: c.hasta(), limit: 100 }),
+      expect.objectContaining({ desde: c.desde(), hasta: c.hasta(), page: 1, limit: 25 }),
     );
     c.accion.set('PAGO');
     c.cargar();
@@ -54,6 +57,29 @@ describe('Gestión interna', () => {
     );
     expect(c.resumen({ ...base, detalle: '{"motivo":"Error"}' })).toBe('motivo: Error');
     expect(c.resumen({ ...base, detalle: null })).toBe('—');
+  });
+
+  it('la auditoría pide la página elegida y vuelve a la primera al cambiar un filtro (H-24)', () => {
+    const getAuditoria = vi.fn(() =>
+      of({ status: 'OK' as const, data: [], pagination: { total: 240, page: 1, limit: 25 } }),
+    );
+    configurar({ getAuditoria });
+    const c = TestBed.createComponent(AuditoriaComponent).componentInstance;
+    expect(c.total()).toBe(240);
+
+    c.cambiarPagina(3);
+    expect(getAuditoria).toHaveBeenLastCalledWith(expect.objectContaining({ page: 3, limit: 25 }));
+
+    c.accion.set('PAGO');
+    c.filtrar();
+    expect(c.pagina()).toBe(1);
+    expect(getAuditoria).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, accion: 'PAGO' }),
+    );
+
+    c.cambiarPagina(2);
+    c.cambiarPorPagina(50);
+    expect(getAuditoria).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, limit: 50 }));
   });
 
   it('el inventario suma el valor total y valida antes de registrar', () => {
