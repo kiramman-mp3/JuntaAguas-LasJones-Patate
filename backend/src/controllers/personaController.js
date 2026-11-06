@@ -16,7 +16,7 @@ const datosPersona = {
   telefono: s.telefono,
   celular: s.celular,
   email: s.email,
-  fecha_nacimiento: s.fechaOpcional
+  fecha_nacimiento: s.fechaNacimientoOpcional
 };
 
 const rolCodigo = z.enum([ROLES.ADMIN, ROLES.USUARIO]);

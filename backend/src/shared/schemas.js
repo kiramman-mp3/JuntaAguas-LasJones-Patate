@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { esFechaValida, normalizarHora } = require('./dates');
+const { esFechaValida, normalizarHora, hoy } = require('./dates');
 
 /** Valida el dígito verificador de una cédula ecuatoriana de persona natural. */
 function esCedulaValida(cedula) {
@@ -27,6 +27,21 @@ const idParam = z.object({ id });
 const cedula = z.string().trim().refine(esCedulaValida, 'La cédula no es una cédula ecuatoriana válida.');
 const fecha = z.string().refine(esFechaValida, 'Fecha inválida (use AAAA-MM-DD).');
 const fechaOpcional = z.preprocess(vacioANull, fecha.nullish()).transform((v) => v ?? null);
+
+const EDAD_MINIMA = 18;
+/** Fecha límite (YYYY-MM-DD) para ser mayor de edad hoy: la misma fecha de hace EDAD_MINIMA años. */
+const fechaMaximaNacimiento = (ahora = new Date()) => {
+  const [anio, mes, dia] = hoy(ahora).split('-');
+  return `${Number(anio) - EDAD_MINIMA}-${mes}-${dia}`;
+};
+/** Fecha de nacimiento opcional: de una persona mayor de edad y posterior a 1900. */
+const fechaNacimientoOpcional = z.preprocess(
+  vacioANull,
+  fecha
+    .refine((f) => f >= '1900-01-01', 'La fecha de nacimiento no es válida.')
+    .refine((f) => f <= fechaMaximaNacimiento(), `La persona debe tener al menos ${EDAD_MINIMA} años.`)
+    .nullish()
+).transform((v) => v ?? null);
 const hora = z.string().transform((v, ctx) => {
   const normalizada = normalizarHora(v);
   if (!normalizada) {
@@ -57,6 +72,6 @@ const paginacion = z.object({
 });
 
 module.exports = {
-  z, esCedulaValida, textoOpcional, id, idParam, cedula, fecha, fechaOpcional, hora,
+  z, esCedulaValida, textoOpcional, id, idParam, cedula, fecha, fechaOpcional, fechaNacimientoOpcional, fechaMaximaNacimiento, EDAD_MINIMA, hora,
   dinero, dineroCon, montoPositivo, celular, telefono, email, paginacion
 };
