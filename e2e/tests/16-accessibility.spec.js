@@ -7,7 +7,20 @@ const { credenciales, iniciarSesion } = require('./ayudas');
 const SIN_SESION = { cookies: [], origins: [] };
 const TEMAS = ['light', 'dark'];
 
+/**
+ * Espera a que la pantalla termine de cargar y de animarse. Las tarjetas y listas del panel aparecen con un
+ * fundido; si axe mide el contraste a mitad de ese fundido, el color mezclado con el fondo parece de bajo
+ * contraste. En una máquina lenta (CI) el análisis llega antes de que termine y falla de forma intermitente.
+ */
+async function esperarPantallaEstable(page) {
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('.skeleton')).toHaveCount(0);
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+}
+
 async function revisar(page, ruta, tema) {
+  // Con "reducir movimiento" las animaciones de la aplicación terminan al instante.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript((t) => {
     try {
       localStorage.setItem('junta_theme', t);
@@ -18,6 +31,7 @@ async function revisar(page, ruta, tema) {
   await page.goto(ruta);
   await expect(page.locator('h1').first()).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', tema);
+  await esperarPantallaEstable(page);
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const graves = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   const resumen = graves.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} nodo(s), p. ej. ${v.nodes[0].target.join(' ')}`);
