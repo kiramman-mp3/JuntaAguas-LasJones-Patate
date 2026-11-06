@@ -211,6 +211,17 @@ async function linkPersonaLote(req, res) {
       throw badRequest('El lote ya pertenece a este usuario.');
     }
 
+    // Verificar si el titular anterior registra obligaciones anuales pendientes
+    let deudasPreviasLote = [];
+    if (anterior) {
+      const [pendientes] = await conexion.query(
+        `SELECT id, periodo_anio, valor_total FROM obligacion_anual_agua
+         WHERE persona_id = ? AND estado = 'PENDIENTE'`,
+        [anterior.persona_id]
+      );
+      deudasPreviasLote = pendientes;
+    }
+
     await conexion.query('DELETE FROM persona_lotes WHERE lote_id = ?', [loteId]);
     await conexion.query(
       `INSERT INTO persona_lotes (persona_id, lote_id, tipo_relacion, porcentaje, fecha_desde, observacion) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -221,7 +232,7 @@ async function linkPersonaLote(req, res) {
       "UPDATE turnos_riego SET persona_id = ? WHERE lote_id = ? AND estado = 'ACTIVO' AND persona_id <> ?",
       [datos.persona_id, loteId, datos.persona_id]
     );
-    return { lote: lotes[0], nuevo, anterior, turnosReasignados: turnos.affectedRows };
+    return { lote: lotes[0], nuevo, anterior, turnosReasignados: turnos.affectedRows, deudasPreviasLote };
   });
 
   await registrarAuditoria({
@@ -232,13 +243,22 @@ async function linkPersonaLote(req, res) {
       lote: resultado.lote.codigo,
       anterior: resultado.anterior && { persona_id: resultado.anterior.persona_id, tipo_relacion: resultado.anterior.tipo_relacion, desde: resultado.anterior.fecha_desde },
       nuevo: { persona_id: datos.persona_id, tipo_relacion: datos.tipo_relacion },
-      turnosReasignados: resultado.turnosReasignados
+      turnosReasignados: resultado.turnosReasignados,
+      deudasPreviasDetectadas: resultado.deudasPreviasLote.length
     }
   });
+  const advertenciaDeuda = resultado.deudasPreviasLote.length
+    ? ` Advertencia: El titular anterior registra ${resultado.deudasPreviasLote.length} obligación(es) pendiente(s) de agua.`
+    : '';
   const message = resultado.anterior
-    ? `Titularidad transferida a ${resultado.nuevo.nombre}.${resultado.turnosReasignados ? ` ${resultado.turnosReasignados} turno(s) de riego pasaron al nuevo titular.` : ''}`
+    ? `Titularidad transferida a ${resultado.nuevo.nombre}.${resultado.turnosReasignados ? ` ${resultado.turnosReasignados} turno(s) de riego pasaron al nuevo titular.` : ''}${advertenciaDeuda}`
     : 'Titularidad asignada correctamente. El lote ahora pertenece al usuario seleccionado.';
-  return res.json({ status: 'OK', message, turnosReasignados: resultado.turnosReasignados });
+  return res.json({
+    status: 'OK',
+    message,
+    turnosReasignados: resultado.turnosReasignados,
+    advertenciaDeudas: resultado.deudasPreviasLote.length > 0 ? resultado.deudasPreviasLote : undefined
+  });
 }
 
 module.exports = { sugerirCodigo, getSectores, createSector, getLotes, createLote, linkPersonaLote };

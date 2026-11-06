@@ -71,14 +71,20 @@ async function login(req, res) {
   }
 
   if (!coincide) {
-    await db.query('UPDATE cuentas SET intentos_fallidos = intentos_fallidos + 1 WHERE id = ?', [cuenta.cuenta_id]);
-    const [[{ intentos_fallidos: intentos }]] = await db.query('SELECT intentos_fallidos FROM cuentas WHERE id = ?', [cuenta.cuenta_id]);
+    await db.query(
+      `UPDATE cuentas
+       SET bloqueada_hasta = CASE WHEN intentos_fallidos + 1 >= ? THEN UTC_TIMESTAMP() + INTERVAL ? MINUTE ELSE bloqueada_hasta END,
+           intentos_fallidos = CASE WHEN intentos_fallidos + 1 >= ? THEN 0 ELSE intentos_fallidos + 1 END
+       WHERE id = ?`,
+      [MAX_INTENTOS, MINUTOS_BLOQUEO, MAX_INTENTOS, cuenta.cuenta_id]
+    );
 
-    if (intentos >= MAX_INTENTOS) {
-      await db.query(
-        'UPDATE cuentas SET intentos_fallidos = 0, bloqueada_hasta = UTC_TIMESTAMP() + INTERVAL ? MINUTE WHERE id = ?',
-        [MINUTOS_BLOQUEO, cuenta.cuenta_id]
-      );
+    const [[cuentaActual]] = await db.query(
+      'SELECT bloqueada_hasta > UTC_TIMESTAMP() AS bloqueada FROM cuentas WHERE id = ?',
+      [cuenta.cuenta_id]
+    );
+
+    if (Number(cuentaActual?.bloqueada)) {
       await registrarAuditoria({ cuentaId: cuenta.cuenta_id, accion: 'BLOQUEO', entidad: 'cuentas', entidadId: cuenta.cuenta_id, ip: req.ip });
     }
     throw unauthorized(MENSAJE_CREDENCIALES);

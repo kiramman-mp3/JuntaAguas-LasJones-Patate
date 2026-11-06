@@ -65,6 +65,10 @@ export class AdminService {
     return this.http.put<RespuestaMensaje>(`${this.baseUrl}/personas/${id}`, data);
   }
 
+  deletePersona(id: number): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(`${this.baseUrl}/personas/${id}`);
+  }
+
   /** Crea la cuenta de acceso de un usuario; la respuesta trae la contraseña temporal. */
   crearCuenta(personaId: number, rol: 'ADMIN' | 'USUARIO'): Observable<RespuestaCredencial> {
     return this.http.post<RespuestaCredencial>(`${this.baseUrl}/personas/${personaId}/cuenta`, {

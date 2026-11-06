@@ -308,3 +308,26 @@ test('permite crear mingas seleccionando un sector o con la opción Todos (null)
   assert.equal(rechazo.status, 400);
 });
 
+test('rechaza justificar o cambiar asistencia si la multa ya fue pagada en tesorería (H-25)', async () => {
+  const eventoId = await eventoPasado({ tipo: 'ASAMBLEA', fecha: enDias(-2), multa: true });
+  const tomo = await tomarAsistencia(eventoId);
+  assert.equal(tomo.status, 200);
+
+  const padron = await request(app).get(`/api/eventos/${eventoId}/asistencias`).set(auth(admin));
+  const ausente = padron.body.data.find((p) => p.estado === 'AUSENTE');
+  assert.ok(ausente, 'Debe haber un usuario ausente');
+
+  const fin = await finalizar(eventoId);
+  assert.equal(fin.status, 200);
+
+  // Simular que tesorería cobró la multa del usuario ausente
+  await db.query("UPDATE obligaciones SET estado = 'PAGADA' WHERE evento_id = ? AND persona_id = ?", [eventoId, ausente.persona_id]);
+
+  // Intentar cambiar a JUSTIFICADO debe rechazar con 409
+  const intento = await request(app).post(`/api/eventos/${eventoId}/asistencias`).set(auth(admin)).send({
+    asistencias: [{ persona_id: ausente.persona_id, estado: 'JUSTIFICADO', motivo_justificacion: 'Enfermedad' }]
+  });
+  assert.equal(intento.status, 409);
+  assert.match(intento.body.message, /ya fue pagada y registrada en contabilidad/i);
+});
+

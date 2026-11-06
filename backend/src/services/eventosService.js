@@ -159,6 +159,21 @@ async function registrarAsistencias(conexion, evento, asistencias, cuentaId) {
       .filter((a) => a.estado === 'JUSTIFICADO' || a.estado === 'PRESENTE')
       .map((a) => Number(a.persona_id));
     if (justificadosOPresentes.length) {
+      // Si la multa ya fue pagada en tesorería, bloquear la justificación para evitar descuadre contable
+      const [pagadas] = await conexion.query(
+        `SELECT o.id, o.persona_id, p.cedula, CONCAT(p.nombres, ' ', p.apellidos) AS nombre, o.valor
+         FROM obligaciones o
+         JOIN personas p ON p.id = o.persona_id
+         WHERE o.evento_id = ? AND o.persona_id IN (?) AND o.origen = 'AUTOMATICA' AND o.estado = 'PAGADA'`,
+        [evento.id, justificadosOPresentes]
+      );
+      if (pagadas.length) {
+        const nombres = pagadas.map((p) => `${p.nombre} (${p.cedula})`).join(', ');
+        throw conflict(
+          `No se puede cambiar a Presente/Justificado a: ${nombres}. Su multa por inasistencia ya fue pagada y registrada en contabilidad. Primero anule el pago en Finanzas si corresponde devolución.`
+        );
+      }
+
       await conexion.query(
         `UPDATE obligaciones SET estado = 'ANULADA', motivo_anulacion = 'Inasistencia corregida o justificada',
          fecha_anulacion = ?, anulada_por_cuenta_id = ?
