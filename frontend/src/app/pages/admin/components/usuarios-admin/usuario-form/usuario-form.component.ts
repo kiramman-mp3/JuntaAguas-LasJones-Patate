@@ -11,7 +11,12 @@ import {
 } from '../../../../../shared/password-temporal/password-temporal.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { PersonaListado } from '../../../../../core/models/api-payloads';
-import { errorCedula, esCedulaValida } from '../../../../../core/utils/personas';
+import {
+  errorCedula,
+  errorNacimiento,
+  esCedulaValida,
+  fechaMaximaNacimiento,
+} from '../../../../../core/utils/personas';
 
 /**
  * Alta y edición de un usuario, con la gestión de su cuenta de acceso web.
@@ -45,6 +50,10 @@ export class UsuarioFormComponent implements OnInit {
   private creadoPendienteDeCierre = false;
   /** Cédula con la que se abrió la edición: una cédula antigua inválida no bloquea otros cambios. */
   private cedulaOriginal = '';
+  /** Igual para la fecha de nacimiento: una anterior que no cumple la edad mínima no bloquea otros cambios. */
+  private nacimientoOriginal = '';
+  /** Fecha de nacimiento más reciente permitida (mayor de edad), para el atributo max del campo. */
+  readonly fechaMaximaNacimiento = fechaMaximaNacimiento();
 
   form = {
     id: null as number | null,
@@ -81,12 +90,19 @@ export class UsuarioFormComponent implements OnInit {
       rol: ROLES.USUARIO,
     };
     this.cedulaOriginal = u.cedula;
+    this.nacimientoOriginal = u.fecha_nacimiento || '';
   }
 
   /** Error de la cédula mientras se escribe; vacío si es válida, está a medias o no se modificó. */
   get errorCedula(): string {
     if (this.modoEdicion && this.form.cedula === this.cedulaOriginal) return '';
     return errorCedula(this.form.cedula);
+  }
+
+  /** Error de la fecha de nacimiento; vacío si es válida, está vacía o no se modificó al editar. */
+  get errorNacimiento(): string {
+    if (this.modoEdicion && this.form.fecha_nacimiento === this.nacimientoOriginal) return '';
+    return errorNacimiento(this.form.fecha_nacimiento);
   }
 
   guardar(): void {
@@ -97,6 +113,10 @@ export class UsuarioFormComponent implements OnInit {
     const cedulaModificada = !this.modoEdicion || this.form.cedula !== this.cedulaOriginal;
     if (cedulaModificada && !esCedulaValida(this.form.cedula)) {
       this.notify.warning(this.errorCedula || 'La cédula debe tener 10 dígitos.');
+      return;
+    }
+    if (this.errorNacimiento) {
+      this.notify.warning(this.errorNacimiento);
       return;
     }
     this.guardando.set(true);

@@ -1,4 +1,10 @@
-import { errorCedula, esCedulaValida, iniciales } from './personas';
+import {
+  errorCedula,
+  errorNacimiento,
+  esCedulaValida,
+  fechaMaximaNacimiento,
+  iniciales,
+} from './personas';
 
 describe('iniciales', () => {
   it('toma el primer nombre y el primer apellido', () => {
@@ -45,5 +51,27 @@ describe('errorCedula', () => {
     expect(errorCedula('17100340651')).toContain('10 dígitos');
     expect(errorCedula('1710034066')).toContain('no es una cédula');
     expect(errorCedula('1710034065')).toBe('');
+  });
+});
+
+describe('fechaMaximaNacimiento y errorNacimiento', () => {
+  const ahora = new Date('2026-11-06T17:00:00Z');
+
+  it('el límite es la misma fecha de hace 18 años en el calendario de Ecuador', () => {
+    expect(fechaMaximaNacimiento(ahora)).toBe('2008-11-06');
+    // 02:00 UTC del día 7 todavía es el 6 en Ecuador (UTC-5).
+    expect(fechaMaximaNacimiento(new Date('2026-11-07T02:00:00Z'))).toBe('2008-11-06');
+  });
+
+  it('acepta una fecha vacía, a los 18 años exactos y de una persona mayor', () => {
+    expect(errorNacimiento('', ahora)).toBe('');
+    expect(errorNacimiento('2008-11-06', ahora)).toBe('');
+    expect(errorNacimiento('1980-05-20', ahora)).toBe('');
+  });
+
+  it('rechaza menores, fechas futuras y fechas anteriores a 1900', () => {
+    expect(errorNacimiento('2008-11-07', ahora)).toContain('al menos 18 años');
+    expect(errorNacimiento('2099-01-01', ahora)).toContain('al menos 18 años');
+    expect(errorNacimiento('1899-12-31', ahora)).toContain('no es válida');
   });
 });

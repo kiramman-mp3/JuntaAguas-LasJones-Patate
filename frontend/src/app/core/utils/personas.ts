@@ -1,3 +1,5 @@
+import { hoyEnEcuador } from './fechas';
+
 /** Iniciales para un monograma: primer nombre y primer apellido ("Luis Alberto Paredes Moreta" → "LP"). */
 export function iniciales(nombre: string | null | undefined): string {
   const palabras = (nombre ?? '').trim().split(/\s+/).filter(Boolean);
@@ -35,5 +37,22 @@ export function errorCedula(cedula: string): string {
   if (texto.length === 10 && !esCedulaValida(texto)) {
     return 'La cédula no es una cédula ecuatoriana válida. Revise los dígitos.';
   }
+  return '';
+}
+
+export const EDAD_MINIMA = 18;
+
+/** Fecha de nacimiento más reciente permitida hoy (AAAA-MM-DD): la de hace 18 años, como exige el servidor. */
+export function fechaMaximaNacimiento(ahora: Date = new Date()): string {
+  const [anio, mes, dia] = hoyEnEcuador(ahora).split('-');
+  return `${Number(anio) - EDAD_MINIMA}-${mes}-${dia}`;
+}
+
+/** Mensaje de error de una fecha de nacimiento; '' si está vacía (es opcional) o es válida. */
+export function errorNacimiento(fecha: string, ahora: Date = new Date()): string {
+  if (!fecha) return '';
+  if (fecha < '1900-01-01') return 'La fecha de nacimiento no es válida.';
+  if (fecha > fechaMaximaNacimiento(ahora))
+    return `La persona debe tener al menos ${EDAD_MINIMA} años.`;
   return '';
 }
