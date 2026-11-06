@@ -1,6 +1,7 @@
 const { registrarAuditoria } = require('../services/auditService');
 const eventos = require('../services/eventosService');
 const { withTransaction } = require('../shared/transaction');
+const { cambioEstadoSchema } = require('../schemas/eventos');
 
 /**
  * Endpoints específicos de mingas. Comparten las reglas de asambleas (eventosService)
@@ -22,7 +23,7 @@ async function getAsistencias(req, res) {
 }
 
 async function cambiarEstado(req, res) {
-  const estado = req.body?.estado;
+  const { estado } = cambioEstadoSchema.parse(req.body);
   const resultado = await enMinga(req, (conexion, minga) => eventos.cambiarEstado(conexion, minga, estado));
   if (resultado.cambiado) {
     await registrarAuditoria({

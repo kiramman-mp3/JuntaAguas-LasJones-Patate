@@ -202,6 +202,17 @@ test('los estados avanzan pero no retroceden; cancelado y realizado son finales'
   assert.equal((await cambiar('CONVOCADO')).status, 409);
 });
 
+test('el estado se valida con zod: valores ajenos, vacíos o no textuales se rechazan con 400 (H-11)', async () => {
+  const id = await eventoPasado({ estado: 'BORRADOR' });
+  const enviar = (ruta, cuerpo) => request(app).post(`/api/${ruta}/${id}/estado`).set(auth(admin)).send(cuerpo);
+  for (const cuerpo of [{}, { estado: '' }, { estado: 'ROTO' }, { estado: 7 }, { estado: ['CANCELADO'] }]) {
+    assert.equal((await enviar('eventos', cuerpo)).status, 400, JSON.stringify(cuerpo));
+  }
+  const minga = await eventoPasado({ tipo: 'MINGA', estado: 'BORRADOR' });
+  const enMinga = await request(app).post(`/api/mingas/${minga}/estado`).set(auth(admin)).send({ estado: 'ROTO' });
+  assert.equal(enMinga.status, 400);
+});
+
 test('los endpoints de mingas no operan sobre asambleas', async () => {
   const asamblea = await eventoPasado({ tipo: 'ASAMBLEA' });
   assert.equal((await finalizar(asamblea, 'mingas')).status, 400);

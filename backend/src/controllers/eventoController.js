@@ -13,7 +13,7 @@ const { badRequest, notFound } = require('../shared/errors');
 const { idParam } = require('../shared/schemas');
 const { z } = require('zod');
 const {
-  listarSchema, crearSchema, actualizarSchema, puntosSchema, documentoSchema
+  listarSchema, crearSchema, actualizarSchema, puntosSchema, documentoSchema, cambioEstadoSchema
 } = require('../schemas/eventos');
 
 const eventoPersonaParam = z.object({
@@ -85,7 +85,7 @@ async function savePuntosAsamblea(req, res) {
 /** Cambiar estado (PROGRAMADO, CONVOCADO, CANCELADO) de una asamblea o minga. */
 async function cambiarEstado(req, res) {
   const { id } = idParam.parse(req.params);
-  const estado = req.body?.estado;
+  const { estado } = cambioEstadoSchema.parse(req.body);
   const resultado = await withTransaction(async (conexion) => {
     const evento = await eventos.obtenerEvento(conexion, id);
     return eventos.cambiarEstado(conexion, evento, estado);
