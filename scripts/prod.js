@@ -67,6 +67,20 @@ if (!env.DB_PASSWORD || ['rootpassword', 'junta_password', 'root'].includes(env.
   problemas.push('DB_PASSWORD está vacía o usa la contraseña de ejemplo de bd/docker-compose.yml.');
 }
 if (env.DB_USER === 'root') console.warn('  Aviso: se recomienda un usuario de base de datos propio en lugar de root.');
+// Coherencia entre el proxy (Caddy/Nginx) y el backend: un error aquí no rompe nada a la vista, pero degrada la
+// seguridad (IP de auditoría, límites de intentos y bloqueo de cuentas dependen de la IP real del cliente).
+const soloLocal = ['127.0.0.1', 'localhost', '::1'].includes(env.HOST);
+if (soloLocal && !env.TRUST_PROXY) {
+  console.warn('  Aviso: HOST=' + env.HOST + ' indica un proxy delante, pero TRUST_PROXY=0. Todos los usuarios compartirían la IP del proxy:');
+  console.warn('         la auditoría registraría una IP falsa y un usuario podría bloquear las cuentas de otros. Use TRUST_PROXY=1.');
+}
+if (!soloLocal && env.TRUST_PROXY) {
+  console.warn('  Aviso: TRUST_PROXY=' + env.TRUST_PROXY + ' con HOST=' + env.HOST + '. Si el puerto ' + env.PORT + ' es accesible desde fuera, cualquiera puede falsificar su IP.');
+  console.warn('         Detrás de un proxy use HOST=127.0.0.1 y cierre ese puerto en el firewall.');
+}
+if (/localhost|127\.0\.0\.1/.test(env.FRONTEND_URL)) {
+  console.warn('  Aviso: FRONTEND_URL apunta a ' + env.FRONTEND_URL + '. Con HTTPS y dominio propio, use la dirección pública (https://su-dominio).');
+}
 if (conWhatsApp) {
   try {
     const whatsapp = require(path.join(whatsappService, 'src/config.js')).leerConfiguracion();
