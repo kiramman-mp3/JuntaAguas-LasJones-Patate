@@ -91,8 +91,8 @@ Las organizaciones comunitarias de riego suelen gestionar su padrón de socios, 
   - Sistema de migraciones SQL y JS versionadas y ordenadas
 * **Pruebas y Calidad de Código:**
   - ESLint para análisis estático en frontend, backend y microservicio
-  - Vitest (168 pruebas unitarias en frontend)
-  - Mocha con base de datos real (14 pruebas de integración en backend)
+  - Vitest (194 pruebas unitarias en frontend)
+  - Runner nativo de Node (`node --test`) con base de datos real (184 pruebas unitarias y de integración en backend)
   - Playwright para pruebas E2E automatizadas
 * **Despliegue e Infraestructura:**
   - Docker y Docker Compose para el servicio de base de datos
@@ -284,7 +284,7 @@ npm run prod
 | Backend | `npm run db:migrate` | Aplica todas las migraciones SQL/JS pendientes a la base de datos |
 | Backend | `npm run db:setup` | Prepara la base de datos e inicializa el primer administrador en producción |
 | Backend | `npm run db:seed` | Siembra usuarios, turnos, lotes y cobros simulados para demostración |
-| Frontend | `npm test -- --watch=false` | Ejecuta las 168 pruebas unitarias con Vitest |
+| Frontend | `npm test -- --watch=false` | Ejecuta las 194 pruebas unitarias con Vitest |
 | Frontend | `npm run build` | Compila el bundle optimizado para despliegue en producción |
 
 ---
@@ -341,7 +341,7 @@ Para desplegar en un servidor en la nube o local:
 | **Protección contra Fuerza Bruta** | Las cuentas se bloquean por 15 minutos tras 5 intentos fallidos consecutivos de inicio de sesión. |
 
 ### Migraciones y Base de Datos
-El proyecto cuenta con 26 migraciones versionadas y aplicadas de forma secuencial (`database/migrations/`). Cada cambio estructural en tablas, índices, catálogos o restricciones foráneas se realiza a través de un archivo nuevo numerado, impidiendo inconsistencias entre entornos de desarrollo y producción.
+El proyecto cuenta con 28 migraciones versionadas y aplicadas de forma secuencial (`backend/database/migrations/`). Cada cambio estructural en tablas, índices, catálogos o restricciones foráneas se realiza a través de un archivo nuevo numerado, impidiendo inconsistencias entre entornos de desarrollo y producción.
 
 ### Manejo de Fechas y Zona Horaria
 La Junta de Agua opera en la zona horaria oficial de Ecuador continental (`America/Guayaquil`, UTC-5). En la base de datos:
@@ -376,18 +376,20 @@ Información recopilada a partir del historial de versiones (`git shortlog -sn`)
 | Puesto | Colaborador | Commits registrados |
 |:---:|---|:---:|
 | 1 | Johan Rodríguez | 197 |
-| 2 | JoseM151 | 159 |
-| 3 | app-secure | 19 |
-| 4 | Alejandro Falcon | 18 |
-| 5 | T1Angel4220 | 16 |
-| 6 | eaguilar1500 | 10 |
-| 7 | Andriu Dex | 8 |
-| 8 | Jorge | 7 |
-| 9 | Melanie Silva | 5 |
-| 10 | Dennis Chimborazo | 4 |
-| 11 | MelSilva-Dev | 4 |
-| 12 | Jorge Alexander Sailema Torres | 2 |
-| 13 | Dennis-Chimborazo | 1 |
+| 2 | JoseM151 | 165 |
+| 3 | kiramman-mp3 | 49 |
+| 4 | app-secure | 19 |
+| 5 | Alejandro Falcon | 18 |
+| 6 | T1Angel4220 | 16 |
+| 7 | eaguilar1500 | 10 |
+| 8 | Andriu Dex | 8 |
+| 9 | Jorge | 7 |
+| 10 | Melanie Silva | 5 |
+| 11 | Dennis Chimborazo | 4 |
+| 12 | MelSilva-Dev | 4 |
+| 13 | Jorge Alexander Sailema Torres | 2 |
+| 14 | Dennis-Chimborazo | 1 |
+| 15 | copilot-swe-agent[bot] | 1 |
 
 ---
 
