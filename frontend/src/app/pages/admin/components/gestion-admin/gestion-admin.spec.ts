@@ -105,6 +105,36 @@ describe('Gestión interna', () => {
     );
   });
 
+  it('el inventario edita un bien existente y permite dar de baja (H-03)', () => {
+    const actualizarBien = vi.fn(() => of({ status: 'OK' as const, data: null }));
+    const registrarBien = vi.fn();
+    configurar({ actualizarBien, registrarBien });
+    const c = TestBed.createComponent(InventarioComponent).componentInstance;
+    c.editar({
+      id: 7,
+      codigo: 'INV-7',
+      nombre: 'Bomba',
+      descripcion: null,
+      cantidad: 2,
+      valor_unitario: 300,
+      fecha_adquisicion: null,
+      estado_fisico: 'MALO',
+      ubicacion: null,
+    });
+    expect(c.editandoId()).toBe(7);
+    expect(c.form.codigo).toBe('INV-7');
+    c.form.estado_fisico = 'DADO_DE_BAJA';
+    c.form.cantidad = 0;
+    c.guardar();
+    expect(registrarBien).not.toHaveBeenCalled();
+    expect(actualizarBien).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ nombre: 'Bomba', cantidad: 0, estado_fisico: 'DADO_DE_BAJA' }),
+    );
+    c.abrir();
+    expect(c.editandoId()).toBeNull();
+  });
+
   it('una actividad del plan exige nombre y fechas en orden', () => {
     const agregarActividad = vi.fn(() => of({ status: 'OK' as const, data: null, actividadId: 9 }));
     const { notify } = configurar({ agregarActividad });
