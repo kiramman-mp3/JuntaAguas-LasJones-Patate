@@ -47,10 +47,10 @@ if (!fs.existsSync(archivoEnv)) {
   fallar('Falta backend/.env. Copie backend/.env.production.example como backend/.env y complete sus valores.');
 }
 
-// 2. Dependencias --------------------------------------------------------------------------
+// 2. Dependencias (el servidor no instala las de desarrollo; el frontend sí, para compilar) --
 paso(2, 'Instalando dependencias');
 for (const dir of [backend, frontend, ...(conWhatsApp ? [whatsappService] : [])]) {
-  if (flags.has('--instalar') || !fs.existsSync(path.join(dir, 'node_modules'))) ejecutar('npm', ['ci'], dir);
+  if (flags.has('--instalar') || !fs.existsSync(path.join(dir, 'node_modules'))) ejecutar('npm', dir === frontend ? ['ci'] : ['ci', '--omit=dev'], dir);
   else console.log(`  ${path.basename(dir)}: dependencias ya instaladas (use --instalar para reinstalar).`);
 }
 
