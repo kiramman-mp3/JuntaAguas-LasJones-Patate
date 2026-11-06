@@ -226,6 +226,17 @@ export interface PersonaListado extends PersonaItem {
   sector_nombre?: string | null;
 }
 
+/** Cuenta con el inicio de sesión bloqueado por intentos fallidos (GET /personas/cuentas-bloqueadas). */
+export interface CuentaBloqueada {
+  persona_id: number;
+  cedula: string;
+  nombres: string;
+  apellidos: string;
+  /** Desde cuántas redes (IP) está bloqueada. */
+  redes: number;
+  minutos_restantes: number;
+}
+
 export interface SectorItem {
   id: number;
   nombre: string;

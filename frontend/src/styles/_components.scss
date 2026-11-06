@@ -616,6 +616,21 @@ textarea.input {
     background: var(--color-danger-light);
     color: var(--color-danger-strong);
   }
+
+  &__list {
+    margin: 0.35rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
 }
 
 /* --- MAPA DE REFERENCIA --- */

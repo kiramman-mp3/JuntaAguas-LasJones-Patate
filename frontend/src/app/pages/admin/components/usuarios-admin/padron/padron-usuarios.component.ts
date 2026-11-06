@@ -13,7 +13,13 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime } from 'rxjs';
 import { AdminService } from '../../../../../core/services/admin.service';
-import { LoteItem, PersonaListado, SectorItem } from '../../../../../core/models/api-payloads';
+import {
+  CuentaBloqueada,
+  LoteItem,
+  PersonaListado,
+  SectorItem,
+} from '../../../../../core/models/api-payloads';
+import { NotificationService } from '../../../../../core/services/notification.service';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
@@ -42,6 +48,7 @@ import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
 export class PadronUsuariosComponent implements OnInit {
   private admin = inject(AdminService);
   private destroyRef = inject(DestroyRef);
+  private notify = inject(NotificationService);
 
   /** ?nuevo=usuario abre el formulario desde el acceso rápido del dashboard. */
   readonly nuevo = input<string | undefined>();
@@ -53,6 +60,8 @@ export class PadronUsuariosComponent implements OnInit {
   readonly pagina = signal(1);
   readonly porPagina = signal(25);
   readonly total = signal(0);
+  /** Cuentas bloqueadas por intentos fallidos: la directiva las ve y las desbloquea. */
+  readonly bloqueadas = signal<CuentaBloqueada[]>([]);
 
   busqueda = '';
   estadoFiltro = '';
@@ -79,7 +88,26 @@ export class PadronUsuariosComponent implements OnInit {
       this.cargar();
     });
     this.cargarSectores();
+    this.cargarBloqueadas();
     this.cargar();
+  }
+
+  cargarBloqueadas(): void {
+    if (typeof this.admin?.getCuentasBloqueadas !== 'function') return;
+    this.admin.getCuentasBloqueadas().subscribe({
+      next: (res) => this.bloqueadas.set(res?.data ?? []),
+      error: () => this.bloqueadas.set([]),
+    });
+  }
+
+  desbloquear(cuenta: CuentaBloqueada): void {
+    this.admin.desbloquearCuenta(cuenta.persona_id).subscribe({
+      next: () => {
+        this.notify.success(`Se desbloqueó la cuenta de ${cuenta.nombres} ${cuenta.apellidos}.`);
+        this.cargarBloqueadas();
+      },
+      error: (err) => this.notify.error(err.error?.message || 'No se pudo desbloquear la cuenta.'),
+    });
   }
 
   cargarSectores(): void {

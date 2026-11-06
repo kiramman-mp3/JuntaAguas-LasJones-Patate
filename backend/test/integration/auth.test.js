@@ -29,6 +29,29 @@ test('la cuenta se bloquea tras 5 intentos fallidos aunque luego use la contrase
   assert.match(res.body.message, /Credenciales incorrectas/);
 });
 
+test('el bloqueo es por cuenta e IP: no deja fuera al dueño que entra desde otra red', async () => {
+  const u = await crearUsuario();
+  // Un atacante desde otra IP agotó sus intentos y quedó bloqueado.
+  await db.query("INSERT INTO intentos_login (cuenta_id, ip, intentos, bloqueado_hasta) VALUES (?, '203.0.113.9', 0, UTC_TIMESTAMP() + INTERVAL 15 MINUTE)", [u.cuentaId]);
+  assert.equal((await login(u.cedula, u.password)).status, 200, 'el dueño entra desde su propia red');
+
+  // Los intentos desde esta IP sí la bloquean, y el bloqueo ajeno sigue vigente.
+  for (let i = 0; i < 5; i++) await login(u.cedula, 'incorrecta1');
+  assert.equal((await login(u.cedula, u.password)).status, 401);
+  const [filas] = await db.query('SELECT ip FROM intentos_login WHERE cuenta_id = ? AND bloqueado_hasta > UTC_TIMESTAMP() ORDER BY ip', [u.cuentaId]);
+  assert.equal(filas.length, 2);
+  assert.ok(filas.some((f) => f.ip === '203.0.113.9'));
+});
+
+test('entrar bien limpia solo los intentos de esa IP', async () => {
+  const u = await crearUsuario();
+  for (let i = 0; i < 3; i++) await login(u.cedula, 'incorrecta1');
+  await db.query("INSERT INTO intentos_login (cuenta_id, ip, intentos) VALUES (?, '203.0.113.9', 2)", [u.cuentaId]);
+  assert.equal((await login(u.cedula, u.password)).status, 200);
+  const [filas] = await db.query('SELECT ip FROM intentos_login WHERE cuenta_id = ?', [u.cuentaId]);
+  assert.deepEqual(filas.map((f) => f.ip), ['203.0.113.9']);
+});
+
 test('una cuenta inactiva no puede iniciar sesión ni usar tokens previos', async () => {
   const u = await crearUsuario();
   await db.query("UPDATE cuentas SET estado = 'INACTIVA' WHERE id = ?", [u.cuentaId]);
@@ -42,7 +65,7 @@ test('no existen alias de inicio de sesión: un administrador solo entra con su 
     assert.equal((await login(alias, admin.password)).status, 401, `el alias ${alias} no debe iniciar sesión`);
   }
   // Los intentos con alias no cuentan contra la cuenta del administrador.
-  const [[{ intentos }]] = await db.query('SELECT intentos_fallidos AS intentos FROM cuentas WHERE id = ?', [admin.cuentaId]);
+  const [[{ intentos }]] = await db.query('SELECT COUNT(*) AS intentos FROM intentos_login WHERE cuenta_id = ?', [admin.cuentaId]);
   assert.equal(intentos, 0);
   assert.equal((await login(admin.cedula, admin.password)).status, 200);
 });

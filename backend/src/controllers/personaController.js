@@ -451,10 +451,8 @@ async function actualizarCuenta(req, res) {
 
     if (cambios.rol) await conexion.query('UPDATE cuentas SET rol_id = ? WHERE id = ?', [await idRol(conexion, cambios.rol), cuenta.id]);
     if (cambios.estado) {
-      await conexion.query(
-        'UPDATE cuentas SET estado = ?, intentos_fallidos = 0, bloqueada_hasta = NULL WHERE id = ?',
-        [cambios.estado, cuenta.id]
-      );
+      await conexion.query('UPDATE cuentas SET estado = ? WHERE id = ?', [cambios.estado, cuenta.id]);
+      await conexion.query('DELETE FROM intentos_login WHERE cuenta_id = ?', [cuenta.id]);
     }
     await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: cambios });
   });
@@ -475,15 +473,45 @@ async function restablecerPassword(req, res) {
     if (!cuenta) throw notFound('El usuario no tiene cuenta de acceso.');
     const clave = generarPasswordTemporal();
     await conexion.query(
-      `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = TRUE, password_updated_at = UTC_TIMESTAMP(3),
-              intentos_fallidos = 0, bloqueada_hasta = NULL
+      `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = TRUE, password_updated_at = UTC_TIMESTAMP(3)
        WHERE id = ?`,
       [await hashPassword(clave), cuenta.id]
     );
+    await conexion.query('DELETE FROM intentos_login WHERE cuenta_id = ?', [cuenta.id]);
     await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { restablecerPassword: true } });
     return clave;
   });
   return res.json({ status: 'OK', message: 'Contraseña restablecida. Entregue la contraseña temporal al usuario.', passwordTemporal });
+}
+
+/**
+ * Cuentas con el inicio de sesión bloqueado ahora mismo (tras varios intentos fallidos), para que la directiva
+ * las vea y las desbloquee sin esperar. Un bloqueo es por IP: `redes` cuenta desde cuántas está bloqueada.
+ */
+async function getCuentasBloqueadas(req, res) {
+  const [filas] = await db.query(
+    `SELECT p.id AS persona_id, p.cedula, p.nombres, p.apellidos, COUNT(*) AS redes,
+            GREATEST(1, CEIL(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), MAX(il.bloqueado_hasta)) / 60)) AS minutos_restantes
+     FROM intentos_login il
+     JOIN cuentas c ON c.id = il.cuenta_id
+     JOIN personas p ON p.id = c.persona_id
+     WHERE il.bloqueado_hasta > UTC_TIMESTAMP()
+     GROUP BY p.id, p.cedula, p.nombres, p.apellidos
+     ORDER BY MAX(il.bloqueado_hasta) DESC`
+  );
+  return res.json({ status: 'OK', data: filas.map((f) => ({ ...f, redes: Number(f.redes), minutos_restantes: Number(f.minutos_restantes) })) });
+}
+
+/** Levanta el bloqueo de inicio de sesión de una cuenta (desde todas las IP) sin cambiar su contraseña. */
+async function desbloquearCuenta(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  await withTransaction(async (conexion) => {
+    const cuenta = await cuentaDePersona(conexion, id, { bloquear: true });
+    if (!cuenta) throw notFound('El usuario no tiene cuenta de acceso.');
+    await conexion.query('DELETE FROM intentos_login WHERE cuenta_id = ?', [cuenta.id]);
+    await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { desbloqueo: true } });
+  });
+  return res.json({ status: 'OK', message: 'Cuenta desbloqueada. El usuario ya puede iniciar sesión.' });
 }
 
 /** Estadísticas públicas sin datos personales. */
@@ -505,6 +533,6 @@ module.exports = {
   deletePersona,
   crearCuenta,
   actualizarCuenta,
-  restablecerPassword,
+  restablecerPassword, getCuentasBloqueadas, desbloquearCuenta,
   getStatsPublicos
 };

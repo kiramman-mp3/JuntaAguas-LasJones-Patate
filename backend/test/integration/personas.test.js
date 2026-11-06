@@ -71,3 +71,25 @@ test('la búsqueda trata % y _ como texto, no como comodines', async () => {
   assert.deepEqual(await cedulasDe('Carl_s'), []);
   assert.deepEqual(await cedulasDe('Carlos'), [moreta.cedula]);
 });
+
+test('la directiva ve las cuentas bloqueadas y las desbloquea sin cambiar la contraseña', async () => {
+  const socio = await crearUsuario();
+  const lista = () => request(app).get('/api/personas/cuentas-bloqueadas').set(auth(admin));
+  assert.deepEqual((await lista()).body.data, []);
+
+  for (let i = 0; i < 5; i++) await request(app).post('/api/auth/login').send({ cedula: socio.cedula, password: 'incorrecta1' });
+  const bloqueadas = (await lista()).body.data;
+  assert.equal(bloqueadas.length, 1);
+  assert.equal(bloqueadas[0].cedula, socio.cedula);
+  assert.equal(bloqueadas[0].redes, 1);
+  assert.ok(bloqueadas[0].minutos_restantes > 0 && bloqueadas[0].minutos_restantes <= 15);
+  assert.equal((await request(app).post('/api/auth/login').send({ cedula: socio.cedula, password: socio.password })).status, 401);
+
+  const res = await request(app).post(`/api/personas/${socio.personaId}/cuenta/desbloquear`).set(auth(admin));
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  assert.deepEqual((await lista()).body.data, []);
+  assert.equal((await request(app).post('/api/auth/login').send({ cedula: socio.cedula, password: socio.password })).status, 200);
+
+  assert.equal((await request(app).post(`/api/personas/${socio.personaId}/cuenta/desbloquear`).set(auth(socio))).status, 403);
+  assert.equal((await request(app).get('/api/personas/cuentas-bloqueadas').set(auth(socio))).status, 403);
+});
