@@ -49,3 +49,25 @@ test('Mi cuenta lista todos los lotes del usuario, no solo el primero (H-23)', a
   assert.deepEqual(vacio.body.resultado.lotes, []);
   assert.equal(vacio.body.resultado.loteCodigo, 'N/A');
 });
+
+test('el alta exige una fecha de nacimiento de mayor de edad (18 años)', async () => {
+  const crear = (cedula, fecha_nacimiento) => request(app).post('/api/personas').set(auth(admin))
+    .send({ cedula, nombres: 'Edad', apellidos: 'Prueba', fecha_nacimiento });
+  const [a, m, d] = require('../../src/shared/schemas').fechaMaximaNacimiento().split('-');
+  const manana = new Date(Date.UTC(Number(a), Number(m) - 1, Number(d) + 1)).toISOString().slice(0, 10);
+
+  const menor = await crear('1710034065', manana);
+  assert.equal(menor.status, 400);
+  assert.match(JSON.stringify(menor.body), /al menos 18 años/);
+  assert.equal((await crear('1710034065', '2099-01-01')).status, 400);
+  assert.equal((await crear('1710034065', '1850-01-01')).status, 400);
+  assert.equal((await crear('1710034065', `${a}-${m}-${d}`)).status, 201);
+  assert.equal((await crear('0926687856', '')).status, 201, 'la fecha de nacimiento sigue siendo opcional');
+});
+
+test('la búsqueda trata % y _ como texto, no como comodines', async () => {
+  assert.deepEqual(await cedulasDe('%'), []);
+  assert.deepEqual(await cedulasDe('_'), []);
+  assert.deepEqual(await cedulasDe('Carl_s'), []);
+  assert.deepEqual(await cedulasDe('Carlos'), [moreta.cedula]);
+});

@@ -9,6 +9,7 @@
  */
 const { hoy, inicioDelDiaUtc, finDelDiaUtc, ZONA_MYSQL } = require('../shared/dates');
 const { notFound } = require('../shared/errors');
+const { patronContiene } = require('../shared/sql');
 const { aCentavos, aDolares, restarMontos } = require('../shared/money');
 
 const where = (condiciones) => (condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '');
@@ -178,7 +179,7 @@ async function detallePagoAnual(conexion, id) {
 async function listarEgresos(conexion, { proveedor, desde, hasta }) {
   const condiciones = [];
   const params = [];
-  if (proveedor) { condiciones.push('e.proveedor LIKE ?'); params.push(`%${proveedor}%`); }
+  if (proveedor) { condiciones.push('e.proveedor LIKE ?'); params.push(patronContiene(proveedor)); }
   if (desde) { condiciones.push('e.fecha >= ?'); params.push(desde); }
   if (hasta) { condiciones.push('e.fecha <= ?'); params.push(hasta); }
   const [filas] = await conexion.query(

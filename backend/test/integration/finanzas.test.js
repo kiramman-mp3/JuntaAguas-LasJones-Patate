@@ -252,3 +252,27 @@ test('anula un egreso y lo descuenta del balance y del historial anual (H-02)', 
   const balanceDespues = (await request(app).get('/api/financiero/balance?desde=2025-06-01&hasta=2025-06-30').set(auth(admin))).body.balance;
   assert.equal(balanceDespues.totalEgresos, 0);
 });
+
+test('un egreso rechaza fechas anteriores al año 2000 y valores no numéricos', async () => {
+  const egreso = (cuerpo) => request(app).post('/api/financiero/egresos').set(auth(admin)).send({ concepto: 'Límites', valor: 10, fecha: '2026-01-15', ...cuerpo });
+  assert.equal((await egreso({ fecha: '1999-12-31' })).status, 400);
+  assert.equal((await egreso({ fecha: '1900-01-01' })).status, 400);
+  assert.equal((await egreso({ fecha: '2000-01-01' })).status, 201);
+  for (const valor of [true, '0x10', '', null, '1e3']) {
+    assert.equal((await egreso({ valor })).status, 400, `debería rechazar valor ${JSON.stringify(valor)}`);
+  }
+  assert.equal((await egreso({ valor: '12.50' })).status, 201);
+});
+
+test('el filtro de proveedor de egresos trata % y _ como texto, no como comodines', async () => {
+  const lista = (proveedor) => request(app).get('/api/financiero/egresos').query({ proveedor }).set(auth(admin));
+  await request(app).post('/api/financiero/egresos').set(auth(admin)).send({
+    fecha: '2025-04-01', concepto: 'Cemento', proveedor: 'Ferretería Patate', valor: 30
+  });
+  assert.equal((await lista('Ferretería')).body.data.length > 0, true);
+  for (const comodin of ['%', '_', 'Ferret_ría']) {
+    const res = await lista(comodin);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.length, 0, `"${comodin}" no debería coincidir con nada`);
+  }
+});

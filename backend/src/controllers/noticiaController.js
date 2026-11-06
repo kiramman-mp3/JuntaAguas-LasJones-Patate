@@ -4,6 +4,7 @@ const { guardarDocumento, eliminarDocumento } = require('../services/documentSto
 const { withTransaction } = require('../shared/transaction');
 const { inicioDelDiaUtc, finDelDiaUtc } = require('../shared/dates');
 const { badRequest, notFound } = require('../shared/errors');
+const { patronContiene } = require('../shared/sql');
 const s = require('../shared/schemas');
 const { z } = s;
 
@@ -69,7 +70,7 @@ async function listar(req, res) {
   const condiciones = [];
   const params = [];
   if (q) {
-    const patron = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
+    const patron = patronContiene(q);
     condiciones.push('(n.titulo LIKE ? OR n.descripcion_corta LIKE ? OR EXISTS (SELECT 1 FROM noticia_etiquetas e WHERE e.noticia_id = n.id AND e.etiqueta LIKE ?))');
     params.push(patron, patron, patron);
   }

@@ -46,7 +46,15 @@
               class="input"
               name="fecha_nacimiento"
               [(ngModel)]="form.fecha_nacimiento"
+              [max]="fechaMaximaNacimiento"
+              [attr.aria-invalid]="errorNacimiento ? 'true' : null"
+              [attr.aria-describedby]="errorNacimiento ? 'com-nacimiento-error' : null"
             />
+            @if (errorNacimiento) {
+              <span id="com-nacimiento-error" class="field__error" role="alert">{{
+                errorNacimiento
+              }}</span>
+            }
           </div>
           <div class="form-group">
             <label for="com-nombres">Nombres *</label>
