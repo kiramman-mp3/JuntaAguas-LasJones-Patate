@@ -2,6 +2,41 @@
 
 Esta guía cubre lo que hay que hacer **después** de `npm run prod`: respaldos, HTTPS, monitoreo y los riesgos conocidos de las dependencias. El despliegue inicial está en [`INSTRUCCIONES.md`](../INSTRUCCIONES.md).
 
+## 0. Puesta en marcha en un servidor (VPS Ubuntu)
+
+Lista ordenada para un servidor Linux con dominio propio. Cada paso evita un error frecuente; los detalles de HTTPS, respaldos y monitoreo están en las secciones siguientes.
+
+1. **DNS:** registros `A` de `@` y `www` hacia la IP del servidor, sin registros `ALIAS`/`CNAME` de aparcamiento ni redirecciones del registrador. Compruebe con `nslookup su-dominio`.
+2. **Servidor:** actualice (`apt update && apt upgrade -y`, reinicie si lo pide), cree un usuario sin privilegios (`adduser junta`) y abra solo SSH, 80 y 443: `ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw enable`. Instale Node (la versión de `engines` de `package.json`), `git`, `mysql-server` y Caddy.
+3. **Acceso SSH seguro:** copie su clave pública (`ssh-copy-id junta@IP`), compruebe que entra sin contraseña y desactive la contraseña en `/etc/ssh/sshd_config.d/` con `PasswordAuthentication no` y `PermitRootLogin no` (después `systemctl restart ssh`). Instale `fail2ban` y `unattended-upgrades`.
+4. **Base de datos:** la guía no puede usar `root`. Cree la base y un usuario propio, con una contraseña larga y aleatoria:
+
+   ```sql
+   -- sudo mysql
+   CREATE DATABASE junta_las_jones CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'junta_app'@'localhost' IDENTIFIED BY 'CONTRASEÑA_LARGA_Y_ALEATORIA';
+   GRANT ALL PRIVILEGES ON junta_las_jones.* TO 'junta_app'@'localhost';
+   ```
+
+   MySQL escucha solo en local por defecto: no abra el puerto 3306.
+5. **Código y configuración:** clone el repositorio en `/opt/junta-las-jones` (propietario `junta`), copie `backend/.env.production.example` como `backend/.env` y complete: `DB_USER`, `DB_PASSWORD`, un `JWT_SECRET` nuevo, `FRONTEND_URL=https://su-dominio`, `ADMIN_CEDULA`/`ADMIN_NOMBRES`/`ADMIN_APELLIDOS`, `HOST=127.0.0.1` y `TRUST_PROXY=1`. Restrinja el archivo: `chmod 600 backend/.env`.
+6. **Preparar:** `npm run prod:preparar`. Instala, compila el frontend, migra y crea al primer administrador. **Anote la contraseña temporal: se muestra una sola vez.** El comando avisa si `HOST`, `TRUST_PROXY` o `FRONTEND_URL` no son coherentes entre sí.
+7. **Servicio y HTTPS:** instale `deploy/junta-backend.service.example` (sección 3) y configure Caddy (sección 2).
+8. **Primer ingreso:** entre con la cédula y la contraseña temporal, elija una contraseña propia y **cree de inmediato un segundo administrador** (Gestión de Usuarios). Si el único administrador pierde su acceso, solo se recupera con el paso de abajo.
+9. **Compruebe la IP real:** inicie sesión y abra `/admin/gestion` (auditoría): la IP del evento debe ser la suya, no `127.0.0.1`. Si sale `127.0.0.1`, `TRUST_PROXY` está mal y todos los usuarios compartirían la IP del proxy.
+10. **Configuración inicial del negocio:** en Ajustes → Tarifas registre la cuota de agua y las multas, y en Gestión de Usuarios → Catastro cree los sectores antes de registrar lotes. Programe el respaldo nocturno y la copia externa (sección 1) y un monitor externo (sección 3).
+
+### Recuperar a un administrador que perdió su contraseña
+
+Solo con acceso al servidor (SSH). Genera una contraseña temporal, cierra sus sesiones y levanta cualquier bloqueo; no sirve para usuarios que no sean administradores (a ellos los restablece un administrador desde el panel):
+
+```bash
+cd /opt/junta-las-jones/backend
+npm run db:reset-admin -- 1801234567     # la cédula del administrador
+```
+
+Si un usuario común (o un administrador, desde otro administrador) queda bloqueado por intentos fallidos, el padrón de usuarios lista las cuentas bloqueadas con un botón **Desbloquear**.
+
 ## 1. Respaldos
 
 La base guarda pagos, multas y auditoría; los documentos subidos (convocatorias, actas, comprobantes) viven en `backend/uploads/`. Ambos se respaldan con un solo comando desde la raíz del proyecto:
