@@ -99,7 +99,7 @@ describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
     const guardado = vi.fn();
     component.guardado.subscribe(guardado);
     Object.assign(component.form, {
-      cedula: '1803456789',
+      cedula: '1710034065',
       nombres: 'Rosa Elena',
       apellidos: 'Caiza Toapanta',
     });
@@ -110,7 +110,7 @@ describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
     });
     expect(component.credencialTemporal).toEqual({
       nombre: 'Rosa Elena Caiza Toapanta',
-      cedula: '1803456789',
+      cedula: '1710034065',
       password: 'Kx7pQ2mR9a',
     });
     expect(component.ocultarFormulario).toBe(true);
@@ -129,7 +129,7 @@ describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
     });
     const component = crear({
       id: 9,
-      cedula: '1803456789',
+      cedula: '1710034065',
       nombres: 'Rosa',
       apellidos: 'Caiza',
       cuenta_estado: 'ACTIVA',
@@ -145,12 +145,35 @@ describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
     configurar({
       crearCuenta: vi.fn(() => of({ status: 'OK', message: '', passwordTemporal: 'Cuenta9New' })),
     });
-    const component = crear({ id: 4, cedula: '1803456789', nombres: 'Luis', apellidos: 'Aldaz' });
+    const component = crear({ id: 4, cedula: '1710034065', nombres: 'Luis', apellidos: 'Aldaz' });
     expect(component.cuenta).toBeNull();
     component.crearCuenta();
     expect(admin.crearCuenta).toHaveBeenCalledWith(4, 'USUARIO');
     expect(component.cuenta).toEqual({ estado: 'ACTIVA', rol: 'USUARIO' });
     expect(component.credencialTemporal?.password).toBe('Cuenta9New');
+  });
+
+  it('no guarda un usuario nuevo con una cédula de dígito verificador inválido (H-14)', () => {
+    configurar({ createPersona: vi.fn(() => of({ status: 'OK' })) });
+    const component = crear();
+    Object.assign(component.form, { cedula: '1710034066', nombres: 'Rosa', apellidos: 'Caiza' });
+    expect(component.errorCedula).toContain('no es una cédula');
+    component.guardar();
+    expect(admin.createPersona).not.toHaveBeenCalled();
+    expect(notifyStub.warning).toHaveBeenCalled();
+  });
+
+  it('al editar, una cédula antigua inválida sin tocar no bloquea el guardado, pero sí si se cambia a otra inválida', () => {
+    configurar({ updatePersona: vi.fn(() => of({ status: 'OK' })) });
+    const component = crear({ id: 4, cedula: '1803456789', nombres: 'Luis', apellidos: 'Aldaz' });
+    expect(component.errorCedula).toBe('');
+    component.guardar();
+    expect(admin.updatePersona).toHaveBeenCalledOnce();
+
+    component.form.cedula = '1803456788';
+    expect(component.errorCedula).toContain('no es una cédula');
+    component.guardar();
+    expect(admin.updatePersona).toHaveBeenCalledOnce();
   });
 });
 

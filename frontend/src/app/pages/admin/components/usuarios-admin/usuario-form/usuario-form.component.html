@@ -24,10 +24,18 @@
               [(ngModel)]="form.cedula"
               required
               inputmode="numeric"
+              maxlength="10"
               placeholder="Ej: 1801234567"
+              [attr.aria-invalid]="errorCedula ? 'true' : null"
+              [attr.aria-describedby]="errorCedula ? 'com-cedula-error' : null"
             />
+            @if (errorCedula) {
+              <span id="com-cedula-error" class="field__error" role="alert">{{ errorCedula }}</span>
+            }
             @if (modoEdicion) {
-              <small class="field__hint">Corrija la cédula solo si hubo un error tipográfico al registrarla.</small>
+              <small class="field__hint"
+                >Corrija la cédula solo si hubo un error tipográfico al registrarla.</small
+              >
             }
           </div>
           <div class="form-group">
