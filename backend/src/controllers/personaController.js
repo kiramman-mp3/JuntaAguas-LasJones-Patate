@@ -462,6 +462,9 @@ async function actualizarCuenta(req, res) {
  */
 async function restablecerPassword(req, res) {
   const { id } = s.idParam.parse(req.params);
+  if (id === req.user.personaId) {
+    throw forbidden('No puede restablecer su propia contraseña; use la opción de cambio de contraseña.');
+  }
 
   const passwordTemporal = await withTransaction(async (conexion) => {
     const cuenta = await cuentaDePersona(conexion, id, { bloquear: true });
