@@ -257,6 +257,27 @@
   }
 }
 
+/* Pantallas muy angostas (cubierta de un plegable, 320px): la cabecera debe caber para no dejar el menú fuera. */
+@media (max-width: 360px) {
+  .main-nav__container {
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .main-nav__brand {
+    min-width: 0;
+    font-size: 1.05rem;
+
+    i {
+      font-size: 1.25rem;
+    }
+  }
+
+  .main-nav__actions {
+    gap: 0.35rem;
+  }
+}
+
 /* En teléfonos los botones de sesión muestran solo el icono (el texto sigue disponible para lectores de pantalla). */
 @media (max-width: 480px) {
   .main-nav__texto {
