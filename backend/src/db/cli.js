@@ -5,6 +5,9 @@
  *   node src/db/cli.js setup            Base lista para producción: migraciones y, si no hay ninguno,
  *                                       el primer administrador (ADMIN_CEDULA, ADMIN_NOMBRES, ADMIN_APELLIDOS).
  *                                       No siembra datos de prueba ni borra nada: se puede repetir sin riesgo.
+ *   node src/db/cli.js reset-admin <cédula>
+ *                                       Recupera a un administrador que perdió su contraseña: genera una temporal.
+ *                                       Solo se puede ejecutar con acceso al servidor.
  *   node src/db/cli.js drop --yes       Elimina la base de datos (solo fuera de producción).
  *   node src/db/cli.js seed [--reset]   Siembra datos de prueba realistas (solo fuera de producción).
  *                                       --reset recrea la base antes de sembrar.
@@ -14,7 +17,7 @@
 const env = require('../config/env');
 const { conectarServidor, conectarBase } = require('./connection');
 const { migrate } = require('./migrator');
-const { asegurarAdminInicial } = require('./adminInicial');
+const { asegurarAdminInicial, restablecerPasswordAdmin } = require('./adminInicial');
 const { generarPasswordTemporal, problemaConPassword } = require('../shared/passwords');
 
 async function eliminarBase() {
@@ -88,6 +91,19 @@ async function main() {
     return;
   }
 
+  if (comando === 'reset-admin') {
+    const conexion = await conectarBase();
+    try {
+      const admin = await restablecerPasswordAdmin(conexion, flags[0]);
+      console.log(`[reset-admin] Contraseña restablecida para ${admin.nombre} (${admin.cedula}). Anótela: no se vuelve a mostrar.`);
+      console.log(`              Contraseña temporal: ${admin.passwordTemporal}`);
+      console.log('              Deberá elegir una contraseña nueva al ingresar; sus sesiones abiertas se cerraron.');
+    } finally {
+      await conexion.end();
+    }
+    return;
+  }
+
   if (comando === 'drop') {
     if (env.esProduccion) throw new Error('No se permite eliminar la base de datos en producción.');
     if (!flags.includes('--yes')) {
@@ -116,7 +132,7 @@ async function main() {
     return;
   }
 
-  throw new Error('Uso: node src/db/cli.js <migrate|setup|drop --yes|seed [--reset]|seed-noticias>');
+  throw new Error('Uso: node src/db/cli.js <migrate|setup|reset-admin <cédula>|drop --yes|seed [--reset]|seed-noticias>');
 }
 
 main().catch((error) => {

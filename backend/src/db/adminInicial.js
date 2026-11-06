@@ -5,6 +5,7 @@
  */
 const { esCedulaValida } = require('../shared/schemas');
 const { generarPasswordTemporal, hashPassword } = require('../shared/passwords');
+const { registrarAuditoria } = require('../services/auditService');
 
 function validarDatos({ cedula, nombres, apellidos }) {
   const problemas = [];
@@ -61,4 +62,46 @@ async function asegurarAdminInicial(conexion, datos) {
   return { creado: true, cedula, nombre: `${nombres} ${apellidos}`, passwordTemporal };
 }
 
-module.exports = { asegurarAdminInicial, validarDatos };
+/**
+ * Recuperación de un administrador que perdió su contraseña: solo se ejecuta con acceso al servidor.
+ * Genera una contraseña temporal (debe cambiarla al entrar), cierra sus sesiones y levanta cualquier bloqueo.
+ * Solo sirve para cuentas ADMIN; a los demás usuarios los restablece un administrador desde el panel.
+ * @returns {Promise<{ cedula: string, nombre: string, passwordTemporal: string }>}
+ */
+async function restablecerPasswordAdmin(conexion, cedulaEntrada) {
+  const cedula = String(cedulaEntrada ?? '').trim();
+  if (!esCedulaValida(cedula)) throw new Error('Indique la cédula del administrador (10 dígitos).');
+
+  const [filas] = await conexion.query(
+    `SELECT c.id, c.estado, p.nombres, p.apellidos FROM personas p
+     JOIN cuentas c ON c.persona_id = p.id
+     JOIN roles r ON r.id = c.rol_id
+     WHERE p.cedula = ? AND r.codigo = 'ADMIN'`,
+    [cedula]
+  );
+  if (!filas.length) throw new Error(`No existe una cuenta de administrador con la cédula ${cedula}.`);
+  const cuenta = filas[0];
+
+  const passwordTemporal = generarPasswordTemporal(12);
+  await conexion.beginTransaction();
+  try {
+    await conexion.query(
+      `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = TRUE, estado = 'ACTIVA',
+              password_updated_at = UTC_TIMESTAMP(3), sesiones_validas_desde = UTC_TIMESTAMP(3)
+       WHERE id = ?`,
+      [await hashPassword(passwordTemporal), cuenta.id]
+    );
+    await conexion.query('DELETE FROM intentos_login WHERE cuenta_id = ?', [cuenta.id]);
+    await registrarAuditoria({
+      conexion, cuentaId: cuenta.id, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: cuenta.id, ip: 'servidor',
+      detalle: { restablecerPassword: true, origen: 'linea de comandos' }
+    });
+    await conexion.commit();
+  } catch (error) {
+    await conexion.rollback();
+    throw error;
+  }
+  return { cedula, nombre: `${cuenta.nombres} ${cuenta.apellidos}`, passwordTemporal };
+}
+
+module.exports = { asegurarAdminInicial, restablecerPasswordAdmin, validarDatos };
