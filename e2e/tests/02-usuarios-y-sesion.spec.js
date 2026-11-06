@@ -50,8 +50,10 @@ test.describe('administración de usuarios', () => {
     await page.getByLabel('Cédula *').fill('1801234560');
     await page.getByLabel('Nombres *').fill('Inválida');
     await page.getByLabel('Apellidos *').fill('Prueba');
+    // El dígito verificador se valida en el formulario, sin llegar al servidor.
+    await expect(page.locator('#com-cedula-error')).toContainText('no es una cédula ecuatoriana válida');
     await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.locator('.toast--error, .toast--danger').first()).toBeVisible();
+    await expect(page.locator('.toast--warning').first()).toBeVisible();
     await expect(page.getByLabel('Cédula *')).toBeVisible(); // el formulario sigue abierto
 
     await page.getByLabel('Cédula *').fill(nuevo.cedula);
