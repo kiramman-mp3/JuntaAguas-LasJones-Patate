@@ -48,7 +48,12 @@
         </a>
       }
       @if (authService.isLoggedIn()) {
-        <button type="button" (click)="cerrarSesion()" class="btn btn--primary btn--sm">
+        <button
+          type="button"
+          (click)="cerrarSesion()"
+          class="btn btn--primary btn--sm"
+          title="Cierra su sesión en este y en todos sus dispositivos"
+        >
           <i class="ri-logout-circle-line" aria-hidden="true"></i>
           <span class="main-nav__texto">Cerrar Sesión</span>
         </button>

@@ -13,6 +13,33 @@
     </div>
   </div>
 
+  @if (bloqueadas().length) {
+    <div class="alert alert--warning" role="status" aria-label="Cuentas bloqueadas">
+      <i class="ri-lock-line" aria-hidden="true"></i>
+      <div>
+        <strong>
+          {{
+            bloqueadas().length === 1
+              ? '1 cuenta bloqueada'
+              : bloqueadas().length + ' cuentas bloqueadas'
+          }}
+          por intentos fallidos de inicio de sesión.
+        </strong>
+        <ul class="alert__list">
+          @for (b of bloqueadas(); track b.persona_id) {
+            <li>
+              {{ b.nombres }} {{ b.apellidos }} ({{ b.cedula }}) · se libera sola en
+              {{ b.minutos_restantes }} min
+              <button type="button" class="btn btn--outline btn--sm" (click)="desbloquear(b)">
+                Desbloquear
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+
   <div class="surface">
     <div class="surface__head">
       <div class="toolbar toolbar--flush">

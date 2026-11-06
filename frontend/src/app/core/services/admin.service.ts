@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   AsistenciaRegistro,
   ConvocatoriaWhatsApp,
+  CuentaBloqueada,
   DashboardResumen,
   EstadoWhatsApp,
   EventoItem,
@@ -80,6 +81,21 @@ export class AdminService {
   restablecerPassword(personaId: number): Observable<RespuestaCredencial> {
     return this.http.post<RespuestaCredencial>(
       `${this.baseUrl}/personas/${personaId}/cuenta/restablecer-password`,
+      {},
+    );
+  }
+
+  /** Cuentas con el inicio de sesión bloqueado ahora mismo por intentos fallidos. */
+  getCuentasBloqueadas(): Observable<RespuestaApi<CuentaBloqueada[]>> {
+    return this.http.get<RespuestaApi<CuentaBloqueada[]>>(
+      `${this.baseUrl}/personas/cuentas-bloqueadas`,
+    );
+  }
+
+  /** Levanta el bloqueo de inicio de sesión sin cambiar la contraseña. */
+  desbloquearCuenta(personaId: number): Observable<RespuestaMensaje> {
+    return this.http.post<RespuestaMensaje>(
+      `${this.baseUrl}/personas/${personaId}/cuenta/desbloquear`,
       {},
     );
   }

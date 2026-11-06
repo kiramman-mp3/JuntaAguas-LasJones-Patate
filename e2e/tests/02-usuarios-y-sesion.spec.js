@@ -205,6 +205,19 @@ test.describe('bloqueo de cuenta y restablecimiento', () => {
 test.describe('restablecimiento y baja', () => {
   test.use({ storageState: require('../entorno').ARCHIVO_SESION });
 
+  test('el padrón avisa de la cuenta bloqueada y la directiva la desbloquea sin cambiar la contraseña', async ({ page, request }) => {
+    const { bloqueable } = leerEstado();
+    await page.goto('/admin/usuarios/padron');
+    const banner = page.getByRole('status', { name: 'Cuentas bloqueadas' });
+    await expect(banner).toContainText(bloqueable.cedula);
+    await banner.locator('li', { hasText: bloqueable.cedula }).getByRole('button', { name: 'Desbloquear' }).click();
+    await expect(banner.locator('li', { hasText: bloqueable.cedula })).toHaveCount(0);
+
+    // Sigue valiendo la misma contraseña temporal: el desbloqueo no la cambia.
+    const entrada = await request.post('/api/auth/login', { data: { cedula: bloqueable.cedula, password: bloqueable.passwordTemporal } });
+    expect(entrada.status()).toBe(200);
+  });
+
   test('el administrador restablece la contraseña y levanta el bloqueo', async ({ page }) => {
     const { bloqueable } = leerEstado();
     await abrirEdicion(page, bloqueable.cedula);
