@@ -38,7 +38,6 @@ function usuarioPublico(fila) {
 async function buscarCuentaPorCedula(cedula) {
   const [rows] = await db.query(
     `SELECT c.id AS cuenta_id, c.password_hash, c.estado AS estado_cuenta, c.debe_cambiar_password,
-            c.intentos_fallidos, c.bloqueada_hasta, c.bloqueada_hasta > UTC_TIMESTAMP() AS bloqueada,
             p.id AS persona_id, p.cedula, p.nombres, p.apellidos, p.email, p.estado AS estado_persona,
             r.codigo AS rol_codigo, r.nombre AS rol_nombre
      FROM personas p
@@ -50,14 +49,39 @@ async function buscarCuentaPorCedula(cedula) {
   return rows[0] || null;
 }
 
+/** ¿Está bloqueado el inicio de sesión de esta cuenta desde esta IP? */
+async function estaBloqueada(cuentaId, ip) {
+  const [[fila]] = await db.query(
+    'SELECT bloqueado_hasta > UTC_TIMESTAMP() AS bloqueada FROM intentos_login WHERE cuenta_id = ? AND ip = ?',
+    [cuentaId, ip]
+  );
+  return Boolean(fila && Number(fila.bloqueada));
+}
+
+/**
+ * Suma un intento fallido de la cuenta desde esa IP y bloquea ese par al llegar al máximo. Es atómico:
+ * en el UPDATE, la segunda asignación aún ve el valor anterior de `intentos`. Devuelve true si quedó bloqueado.
+ */
+async function registrarIntentoFallido(cuentaId, ip) {
+  await db.query(
+    `INSERT INTO intentos_login (cuenta_id, ip, intentos) VALUES (?, ?, 1)
+     ON DUPLICATE KEY UPDATE
+       bloqueado_hasta = CASE WHEN intentos + 1 >= ? THEN UTC_TIMESTAMP() + INTERVAL ? MINUTE ELSE bloqueado_hasta END,
+       intentos = CASE WHEN intentos + 1 >= ? THEN 0 ELSE intentos + 1 END`,
+    [cuentaId, ip, MAX_INTENTOS, MINUTOS_BLOQUEO, MAX_INTENTOS]
+  );
+  return estaBloqueada(cuentaId, ip);
+}
+
 /**
  * Inicio de sesión. Responde siempre el mismo mensaje ante credenciales inválidas,
- * bloquea la cuenta tras varios intentos fallidos y, si la contraseña es temporal,
+ * bloquea la cuenta desde esa IP tras varios intentos fallidos y, si la contraseña es temporal,
  * emite un token que solo sirve para cambiarla.
  */
 async function login(req, res) {
   const { cedula, password } = loginSchema.parse(req.body);
   const cuenta = await buscarCuentaPorCedula(cedula);
+  const ip = String(req.ip || '').slice(0, 45);
 
   // Igualar el tiempo de respuesta aunque la cédula no exista.
   const coincide = await compararPassword(password, cuenta ? cuenta.password_hash : HASH_FICTICIO);
@@ -66,34 +90,23 @@ async function login(req, res) {
     throw unauthorized(MENSAJE_CREDENCIALES);
   }
 
-  if (Number(cuenta.bloqueada)) {
+  if (await estaBloqueada(cuenta.cuenta_id, ip)) {
     throw unauthorized(MENSAJE_CREDENCIALES);
   }
 
   if (!coincide) {
-    await db.query(
-      `UPDATE cuentas
-       SET bloqueada_hasta = CASE WHEN intentos_fallidos + 1 >= ? THEN UTC_TIMESTAMP() + INTERVAL ? MINUTE ELSE bloqueada_hasta END,
-           intentos_fallidos = CASE WHEN intentos_fallidos + 1 >= ? THEN 0 ELSE intentos_fallidos + 1 END
-       WHERE id = ?`,
-      [MAX_INTENTOS, MINUTOS_BLOQUEO, MAX_INTENTOS, cuenta.cuenta_id]
-    );
-
-    const [[cuentaActual]] = await db.query(
-      'SELECT bloqueada_hasta > UTC_TIMESTAMP() AS bloqueada FROM cuentas WHERE id = ?',
-      [cuenta.cuenta_id]
-    );
-
-    if (Number(cuentaActual?.bloqueada)) {
-      await registrarAuditoria({ cuentaId: cuenta.cuenta_id, accion: 'BLOQUEO', entidad: 'cuentas', entidadId: cuenta.cuenta_id, ip: req.ip });
+    if (await registrarIntentoFallido(cuenta.cuenta_id, ip)) {
+      await registrarAuditoria({
+        cuentaId: cuenta.cuenta_id, accion: 'BLOQUEO', entidad: 'cuentas', entidadId: cuenta.cuenta_id, ip: req.ip,
+        detalle: { minutos: MINUTOS_BLOQUEO }
+      });
     }
     throw unauthorized(MENSAJE_CREDENCIALES);
   }
 
-  await db.query(
-    'UPDATE cuentas SET ultimo_acceso = UTC_TIMESTAMP(), intentos_fallidos = 0, bloqueada_hasta = NULL WHERE id = ?',
-    [cuenta.cuenta_id]
-  );
+  await db.query('UPDATE cuentas SET ultimo_acceso = UTC_TIMESTAMP() WHERE id = ?', [cuenta.cuenta_id]);
+  // Entrar bien limpia los intentos de esta IP; los bloqueos de otras IP siguen vigentes.
+  await db.query('DELETE FROM intentos_login WHERE cuenta_id = ? AND ip = ?', [cuenta.cuenta_id, ip]);
 
   const user = usuarioPublico(cuenta);
   const token = firmarToken(user, user.debeCambiarPassword ? { alcance: ALCANCE_CAMBIO_PASSWORD } : undefined);
