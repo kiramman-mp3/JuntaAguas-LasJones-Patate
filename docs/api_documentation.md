@@ -35,7 +35,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/auth/login` | Público | Autenticación mediante cédula y contraseña. Retorna JWT Token y bandera `debeCambiarPassword`. |
+| `POST` | `/auth/login` | Público | Autenticación mediante cédula y contraseña. Retorna JWT Token y bandera `debeCambiarPassword`. Tras 5 intentos fallidos desde una misma IP, esa cuenta queda bloqueada 15 minutos para esa IP. |
 | `GET` | `/auth/me` | Autenticado | Devuelve los datos del perfil y rol del usuario autenticado. |
 | `POST` | `/auth/change-password` | Autenticado | Permite al usuario modificar su contraseña. |
 
@@ -49,7 +49,9 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `GET` | `/personas` | Autenticado | Listado y búsqueda administrativa de usuarios con paginación (`?busqueda=...&estado=...`). |
 | `GET` | `/personas/:id` | Autenticado | Detalle completo de una persona, incluyendo sus lotes vinculados, turnos y deudas. |
 | `POST` | `/personas` | ADMIN / SECRETARIO | Registro de un usuario con opción de creación de cuenta de acceso. |
-| `PUT` | `/personas/:id` | ADMIN / SECRETARIO | Actualización de datos personales. |
+| `PUT` | `/personas/:id` | ADMIN / SECRETARIO | Actualización de datos personales. La fecha de nacimiento, si se envía, debe corresponder a una persona de al menos 18 años. |
+| `GET` | `/personas/cuentas-bloqueadas` | ADMIN | Cuentas con el inicio de sesión bloqueado ahora mismo: persona, número de redes (IP) bloqueadas y minutos restantes. |
+| `POST` | `/personas/:id/cuenta/desbloquear` | ADMIN | Levanta el bloqueo de inicio de sesión de la cuenta (desde todas las IP) sin cambiar su contraseña. |
 
 ---
 
