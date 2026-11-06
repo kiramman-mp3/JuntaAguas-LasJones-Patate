@@ -44,6 +44,8 @@ import {
 import { formatearFecha } from '../../../../../core/utils/fechas';
 import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { formatearDinero } from '../../../../../core/utils/dinero';
 
 /** Pestañas de la caja: el pago anual de agua o las multas y otros cobros. */
 export type PestanaCobro = 'AGUA' | 'OTRAS';
@@ -81,7 +83,7 @@ const sumar = (valores: number[]) => redondear(valores.reduce((s, v) => s + v, 0
 @Component({
   selector: 'app-cobro-caja',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, ComprobanteBancarioComponent],
+  imports: [MonedaPipe, FormsModule, FechaLocalPipe, ComprobanteBancarioComponent],
   templateUrl: './cobro-caja.component.html',
 })
 export class CobroCajaComponent {
@@ -441,7 +443,7 @@ export class CobroCajaComponent {
           observacion: datos.observacion ?? null,
         });
         this.notify.success(
-          `Pago ${numero} registrado por $${(res.valorTotal ?? total).toFixed(2)}.`,
+          `Pago ${numero} registrado por ${formatearDinero(res.valorTotal ?? total)}.`,
         );
         this.reiniciarPago(this.pestana());
         this.cargarObligaciones();

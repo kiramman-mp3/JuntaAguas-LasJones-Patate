@@ -8,6 +8,7 @@ import {
   numeroReciboAgua,
 } from '../models/finanzas';
 import { formatearFecha } from '../utils/fechas';
+import { formatearDinero } from '../utils/dinero';
 
 export interface ComprobanteLinea {
   concepto: string;
@@ -136,7 +137,7 @@ export class ComprobantePdfService {
     const { jsPDF, autoTable } = await cargarJsPdf();
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
     const centro = doc.internal.pageSize.getWidth() / 2;
-    const dinero = (n: number) => `$${n.toFixed(2)}`;
+    const dinero = formatearDinero;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);

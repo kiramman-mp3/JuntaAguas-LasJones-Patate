@@ -36,7 +36,7 @@
         <div class="stat-tile">
           <span class="stat-tile__label">{{ c.nombre }}</span>
           @if (c.tarifa_actual !== null) {
-            <span class="stat-tile__value money">${{ c.tarifa_actual.toFixed(2) }}</span>
+            <span class="stat-tile__value money">{{ c.tarifa_actual | moneda }}</span>
             <span class="stat-tile__hint">Vigente hoy</span>
           } @else {
             <span class="stat-tile__value text-muted">—</span>
@@ -84,7 +84,7 @@
                   {{ t.vigencia_hasta ? (t.vigencia_hasta | fechaLocal) : 'Sin fecha de fin' }}
                 </td>
                 <td class="num">
-                  <span class="money">${{ t.valor.toFixed(2) }}</span>
+                  <span class="money">{{ t.valor | moneda }}</span>
                 </td>
                 <td>
                   @switch (estado(t)) {
@@ -171,7 +171,7 @@
         @if (conceptoElegido(); as c) {
           @if (c.tarifa_actual !== null) {
             <p class="field__hint">
-              La tarifa actual de {{ c.nombre.toLowerCase() }} (${{ c.tarifa_actual.toFixed(2) }})
+              La tarifa actual de {{ c.nombre.toLowerCase() }} ({{ c.tarifa_actual | moneda }})
               dejará de regir el día anterior a la fecha elegida. Las cuotas ya emitidas no cambian.
             </p>
           }

@@ -38,16 +38,16 @@
         <div class="summary" style="margin-top: 0.75rem">
           <div class="summary__row">
             <span class="text-muted">Obligaciones emitidas</span
-            ><strong class="money">{{ r.emitidas }} · ${{ r.total.toFixed(2) }}</strong>
+            ><strong class="money">{{ r.emitidas }} · {{ r.total | moneda }}</strong>
           </div>
           <div class="summary__row">
             <span class="text-muted">Cobradas</span
-            ><strong class="money">{{ r.pagadas }} · ${{ r.recaudado.toFixed(2) }}</strong>
+            ><strong class="money">{{ r.pagadas }} · {{ r.recaudado | moneda }}</strong>
           </div>
           <div class="summary__row">
             <span class="text-muted">Pendientes</span
             ><strong class="money"
-              >{{ r.pendientes }} · ${{ (r.total - r.recaudado).toFixed(2) }}</strong
+              >{{ r.pendientes }} · {{ r.total - r.recaudado | moneda }}</strong
             >
           </div>
           <span class="month-tile__bar" aria-hidden="true"
@@ -93,8 +93,8 @@
           <span class="text-muted">Se emitirán</span>
           <span class="summary__total money">{{ p.generadas }} obligaciones</span>
           <span
-            >de <strong class="money">${{ p.valor.toFixed(2) }}</strong> · total
-            <strong class="money">${{ p.total.toFixed(2) }}</strong></span
+            >de <strong class="money">{{ p.valor | moneda }}</strong> · total
+            <strong class="money">{{ p.total | moneda }}</strong></span
           >
           @if (p.existentes) {
             <span class="field__hint"

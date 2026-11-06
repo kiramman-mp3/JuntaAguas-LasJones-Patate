@@ -14,6 +14,7 @@ import {
   resumirAsistencia,
 } from '../asamblea.model';
 import { AsambleasService } from '../asambleas.service';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
 
 type FiltroEstado = 'TODOS' | EstadoAsistencia;
 
@@ -21,7 +22,14 @@ type FiltroEstado = 'TODOS' | EstadoAsistencia;
 @Component({
   selector: 'app-asamblea-asistencia',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, ModalComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [
+    FormsModule,
+    FechaLocalPipe,
+    MonedaPipe,
+    ModalComponent,
+    SkeletonComponent,
+    EmptyStateComponent,
+  ],
   templateUrl: './asamblea-asistencia.component.html',
 })
 export class AsambleaAsistenciaComponent implements OnInit {

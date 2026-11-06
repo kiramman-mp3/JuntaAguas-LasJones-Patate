@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FinanzasService } from '../../core/services/finanzas.service';
+import { MonedaPipe } from '../pipes/moneda.pipe';
 
 const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = {
   ASAMBLEA: 'MULTA_ASAMBLEA',
@@ -14,7 +15,7 @@ const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = {
 @Component({
   selector: 'app-multa-configurada',
   standalone: true,
-  imports: [RouterLink],
+  imports: [MonedaPipe, RouterLink],
   template: `
     @if (cargando()) {
       <p class="multa-info">
@@ -25,8 +26,8 @@ const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = {
       <p class="multa-info" role="status">
         <i class="ri-price-tag-3-line" aria-hidden="true"></i>
         <span
-          >Multa configurada: <strong class="money">\${{ valor()!.toFixed(2) }}</strong> por
-          ausencia sin justificación.</span
+          >Multa configurada: <strong class="money">{{ valor()! | moneda }}</strong> por ausencia
+          sin justificación.</span
         >
         <a routerLink="/admin/ajustes/tarifas" class="multa-info__link">Cambiar en Ajustes</a>
       </p>

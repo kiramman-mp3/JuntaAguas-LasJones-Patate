@@ -3,6 +3,7 @@ import { forkJoin } from 'rxjs';
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
 import { HistorialAnual, MESES, numeroEgreso } from '../../../../../core/models/finanzas';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
 
 /** Un pago o un egreso dentro de un mes del historial. */
 export interface Movimiento {
@@ -37,7 +38,7 @@ function rangoDelMes(mes: string): { desde: string; hasta: string } {
 @Component({
   selector: 'app-historial-financiero',
   standalone: true,
-  imports: [FechaLocalPipe],
+  imports: [MonedaPipe, FechaLocalPipe],
   templateUrl: './historial-financiero.component.html',
 })
 export class HistorialFinancieroComponent {
