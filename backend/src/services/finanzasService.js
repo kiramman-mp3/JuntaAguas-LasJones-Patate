@@ -175,10 +175,6 @@ async function anularEgreso(conexion, { egresoId, motivo, cuentaId }) {
   return { egreso };
 }
 
-/** Usuarios activos con al menos un lote activo: son quienes reciben el agua y la pagan. */
-const CONDICION_USUARIO_CON_LOTE = `p.estado = 'ACTIVO'
-  AND EXISTS (SELECT 1 FROM persona_lotes pl JOIN lotes l ON l.id = pl.lote_id WHERE pl.persona_id = p.id AND l.activo = TRUE)`;
-
 /**
  * Valor del pago anual de un año: el indicado o, si no se indica, la tarifa del concepto
  * AGUA_ANUAL vigente al 1 de enero de ese año (Ajustes → Tarifas).
