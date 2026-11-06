@@ -30,8 +30,19 @@ import {
 } from '../models/finanzas';
 import { Comprobante, comprobanteDePago, comprobanteDePagoAnual } from './comprobante-pdf.service';
 
+/**
+ * Filtros de los listados de pagos. Sin `persona_id`, la directiva recibe los de toda la Junta;
+ * una pantalla personal (Mi cuenta) debe enviarlo para ver solo los suyos.
+ */
+export interface FiltrosPagos {
+  desde?: string;
+  hasta?: string;
+  estado?: Pago['estado'];
+  persona_id?: number;
+}
+
 /** Parámetros de consulta sin valores vacíos. */
-function parametros(valores: Record<string, string | number | null | undefined>): HttpParams {
+function parametros(valores: object): HttpParams {
   let params = new HttpParams();
   for (const [clave, valor] of Object.entries(valores)) {
     if (valor !== null && valor !== undefined && valor !== '')
@@ -96,9 +107,7 @@ export class FinanzasService {
     return this.http.get(this.rutaComprobante(tipo, id), { responseType: 'blob' });
   }
 
-  getPagos(
-    filtros: { desde?: string; hasta?: string; estado?: Pago['estado'] } = {},
-  ): Observable<Respuesta<Pago[]>> {
+  getPagos(filtros: FiltrosPagos = {}): Observable<Respuesta<Pago[]>> {
     return this.http.get<Respuesta<Pago[]>>(`${this.url}/pagos`, { params: parametros(filtros) });
   }
 
@@ -118,6 +127,10 @@ export class FinanzasService {
 
   registrarEgreso(egreso: NuevoEgreso): Observable<Respuesta<unknown> & { egresoId: number }> {
     return this.http.post<Respuesta<unknown> & { egresoId: number }>(`${this.url}/egresos`, egreso);
+  }
+
+  anularEgreso(id: number, motivo: string): Observable<Respuesta<unknown>> {
+    return this.http.post<Respuesta<unknown>>(`${this.url}/egresos/${id}/anular`, { motivo });
   }
 
   getConceptos(): Observable<Respuesta<ConceptoCobro[]>> {
@@ -147,9 +160,7 @@ export class FinanzasService {
   }
 
   /** Pagos anuales de agua; un usuario recibe solo los suyos. */
-  getPagosAnualesAgua(
-    filtros: { desde?: string; hasta?: string; estado?: Pago['estado'] } = {},
-  ): Observable<Respuesta<PagoAnual[]>> {
+  getPagosAnualesAgua(filtros: FiltrosPagos = {}): Observable<Respuesta<PagoAnual[]>> {
     return this.http.get<Respuesta<PagoAnual[]>>(`${this.url}/agua-anual/pagos`, {
       params: parametros(filtros),
     });
@@ -172,9 +183,7 @@ export class FinanzasService {
   }
 
   /** Pagos generales y pagos anuales de agua juntos, del más reciente al más antiguo. */
-  getRecibos(
-    filtros: { desde?: string; hasta?: string; estado?: Pago['estado'] } = {},
-  ): Observable<Recibo[]> {
+  getRecibos(filtros: FiltrosPagos = {}): Observable<Recibo[]> {
     return forkJoin([this.getPagos(filtros), this.getPagosAnualesAgua(filtros)]).pipe(
       map(([generales, anuales]) =>
         ordenarRecibos([

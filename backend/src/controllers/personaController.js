@@ -6,6 +6,7 @@ const { generarPasswordTemporal, hashPassword } = require('../shared/passwords')
 const { ROLES, esAdmin } = require('../shared/roles');
 const { badRequest, forbidden, notFound, conflict } = require('../shared/errors');
 const { aCentavos, aDolares } = require('../shared/money');
+const { patronContiene } = require('../shared/sql');
 const s = require('../shared/schemas');
 const { z } = s;
 
@@ -16,7 +17,7 @@ const datosPersona = {
   telefono: s.telefono,
   celular: s.celular,
   email: s.email,
-  fecha_nacimiento: s.fechaOpcional
+  fecha_nacimiento: s.fechaNacimientoOpcional
 };
 
 const rolCodigo = z.enum([ROLES.ADMIN, ROLES.USUARIO]);
@@ -35,6 +36,7 @@ const crearSchema = z.object({
 });
 
 const actualizarSchema = z.object({
+  cedula: s.cedula.optional(),
   ...datosPersona,
   estado: z.enum(['ACTIVO', 'INACTIVO']).optional()
 });
@@ -93,9 +95,9 @@ async function getPersonas(req, res) {
     params.push(sector_id);
   }
   if (busqueda) {
-    where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ?)';
-    const term = `%${busqueda}%`;
-    params.push(term, term, term, term);
+    where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ? OR CONCAT(p.apellidos, \' \', p.nombres) LIKE ?)';
+    const term = patronContiene(busqueda);
+    params.push(term, term, term, term, term);
   }
 
   const [personas] = await db.query(
@@ -194,9 +196,11 @@ async function consultaPublicaPorCedula(req, res) {
      FROM persona_lotes pl
      JOIN lotes l ON l.id = pl.lote_id
      JOIN sectores s ON s.id = l.sector_id
-     WHERE pl.persona_id = ? ORDER BY l.codigo LIMIT 1`,
+     WHERE pl.persona_id = ? ORDER BY l.codigo`,
     [persona.id]
   );
+  const lotes = lotesRows.map((l) => ({ codigo: l.lote_codigo, sector: l.sector_nombre }));
+  // `sector` y `loteCodigo` conservan el primer lote para los clientes anteriores a `lotes`.
   const loteInfo = lotesRows[0] || { lote_codigo: 'N/A', sector_nombre: 'Sin sector asignado' };
 
   const [obligaciones] = await db.query(
@@ -214,16 +218,18 @@ async function consultaPublicaPorCedula(req, res) {
     [persona.id]
   );
 
-  // El agua se cobra una vez al año: sus obligaciones se muestran junto a multas y otros cobros.
+  // El agua se cobra una vez al año por cada lote: sus obligaciones se muestran junto a multas y otros cobros.
   const [anuales] = await db.query(
-    `SELECT o.id, o.periodo_anio, o.valor_total, o.estado, o.fecha_emision,
+    `SELECT o.id, o.periodo_anio, o.valor_total, o.estado, o.fecha_emision, o.lote_id,
+            l.codigo AS lote_codigo,
             (SELECT d.pago_anual_agua_id FROM pago_anual_agua_detalle d
              JOIN pago_anual_agua p ON p.id = d.pago_anual_agua_id AND p.estado = 'VIGENTE'
              WHERE d.obligacion_anual_agua = o.id
              ORDER BY d.pago_anual_agua_id DESC LIMIT 1) AS pago_anual_id
      FROM obligacion_anual_agua o
+     LEFT JOIN lotes l ON l.id = o.lote_id
      WHERE o.persona_id = ? AND o.estado <> 'ANULADA'
-     ORDER BY o.periodo_anio DESC`,
+     ORDER BY o.periodo_anio DESC, l.codigo ASC`,
     [persona.id]
   );
 
@@ -231,11 +237,11 @@ async function consultaPublicaPorCedula(req, res) {
     ...anuales.map((o) => ({
       id: o.id,
       tipo: 'AGUA_ANUAL',
-      concepto: 'Pago anual de agua',
+      concepto: o.lote_codigo ? `Pago anual de agua (Lote ${o.lote_codigo})` : 'Pago anual de agua',
       conceptoCodigo: 'AGUA_ANUAL',
       anio: o.periodo_anio,
       mes: null,
-      periodo: `Año ${o.periodo_anio}`,
+      periodo: o.lote_codigo ? `Año ${o.periodo_anio} · Lote ${o.lote_codigo}` : `Año ${o.periodo_anio}`,
       valor: Number(o.valor_total),
       estado: o.estado,
       fechaEmision: o.fecha_emision,
@@ -266,6 +272,7 @@ async function consultaPublicaPorCedula(req, res) {
       nombres: `${persona.nombres} ${persona.apellidos}`,
       sector: loteInfo.sector_nombre,
       loteCodigo: loteInfo.lote_codigo,
+      lotes,
       totalPendiente,
       deudas
     }
@@ -316,16 +323,25 @@ async function createPersona(req, res) {
   });
 }
 
-/** Actualizar datos personales de un usuario. */
+/** Actualizar datos personales de un usuario (incluyendo corrección auditada de cédula). */
 async function updatePersona(req, res) {
   const { id } = s.idParam.parse(req.params);
   const datos = actualizarSchema.parse(req.body);
 
   await withTransaction(async (conexion) => {
-    const [personaRows] = await conexion.query('SELECT estado FROM personas WHERE id = ? FOR UPDATE', [id]);
+    const [personaRows] = await conexion.query('SELECT id, cedula, estado FROM personas WHERE id = ? FOR UPDATE', [id]);
     if (!personaRows.length) throw notFound('Usuario no encontrado.');
-    const estadoActual = personaRows[0].estado;
+    const personaActual = personaRows[0];
+    const estadoActual = personaActual.estado;
     const nuevoEstado = datos.estado ?? estadoActual;
+    const nuevaCedula = datos.cedula ? datos.cedula.trim() : personaActual.cedula;
+
+    if (nuevaCedula !== personaActual.cedula) {
+      const [existeCedula] = await conexion.query('SELECT id FROM personas WHERE cedula = ? AND id <> ?', [nuevaCedula, id]);
+      if (existeCedula.length) {
+        throw conflict(`Ya existe otro usuario registrado con la cédula ${nuevaCedula}.`);
+      }
+    }
 
     if (nuevoEstado === 'INACTIVO' && estadoActual === 'ACTIVO') {
       if (id === req.user.personaId) {
@@ -339,17 +355,68 @@ async function updatePersona(req, res) {
 
     await conexion.query(
       `UPDATE personas
-       SET nombres = ?, apellidos = ?, direccion = ?, telefono = ?, celular = ?, email = ?, fecha_nacimiento = ?, estado = ?
+       SET cedula = ?, nombres = ?, apellidos = ?, direccion = ?, telefono = ?, celular = ?, email = ?, fecha_nacimiento = ?, estado = ?
        WHERE id = ?`,
-      [datos.nombres, datos.apellidos, datos.direccion, datos.telefono, datos.celular, datos.email, datos.fecha_nacimiento, nuevoEstado, id]
+      [nuevaCedula, datos.nombres, datos.apellidos, datos.direccion, datos.telefono, datos.celular, datos.email, datos.fecha_nacimiento, nuevoEstado, id]
     );
     await registrarAuditoria({
       conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'personas', entidadId: id, ip: req.ip,
-      detalle: { nombres: datos.nombres, apellidos: datos.apellidos, estado: nuevoEstado }
+      detalle: {
+        nombres: datos.nombres,
+        apellidos: datos.apellidos,
+        estado: nuevoEstado,
+        ...(nuevaCedula !== personaActual.cedula ? { cedulaAnterior: personaActual.cedula, cedulaNueva: nuevaCedula } : {})
+      }
     });
   });
 
   return res.json({ status: 'OK', message: 'Datos del usuario actualizados correctamente.' });
+}
+
+/**
+ * Eliminación física de una persona erróneamente registrada.
+ * Por estricta regla institucional, solo se permite si NO tiene ningún historial
+ * (0 lotes, 0 obligaciones emitidas, 0 asistencias a eventos, 0 turnos).
+ * Si tiene historial, se rechaza y se exige baja lógica (estado = INACTIVO).
+ */
+async function deletePersona(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  if (id === req.user.personaId) {
+    throw forbidden('No puede eliminar su propio registro.');
+  }
+
+  await withTransaction(async (conexion) => {
+    const [personaRows] = await conexion.query('SELECT id, cedula, nombres, apellidos FROM personas WHERE id = ? FOR UPDATE', [id]);
+    if (!personaRows.length) throw notFound('Usuario no encontrado.');
+    const persona = personaRows[0];
+
+    const [[{ lotesCount }]] = await conexion.query('SELECT COUNT(*) AS lotesCount FROM persona_lotes WHERE persona_id = ?', [id]);
+    const [[{ obligCount }]] = await conexion.query('SELECT COUNT(*) AS obligCount FROM obligaciones WHERE persona_id = ?', [id]);
+    const [[{ obligAguaCount }]] = await conexion.query('SELECT COUNT(*) AS obligAguaCount FROM obligacion_anual_agua WHERE persona_id = ?', [id]);
+    const [[{ asistenciasCount }]] = await conexion.query('SELECT COUNT(*) AS asistenciasCount FROM asistencias_eventos WHERE persona_id = ?', [id]);
+    const [[{ turnosCount }]] = await conexion.query('SELECT COUNT(*) AS turnosCount FROM turnos_riego WHERE persona_id = ?', [id]);
+    const [[{ pagosCount }]] = await conexion.query('SELECT COUNT(*) AS pagosCount FROM pagos WHERE persona_id = ?', [id]);
+
+    const totalVinculos = Number(lotesCount) + Number(obligCount) + Number(obligAguaCount) + Number(asistenciasCount) + Number(turnosCount) + Number(pagosCount);
+
+    if (totalVinculos > 0) {
+      throw conflict(
+        `No se puede eliminar físicamente al usuario porque registra historial activo ` +
+        `(${lotesCount} lotes, ${Number(obligCount) + Number(obligAguaCount)} obligaciones, ${asistenciasCount} asistencias, ${turnosCount} turnos). ` +
+        `Para preservar la trazabilidad institucional de la Junta, cambie su estado a INACTIVO.`
+      );
+    }
+
+    await conexion.query('DELETE FROM cuentas WHERE persona_id = ?', [id]);
+    await conexion.query('DELETE FROM personas WHERE id = ?', [id]);
+
+    await registrarAuditoria({
+      conexion, cuentaId: req.user.cuentaId, accion: 'ELIMINAR', entidad: 'personas', entidadId: id, ip: req.ip,
+      detalle: { cedula: persona.cedula, nombres: `${persona.nombres} ${persona.apellidos}` }
+    });
+  });
+
+  return res.json({ status: 'OK', message: 'Usuario eliminado exitosamente del padrón.' });
 }
 
 /** Crear la cuenta de acceso de un usuario que aún no la tiene. */
@@ -384,10 +451,8 @@ async function actualizarCuenta(req, res) {
 
     if (cambios.rol) await conexion.query('UPDATE cuentas SET rol_id = ? WHERE id = ?', [await idRol(conexion, cambios.rol), cuenta.id]);
     if (cambios.estado) {
-      await conexion.query(
-        'UPDATE cuentas SET estado = ?, intentos_fallidos = 0, bloqueada_hasta = NULL WHERE id = ?',
-        [cambios.estado, cuenta.id]
-      );
+      await conexion.query('UPDATE cuentas SET estado = ? WHERE id = ?', [cambios.estado, cuenta.id]);
+      await conexion.query('DELETE FROM intentos_login WHERE cuenta_id = ?', [cuenta.id]);
     }
     await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: cambios });
   });
@@ -399,21 +464,54 @@ async function actualizarCuenta(req, res) {
  */
 async function restablecerPassword(req, res) {
   const { id } = s.idParam.parse(req.params);
+  if (id === req.user.personaId) {
+    throw forbidden('No puede restablecer su propia contraseña; use la opción de cambio de contraseña.');
+  }
 
   const passwordTemporal = await withTransaction(async (conexion) => {
     const cuenta = await cuentaDePersona(conexion, id, { bloquear: true });
     if (!cuenta) throw notFound('El usuario no tiene cuenta de acceso.');
     const clave = generarPasswordTemporal();
     await conexion.query(
-      `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = TRUE, password_updated_at = UTC_TIMESTAMP(3),
-              intentos_fallidos = 0, bloqueada_hasta = NULL
+      `UPDATE cuentas SET password_hash = ?, debe_cambiar_password = TRUE, password_updated_at = UTC_TIMESTAMP(3)
        WHERE id = ?`,
       [await hashPassword(clave), cuenta.id]
     );
+    await conexion.query('DELETE FROM intentos_login WHERE cuenta_id = ?', [cuenta.id]);
     await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { restablecerPassword: true } });
     return clave;
   });
   return res.json({ status: 'OK', message: 'Contraseña restablecida. Entregue la contraseña temporal al usuario.', passwordTemporal });
+}
+
+/**
+ * Cuentas con el inicio de sesión bloqueado ahora mismo (tras varios intentos fallidos), para que la directiva
+ * las vea y las desbloquee sin esperar. Un bloqueo es por IP: `redes` cuenta desde cuántas está bloqueada.
+ */
+async function getCuentasBloqueadas(req, res) {
+  const [filas] = await db.query(
+    `SELECT p.id AS persona_id, p.cedula, p.nombres, p.apellidos, COUNT(*) AS redes,
+            GREATEST(1, CEIL(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), MAX(il.bloqueado_hasta)) / 60)) AS minutos_restantes
+     FROM intentos_login il
+     JOIN cuentas c ON c.id = il.cuenta_id
+     JOIN personas p ON p.id = c.persona_id
+     WHERE il.bloqueado_hasta > UTC_TIMESTAMP()
+     GROUP BY p.id, p.cedula, p.nombres, p.apellidos
+     ORDER BY MAX(il.bloqueado_hasta) DESC`
+  );
+  return res.json({ status: 'OK', data: filas.map((f) => ({ ...f, redes: Number(f.redes), minutos_restantes: Number(f.minutos_restantes) })) });
+}
+
+/** Levanta el bloqueo de inicio de sesión de una cuenta (desde todas las IP) sin cambiar su contraseña. */
+async function desbloquearCuenta(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  await withTransaction(async (conexion) => {
+    const cuenta = await cuentaDePersona(conexion, id, { bloquear: true });
+    if (!cuenta) throw notFound('El usuario no tiene cuenta de acceso.');
+    await conexion.query('DELETE FROM intentos_login WHERE cuenta_id = ?', [cuenta.id]);
+    await registrarAuditoria({ conexion, cuentaId: req.user.cuentaId, accion: 'MODIFICAR', entidad: 'cuentas', entidadId: id, ip: req.ip, detalle: { desbloqueo: true } });
+  });
+  return res.json({ status: 'OK', message: 'Cuenta desbloqueada. El usuario ya puede iniciar sesión.' });
 }
 
 /** Estadísticas públicas sin datos personales. */
@@ -432,8 +530,9 @@ module.exports = {
   consultaPublicaPorCedula,
   createPersona,
   updatePersona,
+  deletePersona,
   crearCuenta,
   actualizarCuenta,
-  restablecerPassword,
+  restablecerPassword, getCuentasBloqueadas, desbloquearCuenta,
   getStatsPublicos
 };

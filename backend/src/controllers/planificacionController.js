@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const { withTransaction } = require('../shared/transaction');
 const { registrarAuditoria } = require('../services/auditService');
-const { notFound, conflict } = require('../shared/errors');
+const { notFound, conflict, badRequest } = require('../shared/errors');
 const s = require('../shared/schemas');
 const { z } = s;
 
@@ -19,7 +19,22 @@ const actividadSchema = z.object({
   path: ['fecha_fin'], message: 'La fecha de inicio debe ser menor o igual a la fecha de finalización.'
 });
 
+const actividadUpdateSchema = z.object({
+  nombre: z.string().trim().min(3, 'Describa la actividad (mínimo 3 caracteres).').max(200).optional(),
+  descripcion: s.textoOpcional(5000),
+  fecha_inicio: s.fecha.optional(),
+  fecha_fin: s.fecha.optional(),
+  estado: z.enum(['PENDIENTE', 'EN_PROCESO', 'CUMPLIDA', 'NO_CUMPLIDA', 'CANCELADA']).optional(),
+  fecha_cumplimiento: s.fechaOpcional,
+  observacion_resultado: s.textoOpcional(5000)
+}).superRefine((d, ctx) => {
+  if (d.fecha_inicio && d.fecha_fin && d.fecha_inicio > d.fecha_fin) {
+    ctx.addIssue({ code: 'custom', path: ['fecha_fin'], message: 'La fecha de inicio debe ser menor o igual a la fecha de finalización.' });
+  }
+});
+
 const planParam = z.object({ planId: s.id });
+const actividadParam = z.object({ planId: s.id, actividadId: s.id });
 
 /** Planes anuales con sus actividades: dos consultas en total, no una por plan. */
 async function getPlanes(req, res) {
@@ -68,4 +83,48 @@ async function addActividadPlan(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Actividad añadida al plan.', actividadId });
 }
 
-module.exports = { getPlanes, createPlan, addActividadPlan };
+async function updateActividadPlan(req, res) {
+  const { planId, actividadId } = actividadParam.parse(req.params);
+  const datos = actividadUpdateSchema.parse(req.body);
+
+  const [filas] = await db.query(
+    'SELECT a.*, p.estado AS plan_estado FROM actividades_plan a JOIN planes_anuales p ON p.id = a.plan_id WHERE a.id = ? AND a.plan_id = ?',
+    [actividadId, planId]
+  );
+  if (!filas.length) throw notFound('Actividad no encontrada en este plan anual.');
+  const act = filas[0];
+  if (act.plan_estado === 'CERRADO') throw conflict('El plan anual está cerrado y no permite modificaciones.');
+
+  const nuevoNombre = datos.nombre !== undefined ? datos.nombre : act.nombre;
+  const nuevaDesc = datos.descripcion !== undefined ? datos.descripcion : act.descripcion;
+  const nuevaFechaInicio = datos.fecha_inicio !== undefined ? datos.fecha_inicio : act.fecha_inicio;
+  const nuevaFechaFin = datos.fecha_fin !== undefined ? datos.fecha_fin : act.fecha_fin;
+  const nuevoEstado = datos.estado !== undefined ? datos.estado : act.estado;
+  const nuevaFechaCumplimiento = datos.fecha_cumplimiento !== undefined ? datos.fecha_cumplimiento : act.fecha_cumplimiento;
+  const nuevaObs = datos.observacion_resultado !== undefined ? datos.observacion_resultado : act.observacion_resultado;
+
+  if (nuevaFechaInicio > nuevaFechaFin) {
+    throw badRequest('La fecha de inicio debe ser menor o igual a la fecha de finalización.');
+  }
+
+  await db.query(
+    `UPDATE actividades_plan
+     SET nombre = ?, descripcion = ?, fecha_inicio = ?, fecha_fin = ?,
+         estado = ?, fecha_cumplimiento = ?, observacion_resultado = ?
+     WHERE id = ? AND plan_id = ?`,
+    [nuevoNombre, nuevaDesc, nuevaFechaInicio, nuevaFechaFin, nuevoEstado, nuevaFechaCumplimiento, nuevaObs, actividadId, planId]
+  );
+
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId,
+    accion: 'ACTUALIZAR',
+    entidad: 'actividades_plan',
+    entidadId: actividadId,
+    ip: req.ip,
+    detalle: { planId, estado: nuevoEstado, nombre: nuevoNombre }
+  });
+
+  return res.json({ status: 'OK', message: 'Actividad actualizada exitosamente.', data: { id: actividadId, estado: nuevoEstado } });
+}
+
+module.exports = { getPlanes, createPlan, addActividadPlan, updateActividadPlan };

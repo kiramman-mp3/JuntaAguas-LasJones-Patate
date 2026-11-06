@@ -1,5 +1,5 @@
 import { Route, Routes } from '@angular/router';
-import { grupoDeSeccion } from './components/finanzas/grupos-finanzas';
+import { GRUPOS_FINANZAS, grupoDeSeccion } from './components/finanzas/grupos-finanzas';
 
 const cargarFinanzas = () =>
   import('./components/finanzas/finanzas.component').then((m) => m.FinanzasComponent);
@@ -57,6 +57,22 @@ const seccionesGestionInterna: Routes = [
   },
   { path: '**', redirectTo: 'auditoria' },
 ];
+
+/**
+ * Cada sección de finanzas vive en un solo apartado (/admin/ajustes/facturacion). Una URL que la
+ * pone en otro apartado (/admin/cobros/facturacion) o la nombra como antes (agua-anual) lleva a la
+ * correcta, en lugar de caer en silencio en la primera sección de ese apartado.
+ */
+const redireccionesFinanzas: Routes = GRUPOS_FINANZAS.flatMap((grupo) => [
+  ...GRUPOS_FINANZAS.filter((otro) => otro.id !== grupo.id).flatMap((otro) =>
+    otro.secciones.map((seccion): Route => ({
+      path: `${grupo.id}/${seccion.id}`,
+      pathMatch: 'full',
+      redirectTo: `${otro.id}/${seccion.id}`,
+    })),
+  ),
+  { path: `${grupo.id}/agua-anual`, pathMatch: 'full', redirectTo: 'ajustes/facturacion' },
+]);
 
 const rutaGestionUsuarios = (path: string): Route => ({
   path,
@@ -131,6 +147,7 @@ export const ADMIN_ROUTES: Routes = [
       ),
   },
   // Finanzas se divide en tres apartados del menú; cada uno usa el mismo componente con su grupo.
+  ...redireccionesFinanzas,
   { path: 'cobros', pathMatch: 'full', redirectTo: 'cobros/cobrar' },
   {
     path: 'cobros/:seccion',

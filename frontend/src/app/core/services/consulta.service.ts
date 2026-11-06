@@ -25,6 +25,8 @@ export interface ConsultaResultadoResponse {
     nombres: string;
     sector: string;
     loteCodigo: string;
+    /** Todos los lotes del usuario; `sector` y `loteCodigo` describen solo el primero. */
+    lotes: { codigo: string; sector: string }[];
     totalPendiente: number;
     deudas: DeudaItem[];
   };

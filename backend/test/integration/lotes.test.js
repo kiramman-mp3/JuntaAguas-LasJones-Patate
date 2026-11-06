@@ -129,3 +129,93 @@ test('valida las coordenadas y el sector al crear un lote', async () => {
   assert.equal((await crear({ codigo: 'LJA-041', latitud_aproximada: '', longitud_aproximada: '' })).status, 201, 'vacíos se guardan como null');
   assert.equal((await request(app).post('/api/lotes').set(auth(admin)).send({ sector_id: 999999, codigo: 'LJA-042' })).status, 404);
 });
+
+test('detecta y advierte deudas de agua pendientes del titular anterior al transferir titularidad (H-09)', async () => {
+  const titular = await crearUsuario();
+  const nuevoTitular = await crearUsuario();
+  const loteId = await crearLote({ sectorId: sectorAlto, codigo: 'LJA-099' });
+
+  // Asignar primer titular
+  await request(app).post(`/api/lotes/${loteId}/vincular-persona`).set(auth(admin)).send({ persona_id: titular.personaId, porcentaje: 100 });
+
+  // Crear obligación pendiente de agua para el primer titular
+  await db.query(
+    "INSERT INTO obligacion_anual_agua (persona_id, periodo_anio, valor_total, estado, fecha_emision, fecha_vencimiento) VALUES (?, 2026, 30.00, 'PENDIENTE', '2026-01-01', '2026-12-31')",
+    [titular.personaId]
+  );
+
+  // Transferir al nuevo titular
+  const res = await request(app).post(`/api/lotes/${loteId}/vincular-persona`).set(auth(admin)).send({ persona_id: nuevoTitular.personaId, porcentaje: 100 });
+  assert.equal(res.status, 200);
+  assert.match(res.body.message, /Advertencia: El titular anterior registra 1 obligación\(es\) pendiente\(s\) de agua/);
+  assert.ok(Array.isArray(res.body.advertenciaDeudas));
+  assert.equal(res.body.advertenciaDeudas.length, 1);
+});
+
+test('edita un lote existente con validación de código único y sector (H-01)', async () => {
+  const loteId = await crearLote({ sectorId: sectorAlto, codigo: 'LJA-070' });
+  const usuarioComun = await crearUsuario({ rol: 'USUARIO' });
+
+  // Usuario común no puede editar
+  const resNoAdmin = await request(app).put(`/api/lotes/${loteId}`).set(auth(usuarioComun)).send({ superficie_m2: 500 });
+  assert.equal(resNoAdmin.status, 403);
+
+  // Edición exitosa
+  const res = await request(app).put(`/api/lotes/${loteId}`).set(auth(admin)).send({
+    codigo: 'LJA-075',
+    superficie_m2: 850.5,
+    observacion: 'Lote actualizado'
+  });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.data.codigo, 'LJA-075');
+
+  const [[actualizado]] = await db.query('SELECT codigo, superficie_m2, observacion FROM lotes WHERE id = ?', [loteId]);
+  assert.equal(actualizado.codigo, 'LJA-075');
+  assert.equal(Number(actualizado.superficie_m2), 850.5);
+  assert.equal(actualizado.observacion, 'Lote actualizado');
+
+  // Rechaza código duplicado de otro lote
+  const resDup = await request(app).put(`/api/lotes/${loteId}`).set(auth(admin)).send({ codigo: 'LJA-001' });
+  assert.equal(resDup.status, 409);
+
+  // Rechaza sector inexistente
+  const resSector = await request(app).put(`/api/lotes/${loteId}`).set(auth(admin)).send({ sector_id: 999999 });
+  assert.equal(resSector.status, 404);
+
+  // Rechaza lote inexistente
+  const resNoExiste = await request(app).put('/api/lotes/999999').set(auth(admin)).send({ superficie_m2: 100 });
+  assert.equal(resNoExiste.status, 404);
+});
+
+test('actualiza y elimina sectores con validación de dependencias (H-21)', async () => {
+  const usuarioComun = await crearUsuario({ rol: 'USUARIO' });
+  const sectorVacio = await crearSector('Sector Sin Lotes');
+
+  // Usuario común no puede actualizar ni eliminar
+  assert.equal((await request(app).put(`/api/lotes/sectores/${sectorVacio}`).set(auth(usuarioComun)).send({ nombre: 'Nuevo Nombre' })).status, 403);
+  assert.equal((await request(app).delete(`/api/lotes/sectores/${sectorVacio}`).set(auth(usuarioComun))).status, 403);
+
+  // Actualización exitosa
+  const resPut = await request(app).put(`/api/lotes/sectores/${sectorVacio}`).set(auth(admin)).send({
+    nombre: 'Sector Vacío Renombrado',
+    descripcion: 'Descripción actualizada'
+  });
+  assert.equal(resPut.status, 200);
+  const [[secModificado]] = await db.query('SELECT nombre FROM sectores WHERE id = ?', [sectorVacio]);
+  assert.equal(secModificado.nombre, 'Sector Vacío Renombrado');
+
+  // Rechaza nombre duplicado
+  const resDup = await request(app).put(`/api/lotes/sectores/${sectorVacio}`).set(auth(admin)).send({ nombre: 'La Jones Alto' });
+  assert.equal(resDup.status, 409);
+
+  // No permite eliminar un sector con lotes activos
+  const resDelConLotes = await request(app).delete(`/api/lotes/sectores/${sectorAlto}`).set(auth(admin));
+  assert.equal(resDelConLotes.status, 409);
+  assert.match(resDelConLotes.body.message, /lotes activos/);
+
+  // Elimina exitosamente un sector sin dependencias
+  const resDel = await request(app).delete(`/api/lotes/sectores/${sectorVacio}`).set(auth(admin));
+  assert.equal(resDel.status, 200);
+  const [[secInactivo]] = await db.query('SELECT activo FROM sectores WHERE id = ?', [sectorVacio]);
+  assert.equal(secInactivo.activo, 0);
+});

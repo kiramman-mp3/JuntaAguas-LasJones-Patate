@@ -3,9 +3,6 @@
   <header class="portal-cabecera consulta-cabecera">
     <app-curvas-nivel />
     <h1 class="portal-cabecera__titulo">Mi Cuenta y Estado de Obligaciones</h1>
-    <button type="button" class="btn btn--outline btn--sm" (click)="cerrarSesion()">
-      <i class="ri-logout-box-r-line" aria-hidden="true"></i> Cerrar Sesión
-    </button>
   </header>
 
   <!-- CARGANDO (SKELETON) -->
@@ -44,8 +41,13 @@
           <div class="user-info-text">
             <h3>{{ resultado.nombres }}</h3>
             <p class="caption">
-              Cédula: <strong>{{ resultado.cedula }}</strong> | Lote:
-              <span class="badge badge--info">{{ resultado.loteCodigo }}</span>
+              Cédula: <strong>{{ resultado.cedula }}</strong> |
+              {{ resultado.lotes.length === 1 ? 'Lote' : 'Lotes' }}:
+              @for (l of resultado.lotes; track l.codigo) {
+                <span class="badge badge--info" [title]="l.sector">{{ l.codigo }}</span>
+              } @empty {
+                <span class="badge badge--neutral">Sin lote asignado</span>
+              }
             </p>
           </div>
           @if (ultimoRecibo; as r) {
@@ -178,7 +180,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (p of recibos; track clave(p.tipo, p.id)) {
+                @for (p of recibosPagina; track clave(p.tipo, p.id)) {
                   <tr>
                     <td>
                       <strong class="recibo-numero">{{ p.numero }}</strong>
@@ -251,6 +253,15 @@
               </tbody>
             </table>
           </div>
+          <app-paginador
+            etiqueta="comprobantes"
+            [pagina]="paginaRecibos"
+            [porPagina]="porPaginaRecibos"
+            [total]="recibos.length"
+            [opciones]="opcionesPorPagina"
+            (paginaChange)="cambiarPaginaRecibos($event)"
+            (porPaginaChange)="cambiarPorPaginaRecibos($event)"
+          />
         </div>
       }
 

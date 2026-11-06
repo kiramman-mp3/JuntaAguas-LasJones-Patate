@@ -8,6 +8,8 @@ import {
   ResumenAnualAgua,
 } from '../../../../../core/models/finanzas';
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { formatearDinero } from '../../../../../core/utils/dinero';
 
 /**
  * Pago anual de agua: estado del año (emitidas, cobradas, pendientes) y emisión de la obligación
@@ -17,7 +19,7 @@ import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 @Component({
   selector: 'app-facturacion-anual',
   standalone: true,
-  imports: [FormsModule],
+  imports: [MonedaPipe, FormsModule],
   templateUrl: './facturacion-anual.component.html',
 })
 export class FacturacionAnualComponent {
@@ -113,7 +115,7 @@ export class FacturacionAnualComponent {
     if (!previa || !previa.generadas || this.emitiendo()) return;
     const confirmado = await this.dialog.confirmar({
       titulo: `Emitir el pago anual de agua ${previa.anio}`,
-      mensaje: `Se emitirán ${previa.generadas} obligaciones de $${previa.valor.toFixed(2)} (total $${previa.total.toFixed(2)}). Vencen el 31 de diciembre de ${previa.anio}.`,
+      mensaje: `Se emitirán ${previa.generadas} obligaciones de ${formatearDinero(previa.valor)} (total ${formatearDinero(previa.total)}). Vencen el 31 de diciembre de ${previa.anio}.`,
       textoConfirmar: `Emitir ${previa.generadas} obligaciones`,
       tipo: 'WARNING',
     });

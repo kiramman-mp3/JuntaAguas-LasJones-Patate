@@ -7,6 +7,41 @@ const { badRequest, notFound, conflict } = require('../shared/errors');
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
+const MINUTOS_DIA = 1440;
+const MINUTOS_SEMANA = 7 * MINUTOS_DIA;
+/** Un turno que cruza la medianoche (fin menor al inicio) dura como máximo esto: evita que un error de digitación cree turnos de casi 24 horas. */
+const MAX_MINUTOS_NOCTURNO = 12 * 60;
+const MENSAJE_HORARIO = 'La hora de inicio y la de fin no pueden ser iguales; un turno que cruza la medianoche dura como máximo 12 horas.';
+
+const aMinutos = (hora) => {
+  const [h, m] = String(hora).split(':');
+  return Number(h) * 60 + Number(m);
+};
+
+/** Duración en minutos de un turno; si la hora de fin es menor a la de inicio, cruza la medianoche. */
+function duracionMinutos(horaInicio, horaFin) {
+  const diferencia = aMinutos(horaFin) - aMinutos(horaInicio);
+  return diferencia > 0 ? diferencia : diferencia + MINUTOS_DIA;
+}
+
+/** Un turno es válido si tiene duración y, de cruzar la medianoche, no supera el máximo. */
+function horarioValido(horaInicio, horaFin) {
+  if (aMinutos(horaInicio) === aMinutos(horaFin)) return false;
+  const cruzaMedianoche = aMinutos(horaFin) < aMinutos(horaInicio);
+  return !cruzaMedianoche || duracionMinutos(horaInicio, horaFin) <= MAX_MINUTOS_NOCTURNO;
+}
+
+/** Intervalo del turno en minutos desde el lunes 00:00; el turno pertenece al día en que inicia. */
+function intervaloSemanal(diaSemana, horaInicio, horaFin) {
+  const inicio = (diaSemana - 1) * MINUTOS_DIA + aMinutos(horaInicio);
+  return [inicio, inicio + duracionMinutos(horaInicio, horaFin)];
+}
+
+/** Dos intervalos se cruzan si se solapan en la semana o al pasar del domingo al lunes. */
+function seCruzan([inicioA, finA], [inicioB, finB]) {
+  return [-MINUTOS_SEMANA, 0, MINUTOS_SEMANA].some((desfase) => inicioA < finB + desfase && finA > inicioB + desfase);
+}
+
 async function verificarPersonaYLote(conexion, personaId, loteId) {
   const [personas] = await conexion.query("SELECT id FROM personas WHERE id = ? AND estado = 'ACTIVO'", [personaId]);
   if (!personas.length) throw notFound('El usuario no existe o está inactivo.');
@@ -23,24 +58,31 @@ async function verificarPersonaYLote(conexion, personaId, loteId) {
 }
 
 /**
- * Rechaza un turno que se cruce con otro turno activo del mismo sector y día: el agua de un
+ * Rechaza un turno que se cruce con otro turno activo del mismo sector: el agua de un
  * sector llega por un mismo canal, así que dos lotes del sector no pueden regar a la vez.
+ * Considera los turnos que cruzan la medianoche, que invaden el día siguiente.
  */
 async function verificarSolape(conexion, { loteId, diaSemana, horaInicio, horaFin, excluirId = null }) {
   if (!loteId) return;
-  const [solapados] = await conexion.query(
-    `SELECT t.id, t.hora_inicio, t.hora_fin, l.codigo AS lote_codigo
+  // Bloqueo pesimista del sector para serializar asignaciones concurrentes en el mismo canal
+  const [lotes] = await conexion.query('SELECT sector_id FROM lotes WHERE id = ?', [loteId]);
+  if (lotes.length && lotes[0].sector_id) {
+    await conexion.query('SELECT id FROM sectores WHERE id = ? FOR UPDATE', [lotes[0].sector_id]);
+  }
+
+  const [turnosSector] = await conexion.query(
+    `SELECT t.id, t.dia_semana, t.hora_inicio, t.hora_fin, l.codigo AS lote_codigo
      FROM turnos_riego t
      JOIN lotes l ON l.id = t.lote_id
      WHERE l.sector_id = (SELECT sector_id FROM lotes WHERE id = ?)
-       AND t.dia_semana = ? AND t.estado = 'ACTIVO' AND (? IS NULL OR t.id <> ?)
-       AND ? < t.hora_fin AND ? > t.hora_inicio
-     LIMIT 1 FOR UPDATE`,
-    [loteId, diaSemana, excluirId, excluirId, horaInicio, horaFin]
+       AND t.estado = 'ACTIVO' AND (? IS NULL OR t.id <> ?)
+     FOR UPDATE`,
+    [loteId, excluirId, excluirId]
   );
-  if (solapados.length) {
-    const t = solapados[0];
-    throw conflict(`El sector ya tiene un turno el ${DIAS[diaSemana]} de ${String(t.hora_inicio).slice(0, 5)} a ${String(t.hora_fin).slice(0, 5)} (lote ${t.lote_codigo}) que se cruza con este horario.`);
+  const nuevo = intervaloSemanal(diaSemana, horaInicio, horaFin);
+  const t = turnosSector.find((otro) => seCruzan(nuevo, intervaloSemanal(otro.dia_semana, otro.hora_inicio, otro.hora_fin)));
+  if (t) {
+    throw conflict(`El sector ya tiene un turno el ${DIAS[t.dia_semana]} de ${String(t.hora_inicio).slice(0, 5)} a ${String(t.hora_fin).slice(0, 5)} (lote ${t.lote_codigo}) que se cruza con este horario.`);
   }
 }
 
@@ -70,7 +112,7 @@ async function actualizarTurno(conexion, id, cambios) {
     hora_fin: cambios.hora_fin ?? String(actual.hora_fin),
     observacion: cambios.observacion === undefined ? actual.observacion : cambios.observacion
   };
-  if (final.hora_inicio >= final.hora_fin) throw badRequest('La hora de inicio debe ser menor a la hora de finalización.');
+  if (!horarioValido(final.hora_inicio, final.hora_fin)) throw badRequest(MENSAJE_HORARIO);
   if (cambios.persona_id !== undefined || cambios.lote_id !== undefined) {
     await verificarPersonaYLote(conexion, final.persona_id, final.lote_id);
   }
@@ -99,8 +141,7 @@ async function cronograma(conexion, { sectorId, diaSemana, completo = false } = 
     `SELECT t.id, t.persona_id, t.lote_id, t.dia_semana, t.hora_inicio, t.hora_fin, t.observacion,
             CONCAT(p.nombres, ' ', p.apellidos) AS usuario_nombre, p.cedula,
             l.codigo AS lote_codigo, l.superficie_m2,
-            s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion,
-            TIMESTAMPDIFF(MINUTE, t.hora_inicio, t.hora_fin) AS duracion_minutos
+            s.id AS sector_id, s.nombre AS sector_nombre, s.descripcion AS sector_descripcion
      FROM turnos_riego t
      JOIN personas p ON p.id = t.persona_id
      JOIN lotes l ON l.id = t.lote_id
@@ -124,7 +165,7 @@ async function cronograma(conexion, { sectorId, diaSemana, completo = false } = 
       });
     }
     const sector = sectores.get(fila.sector_id);
-    const minutos = Math.max(0, Number(fila.duracion_minutos) || 0);
+    const minutos = duracionMinutos(fila.hora_inicio, fila.hora_fin);
     sector.turnos++;
     sector.minutos += minutos;
     sector.lotes.add(fila.lote_id);
@@ -165,4 +206,4 @@ async function desactivarTurno(conexion, id) {
   if (!r.affectedRows) throw notFound('Turno no encontrado.');
 }
 
-module.exports = { DIAS, verificarSolape, crearTurno, actualizarTurno, desactivarTurno, cronograma };
+module.exports = { DIAS, MENSAJE_HORARIO, horarioValido, duracionMinutos, verificarSolape, crearTurno, actualizarTurno, desactivarTurno, cronograma };

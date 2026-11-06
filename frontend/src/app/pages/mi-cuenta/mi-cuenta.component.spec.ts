@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { FinanzasService } from '../../core/services/finanzas.service';
 import { ComprobantePdfService } from '../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { Recibo } from '../../core/models/finanzas';
 
 const deuda = (parcial: Partial<DeudaItem>): DeudaItem => ({
   id: 1,
@@ -27,9 +28,9 @@ describe('Mi cuenta', () => {
   let finanzas: { getRecibos: ReturnType<typeof vi.fn>; getComprobante: ReturnType<typeof vi.fn> };
   let pdf: { imprimir: ReturnType<typeof vi.fn>; descargar: ReturnType<typeof vi.fn> };
 
-  function crear(deudas: DeudaItem[], totalPendiente: number) {
+  function crear(deudas: DeudaItem[], totalPendiente: number, recibos: Recibo[] = []) {
     finanzas = {
-      getRecibos: vi.fn(() => of([])),
+      getRecibos: vi.fn(() => of(recibos)),
       getComprobante: vi.fn(() =>
         of({
           numero: 'REC-AGUA-000009',
@@ -47,7 +48,7 @@ describe('Mi cuenta', () => {
         provideRouter([]),
         {
           provide: AuthService,
-          useValue: { getUser: () => ({ cedula: '1804567890' }), logout: vi.fn() },
+          useValue: { getUser: () => ({ cedula: '1804567890', personaId: 7 }), logout: vi.fn() },
         },
         {
           provide: ConsultaService,
@@ -60,6 +61,10 @@ describe('Mi cuenta', () => {
                   nombres: 'Rosa Caiza',
                   sector: 'La Jones',
                   loteCodigo: 'LJA-001',
+                  lotes: [
+                    { codigo: 'LJA-001', sector: 'La Jones' },
+                    { codigo: 'LJB-014', sector: 'El Tambo' },
+                  ],
                   totalPendiente,
                   deudas,
                 },
@@ -80,6 +85,30 @@ describe('Mi cuenta', () => {
     const c = crear([deuda({ tipo: 'AGUA_ANUAL', concepto: 'Pago anual de agua', valor: 42 })], 42);
     expect(c.totalPendiente).toBe(42);
     expect(c.deudasPendientes.map((d) => d.tipo)).toEqual(['AGUA_ANUAL']);
+  });
+
+  it('muestra todos los lotes del usuario (H-23)', () => {
+    const c = crear([], 0);
+    expect(c.resultado?.lotes.map((l) => l.codigo)).toEqual(['LJA-001', 'LJB-014']);
+  });
+
+  it('los comprobantes se piden solo de la persona de la sesión, aunque sea directivo (H-34)', () => {
+    crear([], 0);
+    expect(finanzas.getRecibos).toHaveBeenCalledWith({ estado: 'VIGENTE', persona_id: 7 });
+  });
+
+  it('los comprobantes se muestran por páginas para no cargar todo el historial en el DOM (H-34)', () => {
+    const recibos = Array.from(
+      { length: 25 },
+      (_, i) => ({ tipo: 'GENERAL', id: i + 1, numero: 'REC-' + (i + 1) }) as Recibo,
+    );
+    const c = crear([], 0, recibos);
+    expect(c.recibosPagina.map((r) => r.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    c.cambiarPaginaRecibos(3);
+    expect(c.recibosPagina.map((r) => r.id)).toEqual([21, 22, 23, 24, 25]);
+    c.cambiarPorPaginaRecibos(20);
+    expect(c.paginaRecibos).toBe(1);
+    expect(c.recibosPagina).toHaveLength(20);
   });
 
   it('cada obligación pagada imprime su propio comprobante; sin uno vigente no ofrece otro', () => {

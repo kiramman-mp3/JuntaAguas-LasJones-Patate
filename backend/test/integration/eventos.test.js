@@ -178,6 +178,21 @@ test('las justificaciones requieren motivo, admiten archivo opcional y no genera
   const comunero = padronActual.find((p) => p.persona_id === personaId);
   assert.equal(comunero.archivo_justificacion_nombre, 'justificante_medico.pdf');
   assert.ok(comunero.archivo_justificacion_url);
+
+  // El motivo largo se rechaza en lugar de truncarse en silencio (H-12)
+  const subirConMotivo = (motivo) => request(app)
+    .post(`/api/mingas/${id}/asistencias/${personaId}/justificante`)
+    .set(auth(admin))
+    .field('motivo_justificacion', motivo)
+    .attach('archivo', pdfFirma, 'justificante_medico.pdf');
+  const demasiado = await subirConMotivo('m'.repeat(256));
+  assert.equal(demasiado.status, 400);
+  assert.match(demasiado.body.message, /255/);
+  assert.equal((await subirConMotivo('m'.repeat(255))).status, 200);
+  const [[guardado]] = await db.query(
+    'SELECT motivo_justificacion FROM asistencias WHERE evento_id = ? AND persona_id = ?', [id, personaId]
+  );
+  assert.equal(guardado.motivo_justificacion, 'm'.repeat(255));
 });
 
 test('rechaza personas repetidas o ajenas al padrón', async () => {
@@ -200,6 +215,17 @@ test('los estados avanzan pero no retroceden; cancelado y realizado son finales'
   assert.equal((await cambiar('REALIZADO')).status, 400);
   assert.equal((await cambiar('CANCELADO')).status, 200);
   assert.equal((await cambiar('CONVOCADO')).status, 409);
+});
+
+test('el estado se valida con zod: valores ajenos, vacíos o no textuales se rechazan con 400 (H-11)', async () => {
+  const id = await eventoPasado({ estado: 'BORRADOR' });
+  const enviar = (ruta, cuerpo) => request(app).post(`/api/${ruta}/${id}/estado`).set(auth(admin)).send(cuerpo);
+  for (const cuerpo of [{}, { estado: '' }, { estado: 'ROTO' }, { estado: 7 }, { estado: ['CANCELADO'] }]) {
+    assert.equal((await enviar('eventos', cuerpo)).status, 400, JSON.stringify(cuerpo));
+  }
+  const minga = await eventoPasado({ tipo: 'MINGA', estado: 'BORRADOR' });
+  const enMinga = await request(app).post(`/api/mingas/${minga}/estado`).set(auth(admin)).send({ estado: 'ROTO' });
+  assert.equal(enMinga.status, 400);
 });
 
 test('los endpoints de mingas no operan sobre asambleas', async () => {
@@ -306,5 +332,79 @@ test('permite crear mingas seleccionando un sector o con la opción Todos (null)
     genera_multa_ausencia: false
   });
   assert.equal(rechazo.status, 400);
+});
+
+test('rechaza justificar o cambiar asistencia si la multa ya fue pagada en tesorería (H-25)', async () => {
+  const eventoId = await eventoPasado({ tipo: 'ASAMBLEA', fecha: enDias(-2), multa: true });
+  const tomo = await tomarAsistencia(eventoId);
+  assert.equal(tomo.status, 200);
+
+  const padron = await request(app).get(`/api/eventos/${eventoId}/asistencias`).set(auth(admin));
+  const ausente = padron.body.data.find((p) => p.estado === 'AUSENTE');
+  assert.ok(ausente, 'Debe haber un usuario ausente');
+
+  const fin = await finalizar(eventoId);
+  assert.equal(fin.status, 200);
+
+  // Simular que tesorería cobró la multa del usuario ausente
+  await db.query("UPDATE obligaciones SET estado = 'PAGADA' WHERE evento_id = ? AND persona_id = ?", [eventoId, ausente.persona_id]);
+
+  // Intentar cambiar a JUSTIFICADO debe rechazar con 409
+  const intento = await request(app).post(`/api/eventos/${eventoId}/asistencias`).set(auth(admin)).send({
+    asistencias: [{ persona_id: ausente.persona_id, estado: 'JUSTIFICADO', motivo_justificacion: 'Enfermedad' }]
+  });
+  assert.equal(intento.status, 409);
+  assert.match(intento.body.message, /ya fue pagada y registrada en contabilidad/i);
+});
+
+test('edita un evento antes de finalizar con validación horaria y bloqueo si ya finalizó (H-20)', async () => {
+  const usuarioComun = await crearUsuario({ rol: 'USUARIO' });
+  const eventoId = await request(app).post('/api/eventos').set(auth(admin)).send({
+    tipo: 'ASAMBLEA',
+    titulo: 'Asamblea con error tipográfico',
+    descripcion: 'Borrador inicial',
+    fecha: enDias(10),
+    hora_inicio: '10:00'
+  }).then(r => r.body.eventoId);
+
+  // Usuario común no puede editar
+  const resNoAdmin = await request(app).put(`/api/eventos/${eventoId}`).set(auth(usuarioComun)).send({ titulo: 'Intento usuario' });
+  assert.equal(resNoAdmin.status, 403);
+
+  // Rechaza hora_fin <= hora_inicio
+  const resHoraInvalida = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({
+    hora_inicio: '11:00',
+    hora_fin: '10:00'
+  });
+  assert.equal(resHoraInvalida.status, 400);
+
+  // Rechaza fecha en el pasado
+  const resFechaPasada = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({
+    fecha: enDias(-3)
+  });
+  assert.equal(resFechaPasada.status, 400);
+
+  // Edición exitosa
+  const resOk = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({
+    titulo: 'Asamblea General Ordinaria Corregida',
+    descripcion: 'Descripción ampliada',
+    hora_inicio: '09:30',
+    hora_fin: '12:00',
+    lugar: 'Sede Principal'
+  });
+  assert.equal(resOk.status, 200);
+
+  const [[eventoDb]] = await db.query('SELECT titulo, descripcion, hora_inicio, hora_fin, lugar FROM eventos WHERE id = ?', [eventoId]);
+  assert.equal(eventoDb.titulo, 'Asamblea General Ordinaria Corregida');
+  assert.equal(eventoDb.descripcion, 'Descripción ampliada');
+  assert.equal(eventoDb.hora_inicio, '09:30:00');
+  assert.equal(eventoDb.hora_fin, '12:00:00');
+  assert.equal(eventoDb.lugar, 'Sede Principal');
+
+  // Cancelar el evento y verificar que no se puede editar
+  const resEstado = await request(app).post(`/api/eventos/${eventoId}/estado`).set(auth(admin)).send({ estado: 'CANCELADO' });
+  assert.equal(resEstado.status, 200);
+  const resCancelado = await request(app).put(`/api/eventos/${eventoId}`).set(auth(admin)).send({ titulo: 'Intento en cancelado' });
+  assert.equal(resCancelado.status, 409);
 });
 

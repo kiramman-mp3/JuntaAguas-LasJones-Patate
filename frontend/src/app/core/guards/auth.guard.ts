@@ -1,6 +1,19 @@
 import { inject } from '@angular/core';
-import { Router, CanActivateFn } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, CanActivateFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+
+/**
+ * Roles que exige una ruta: los de su propio `data` y los de cada ruta padre. En `canActivateChild`
+ * la ruta evaluada es la hija, cuyo `data` no hereda el del padre cuando ella tiene su propio componente.
+ */
+function rolesRequeridos(route: ActivatedRouteSnapshot): string[][] {
+  const niveles: string[][] = [];
+  for (let actual: ActivatedRouteSnapshot | null = route; actual; actual = actual.parent) {
+    const roles = actual.data?.['roles'] as string[] | undefined;
+    if (roles && roles.length > 0) niveles.push(roles);
+  }
+  return niveles;
+}
 
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
@@ -18,11 +31,11 @@ export const authGuard: CanActivateFn = (route, state) => {
     return false;
   }
 
-  // Verificar si la ruta requiere roles específicos
-  const requiredRoles = route.data['roles'] as string[];
-  if (requiredRoles && requiredRoles.length > 0) {
+  // Verificar si la ruta, o alguna de sus rutas padre, requiere roles específicos
+  const niveles = rolesRequeridos(route);
+  if (niveles.length > 0) {
     const user = authService.getUser();
-    if (!user || !requiredRoles.includes(user.rol)) {
+    if (!user || !niveles.every((roles) => roles.includes(user.rol))) {
       // Usuario autenticado pero sin rol suficiente, redirigir y retornar false
       router.navigate(['/mi-cuenta']);
       return false;

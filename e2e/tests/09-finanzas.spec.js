@@ -204,7 +204,7 @@ test.describe('historial', () => {
     await expect(page.getByRole('row').filter({ hasText: reciboAnual })).toHaveCount(1);
   });
 
-  test('reimprimir pide el recibo al servidor; los pagos de agua no admiten comprobante bancario', async ({ page }) => {
+  test('reimprimir pide el recibo al servidor; los pagos de agua también admiten comprobante bancario', async ({ page }) => {
     const { receptor, reciboAnual } = leerEstado();
     await page.goto('/admin/historial/pagos');
     await page.getByLabel('Desde').fill(fechaEcuador(-1));
@@ -217,8 +217,8 @@ test.describe('historial', () => {
       fila.getByRole('button', { name: `Reimprimir comprobante ${reciboAnual}` }).click()
     ]);
     expect(respuesta.status()).toBe(200);
-    // El comprobante bancario solo existe para los pagos de multas y otros rubros.
-    await expect(fila.locator('input[type=file]')).toHaveCount(0);
+    // El pago anual de agua por transferencia o depósito también adjunta su comprobante bancario.
+    await expect(fila.locator('input[type=file]')).toHaveCount(1);
   });
 
   test('el comprobante bancario de un pago de multas se adjunta en caja y queda en el historial', async ({ page }) => {

@@ -159,6 +159,21 @@ async function registrarAsistencias(conexion, evento, asistencias, cuentaId) {
       .filter((a) => a.estado === 'JUSTIFICADO' || a.estado === 'PRESENTE')
       .map((a) => Number(a.persona_id));
     if (justificadosOPresentes.length) {
+      // Si la multa ya fue pagada en tesorería, bloquear la justificación para evitar descuadre contable
+      const [pagadas] = await conexion.query(
+        `SELECT o.id, o.persona_id, p.cedula, CONCAT(p.nombres, ' ', p.apellidos) AS nombre, o.valor
+         FROM obligaciones o
+         JOIN personas p ON p.id = o.persona_id
+         WHERE o.evento_id = ? AND o.persona_id IN (?) AND o.origen = 'AUTOMATICA' AND o.estado = 'PAGADA'`,
+        [evento.id, justificadosOPresentes]
+      );
+      if (pagadas.length) {
+        const nombres = pagadas.map((p) => `${p.nombre} (${p.cedula})`).join(', ');
+        throw conflict(
+          `No se puede cambiar a Presente/Justificado a: ${nombres}. Su multa por inasistencia ya fue pagada y registrada en contabilidad. Primero anule el pago en Finanzas si corresponde devolución.`
+        );
+      }
+
       await conexion.query(
         `UPDATE obligaciones SET estado = 'ANULADA', motivo_anulacion = 'Inasistencia corregida o justificada',
          fecha_anulacion = ?, anulada_por_cuenta_id = ?
@@ -409,6 +424,60 @@ async function crearEvento(conexion, datos, cuentaId) {
 }
 
 /**
+ * Actualiza los datos generales de un evento que aún no ha sido realizado ni cancelado.
+ */
+async function actualizarEvento(conexion, id, datos) {
+  const evento = await obtenerEvento(conexion, id);
+  if (evento.estado === 'REALIZADO' || evento.estado === 'CANCELADO') {
+    throw conflict(`No se puede modificar una ${NOMBRE[evento.tipo]} que ya fue ${evento.estado.toLowerCase()}.`);
+  }
+
+  const nuevaFecha = datos.fecha !== undefined ? datos.fecha : evento.fecha;
+  if (datos.fecha && datos.fecha < hoy()) {
+    throw badRequest('La fecha no puede ser anterior a la fecha actual.');
+  }
+
+  const nuevaHoraInicio = datos.hora_inicio !== undefined ? datos.hora_inicio : evento.hora_inicio;
+  const nuevaHoraFin = datos.hora_fin !== undefined ? datos.hora_fin : evento.hora_fin;
+  if (nuevaHoraInicio && nuevaHoraFin && nuevaHoraFin <= nuevaHoraInicio) {
+    throw badRequest('La hora de fin debe ser posterior a la de inicio.');
+  }
+
+  let nuevoSectorId = evento.sector_id;
+  if (evento.tipo === 'MINGA' && datos.sector_id !== undefined) {
+    nuevoSectorId = datos.sector_id;
+    if (nuevoSectorId) {
+      const [sectores] = await conexion.query('SELECT id FROM sectores WHERE id = ? AND activo = TRUE', [nuevoSectorId]);
+      if (!sectores.length) throw badRequest('El sector seleccionado no existe o está inactivo.');
+    }
+  }
+
+  const nuevoTitulo = datos.titulo !== undefined ? datos.titulo : evento.titulo;
+  const nuevaDescripcion = datos.descripcion !== undefined ? datos.descripcion : evento.descripcion;
+  const nuevoLugar = datos.lugar !== undefined ? (datos.lugar || 'Casa Comunal Junta La Jones') : evento.lugar;
+  const nuevoRequiere = datos.requiere_asistencia !== undefined ? datos.requiere_asistencia : evento.requiere_asistencia;
+  const nuevoGeneraMulta = datos.genera_multa_ausencia !== undefined ? datos.genera_multa_ausencia : evento.genera_multa_ausencia;
+
+  let valorMulta = evento.valor_multa;
+  if (nuevoGeneraMulta && (datos.fecha || !evento.valor_multa)) {
+    valorMulta = await multaConfigurada(conexion, evento.tipo, nuevaFecha);
+  } else if (!nuevoGeneraMulta) {
+    valorMulta = null;
+  }
+
+  await conexion.query(
+    `UPDATE eventos
+     SET titulo = ?, descripcion = ?, fecha = ?, hora_inicio = ?, hora_fin = ?, lugar = ?,
+         sector_id = ?, requiere_asistencia = ?, genera_multa_ausencia = ?, valor_multa = ?
+     WHERE id = ?`,
+    [nuevoTitulo, nuevaDescripcion, nuevaFecha, nuevaHoraInicio, nuevaHoraFin, nuevoLugar,
+      nuevoSectorId, nuevoRequiere, nuevoGeneraMulta, valorMulta, id]
+  );
+
+  return { id, tipo: evento.tipo, titulo: nuevoTitulo, fecha: nuevaFecha };
+}
+
+/**
  * Guarda los puntos del orden del día y su desarrollo en el acta general: actualiza los
  * existentes por id, crea los nuevos y elimina los que ya no se envían.
  * @returns {{ data: object[] }} puntos resultantes, ordenados
@@ -461,6 +530,9 @@ async function guardarJustificante(conexion, evento, personaId, { buffer, nombre
   const { personas } = await obtenerPadron(conexion, evento);
   const persona = personas.find((p) => Number(p.persona_id) === Number(personaId));
   if (!persona) throw badRequest(`La persona no pertenece al padrón de esta ${NOMBRE[evento.tipo]}.`);
+  if (typeof motivo === 'string' && motivo.trim().length > 255) {
+    throw badRequest('El motivo no puede superar los 255 caracteres.');
+  }
 
   const nuevo = await guardarDocumento(buffer, 'justificante_asistencia');
   const [existente] = await conexion.query(
@@ -468,7 +540,7 @@ async function guardarJustificante(conexion, evento, personaId, { buffer, nombre
     [evento.id, personaId]
   );
   const anteriorUrl = existente[0]?.archivo_justificacion_url;
-  const motivoFinal = (motivo?.trim() || existente[0]?.motivo_justificacion?.trim() || 'Inasistencia justificada con documento').slice(0, 255);
+  const motivoFinal = (motivo?.trim() || existente[0]?.motivo_justificacion?.trim() || 'Inasistencia justificada con documento');
   const ahora = new Date();
 
   await conexion.query(
@@ -521,7 +593,7 @@ async function eliminarJustificante(conexion, evento, personaId) {
 }
 
 module.exports = {
-  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, guardarPuntos,
+  listarEventos, listarEventosPublicos, detalleEvento, crearEvento, actualizarEvento, guardarPuntos,
   ESTADOS_ASISTENCIA, obtenerEvento, obtenerPadron, cambiarEstado, registrarAsistencias, finalizar, exigirAbierto,
   guardarJustificante, eliminarJustificante
 };

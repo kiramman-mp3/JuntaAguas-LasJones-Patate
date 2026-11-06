@@ -69,6 +69,11 @@ test('los pagos son coherentes con sus obligaciones y nunca están en el futuro'
   assert.ok((await uno("SELECT COUNT(*) AS n FROM obligaciones WHERE estado = 'PENDIENTE'")).n > 0, 'debe quedar cartera pendiente');
 });
 
+test('RN-01: los pagos sembrados son por transferencia o depósito y llevan referencia', async () => {
+  assert.equal((await uno("SELECT COUNT(*) AS n FROM pagos WHERE metodo NOT IN ('TRANSFERENCIA', 'DEPOSITO')")).n, 0);
+  assert.equal((await uno('SELECT COUNT(*) AS n FROM pagos WHERE referencia IS NULL OR referencia = ""')).n, 0);
+});
+
 test('el pago anual de agua tiene una obligación por usuario activo y año, y sus pagos son coherentes', async () => {
   const [anios] = await db.query('SELECT periodo_anio AS anio, COUNT(*) AS total FROM obligacion_anual_agua GROUP BY periodo_anio ORDER BY anio');
   assert.deepEqual(anios.map((a) => a.anio), [2025, 2026], 'no se emiten años futuros');

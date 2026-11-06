@@ -5,6 +5,7 @@ import { hoyEnEcuador, sumarDias } from '../../../../../core/utils/fechas';
 import { mensajeError } from '../../../../../core/utils/errores';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
+import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 
 /** Acciones que registra el sistema, para filtrar el registro. */
@@ -28,7 +29,13 @@ const ACCIONES = [
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, EmptyStateComponent, SkeletonComponent],
+  imports: [
+    FormsModule,
+    FechaLocalPipe,
+    EmptyStateComponent,
+    SkeletonComponent,
+    PaginadorComponent,
+  ],
   template: `
     <section class="fin-panel" aria-labelledby="auditoria-titulo">
       <div class="fin-panel__head">
@@ -37,12 +44,12 @@ const ACCIONES = [
             <i class="ri-shield-check-line" aria-hidden="true"></i> Registro de auditoría
           </h3>
           <p class="fin-panel__desc">
-            Se muestran los {{ limite }} registros más recientes que coinciden con los filtros.
+            Registros que coinciden con los filtros, del más reciente al más antiguo.
           </p>
         </div>
       </div>
 
-      <form class="field-row" style="margin-bottom: 1rem" (ngSubmit)="cargar()">
+      <form class="field-row" style="margin-bottom: 1rem" (ngSubmit)="filtrar()">
         <div class="field">
           <label for="aud-desde">Desde</label>
           <input
@@ -51,7 +58,7 @@ const ACCIONES = [
             class="input"
             type="date"
             [ngModel]="desde()"
-            (ngModelChange)="desde.set($event); cargar()"
+            (ngModelChange)="desde.set($event); filtrar()"
           />
         </div>
         <div class="field">
@@ -62,7 +69,7 @@ const ACCIONES = [
             class="input"
             type="date"
             [ngModel]="hasta()"
-            (ngModelChange)="hasta.set($event); cargar()"
+            (ngModelChange)="hasta.set($event); filtrar()"
           />
         </div>
         <div class="field">
@@ -72,7 +79,7 @@ const ACCIONES = [
             name="accion"
             class="input"
             [ngModel]="accion()"
-            (ngModelChange)="accion.set($event); cargar()"
+            (ngModelChange)="accion.set($event); filtrar()"
           >
             <option value="">Todas</option>
             @for (a of acciones; track a) {
@@ -90,8 +97,8 @@ const ACCIONES = [
             placeholder="pagos, cuentas, eventos…"
             [ngModel]="entidad()"
             (ngModelChange)="entidad.set($event)"
-            (keyup.enter)="cargar()"
-            (blur)="cargar()"
+            (keyup.enter)="filtrar()"
+            (blur)="filtrarSiCambioEntidad()"
           />
         </div>
       </form>
@@ -116,7 +123,7 @@ const ACCIONES = [
           mensaje="No hay acciones registradas con esos filtros."
         />
       } @else {
-        <div class="table-scroll">
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de auditoría">
           <table class="fin-table">
             <thead>
               <tr>
@@ -156,6 +163,15 @@ const ACCIONES = [
             </tbody>
           </table>
         </div>
+        <app-paginador
+          etiqueta="registros"
+          [pagina]="pagina()"
+          [porPagina]="porPagina()"
+          [total]="total()"
+          [cargando]="cargando()"
+          (paginaChange)="cambiarPagina($event)"
+          (porPaginaChange)="cambiarPorPagina($event)"
+        />
       }
     </section>
   `,
@@ -164,7 +180,9 @@ export class AuditoriaComponent {
   private gestion = inject(GestionService);
 
   readonly acciones = ACCIONES;
-  readonly limite = 100;
+  readonly pagina = signal(1);
+  readonly porPagina = signal(25);
+  readonly total = signal(0);
   readonly desde = signal(sumarDias(hoyEnEcuador(), -30));
   readonly hasta = signal(hoyEnEcuador());
   readonly accion = signal('');
@@ -173,8 +191,31 @@ export class AuditoriaComponent {
   readonly cargando = signal(false);
   readonly error = signal('');
 
+  /** Entidad con la que se pidió el último listado, para no recargar al salir del campo sin cambios. */
+  private entidadAplicada = '';
+
   constructor() {
     this.cargar();
+  }
+
+  /** Aplica un filtro nuevo: vuelve a la primera página. */
+  filtrar(): void {
+    this.pagina.set(1);
+    this.cargar();
+  }
+
+  filtrarSiCambioEntidad(): void {
+    if (this.entidad().trim() !== this.entidadAplicada) this.filtrar();
+  }
+
+  cambiarPagina(nueva: number): void {
+    this.pagina.set(nueva);
+    this.cargar();
+  }
+
+  cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.filtrar();
   }
 
   cargar(): void {
@@ -184,17 +225,20 @@ export class AuditoriaComponent {
     }
     this.cargando.set(true);
     this.error.set('');
+    this.entidadAplicada = this.entidad().trim();
     this.gestion
       .getAuditoria({
         desde: this.desde() || undefined,
         hasta: this.hasta() || undefined,
         accion: this.accion() || undefined,
-        entidad: this.entidad().trim() || undefined,
-        limit: this.limite,
+        entidad: this.entidadAplicada || undefined,
+        page: this.pagina(),
+        limit: this.porPagina(),
       })
       .subscribe({
         next: (res) => {
           this.registros.set(res.data);
+          this.total.set(res.pagination.total);
           this.cargando.set(false);
         },
         error: (err) => {

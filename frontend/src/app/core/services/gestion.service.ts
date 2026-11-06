@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { RespuestaApi } from '../models/api-payloads';
+import { RespuestaApi, RespuestaPaginada } from '../models/api-payloads';
 
 /** Registro de GET /auditoria: quién hizo qué, sobre qué y cuándo (fecha en UTC). */
 export interface RegistroAuditoria {
@@ -23,6 +23,7 @@ export interface FiltrosAuditoria {
   accion?: string;
   desde?: string;
   hasta?: string;
+  page?: number;
   limit?: number;
 }
 
@@ -62,6 +63,7 @@ export interface ActividadPlan {
   fecha_fin: string;
   estado: EstadoActividad;
   fecha_cumplimiento: string | null;
+  observacion_resultado: string | null;
 }
 
 export interface PlanAnual {
@@ -95,8 +97,8 @@ export class GestionService {
   private http = inject(HttpClient);
   private url = environment.apiUrl;
 
-  getAuditoria(filtros: FiltrosAuditoria = {}): Observable<RespuestaApi<RegistroAuditoria[]>> {
-    return this.http.get<RespuestaApi<RegistroAuditoria[]>>(`${this.url}/auditoria`, {
+  getAuditoria(filtros: FiltrosAuditoria = {}): Observable<RespuestaPaginada<RegistroAuditoria>> {
+    return this.http.get<RespuestaPaginada<RegistroAuditoria>>(`${this.url}/auditoria`, {
       params: parametros(filtros),
     });
   }
@@ -110,6 +112,13 @@ export class GestionService {
       `${this.url}/inventario`,
       bien,
     );
+  }
+
+  actualizarBien(
+    id: number,
+    datos: Partial<NuevoBien> & { activo?: boolean },
+  ): Observable<RespuestaApi<unknown>> {
+    return this.http.patch<RespuestaApi<unknown>>(`${this.url}/inventario/${id}`, datos);
   }
 
   getPlanes(): Observable<RespuestaApi<PlanAnual[]>> {
@@ -133,6 +142,21 @@ export class GestionService {
     return this.http.post<RespuestaApi<unknown> & { actividadId: number }>(
       `${this.url}/planes/${planId}/actividades`,
       actividad,
+    );
+  }
+
+  actualizarActividad(
+    planId: number,
+    actividadId: number,
+    datos: Partial<NuevaActividad> & {
+      estado?: EstadoActividad;
+      fecha_cumplimiento?: string | null;
+      observacion_resultado?: string | null;
+    },
+  ): Observable<RespuestaApi<unknown>> {
+    return this.http.patch<RespuestaApi<unknown>>(
+      `${this.url}/planes/${planId}/actividades/${actividadId}`,
+      datos,
     );
   }
 }

@@ -50,8 +50,8 @@
     }
 
     <div class="filtros__fechas">
-      <label for="noticias-desde">
-        Publicadas desde
+      <div class="filtros__campo">
+        <label for="noticias-desde">Publicadas desde</label>
         <input
           id="noticias-desde"
           class="input"
@@ -60,9 +60,9 @@
           [ngModel]="desde()"
           (ngModelChange)="aplicar({ desde: $event })"
         />
-      </label>
-      <label for="noticias-hasta">
-        hasta
+      </div>
+      <div class="filtros__campo">
+        <label for="noticias-hasta">Publicadas hasta</label>
         <input
           id="noticias-hasta"
           class="input"
@@ -71,7 +71,7 @@
           [ngModel]="hasta()"
           (ngModelChange)="aplicar({ hasta: $event })"
         />
-      </label>
+      </div>
       @if (hayFiltros()) {
         <button type="button" class="btn btn--outline" (click)="limpiar()">
           <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros

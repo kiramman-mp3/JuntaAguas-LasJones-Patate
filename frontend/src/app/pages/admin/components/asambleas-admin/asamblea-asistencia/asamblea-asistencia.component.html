@@ -4,7 +4,7 @@
     asamblea().titulo +
     ' · ' +
     (asamblea().fecha | fechaLocal) +
-    (asamblea().genera_multa_ausencia ? ' · Multa $' + asamblea().valor_multa.toFixed(2) : '')
+    (asamblea().genera_multa_ausencia ? ' · Multa ' + (asamblea().valor_multa | moneda) : '')
   "
   icono="ri-checkbox-circle-line"
   tono="success"

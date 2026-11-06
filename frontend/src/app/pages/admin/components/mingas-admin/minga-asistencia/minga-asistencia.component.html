@@ -50,6 +50,8 @@
         <div class="search-field toolbar__grow">
           <i class="ri-search-line" aria-hidden="true"></i>
           <input
+            id="minga-asistencia-buscar"
+            name="buscar"
             class="input input--sm"
             type="search"
             [(ngModel)]="buscar"
@@ -132,6 +134,8 @@
               @if (a.estado === 'JUSTIFICADO') {
                 <div class="roster__justification-block">
                   <input
+                    [id]="'motivo-' + a.persona_id"
+                    [name]="'motivo-' + a.persona_id"
                     class="input input--sm roster__reason"
                     [(ngModel)]="a.motivo_justificacion"
                     [disabled]="cerrada || guardando"
@@ -184,6 +188,8 @@
                           <span>Adjuntar archivo (opcional)</span>
                         }
                         <input
+                          [id]="'archivo-' + a.persona_id"
+                          [name]="'archivo-' + a.persona_id"
                           type="file"
                           class="sr-only"
                           (change)="adjuntarArchivo(a, $event)"

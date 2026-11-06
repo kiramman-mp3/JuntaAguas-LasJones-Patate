@@ -25,6 +25,7 @@ router.use('/mingas', mingaRoutes);
 router.use('/financiero', financieroRoutes);
 router.use('/inventario', inventarioRoutes);
 router.use('/planes', planificacionRoutes);
+router.use('/planificacion', planificacionRoutes);
 router.use('/auditoria', auditoriaRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/dashboard', dashboardRoutes);

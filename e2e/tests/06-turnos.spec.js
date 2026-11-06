@@ -23,7 +23,7 @@ async function llenarHorario(modal, { dia, inicio, fin }) {
   await modal.locator('#turno-fin').fill(fin);
 }
 
-test('asignar un turno exige usuario y lote, y rechaza un horario al revés', async ({ page }) => {
+test('asignar un turno exige usuario y lote, y rechaza un horario que cruza la medianoche por más de 12 horas', async ({ page }) => {
   const { receptor } = leerEstado();
   await page.goto('/admin/turnos');
   await page.getByRole('button', { name: 'Asignar turno' }).click();
@@ -34,7 +34,7 @@ test('asignar un turno exige usuario y lote, y rechaza un horario al revés', as
   const formulario = await abrirAsignacion(page, receptor);
   await llenarHorario(formulario, { dia: 'Miércoles', inicio: '09:00', fin: '08:00' });
   await formulario.getByRole('button', { name: 'Guardar turno' }).click();
-  await expect(aviso(page, 'La hora de fin debe ser posterior a la de inicio.')).toBeVisible();
+  await expect(aviso(page, 'Un turno que cruza la medianoche puede durar como máximo 12 horas.')).toBeVisible();
   await expect(formulario).toBeVisible();
 });
 
@@ -84,7 +84,7 @@ test('la ficha del turno muestra sus datos y permite editarlo', async ({ page })
   await edicion.locator('#edit-inicio').fill('10:00');
   await edicion.locator('#edit-fin').fill('09:00');
   await edicion.getByRole('button', { name: /Guardar/ }).click();
-  await expect(aviso(page, 'La hora de fin debe ser mayor a la hora de inicio.')).toBeVisible();
+  await expect(aviso(page, 'Un turno que cruza la medianoche puede durar como máximo 12 horas.')).toBeVisible();
 
   await edicion.locator('#edit-fin').fill('12:00');
   await edicion.getByRole('button', { name: /Guardar/ }).click();

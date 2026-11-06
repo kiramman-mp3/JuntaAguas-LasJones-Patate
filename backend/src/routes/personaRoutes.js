@@ -47,6 +47,16 @@ router.post('/', ...soloAdmin, personaController.createPersona);
 
 /**
  * @openapi
+ * /personas/cuentas-bloqueadas:
+ *   get:
+ *     tags: [Usuarios (Personas)]
+ *     summary: Cuentas con el inicio de sesión bloqueado ahora mismo por intentos fallidos (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/cuentas-bloqueadas', ...soloAdmin, personaController.getCuentasBloqueadas);
+
+/**
+ * @openapi
  * /personas/{id}:
  *   get:
  *     tags: [Usuarios (Personas)]
@@ -59,6 +69,7 @@ router.post('/', ...soloAdmin, personaController.createPersona);
  */
 router.get('/:id', verificarToken, personaController.getPersonaById);
 router.put('/:id', ...soloAdmin, personaController.updatePersona);
+router.delete('/:id', ...soloAdmin, personaController.deletePersona);
 
 /**
  * @openapi
@@ -80,5 +91,15 @@ router.put('/:id', ...soloAdmin, personaController.updatePersona);
 router.post('/:id/cuenta', ...soloAdmin, personaController.crearCuenta);
 router.patch('/:id/cuenta', ...soloAdmin, personaController.actualizarCuenta);
 router.post('/:id/cuenta/restablecer-password', ...soloAdmin, personaController.restablecerPassword);
+
+/**
+ * @openapi
+ * /personas/{id}/cuenta/desbloquear:
+ *   post:
+ *     tags: [Usuarios (Personas)]
+ *     summary: Levantar el bloqueo de inicio de sesión de la cuenta sin cambiar su contraseña (ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/:id/cuenta/desbloquear', ...soloAdmin, personaController.desbloquearCuenta);
 
 module.exports = router;

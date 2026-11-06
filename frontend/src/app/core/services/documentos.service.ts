@@ -46,6 +46,12 @@ export class DocumentosService {
     );
   }
 
+  eliminar(eventoId: number, documentoId: number): Observable<{ status: string; message: string }> {
+    return this.http.delete<{ status: string; message: string }>(
+      `${environment.apiUrl}/eventos/${eventoId}/documentos/${documentoId}`,
+    );
+  }
+
   /** URL absoluta de un documento guardado ('/uploads/...' o ya absoluta). */
   urlAbsoluta(ruta: string): string {
     return /^https?:\/\//.test(ruta) ? ruta : `${environment.serverUrl}${ruta}`;

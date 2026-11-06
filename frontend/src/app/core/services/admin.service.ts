@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   AsistenciaRegistro,
   ConvocatoriaWhatsApp,
+  CuentaBloqueada,
   DashboardResumen,
   EstadoWhatsApp,
   EventoItem,
@@ -65,6 +66,10 @@ export class AdminService {
     return this.http.put<RespuestaMensaje>(`${this.baseUrl}/personas/${id}`, data);
   }
 
+  deletePersona(id: number): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(`${this.baseUrl}/personas/${id}`);
+  }
+
   /** Crea la cuenta de acceso de un usuario; la respuesta trae la contraseña temporal. */
   crearCuenta(personaId: number, rol: 'ADMIN' | 'USUARIO'): Observable<RespuestaCredencial> {
     return this.http.post<RespuestaCredencial>(`${this.baseUrl}/personas/${personaId}/cuenta`, {
@@ -76,6 +81,21 @@ export class AdminService {
   restablecerPassword(personaId: number): Observable<RespuestaCredencial> {
     return this.http.post<RespuestaCredencial>(
       `${this.baseUrl}/personas/${personaId}/cuenta/restablecer-password`,
+      {},
+    );
+  }
+
+  /** Cuentas con el inicio de sesión bloqueado ahora mismo por intentos fallidos. */
+  getCuentasBloqueadas(): Observable<RespuestaApi<CuentaBloqueada[]>> {
+    return this.http.get<RespuestaApi<CuentaBloqueada[]>>(
+      `${this.baseUrl}/personas/cuentas-bloqueadas`,
+    );
+  }
+
+  /** Levanta el bloqueo de inicio de sesión sin cambiar la contraseña. */
+  desbloquearCuenta(personaId: number): Observable<RespuestaMensaje> {
+    return this.http.post<RespuestaMensaje>(
+      `${this.baseUrl}/personas/${personaId}/cuenta/desbloquear`,
       {},
     );
   }
@@ -109,6 +129,10 @@ export class AdminService {
     return this.http.post<RespuestaMensaje & { loteId: number }>(`${this.baseUrl}/lotes`, data);
   }
 
+  updateLote(id: number, data: object): Observable<RespuestaMensaje> {
+    return this.http.put<RespuestaMensaje>(`${this.baseUrl}/lotes/${id}`, data);
+  }
+
   sugerirCodigoLote(sectorId: number): Observable<RespuestaApi<{ codigo: string }>> {
     return this.http.get<RespuestaApi<{ codigo: string }>>(`${this.baseUrl}/lotes/sugerir-codigo`, {
       params: { sector_id: sectorId },
@@ -130,6 +154,17 @@ export class AdminService {
       `${this.baseUrl}/lotes/sectores`,
       data,
     );
+  }
+
+  updateSector(
+    id: number,
+    data: { nombre: string; descripcion?: string },
+  ): Observable<RespuestaMensaje> {
+    return this.http.put<RespuestaMensaje>(`${this.baseUrl}/lotes/sectores/${id}`, data);
+  }
+
+  deleteSector(id: number): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(`${this.baseUrl}/lotes/sectores/${id}`);
   }
 
   getSectores(): Observable<RespuestaApi<SectorItem[]>> {
@@ -170,6 +205,10 @@ export class AdminService {
       `${this.baseUrl}/eventos`,
       payload,
     );
+  }
+
+  updateEvento(id: number, payload: object): Observable<RespuestaMensaje> {
+    return this.http.put<RespuestaMensaje>(`${this.baseUrl}/eventos/${id}`, payload);
   }
 
   registrarAsistencias(

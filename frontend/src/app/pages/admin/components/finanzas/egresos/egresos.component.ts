@@ -6,6 +6,7 @@ import { ModalA11yDirective } from '../../../../../core/directives/modal-a11y.di
 import { Egreso, numeroEgreso } from '../../../../../core/models/finanzas';
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
 
 interface FormEgreso {
   fecha: string;
@@ -31,7 +32,7 @@ const formVacio = (): FormEgreso => ({
 @Component({
   selector: 'app-egresos',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, ModalA11yDirective],
+  imports: [MonedaPipe, FormsModule, FechaLocalPipe, ModalA11yDirective],
   templateUrl: './egresos.component.html',
 })
 export class EgresosComponent implements OnInit {

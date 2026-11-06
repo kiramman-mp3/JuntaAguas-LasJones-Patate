@@ -14,6 +14,8 @@ const ESTADOS = Object.freeze({
 const TIEMPO_INICIO_MS = 3 * 60 * 1000;
 const GRUPO_ID = /^[\d-]+@g\.us$/;
 const MAX_TEXTO = 4000;
+/** Cuánto se reutiliza la lista de grupos al enviar: leerla obliga a recorrer todos los chats en el navegador. */
+const TTL_GRUPOS_MS = 60 * 1000;
 /**
  * WhatsApp Web a veces recarga la página mientras whatsapp-web.js la prepara y el arranque falla
  * con estos errores; un intento nuevo suele funcionar. Otros errores no se reintentan.
@@ -40,17 +42,22 @@ class SesionWhatsApp {
   #mensaje = 'WhatsApp no está conectado.';
   #qr = null;
   #temporizador = null;
+  #ttlGruposMs;
+  #ahora;
+  #gruposEnCache = null;
 
   /**
    * @param {object} opciones
    * @param {() => import('whatsapp-web.js').Client} opciones.crearCliente fábrica del cliente de WhatsApp Web
    * @param {(qr: string) => Promise<string>} opciones.generarQr convierte el texto del QR en una imagen (data URL)
    */
-  constructor({ crearCliente, generarQr, tiempoInicioMs = TIEMPO_INICIO_MS, maxIntentos = MAX_INTENTOS, log = console }) {
+  constructor({ crearCliente, generarQr, tiempoInicioMs = TIEMPO_INICIO_MS, maxIntentos = MAX_INTENTOS, ttlGruposMs = TTL_GRUPOS_MS, ahora = Date.now, log = console }) {
     this.#crearCliente = crearCliente;
     this.#generarQr = generarQr;
     this.#tiempoInicioMs = tiempoInicioMs;
     this.#maxIntentos = maxIntentos;
+    this.#ttlGruposMs = ttlGruposMs;
+    this.#ahora = ahora;
     this.#log = log;
   }
 
@@ -154,9 +161,21 @@ class SesionWhatsApp {
       this.#log.error('[WhatsApp] No se pudieron leer los grupos:', error.message);
       throw new ErrorServicio(502, 'WhatsApp Web todavía no cargó los grupos. Intente de nuevo en unos segundos.');
     }
-    return grupos
+    const lista = grupos
       .map((g) => ({ id: g.id, nombre: g.nombre || g.id, participantes: g.participantes ?? null }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    this.#gruposEnCache = { lista, hasta: this.#ahora() + this.#ttlGruposMs };
+    return lista;
+  }
+
+  /**
+   * Comprueba que el grupo existe usando la lista reciente. Si no aparece en ella pudo ser un grupo
+   * al que la cuenta se unió hace poco, así que se vuelve a leer una vez antes de rechazarlo.
+   */
+  async #perteneceAlGrupo(grupoId) {
+    const cache = this.#gruposEnCache;
+    if (cache && this.#ahora() < cache.hasta && cache.lista.some((g) => g.id === grupoId)) return true;
+    return (await this.listarGrupos()).some((g) => g.id === grupoId);
   }
 
   /** Envía un mensaje de texto a un grupo de la cuenta vinculada. */
@@ -165,8 +184,7 @@ class SesionWhatsApp {
     if (typeof texto !== 'string' || !texto.trim()) throw new ErrorServicio(400, 'El mensaje está vacío.');
     if (texto.length > MAX_TEXTO) throw new ErrorServicio(400, `El mensaje supera los ${MAX_TEXTO} caracteres.`);
 
-    const grupos = await this.listarGrupos();
-    if (!grupos.some((g) => g.id === grupoId)) {
+    if (!(await this.#perteneceAlGrupo(grupoId))) {
       throw new ErrorServicio(404, 'El grupo no existe o la cuenta de la Junta ya no pertenece a él.');
     }
 
@@ -197,6 +215,7 @@ class SesionWhatsApp {
   #soltarCliente() {
     const cliente = this.#cliente;
     this.#cliente = null;
+    this.#gruposEnCache = null;
     clearTimeout(this.#temporizador);
     return cliente;
   }

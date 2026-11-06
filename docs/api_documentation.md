@@ -35,7 +35,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 
 | Método | Endpoint | Permisos | Descripción |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/auth/login` | Público | Autenticación mediante cédula y contraseña. Retorna JWT Token y bandera `debeCambiarPassword`. |
+| `POST` | `/auth/login` | Público | Autenticación mediante cédula y contraseña. Retorna JWT Token y bandera `debeCambiarPassword`. Tras 5 intentos fallidos desde una misma IP, esa cuenta queda bloqueada 15 minutos para esa IP. |
 | `GET` | `/auth/me` | Autenticado | Devuelve los datos del perfil y rol del usuario autenticado. |
 | `POST` | `/auth/change-password` | Autenticado | Permite al usuario modificar su contraseña. |
 
@@ -49,7 +49,9 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `GET` | `/personas` | Autenticado | Listado y búsqueda administrativa de usuarios con paginación (`?busqueda=...&estado=...`). |
 | `GET` | `/personas/:id` | Autenticado | Detalle completo de una persona, incluyendo sus lotes vinculados, turnos y deudas. |
 | `POST` | `/personas` | ADMIN / SECRETARIO | Registro de un usuario con opción de creación de cuenta de acceso. |
-| `PUT` | `/personas/:id` | ADMIN / SECRETARIO | Actualización de datos personales. |
+| `PUT` | `/personas/:id` | ADMIN / SECRETARIO | Actualización de datos personales. La fecha de nacimiento, si se envía, debe corresponder a una persona de al menos 18 años. |
+| `GET` | `/personas/cuentas-bloqueadas` | ADMIN | Cuentas con el inicio de sesión bloqueado ahora mismo: persona, número de redes (IP) bloqueadas y minutos restantes. |
+| `POST` | `/personas/:id/cuenta/desbloquear` | ADMIN | Levanta el bloqueo de inicio de sesión de la cuenta (desde todas las IP) sin cambiar su contraseña. |
 
 ---
 
@@ -118,6 +120,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `POST` | `/financiero/agua-anual/pagos` | ADMIN | Registra el pago (solo `TRANSFERENCIA` o `DEPOSITO`, con referencia) de una o varias obligaciones anuales de agua en una transacción atómica. |
 | `GET` | `/financiero/egresos` | Autenticado | Gastos y compras realizadas por la Junta. |
 | `POST` | `/financiero/egresos` | ADMIN / TESORERO | Registrar gasto o compra con número de factura. |
+| `POST` | `/financiero/egresos/:id/anular` | ADMIN | Anula un egreso con motivo obligatorio y deja registro de auditoría (migración 028). |
 | `GET` | `/financiero/balance` | Autenticado | **Reporte de Balance General Al Día:** Suma de Total Ingresos (pagos y pagos anuales de agua) - Total Egresos, con la cartera pendiente de ambos. |
 
 ---
@@ -128,9 +131,11 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | :--- | :--- | :--- | :--- |
 | `GET` | `/inventario` | Autenticado | Catálogo de bienes físicos y equipos pertenecientes a la Junta. |
 | `POST` | `/inventario` | ADMIN / TESORERO | Registrar nuevo bien en inventario. |
+| `PATCH` | `/inventario/:id` | ADMIN | Editar un bien del inventario. |
 | `GET` | `/planes` | Autenticado | Planes operativos anuales de trabajo y sus actividades asociadas. |
 | `POST` | `/planes` | ADMIN | Crear plan anual o añadir actividades con fechas de inicio/fin. |
-| `GET` | `/auditoria` | **ADMIN** | Bitácora imborrable de auditoría para trazabilidad de cambios en el sistema. |
+| `PATCH` | `/planes/:planId/actividades/:actividadId` | ADMIN | Editar una actividad del plan (estado, fechas, observación del resultado). |
+| `GET` | `/auditoria` | **ADMIN** | Bitácora imborrable de auditoría para trazabilidad de cambios en el sistema. Paginada con `?page=1&limit=25`; devuelve `data` y `pagination` (`total`, `page`, `limit`). |
 
 ### 3.7.1. 📰 Noticias (`/api/noticias`)
 

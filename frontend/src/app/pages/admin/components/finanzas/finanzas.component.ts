@@ -12,6 +12,7 @@ import { FacturacionAnualComponent } from './facturacion-anual/facturacion-anual
 import { TarifasComponent } from './tarifas/tarifas.component';
 import { PageHeaderComponent } from '../../../../shared/ui/page-header.component';
 import { GRUPOS_FINANZAS, GrupoFinanzas, SeccionFinanzas } from './grupos-finanzas';
+import { MonedaPipe } from '../../../../shared/pipes/moneda.pipe';
 
 export type { GrupoFinanzas, GrupoSecciones, SeccionFinanzas } from './grupos-finanzas';
 
@@ -24,6 +25,7 @@ interface Indicadores {
   selector: 'app-finanzas',
   standalone: true,
   imports: [
+    MonedaPipe,
     PageHeaderComponent,
     CobroCajaComponent,
     HistorialPagosComponent,

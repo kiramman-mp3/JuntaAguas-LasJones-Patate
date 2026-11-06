@@ -9,8 +9,8 @@ const { z } = s;
 const dia = z.coerce.number({ error: 'Indique el día de la semana.' }).int()
   .min(1, 'El día de la semana debe estar entre 1 (lunes) y 7 (domingo).')
   .max(7, 'El día de la semana debe estar entre 1 (lunes) y 7 (domingo).');
-const horarioValido = (d) => !d.hora_inicio || !d.hora_fin || d.hora_inicio < d.hora_fin;
-const errorHorario = { path: ['hora_fin'], message: 'La hora de inicio debe ser menor a la hora de finalización.' };
+const horarioValido = (d) => !d.hora_inicio || !d.hora_fin || turnos.horarioValido(d.hora_inicio, d.hora_fin);
+const errorHorario = { path: ['hora_fin'], message: turnos.MENSAJE_HORARIO };
 
 const filtrosQuery = z.object({
   persona_id: s.id.optional(),

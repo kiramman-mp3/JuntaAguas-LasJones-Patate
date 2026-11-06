@@ -39,6 +39,29 @@ describe('authGuard', () => {
     expect(navegar).toHaveBeenCalledWith(['/mi-cuenta']);
   });
 
+  it('exige los roles de la ruta padre al evaluar una ruta hija sin roles propios (H-16)', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: {
+            isLoggedIn: () => true,
+            debeCambiarPassword: () => false,
+            getUser: () => ({ rol: 'USUARIO' }),
+          },
+        },
+      ],
+    });
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const hija = { data: {}, parent: { data: { roles: ['ADMIN'] }, parent: null } };
+    const resultado = TestBed.runInInjectionContext(() =>
+      authGuard(hija as any, { url: '/admin/usuarios' } as any),
+    );
+    expect(resultado).toBe(false);
+    expect(navegar).toHaveBeenCalledWith(['/mi-cuenta']);
+  });
+
   it('un administrador con sesión completa entra', () => {
     const { resultado } = evaluar(
       {

@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
+import { NotificationService } from './core/services/notification.service';
 import { ToastContainerComponent } from './shared/toast-container/toast-container.component';
 import { DialogContainerComponent } from './shared/dialog-container/dialog-container.component';
 
@@ -26,6 +27,7 @@ export class App {
   public authService = inject(AuthService);
   public router = inject(Router);
   public themeService = inject(ThemeService);
+  private notify = inject(NotificationService);
 
   get esRutaAdmin(): boolean {
     return this.router.url.startsWith('/admin');
@@ -43,6 +45,12 @@ export class App {
     this.menuAbierto = !this.menuAbierto;
   }
 
+  /** Lleva el foco al contenido sin cambiar la URL (un href="#..." recargaría la ruta). */
+  saltarAlContenido(evento: Event) {
+    evento.preventDefault();
+    document.getElementById('contenido')?.focus();
+  }
+
   cerrarMenu() {
     this.menuAbierto = false;
   }
@@ -50,5 +58,8 @@ export class App {
   cerrarSesion() {
     this.authService.logout();
     this.router.navigate(['/login']);
+    this.notify.info(
+      'Cerró sesión. Si tenía la cuenta abierta en otros dispositivos, también se cerró allí.',
+    );
   }
 }

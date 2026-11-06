@@ -8,6 +8,7 @@ import {
   numeroReciboAgua,
 } from '../models/finanzas';
 import { formatearFecha } from '../utils/fechas';
+import { formatearDinero } from '../utils/dinero';
 
 export interface ComprobanteLinea {
   concepto: string;
@@ -76,9 +77,24 @@ export function comprobanteDePagoAnual(p: PagoAnualDetalle): Comprobante {
  */
 @Injectable({ providedIn: 'root' })
 export class ComprobantePdfService {
-  /** Abre el diálogo de impresión del navegador con el comprobante. */
+  /**
+   * Abre el diálogo de impresión del navegador con el comprobante. En pantallas táctiles el
+   * navegador no imprime desde un iframe oculto, así que se abre el PDF en otra pestaña (o se
+   * descarga si el navegador bloquea la ventana) y desde ahí se imprime o comparte.
+   */
   async imprimir(c: Comprobante): Promise<void> {
     const doc = await this.construir(c);
+    if (this.esPantallaTactil()) {
+      const url = doc.output('bloburl').toString();
+      if (window.open(url, '_blank')) {
+        // La pestaña ya cargó el PDF; se libera el blob pasado un rato.
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } else {
+        URL.revokeObjectURL(url);
+        doc.save(`${c.numero}.pdf`);
+      }
+      return;
+    }
     doc.autoPrint();
     const url = doc.output('bloburl').toString();
     const iframe = document.createElement('iframe');
@@ -91,17 +107,24 @@ export class ComprobantePdfService {
       height: '0',
       border: '0',
     });
+    const retirar = () => {
+      iframe.remove();
+      URL.revokeObjectURL(url);
+    };
     iframe.src = url;
     iframe.onload = () => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
       // El iframe se retira cuando el usuario ya cerró el diálogo de impresión.
-      setTimeout(() => {
-        iframe.remove();
-        URL.revokeObjectURL(url);
-      }, 60_000);
+      setTimeout(retirar, 60_000);
     };
+    // Si el PDF no llega a cargar, tampoco se deja el iframe ni el blob colgados.
+    iframe.onerror = retirar;
     document.body.appendChild(iframe);
+  }
+
+  private esPantallaTactil(): boolean {
+    return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   }
 
   /** Descarga el comprobante como archivo. */
@@ -114,7 +137,7 @@ export class ComprobantePdfService {
     const { jsPDF, autoTable } = await cargarJsPdf();
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
     const centro = doc.internal.pageSize.getWidth() / 2;
-    const dinero = (n: number) => `$${n.toFixed(2)}`;
+    const dinero = formatearDinero;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
@@ -144,7 +167,7 @@ export class ComprobantePdfService {
       ['Fecha / hora:', c.fechaHora],
       [
         'Forma de pago:',
-        c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'EFECTIVO'),
+        c.referencia ? `${c.metodo ?? ''} · Ref. ${c.referencia}` : (c.metodo ?? 'No registrada'),
       ],
     ];
     let y = 36;

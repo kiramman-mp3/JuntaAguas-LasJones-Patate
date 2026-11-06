@@ -117,6 +117,13 @@ test('restablecer contraseña revoca las sesiones abiertas del usuario', async (
   assert.equal((await request(app).get('/api/auth/me').set(auth(objetivo))).status, 401);
 });
 
+test('un administrador no puede restablecer su propia contraseña (H-26)', async () => {
+  const propio = await request(app).post(`/api/personas/${admin.personaId}/cuenta/restablecer-password`).set(auth(admin));
+  assert.equal(propio.status, 403);
+  assert.match(propio.body.message, /propia contraseña/);
+  assert.equal((await request(app).get('/api/auth/me').set(auth(admin))).status, 200, 'su sesión sigue vigente');
+});
+
 test('un administrador no puede modificar su propia cuenta, pero sí la de otro', async () => {
   assert.equal((await request(app).patch(`/api/personas/${admin.personaId}/cuenta`).set(auth(admin)).send({ rol: 'USUARIO' })).status, 403);
   const otroAdmin = await crearUsuario({ rol: 'ADMIN' });

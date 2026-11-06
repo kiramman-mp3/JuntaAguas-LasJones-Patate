@@ -10,7 +10,7 @@ async function esperarHasta(condicion, intentos = 50) {
   assert.ok(condicion(), 'la condición no se cumplió a tiempo');
 }
 
-function crearSesion({ clientes = [], tiempoInicioMs } = {}) {
+function crearSesion({ clientes = [], tiempoInicioMs, ahora } = {}) {
   const creados = [];
   const sesion = new SesionWhatsApp({
     crearCliente: () => {
@@ -20,14 +20,15 @@ function crearSesion({ clientes = [], tiempoInicioMs } = {}) {
     },
     generarQr: async (texto) => `data:image/png;base64,${texto}`,
     tiempoInicioMs,
+    ahora,
     log: logSilencioso
   });
   return { sesion, creados };
 }
 
-async function sesionConectada(chats) {
+async function sesionConectada(chats, opciones = {}) {
   const cliente = new ClienteFalso({ chats });
-  const { sesion } = crearSesion({ clientes: [cliente] });
+  const { sesion } = crearSesion({ clientes: [cliente], ...opciones });
   sesion.iniciar();
   cliente.emit('ready');
   return { sesion, cliente };
@@ -159,6 +160,38 @@ test('envía el mensaje al grupo y valida los datos', async () => {
   await assert.rejects(sesion.enviarAGrupo(GRUPO, '   '), { status: 400 });
   await assert.rejects(sesion.enviarAGrupo(GRUPO, 'x'.repeat(4001)), { status: 400 });
   await assert.rejects(sesion.enviarAGrupo('120363999999999999@g.us', 'Hola'), { status: 404 });
+});
+
+test('enviar varios mensajes reutiliza la lista de grupos hasta que vence (H-18)', async () => {
+  let hora = 1_000_000;
+  const { sesion, cliente } = await sesionConectada([{ id: GRUPO, nombre: 'Usuarios' }], { ahora: () => hora });
+
+  await sesion.enviarAGrupo(GRUPO, 'Uno');
+  await sesion.enviarAGrupo(GRUPO, 'Dos');
+  assert.equal(cliente.consultasGrupos, 1, 'el segundo envío no vuelve a leer los chats');
+
+  hora += 61_000;
+  await sesion.enviarAGrupo(GRUPO, 'Tres');
+  assert.equal(cliente.consultasGrupos, 2, 'pasado el minuto se vuelve a leer');
+  assert.equal(cliente.enviados.length, 3);
+});
+
+test('un grupo que no está en la lista guardada se busca de nuevo antes de rechazarlo', async () => {
+  const { sesion, cliente } = await sesionConectada([{ id: GRUPO, nombre: 'Usuarios' }]);
+  await sesion.enviarAGrupo(GRUPO, 'Uno');
+
+  const nuevo = '120363000000000009@g.us';
+  cliente.chats.push({ id: nuevo, nombre: 'Recién creado' });
+  assert.deepEqual(await sesion.enviarAGrupo(nuevo, 'Hola'), { mensajeId: 'msg-2' });
+  await assert.rejects(sesion.enviarAGrupo('120363999999999999@g.us', 'Hola'), { status: 404 });
+});
+
+test('al desconectarse la sesión descarta la lista de grupos guardada', async () => {
+  const { sesion, cliente } = await sesionConectada([{ id: GRUPO, nombre: 'Usuarios' }]);
+  await sesion.enviarAGrupo(GRUPO, 'Uno');
+  await sesion.detener();
+  await assert.rejects(sesion.enviarAGrupo(GRUPO, 'Dos'), { status: 409 });
+  assert.equal(cliente.consultasGrupos, 1);
 });
 
 test('un rechazo de WhatsApp al enviar se informa como 502', async () => {

@@ -36,6 +36,13 @@
     line-height: 1;
   }
 
+  /* Una etiqueta larga (p. ej. con el número de recibo) envuelve en un teléfono en vez de ensanchar la página. */
+  max-width: 100%;
+
+  @media (max-width: 480px) {
+    white-space: normal;
+  }
+
   /* La respuesta ocurre al presionar, no al soltar. */
   &:active:not(:disabled) {
     transform: scale(0.97);
@@ -99,7 +106,7 @@
   }
 
   &--success {
-    background-color: #059669;
+    background-color: #047857;
     color: var(--text-white);
 
     &:hover:not(:disabled) {
@@ -339,6 +346,8 @@ textarea.input {
 .table-container {
   width: 100%;
   overflow-x: auto;
+  // Contiene a los elementos absolutos de la tabla (.sr-only): si no, ensanchan toda la página.
+  position: relative;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-color);
   background-color: var(--bg-surface);
@@ -606,6 +615,21 @@ textarea.input {
   &--danger {
     background: var(--color-danger-light);
     color: var(--color-danger-strong);
+  }
+
+  &__list {
+    margin: 0.35rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
   }
 }
 

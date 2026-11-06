@@ -43,16 +43,16 @@
     @let h = historial()!;
     <div class="fin-tree__total">
       <span
-        >Ingresos <strong class="money">${{ h.total.ingresos.toFixed(2) }}</strong></span
+        >Ingresos <strong class="money">{{ h.total.ingresos | moneda }}</strong></span
       >
       <span
-        >Egresos <strong class="money">${{ h.total.egresos.toFixed(2) }}</strong></span
+        >Egresos <strong class="money">{{ h.total.egresos | moneda }}</strong></span
       >
       <span
         >Balance
-        <strong class="money" [class.is-negativo]="h.total.balance < 0"
-          >${{ h.total.balance.toFixed(2) }}</strong
-        ></span
+        <strong class="money" [class.is-negativo]="h.total.balance < 0">{{
+          h.total.balance | moneda
+        }}</strong></span
       >
     </div>
 
@@ -70,11 +70,11 @@
             <i class="ri-arrow-right-s-line fin-tree__chevron" aria-hidden="true"></i>
             <span class="fin-tree__etiqueta">{{ a.anio }}</span>
             <span class="fin-tree__cifras">
-              <span class="fin-tree__ingreso money">+${{ a.ingresos.toFixed(2) }}</span>
-              <span class="fin-tree__egreso money">−${{ a.egresos.toFixed(2) }}</span>
-              <strong class="money" [class.is-negativo]="a.balance < 0"
-                >${{ a.balance.toFixed(2) }}</strong
-              >
+              <span class="fin-tree__ingreso money">+{{ a.ingresos | moneda }}</span>
+              <span class="fin-tree__egreso money">−{{ a.egresos | moneda }}</span>
+              <strong class="money" [class.is-negativo]="a.balance < 0">{{
+                a.balance | moneda
+              }}</strong>
             </span>
           </button>
 
@@ -99,11 +99,11 @@
                       >
                     </span>
                     <span class="fin-tree__cifras">
-                      <span class="fin-tree__ingreso money">+${{ m.ingresos.toFixed(2) }}</span>
-                      <span class="fin-tree__egreso money">−${{ m.egresos.toFixed(2) }}</span>
-                      <strong class="money" [class.is-negativo]="m.balance < 0"
-                        >${{ m.balance.toFixed(2) }}</strong
-                      >
+                      <span class="fin-tree__ingreso money">+{{ m.ingresos | moneda }}</span>
+                      <span class="fin-tree__egreso money">−{{ m.egresos | moneda }}</span>
+                      <strong class="money" [class.is-negativo]="m.balance < 0">{{
+                        m.balance | moneda
+                      }}</strong>
                     </span>
                   </button>
 
@@ -124,7 +124,12 @@
                           </button>
                         </div>
                       } @else {
-                        <div class="table-scroll">
+                        <div
+                          class="table-scroll"
+                          tabindex="0"
+                          role="region"
+                          aria-label="Detalle de ingresos y egresos"
+                        >
                           <table class="fin-table">
                             <thead>
                               <tr>
@@ -166,9 +171,8 @@
                                   </td>
                                   <td class="num">
                                     <span class="money"
-                                      >{{ mov.tipo === 'INGRESO' ? '+' : '−' }}${{
-                                        mov.valor.toFixed(2)
-                                      }}</span
+                                      >{{ mov.tipo === 'INGRESO' ? '+' : '−'
+                                      }}{{ mov.valor | moneda }}</span
                                     >
                                   </td>
                                 </tr>

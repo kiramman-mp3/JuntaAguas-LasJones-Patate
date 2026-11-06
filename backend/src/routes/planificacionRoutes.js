@@ -24,5 +24,6 @@ const router = express.Router();
 router.get('/', ...soloAdmin, planificacionController.getPlanes);
 router.post('/', ...soloAdmin, planificacionController.createPlan);
 router.post('/:planId/actividades', ...soloAdmin, planificacionController.addActividadPlan);
+router.patch('/:planId/actividades/:actividadId', ...soloAdmin, planificacionController.updateActividadPlan);
 
 module.exports = router;
