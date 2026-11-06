@@ -44,8 +44,13 @@
           <div class="user-info-text">
             <h3>{{ resultado.nombres }}</h3>
             <p class="caption">
-              Cédula: <strong>{{ resultado.cedula }}</strong> | Lote:
-              <span class="badge badge--info">{{ resultado.loteCodigo }}</span>
+              Cédula: <strong>{{ resultado.cedula }}</strong> |
+              {{ resultado.lotes.length === 1 ? 'Lote' : 'Lotes' }}:
+              @for (l of resultado.lotes; track l.codigo) {
+                <span class="badge badge--info" [title]="l.sector">{{ l.codigo }}</span>
+              } @empty {
+                <span class="badge badge--neutral">Sin lote asignado</span>
+              }
             </p>
           </div>
           @if (ultimoRecibo; as r) {

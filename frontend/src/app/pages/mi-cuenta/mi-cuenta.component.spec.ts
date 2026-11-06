@@ -61,6 +61,10 @@ describe('Mi cuenta', () => {
                   nombres: 'Rosa Caiza',
                   sector: 'La Jones',
                   loteCodigo: 'LJA-001',
+                  lotes: [
+                    { codigo: 'LJA-001', sector: 'La Jones' },
+                    { codigo: 'LJB-014', sector: 'El Tambo' },
+                  ],
                   totalPendiente,
                   deudas,
                 },
@@ -81,6 +85,11 @@ describe('Mi cuenta', () => {
     const c = crear([deuda({ tipo: 'AGUA_ANUAL', concepto: 'Pago anual de agua', valor: 42 })], 42);
     expect(c.totalPendiente).toBe(42);
     expect(c.deudasPendientes.map((d) => d.tipo)).toEqual(['AGUA_ANUAL']);
+  });
+
+  it('muestra todos los lotes del usuario (H-23)', () => {
+    const c = crear([], 0);
+    expect(c.resultado?.lotes.map((l) => l.codigo)).toEqual(['LJA-001', 'LJB-014']);
   });
 
   it('los comprobantes se piden solo de la persona de la sesión, aunque sea directivo (H-34)', () => {

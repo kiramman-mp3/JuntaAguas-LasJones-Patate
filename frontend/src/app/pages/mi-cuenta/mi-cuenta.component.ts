@@ -17,6 +17,7 @@ interface UsuarioResultado {
   nombres: string;
   sector: string;
   loteCodigo: string;
+  lotes: { codigo: string; sector: string }[];
   totalPendiente: number;
   deudas: DeudaItem[];
 }
