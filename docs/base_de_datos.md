@@ -26,7 +26,7 @@ El modelo relacional está compuesto por **22 tablas** normalizadas y distribuid
 
 | Dominio Funcional | Tablas Integrantes | Descripción Breve |
 | :--- | :--- | :--- |
-| **Identidad y Acceso** | `personas`, `roles`, `cuentas` | Gestión de usuarios, credenciales de acceso y perfiles (`ADMIN`, `USUARIO`). |
+| **Identidad y Acceso** | `personas`, `roles`, `cuentas`, `intentos_login` | Gestión de usuarios, credenciales de acceso y perfiles (`ADMIN`, `USUARIO`). |
 | **Lotes y Riego** | `sectores`, `lotes`, `persona_lotes`, `turnos_riego` | Terrenos por sector, ubicación aproximada (lat/lng/radio de error), titularidad y horarios de agua. |
 | **Asambleas, Mingas, Asistencia y Comunicación** | `eventos`, `puntos_asamblea`, `asistencias`, `documentos_evento`, `envios_convocatoria` | Eventos, orden del día/resoluciones, control de asistencia, documentos PDF y convocatorias publicadas en el grupo de WhatsApp. |
 | **Gestión Financiera** | `conceptos_cobro`, `tarifas`, `obligaciones`, `pagos`, `pago_detalles`, `obligacion_anual_agua`, `pago_anual_agua`, `pago_anual_agua_detalle`, `egresos` | Catálogo de cobros, tarifas con vigencia, cuentas por cobrar (no parciales), pagos, pago único anual de agua y gastos operativos. |
@@ -190,6 +190,7 @@ erDiagram
 - **`personas`**: Miembros de la Junta. La cédula es única y obligatoria.
 - **`roles`**: Perfiles de acceso (`ADMIN`, `USUARIO`).
 - **`cuentas`**: Credenciales de acceso vinculadas a una persona (`persona_id` es `UNIQUE`). Posee directamete un `rol_id`. Incluye control `debe_cambiar_password`.
+- **`intentos_login`**: Intentos fallidos de inicio de sesión por par cuenta + IP (`cuenta_id`, `ip`, `intentos`, `bloqueado_hasta` en UTC). Al llegar a 5 intentos, ese par queda bloqueado 15 minutos; un inicio de sesión correcto limpia los intentos de esa IP y el borrado de la cuenta los elimina en cascada.
 - **`cargos_directiva` & `miembros_directiva`**: Mantiene la historia de directivas (Presidente, Tesorero, Secretario, Vocales).
 
 ### 4.2. Dominio de Lotes y Riego
