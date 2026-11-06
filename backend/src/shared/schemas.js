@@ -35,8 +35,18 @@ const hora = z.string().transform((v, ctx) => {
   }
   return normalizada;
 });
-const dinero = z.coerce.number().finite().multipleOf(0.01, 'Use como máximo dos decimales.');
-const montoPositivo = dinero.positive('El valor debe ser mayor a cero.').max(1000000);
+/**
+ * Un importe llega como número o como texto decimal simple ("12.50"). No se usa z.coerce: convertiría
+ * true en 1, "0x10" en 16 o "" en 0 y esos valores se guardarían como importes válidos.
+ */
+const aNumeroDinero = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v.trim()) ? Number(v.trim()) : v);
+/** Importe con dos decimales como máximo; `restricciones` agrega los límites propios de cada campo. */
+const dineroCon = (restricciones = (n) => n) => z.preprocess(
+  aNumeroDinero,
+  restricciones(z.number({ error: 'Ingrese un valor numérico.' }).finite().multipleOf(0.01, 'Use como máximo dos decimales.'))
+);
+const dinero = dineroCon();
+const montoPositivo = dineroCon((n) => n.positive('El valor debe ser mayor a cero.').max(1000000));
 const celular = z.preprocess(vacioANull, z.string().trim().regex(/^09\d{8}$/, 'El celular debe tener 10 dígitos y empezar con 09.').nullish()).transform((v) => v ?? null);
 const telefono = z.preprocess(vacioANull, z.string().trim().regex(/^0[2-7]\d{7}$/, 'El teléfono fijo debe tener 9 dígitos (ej. 032870112).').nullish()).transform((v) => v ?? null);
 const email = z.preprocess(vacioANull, z.string().trim().toLowerCase().email('Correo electrónico inválido.').max(150).nullish()).transform((v) => v ?? null);
@@ -48,5 +58,5 @@ const paginacion = z.object({
 
 module.exports = {
   z, esCedulaValida, textoOpcional, id, idParam, cedula, fecha, fechaOpcional, hora,
-  dinero, montoPositivo, celular, telefono, email, paginacion
+  dinero, dineroCon, montoPositivo, celular, telefono, email, paginacion
 };

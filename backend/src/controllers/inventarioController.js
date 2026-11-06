@@ -11,7 +11,7 @@ const bienSchema = z.object({
   nombre: z.string({ error: 'El nombre del bien es obligatorio.' }).trim().min(2, 'Indique el nombre del bien.').max(150),
   descripcion: s.textoOpcional(5000),
   cantidad: z.coerce.number().int().min(1, 'La cantidad debe ser al menos 1.').max(100000).default(1),
-  valor_unitario: s.dinero.min(0, 'El valor unitario no puede ser negativo.').max(1000000),
+  valor_unitario: s.dineroCon((n) => n.min(0, 'El valor unitario no puede ser negativo.').max(1000000)),
   fecha_adquisicion: s.fechaOpcional,
   estado_fisico: z.preprocess((v) => (typeof v === 'string' ? v.trim().toUpperCase() : v), z.enum(ESTADOS_FISICOS)).default('BUENO'),
   ubicacion: s.textoOpcional(150)
@@ -22,7 +22,7 @@ const bienUpdateSchema = z.object({
   nombre: z.string().trim().min(2, 'Indique el nombre del bien.').max(150).optional(),
   descripcion: s.textoOpcional(5000),
   cantidad: z.coerce.number().int().min(0, 'La cantidad no puede ser negativa.').max(100000).optional(),
-  valor_unitario: s.dinero.min(0, 'El valor unitario no puede ser negativo.').max(1000000).optional(),
+  valor_unitario: s.dineroCon((n) => n.min(0, 'El valor unitario no puede ser negativo.').max(1000000)).optional(),
   fecha_adquisicion: s.fechaOpcional,
   estado_fisico: z.preprocess((v) => (typeof v === 'string' ? v.trim().toUpperCase() : v), z.enum(ESTADOS_FISICOS)).optional(),
   ubicacion: s.textoOpcional(150),
