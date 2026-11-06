@@ -37,7 +37,7 @@ jobs:
       DB_PASSWORD: rootpassword
       JWT_SECRET: secreto-exclusivo-de-pruebas-0123456789abcdef
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 26
@@ -58,7 +58,7 @@ jobs:
       # Las pruebas usan un cliente simulado: no hace falta descargar Chrome.
       PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 26
@@ -75,7 +75,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 26
@@ -110,7 +110,7 @@ jobs:
       DB_PASSWORD: rootpassword
       JWT_SECRET: e2e-secreto-solo-para-pruebas-0123456789abcdef
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 26
