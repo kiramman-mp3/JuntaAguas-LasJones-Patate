@@ -1,0 +1,44 @@
+name: Auditoría de dependencias
+
+# Los avisos de seguridad aparecen con el tiempo aunque el código no cambie: además de cada push a main,
+# se revisa cada lunes.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+jobs:
+  auditoria:
+    name: npm audit (dependencias de producción)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        paquete: [backend, frontend, e2e]
+    defaults:
+      run:
+        working-directory: ${{ matrix.paquete }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+      # Falla ante avisos altos o críticos en lo que se instala en el servidor.
+      - run: npm audit --omit=dev --audit-level=high
+
+  whatsapp-service:
+    name: npm audit (servicio de WhatsApp, informativo)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: whatsapp-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+      # Sus avisos conocidos (extract-zip y zod dentro de whatsapp-web.js) no se pueden corregir sin bajar de versión;
+      # están explicados en docs/operacion.md. Se muestran en el registro para detectar avisos nuevos, sin bloquear.
+      - run: npm audit --omit=dev || true
