@@ -98,9 +98,11 @@ test('anular el pago exige un motivo y devuelve la multa a pendiente', async ({ 
   const confirmacion = page.getByRole('alertdialog').or(page.getByRole('dialog')).last();
   await confirmacion.getByPlaceholder('Motivo de la anulación').fill('no');
   await confirmacion.getByRole('button', { name: 'Anular pago' }).click();
+  // El diálogo sigue abierto con el error y conserva lo escrito: se completa el motivo ahí mismo.
+  await expect(confirmacion.getByRole('alert')).toContainText('al menos 5 caracteres');
+  await expect(confirmacion.getByPlaceholder('Motivo de la anulación')).toHaveValue('no');
   await expect(fila).not.toContainText('Anulado');
 
-  await fila.getByRole('button', { name: /^Anular pago / }).click();
   await confirmacion.getByPlaceholder('Motivo de la anulación').fill('Referencia bancaria mal digitada (prueba E2E)');
   await confirmacion.getByRole('button', { name: 'Anular pago' }).click();
   await expect(fila).toContainText('Anulado');
