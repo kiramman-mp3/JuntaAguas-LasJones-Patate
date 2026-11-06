@@ -142,6 +142,39 @@ describe('Cobro en caja', () => {
     expect(c.total()).toBe(0);
   });
 
+  it('marca la búsqueda en curso al escribir, antes del retraso, para no mostrar «sin resultados» (H-30)', () => {
+    vi.useFakeTimers();
+    try {
+      const buscarUsuarios = vi.fn(() => of({ status: 'OK', data: [usuario] }));
+      configurar({ buscarUsuarios });
+      const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
+
+      c.onBuscar('R');
+      expect(c.buscando()).toBe(false);
+
+      c.onBuscar('Ro');
+      expect(c.buscando()).toBe(true);
+      expect(buscarUsuarios).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(250);
+      expect(buscarUsuarios).toHaveBeenCalledWith('Ro');
+      expect(c.buscando()).toBe(false);
+      expect(c.resultados()).toHaveLength(1);
+
+      // Escribir otra letra y volver al mismo texto dentro del retraso no deja la búsqueda "en curso".
+      c.onBuscar('Ros');
+      expect(c.buscando()).toBe(true);
+      c.onBuscar('Ro');
+      expect(c.buscando()).toBe(false);
+      vi.advanceTimersByTime(250);
+      expect(c.buscando()).toBe(false);
+
+      c.onBuscar('');
+      expect(c.buscando()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('pide cada lista una sola vez al elegir el usuario', () => {
     const { getObligaciones, getObligacionesAnualesAgua } = crear();
     expect(getObligaciones).toHaveBeenCalledTimes(1);

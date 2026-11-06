@@ -195,9 +195,11 @@ async function consultaPublicaPorCedula(req, res) {
      FROM persona_lotes pl
      JOIN lotes l ON l.id = pl.lote_id
      JOIN sectores s ON s.id = l.sector_id
-     WHERE pl.persona_id = ? ORDER BY l.codigo LIMIT 1`,
+     WHERE pl.persona_id = ? ORDER BY l.codigo`,
     [persona.id]
   );
+  const lotes = lotesRows.map((l) => ({ codigo: l.lote_codigo, sector: l.sector_nombre }));
+  // `sector` y `loteCodigo` conservan el primer lote para los clientes anteriores a `lotes`.
   const loteInfo = lotesRows[0] || { lote_codigo: 'N/A', sector_nombre: 'Sin sector asignado' };
 
   const [obligaciones] = await db.query(
@@ -269,6 +271,7 @@ async function consultaPublicaPorCedula(req, res) {
       nombres: `${persona.nombres} ${persona.apellidos}`,
       sector: loteInfo.sector_nombre,
       loteCodigo: loteInfo.lote_codigo,
+      lotes,
       totalPendiente,
       deudas
     }

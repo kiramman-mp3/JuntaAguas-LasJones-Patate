@@ -95,6 +95,8 @@ export class CobroCajaComponent {
 
   private campoBusqueda = viewChild<ElementRef<HTMLInputElement>>('campoBusqueda');
   private busqueda$ = new Subject<string>();
+  /** Último término que llegó a buscarse; si se vuelve a escribir el mismo no habrá nueva petición. */
+  private ultimoTermino = '';
 
   readonly termino = signal('');
   readonly resultados = signal<UsuarioBusqueda[]>([]);
@@ -229,7 +231,10 @@ export class CobroCajaComponent {
       .pipe(
         debounceTime(250),
         distinctUntilChanged(),
-        tap(() => this.errorBusqueda.set('')),
+        tap((texto) => {
+          this.ultimoTermino = texto;
+          this.errorBusqueda.set('');
+        }),
         switchMap((texto) => {
           if (texto.length < 2) {
             this.buscando.set(false);
@@ -254,8 +259,11 @@ export class CobroCajaComponent {
   }
 
   onBuscar(texto: string): void {
+    const termino = texto.trim();
     this.termino.set(texto);
-    this.busqueda$.next(texto.trim());
+    // La búsqueda se retrasa 250 ms; hasta entonces se marca como en curso para no mostrar «sin resultados».
+    this.buscando.set(termino.length >= 2 && termino !== this.ultimoTermino);
+    this.busqueda$.next(termino);
   }
 
   seleccionarUsuario(c: UsuarioBusqueda): void {
