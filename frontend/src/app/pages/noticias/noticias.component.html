@@ -25,7 +25,8 @@
       mensaje="Cuando la directiva publique una, aparecerá aquí."
     />
   } @else {
-    <section aria-label="Noticia más reciente" class="noticias__principal">
+    <section aria-labelledby="principal-titulo" class="noticias__principal">
+      <h2 id="principal-titulo" class="sr-only">Noticia más reciente</h2>
       <app-noticia-tarjeta [noticia]="principal()!" variante="destacada" />
     </section>
 

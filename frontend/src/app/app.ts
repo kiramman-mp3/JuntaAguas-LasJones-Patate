@@ -43,6 +43,12 @@ export class App {
     this.menuAbierto = !this.menuAbierto;
   }
 
+  /** Lleva el foco al contenido sin cambiar la URL (un href="#..." recargaría la ruta). */
+  saltarAlContenido(evento: Event) {
+    evento.preventDefault();
+    document.getElementById('contenido')?.focus();
+  }
+
   cerrarMenu() {
     this.menuAbierto = false;
   }

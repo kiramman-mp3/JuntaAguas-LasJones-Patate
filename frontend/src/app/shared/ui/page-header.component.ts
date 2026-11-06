@@ -17,7 +17,7 @@ import { CurvasNivelComponent } from './curvas-nivel.component';
           <span class="page-header__icon" aria-hidden="true"><i [class]="icono()"></i></span>
         }
         <div>
-          <h2 class="page-header__title">{{ titulo() }}</h2>
+          <h1 class="page-header__title">{{ titulo() }}</h1>
           @if (subtitulo()) {
             <p class="page-header__subtitle">{{ subtitulo() }}</p>
           }
