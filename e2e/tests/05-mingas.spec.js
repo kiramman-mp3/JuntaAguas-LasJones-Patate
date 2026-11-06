@@ -112,7 +112,7 @@ test('un justificante se adjunta a la asistencia, se descarga y se puede quitar'
 
   await modal.getByRole('button', { name: 'Quitar archivo' }).first().click();
   const confirmar = dialogo(page);
-  if (await confirmar.isVisible({ timeout: 2000 }).catch(() => false)) await confirmar.getByRole('button').last().click();
+  await confirmar.getByRole('button', { name: 'Quitar archivo' }).click();
   await expect(modal.getByRole('button', { name: 'Descargar comprobante' })).toHaveCount(0);
   await modal.getByRole('button', { name: 'Cerrar' }).last().click();
 });
