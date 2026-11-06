@@ -176,19 +176,21 @@ async function valorAnualAgua(conexion, anio, valorTotal) {
 }
 
 /**
- * Pago anual de agua: genera la obligación del año para cada usuario activo con al menos un lote.
- * Es idempotente: las obligaciones ya emitidas de ese año se respetan (clave única usuario/año)
+ * Pago anual de agua: genera la obligación del año por cada lote activo vinculado a un usuario activo.
+ * Es idempotente: las obligaciones ya emitidas de ese año y lote se respetan (clave única lote/año)
  * y conservan su valor. Con `simular` solo calcula cuántas se emitirían.
- * @returns {Promise<{ anio: number, valor: number, usuarios: number, generadas: number, existentes: number, total: number }>}
+ * @returns {Promise<{ anio: number, valor: number, lotes: number, generadas: number, existentes: number, total: number }>}
  */
 async function generarObligacionesAnualesAgua(conexion, { anio, valorTotal = null, simular = false, fechaEmision = null }) {
   const valor = await valorAnualAgua(conexion, anio, valorTotal);
   const [candidatos] = await conexion.query(
-    `SELECT p.id, (o.id IS NOT NULL) AS ya_emitida
-     FROM personas p
-     LEFT JOIN obligacion_anual_agua o ON o.persona_id = p.id AND o.periodo_anio = ?
-     WHERE ${CONDICION_USUARIO_CON_LOTE}
-     ORDER BY p.id`,
+    `SELECT pl.persona_id, pl.lote_id, (o.id IS NOT NULL) AS ya_emitida
+     FROM persona_lotes pl
+     JOIN personas p ON p.id = pl.persona_id
+     JOIN lotes l ON l.id = pl.lote_id
+     LEFT JOIN obligacion_anual_agua o ON o.lote_id = pl.lote_id AND o.periodo_anio = ?
+     WHERE p.estado = 'ACTIVO' AND l.activo = TRUE
+     ORDER BY pl.persona_id, pl.lote_id`,
     [anio]
   );
   const nuevos = candidatos.filter((c) => !Number(c.ya_emitida));
@@ -200,8 +202,8 @@ async function generarObligacionesAnualesAgua(conexion, { anio, valorTotal = nul
 
   const emision = fechaEmision ?? `${anio}-01-01`;
   await conexion.query(
-    `INSERT INTO obligacion_anual_agua (persona_id, periodo_anio, valor_total, estado, fecha_emision, fecha_vencimiento) VALUES ?`,
-    [nuevos.map((c) => [c.id, anio, valor, 'PENDIENTE', emision, `${anio}-12-31`])]
+    `INSERT INTO obligacion_anual_agua (persona_id, lote_id, periodo_anio, valor_total, estado, fecha_emision, fecha_vencimiento) VALUES ?`,
+    [nuevos.map((c) => [c.persona_id, c.lote_id, anio, valor, 'PENDIENTE', emision, `${anio}-12-31`])]
   );
   return resultado;
 }
@@ -227,13 +229,18 @@ async function resumenAnualAgua(conexion, anio) {
   };
 }
 
-/** Obligaciones anuales de agua sin pagar de un usuario, de la más antigua a la más reciente. */
+/** Obligaciones anuales de agua sin pagar de un usuario, con desglose de lote. */
 async function obligacionesAnualesPendientes(conexion, personaId) {
   const [personas] = await conexion.query('SELECT id FROM personas WHERE id = ?', [personaId]);
   if (!personas.length) throw notFound('El usuario no existe.');
   const [filas] = await conexion.query(
-    `SELECT id, persona_id, periodo_anio, valor_total, estado FROM obligacion_anual_agua
-     WHERE persona_id = ? AND estado = 'PENDIENTE' ORDER BY periodo_anio ASC`,
+    `SELECT o.id, o.persona_id, o.lote_id, o.periodo_anio, o.valor_total, o.estado,
+            l.codigo AS lote_codigo, s.nombre AS sector_nombre
+     FROM obligacion_anual_agua o
+     LEFT JOIN lotes l ON l.id = o.lote_id
+     LEFT JOIN sectores s ON s.id = l.sector_id
+     WHERE o.persona_id = ? AND o.estado = 'PENDIENTE'
+     ORDER BY o.periodo_anio ASC, l.codigo ASC`,
     [personaId]
   );
   return filas.map((f) => ({ ...f, valor_total: Number(f.valor_total) }));

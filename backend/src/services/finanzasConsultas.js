@@ -173,9 +173,12 @@ async function detallePagoAnual(conexion, id) {
   );
   if (!filas.length) return null;
   const [detalles] = await conexion.query(
-    `SELECT d.obligacion_anual_agua AS obligacion_id, d.valor_pagado, o.periodo_anio
-     FROM pago_anual_agua_detalle d JOIN obligacion_anual_agua o ON o.id = d.obligacion_anual_agua
-     WHERE d.pago_anual_agua_id = ? ORDER BY o.periodo_anio`,
+    `SELECT d.obligacion_anual_agua AS obligacion_id, d.valor_pagado, o.periodo_anio, o.lote_id,
+            l.codigo AS lote_codigo
+     FROM pago_anual_agua_detalle d
+     JOIN obligacion_anual_agua o ON o.id = d.obligacion_anual_agua
+     LEFT JOIN lotes l ON l.id = o.lote_id
+     WHERE d.pago_anual_agua_id = ? ORDER BY o.periodo_anio, l.codigo`,
     [id]
   );
   return { ...filas[0], detalles };

@@ -245,3 +245,19 @@ test('el balance respeta el rango de fechas para los pagos anuales', async () =>
   const fuera = await request(app).get('/api/financiero/balance?desde=2000-01-01&hasta=2000-01-31').set(auth(admin));
   assert.equal(fuera.body.balance.totalIngresos, 0);
 });
+
+test('un usuario con múltiples lotes recibe una obligación por cada lote', async () => {
+  const pConDosLotes = await crearPersona({ nombres: 'Propietario Multiple' });
+  const [sector] = await db.query('SELECT id FROM sectores LIMIT 1');
+  const [l1] = await db.query('INSERT INTO lotes (codigo, sector_id, superficie_m2) VALUES (?, ?, ?)', ['L-MULTI-1', sector[0].id, 100]);
+  const [l2] = await db.query('INSERT INTO lotes (codigo, sector_id, superficie_m2) VALUES (?, ?, ?)', ['L-MULTI-2', sector[0].id, 200]);
+  await db.query('INSERT INTO persona_lotes (persona_id, lote_id) VALUES (?, ?), (?, ?)', [pConDosLotes.personaId, l1.insertId, pConDosLotes.personaId, l2.insertId]);
+
+  const emision = await generar({ anio: 2022, valor_total: 15 });
+  assert.equal(emision.status, 201);
+
+  const [obligaciones] = await db.query('SELECT * FROM obligacion_anual_agua WHERE persona_id = ? AND periodo_anio = 2022', [pConDosLotes.personaId]);
+  assert.equal(obligaciones.length, 2, 'debe tener 2 obligaciones para el año 2022, una por cada lote');
+  const lotesIds = obligaciones.map(o => Number(o.lote_id)).sort((a, b) => a - b);
+  assert.deepEqual(lotesIds, [Number(l1.insertId), Number(l2.insertId)].sort((a, b) => a - b));
+});

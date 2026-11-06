@@ -215,16 +215,18 @@ async function consultaPublicaPorCedula(req, res) {
     [persona.id]
   );
 
-  // El agua se cobra una vez al año: sus obligaciones se muestran junto a multas y otros cobros.
+  // El agua se cobra una vez al año por cada lote: sus obligaciones se muestran junto a multas y otros cobros.
   const [anuales] = await db.query(
-    `SELECT o.id, o.periodo_anio, o.valor_total, o.estado, o.fecha_emision,
+    `SELECT o.id, o.periodo_anio, o.valor_total, o.estado, o.fecha_emision, o.lote_id,
+            l.codigo AS lote_codigo,
             (SELECT d.pago_anual_agua_id FROM pago_anual_agua_detalle d
              JOIN pago_anual_agua p ON p.id = d.pago_anual_agua_id AND p.estado = 'VIGENTE'
              WHERE d.obligacion_anual_agua = o.id
              ORDER BY d.pago_anual_agua_id DESC LIMIT 1) AS pago_anual_id
      FROM obligacion_anual_agua o
+     LEFT JOIN lotes l ON l.id = o.lote_id
      WHERE o.persona_id = ? AND o.estado <> 'ANULADA'
-     ORDER BY o.periodo_anio DESC`,
+     ORDER BY o.periodo_anio DESC, l.codigo ASC`,
     [persona.id]
   );
 
@@ -232,11 +234,11 @@ async function consultaPublicaPorCedula(req, res) {
     ...anuales.map((o) => ({
       id: o.id,
       tipo: 'AGUA_ANUAL',
-      concepto: 'Pago anual de agua',
+      concepto: o.lote_codigo ? `Pago anual de agua (Lote ${o.lote_codigo})` : 'Pago anual de agua',
       conceptoCodigo: 'AGUA_ANUAL',
       anio: o.periodo_anio,
       mes: null,
-      periodo: `Año ${o.periodo_anio}`,
+      periodo: o.lote_codigo ? `Año ${o.periodo_anio} · Lote ${o.lote_codigo}` : `Año ${o.periodo_anio}`,
       valor: Number(o.valor_total),
       estado: o.estado,
       fechaEmision: o.fecha_emision,
