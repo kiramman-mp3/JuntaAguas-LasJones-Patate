@@ -35,7 +35,8 @@ test('las horas sin cero inicial se comparan como horas, no como texto', async (
   assert.equal(cruce.status, 409);
   assert.match(cruce.body.message, /09:00 a 10:00/);
   assert.equal((await crear({ ...base(), hora_inicio: '10:00', hora_fin: '11:00' })).status, 201, 'turno contiguo');
-  assert.equal((await crear({ ...base(), hora_inicio: '12:00', hora_fin: '11:00' })).status, 400);
+  assert.equal((await crear({ ...base(), hora_inicio: '12:00', hora_fin: '11:00' })).status, 400, 'cruce de medianoche de 23 horas');
+  assert.equal((await crear({ ...base(), hora_inicio: '12:00', hora_fin: '12:00' })).status, 400, 'sin duración');
   assert.equal((await crear({ ...base(), dia_semana: 8, hora_inicio: '06:00', hora_fin: '07:00' })).status, 400);
 });
 
@@ -85,6 +86,29 @@ test('editar conserva los campos omitidos y valida cruces con el horario final',
   assert.equal((await editar(r.body.turnoId, { hora_inicio: '17:00' })).status, 400, 'inicio después del fin guardado');
   assert.equal((await editar(999999, { hora_fin: '16:00' })).status, 404);
 });
+
+test('los turnos nocturnos cruzan la medianoche, suman su duración real y bloquean el día siguiente (H-13)', async () => {
+  const delVecino = (dia, hora_inicio, hora_fin) => ({ persona_id: vecino.personaId, lote_id: loteVecino, dia_semana: dia, hora_inicio, hora_fin });
+
+  const nocturno = await crear({ ...base(), dia_semana: 6, hora_inicio: '22:00', hora_fin: '02:00' });
+  assert.equal(nocturno.status, 201, nocturno.body.message);
+
+  const cronograma = await request(app).get('/api/turnos/cronograma').set(auth(admin));
+  const sabado = cronograma.body.data.find((s) => s.sector_nombre === 'La Jones Alta').dias[5].turnos;
+  assert.equal(sabado.find((t) => t.id === nocturno.body.turnoId).duracion_minutos, 240);
+
+  // Invade la madrugada del domingo y la noche del sábado, pero no más allá.
+  assert.equal((await crear(delVecino(7, '01:00', '01:30'))).status, 409, 'madrugada del día siguiente');
+  assert.equal((await crear(delVecino(6, '21:00', '22:30'))).status, 409, 'noche del mismo día');
+  assert.equal((await crear(delVecino(7, '02:00', '03:00'))).status, 201, 'contiguo al fin');
+  assert.equal((await crear(delVecino(6, '20:00', '22:00'))).status, 201, 'contiguo al inicio');
+
+  // El domingo pasa al lunes de la semana siguiente.
+  const domingoNoche = await crear({ ...base(), dia_semana: 7, hora_inicio: '23:00', hora_fin: '01:00' });
+  assert.equal(domingoNoche.status, 201, domingoNoche.body.message);
+  assert.equal((await crear(delVecino(1, '00:30', '01:30'))).status, 409, 'lunes de madrugada');
+});
+
 test('eliminar desactiva el turno una sola vez', async () => {
   const r = await crear({ ...base(), dia_semana: 4, hora_inicio: '06:00', hora_fin: '07:00' });
   assert.equal((await request(app).delete(`/api/turnos/${r.body.turnoId}`).set(auth(admin))).status, 200);
