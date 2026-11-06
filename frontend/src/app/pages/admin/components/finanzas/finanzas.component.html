@@ -8,7 +8,7 @@
   <!-- Los indicadores de caja no aplican en Ajustes -->
   @if (!grupoActual().indicadores) {
   } @else if (indicadores(); as k) {
-    <div class="stat-grid" aria-label="Indicadores financieros">
+    <div class="stat-grid stat-grid--cuatro" aria-label="Indicadores financieros">
       <div
         class="stat-tile"
         [class.stat-tile--positive]="k.historico.balanceAlDia >= 0"
@@ -46,7 +46,7 @@
       </button>
     </div>
   } @else {
-    <div class="stat-grid" aria-hidden="true">
+    <div class="stat-grid stat-grid--cuatro" aria-hidden="true">
       @for (s of [1, 2, 3, 4]; track s) {
         <div class="skeleton skeleton--card" style="height: 92px"></div>
       }
