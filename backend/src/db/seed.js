@@ -327,8 +327,8 @@ async function pagarPendientes(conexion, azar, persona, fecha, cuentaId) {
     [persona.id, fecha]
   );
   if (!pendientes.length) return null;
-  const metodo = azar.probabilidad(0.8) ? 'EFECTIVO' : azar.probabilidad(0.75) ? 'TRANSFERENCIA' : 'DEPOSITO';
-  const referencia = metodo === 'EFECTIVO' ? null : `${metodo === 'TRANSFERENCIA' ? 'TRF' : 'DEP'}-${azar.entero(100000, 999999)}`;
+  const metodo = azar.probabilidad(0.75) ? 'TRANSFERENCIA' : 'DEPOSITO';
+  const referencia = `${metodo === 'TRANSFERENCIA' ? 'TRF' : 'DEP'}-${azar.entero(100000, 999999)}`;
   const hora = `${dosDigitos(azar.entero(8, 16))}:${dosDigitos(azar.entero(0, 59))}:00`;
   const ahora = new Date();
   const momento = instante(fecha, hora);
