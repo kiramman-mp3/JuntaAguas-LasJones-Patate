@@ -129,3 +129,25 @@ test('valida las coordenadas y el sector al crear un lote', async () => {
   assert.equal((await crear({ codigo: 'LJA-041', latitud_aproximada: '', longitud_aproximada: '' })).status, 201, 'vacíos se guardan como null');
   assert.equal((await request(app).post('/api/lotes').set(auth(admin)).send({ sector_id: 999999, codigo: 'LJA-042' })).status, 404);
 });
+
+test('detecta y advierte deudas de agua pendientes del titular anterior al transferir titularidad (H-09)', async () => {
+  const titular = await crearUsuario();
+  const nuevoTitular = await crearUsuario();
+  const loteId = await crearLote({ sectorId: sectorAlto, codigo: 'LJA-099' });
+
+  // Asignar primer titular
+  await request(app).post(`/api/lotes/${loteId}/vincular-persona`).set(auth(admin)).send({ persona_id: titular.personaId, porcentaje: 100 });
+
+  // Crear obligación pendiente de agua para el primer titular
+  await db.query(
+    "INSERT INTO obligacion_anual_agua (persona_id, periodo_anio, valor_total, estado, fecha_emision, fecha_vencimiento) VALUES (?, 2026, 30.00, 'PENDIENTE', '2026-01-01', '2026-12-31')",
+    [titular.personaId]
+  );
+
+  // Transferir al nuevo titular
+  const res = await request(app).post(`/api/lotes/${loteId}/vincular-persona`).set(auth(admin)).send({ persona_id: nuevoTitular.personaId, porcentaje: 100 });
+  assert.equal(res.status, 200);
+  assert.match(res.body.message, /Advertencia: El titular anterior registra 1 obligación\(es\) pendiente\(s\) de agua/);
+  assert.ok(Array.isArray(res.body.advertenciaDeudas));
+  assert.equal(res.body.advertenciaDeudas.length, 1);
+});
