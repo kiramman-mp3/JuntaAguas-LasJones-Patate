@@ -60,7 +60,12 @@
   @if (grupo.tarifas.length) {
     <section class="fin-panel" [attr.aria-label]="'Historial de ' + grupo.concepto.nombre">
       <h4 class="fin-panel__title" style="margin-bottom: 0.75rem">{{ grupo.concepto.nombre }}</h4>
-      <div class="table-scroll">
+      <div
+        class="table-scroll"
+        tabindex="0"
+        role="region"
+        [attr.aria-label]="'Tabla de tarifas de ' + grupo.concepto.nombre"
+      >
         <table class="fin-table">
           <thead>
             <tr>

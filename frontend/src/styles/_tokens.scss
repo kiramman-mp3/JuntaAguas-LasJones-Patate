@@ -7,11 +7,11 @@
 
 :root {
   /* --- Marca: agua y vertiente --- */
-  --color-primary: #0284c7;
-  --color-primary-hover: #0369a1;
+  --color-primary: #0369a1;
+  --color-primary-hover: #075985;
   --color-primary-light: #e0f2fe;
-  /* Relleno de botones: mantiene contraste con texto blanco en ambos temas */
-  --color-primary-solid: #0284c7;
+  /* Relleno de botones: contraste mínimo 4.5:1 con texto blanco (WCAG AA) en ambos temas */
+  --color-primary-solid: #0276b3;
   --color-primary-solid-hover: #0369a1;
   --color-secondary: #06b6d4;
   --color-secondary-hover: #0891b2;
@@ -20,8 +20,9 @@
   /* --- Estados y agricultura --- */
   --color-agricultural: #10b981;
   --color-accent-amber: #f59e0b;
-  --color-danger: #ef4444;
-  --color-success: #10b981;
+  /* Verde y rojo también se usan como texto: al menos 4.5:1 sobre blanco (WCAG AA) */
+  --color-danger: #dc2626;
+  --color-success: #047857;
 
   /* Fondos suaves y texto de alto contraste para insignias y alertas */
   --color-success-light: #d1fae5;
@@ -41,7 +42,7 @@
 
   /* --- Texto --- */
   --text-main: #0f172a;
-  --text-muted: #64748b;
+  --text-muted: #5b6a7f;
   --text-white: #ffffff;
 
   /* --- Tipografía: Inter para la interfaz, Outfit para títulos --- */
@@ -89,6 +90,8 @@
 }
 
 [data-theme='dark'] {
+  --color-danger: #f87171;
+  --color-success: #10b981;
   --color-primary: #38bdf8;
   --color-primary-hover: #7dd3fc;
   --color-primary-light: rgba(56, 189, 248, 0.16);

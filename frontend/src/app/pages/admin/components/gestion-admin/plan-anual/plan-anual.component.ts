@@ -84,7 +84,12 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
               }
             </div>
             @if (p.actividades.length) {
-              <div class="table-scroll">
+              <div
+                class="table-scroll"
+                tabindex="0"
+                role="region"
+                [attr.aria-label]="'Actividades del plan ' + p.anio"
+              >
                 <table class="fin-table">
                   <thead>
                     <tr>

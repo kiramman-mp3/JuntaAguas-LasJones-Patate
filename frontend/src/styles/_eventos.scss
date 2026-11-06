@@ -44,7 +44,8 @@
   }
   &--cancelado {
     --event-accent: var(--color-danger);
-    opacity: 0.72;
+    // Sin opacity: atenuaba el texto por debajo del contraste mínimo.
+    filter: grayscale(0.4);
   }
 
   &[aria-busy='true'] {
