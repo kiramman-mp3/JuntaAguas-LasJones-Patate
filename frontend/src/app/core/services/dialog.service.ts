@@ -11,6 +11,11 @@ export interface DialogOpciones {
   /** Si se define, el diálogo muestra un campo de texto (reemplazo de prompt). */
   placeholder?: string;
   valorInicial?: string;
+  /**
+   * Solo con `placeholder` (diálogo con campo de texto): valida el texto al confirmar. Si devuelve un mensaje, el diálogo
+   * sigue abierto con ese error y lo escrito se conserva; con null se acepta.
+   */
+  validar?: (valor: string) => string | null;
 }
 
 interface DialogState {
@@ -23,6 +28,8 @@ interface DialogState {
   placeholder: string;
   valor: string;
   esPrompt: boolean;
+  error: string;
+  validar?: (valor: string) => string | null;
   resolver?: (valor: string | boolean | null) => void;
 }
 
@@ -47,6 +54,8 @@ export class DialogService {
       placeholder: '',
       valor: '',
       esPrompt: false,
+      error: '',
+      validar: undefined,
       resolver: undefined,
     };
   }
@@ -92,17 +101,25 @@ export class DialogService {
         placeholder: opciones.placeholder ?? '',
         valor: opciones.valorInicial ?? '',
         esPrompt: true,
+        validar: opciones.validar,
         resolver: (v) => resolve(v ? String(v) : null),
       });
     });
   }
 
   setValor(valor: string): void {
-    this.estado.update((e) => ({ ...e, valor }));
+    this.estado.update((e) => ({ ...e, valor, error: '' }));
   }
 
   responder(valor: boolean): void {
     const actual = this.estado();
+    if (valor && actual.esPrompt && actual.validar) {
+      const error = actual.validar(actual.valor);
+      if (error) {
+        this.estado.update((e) => ({ ...e, error }));
+        return;
+      }
+    }
     actual.resolver?.(actual.esPrompt ? (valor ? actual.valor : null) : valor);
     this.estado.set({ ...this.estadoInicial() });
   }

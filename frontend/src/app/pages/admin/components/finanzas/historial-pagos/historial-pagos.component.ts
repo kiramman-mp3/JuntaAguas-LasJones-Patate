@@ -131,12 +131,11 @@ export class HistorialPagosComponent {
       placeholder: 'Motivo de la anulación',
       textoConfirmar: 'Anular pago',
       tipo: 'DANGER',
+      // El diálogo no se cierra mientras el motivo sea corto: así lo escrito no se pierde.
+      validar: (texto) =>
+        texto.trim().length < 5 ? 'Describa el motivo con al menos 5 caracteres.' : null,
     });
     if (!motivo?.trim()) return;
-    if (motivo.trim().length < 5) {
-      this.notify.warning('Describa el motivo con al menos 5 caracteres.');
-      return;
-    }
     this.procesando.set(this.clave(recibo));
     this.finanzas.anularRecibo(recibo.tipo, recibo.id, motivo.trim()).subscribe({
       next: (res) => {

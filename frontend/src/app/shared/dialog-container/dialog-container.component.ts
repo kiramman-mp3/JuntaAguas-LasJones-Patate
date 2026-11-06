@@ -37,13 +37,21 @@ const ICONOS: Record<DialogTipo, string> = {
           <p id="dialogo-mensaje" class="dialog__message">{{ d.mensaje }}</p>
           @if (d.esPrompt) {
             <input
+              id="dialogo-entrada"
+              name="dialogo-entrada"
               type="text"
               class="input dialog__input"
               [placeholder]="d.placeholder"
+              [attr.aria-label]="d.placeholder"
+              [attr.aria-invalid]="d.error ? 'true' : null"
+              [attr.aria-describedby]="d.error ? 'dialogo-error' : null"
               [value]="d.valor"
               (input)="dialogService.setValor($any($event.target).value)"
               (keydown.enter)="dialogService.responder(true)"
             />
+            @if (d.error) {
+              <p id="dialogo-error" class="dialog__error" role="alert">{{ d.error }}</p>
+            }
           }
           <div class="dialog__actions">
             @if (d.textoCancelar) {
@@ -111,6 +119,13 @@ const ICONOS: Record<DialogTipo, string> = {
       }
       .dialog__input {
         margin-top: 0.75rem;
+        text-align: left;
+      }
+      .dialog__error {
+        width: 100%;
+        margin: 0.35rem 0 0;
+        color: var(--color-danger);
+        font-size: 0.85rem;
         text-align: left;
       }
       .dialog__actions {
