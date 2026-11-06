@@ -88,9 +88,9 @@ if (fs.existsSync(path.join(frontendDist, 'index.html'))) {
       if (archivo.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
     }
   }));
-  // Rutas de Angular (/admin/cobros…): cualquier GET que no sea de la API ni un archivo devuelve la SPA.
+  // Rutas de Angular (/admin/cobros…): cualquier GET o HEAD (los monitores usan HEAD) que no sea de la API ni un archivo devuelve la SPA.
   app.use((req, res, next) => {
-    if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/uploads') || path.extname(req.path)) return next();
+    if ((req.method !== 'GET' && req.method !== 'HEAD') || req.path.startsWith('/api') || req.path.startsWith('/uploads') || path.extname(req.path)) return next();
     res.setHeader('Cache-Control', 'no-cache');
     return res.sendFile(path.join(frontendDist, 'index.html'));
   });
