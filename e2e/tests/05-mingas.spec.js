@@ -27,6 +27,8 @@ test('una minga de un solo sector convoca solo a los usuarios de ese sector', as
   await page.goto('/admin/asistencias/mingas');
   const sectores = await (async () => {
     await page.getByRole('button', { name: 'Nueva minga' }).click();
+    // Los sectores llegan del servidor al abrir el formulario: se espera a que haya más que "Todos".
+    await expect(page.getByLabel('Sector convocado').locator('option')).not.toHaveCount(1);
     const opciones = await page.getByLabel('Sector convocado').locator('option').allInnerTexts();
     await page.getByRole('button', { name: 'Cancelar' }).click();
     return opciones.map((o) => o.trim()).filter((o) => !o.startsWith('Todos'));
