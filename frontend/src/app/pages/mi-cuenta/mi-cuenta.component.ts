@@ -211,9 +211,4 @@ export class MiCuentaComponent implements OnInit {
       error: () => this.notify.error('No se pudo descargar el respaldo bancario.'),
     });
   }
-
-  cerrarSesion() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
 }
