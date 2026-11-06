@@ -20,6 +20,8 @@
     <div class="search-field toolbar__grow">
       <i class="ri-search-line" aria-hidden="true"></i>
       <input
+        id="mingas-busqueda"
+        name="busqueda"
         class="input"
         type="search"
         [(ngModel)]="busqueda"
@@ -27,7 +29,13 @@
         aria-label="Buscar minga"
       />
     </div>
-    <select class="input toolbar__select" [(ngModel)]="periodo" aria-label="Fecha">
+    <select
+      id="mingas-periodo"
+      name="periodo"
+      class="input toolbar__select"
+      [(ngModel)]="periodo"
+      aria-label="Fecha"
+    >
       <option value="TODAS">Todas las fechas</option>
       <option value="PROXIMAS">Hoy y próximas</option>
       <option value="ANTERIORES">Anteriores</option>
@@ -248,6 +256,8 @@
                     }
                   </button>
                   <input
+                    [id]="'minga-lista-firmada-' + m.id"
+                    [name]="'listaFirmada-' + m.id"
                     type="file"
                     hidden
                     #archivoFirmado
