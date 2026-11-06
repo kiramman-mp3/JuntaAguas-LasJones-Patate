@@ -159,9 +159,21 @@ async function registrarEgreso(conexion, datos, cuentaId) {
   return r.insertId;
 }
 
-/** Usuarios activos con al menos un lote activo: son quienes reciben el agua y la pagan. */
-const CONDICION_USUARIO_CON_LOTE = `p.estado = 'ACTIVO'
-  AND EXISTS (SELECT 1 FROM persona_lotes pl JOIN lotes l ON l.id = pl.lote_id WHERE pl.persona_id = p.id AND l.activo = TRUE)`;
+/** Anula un egreso registrado por error. */
+async function anularEgreso(conexion, { egresoId, motivo, cuentaId }) {
+  const [filas] = await conexion.query('SELECT * FROM egresos WHERE id = ? FOR UPDATE', [egresoId]);
+  if (!filas.length) throw notFound('Egreso no encontrado.');
+  const egreso = filas[0];
+  if (egreso.estado === 'ANULADO') throw conflict('Este egreso ya fue anulado.');
+
+  await conexion.query(
+    `UPDATE egresos
+     SET estado = 'ANULADO', motivo_anulacion = ?, fecha_anulacion = CURRENT_TIMESTAMP, anulado_por_cuenta_id = ?
+     WHERE id = ?`,
+    [motivo, cuentaId, egresoId]
+  );
+  return { egreso };
+}
 
 /**
  * Valor del pago anual de un año: el indicado o, si no se indica, la tarifa del concepto
@@ -317,7 +329,7 @@ async function anularObligacionAnualAgua(conexion, { obligacionId, motivo, cuent
 }
 
 module.exports = {
-  crearObligacionManual, anularObligacion, registrarEgreso, DIAS_PARA_VENCER, vencimientoPorDefecto,
+  crearObligacionManual, anularObligacion, registrarEgreso, anularEgreso, DIAS_PARA_VENCER, vencimientoPorDefecto,
   redondear, conceptoPorCodigo, tarifaVigente, registrarTarifa, registrarPago, anularPago,
   generarObligacionesAnualesAgua, resumenAnualAgua, obligacionesAnualesPendientes, registrarPagoAnualAgua,
   anularPagoAnualAgua, anularObligacionAnualAgua

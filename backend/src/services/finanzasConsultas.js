@@ -87,15 +87,6 @@ async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes }) {
   return filas;
 }
 
-/** Años con obligaciones registradas (sin anuladas). */
-async function periodosObligaciones(conexion) {
-  const [filas] = await conexion.query(
-    `SELECT DISTINCT periodo_anio FROM obligaciones
-     WHERE periodo_anio IS NOT NULL AND estado <> 'ANULADA' ORDER BY periodo_anio ASC`
-  );
-  return filas;
-}
-
 async function listarPagos(conexion, { personaId, estado, desde, hasta }) {
   const condiciones = [];
   const params = [];
@@ -217,7 +208,7 @@ async function balance(conexion, { desde, hasta }) {
   const filtroPagosAnuales = ["estado = 'VIGENTE'"];
   const pIngresosAnuales = [];
   filtroFechaPago('fecha_pago', { desde, hasta }, filtroPagosAnuales, pIngresosAnuales);
-  const filtroEgresos = [];
+  const filtroEgresos = ["estado = 'VIGENTE'"];
   const pEgresos = [];
   if (desde) { filtroEgresos.push('fecha >= ?'); pEgresos.push(desde); }
   if (hasta) { filtroEgresos.push('fecha <= ?'); pEgresos.push(hasta); }
@@ -260,7 +251,7 @@ async function balance(conexion, { desde, hasta }) {
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0
        FROM pago_anual_agua WHERE estado = 'VIGENTE' AND fecha_pago >= ? AND fecha_pago < ?
        UNION ALL
-       SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes, 0, valor FROM egresos WHERE fecha >= ? AND fecha <= ?
+       SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes, 0, valor FROM egresos WHERE estado = 'VIGENTE' AND fecha >= ? AND fecha <= ?
      ) t GROUP BY mes ORDER BY mes DESC`,
     [ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin),
       ZONA_MYSQL, inicioDelDiaUtc(inicioResumen), finDelDiaUtc(fin), inicioResumen, fin]
@@ -318,7 +309,7 @@ async function historialAnual(conexion) {
        UNION ALL
        SELECT DATE_FORMAT(CONVERT_TZ(fecha_pago, '+00:00', ?), '%Y-%m'), valor_total, 0, 1 FROM pago_anual_agua WHERE estado = 'VIGENTE'
        UNION ALL
-       SELECT DATE_FORMAT(fecha, '%Y-%m'), 0, valor, 0 FROM egresos
+       SELECT DATE_FORMAT(fecha, '%Y-%m'), 0, valor, 0 FROM egresos WHERE estado = 'VIGENTE'
      ) t GROUP BY mes ORDER BY mes DESC`,
     [ZONA_MYSQL, ZONA_MYSQL]
   );
@@ -339,6 +330,6 @@ async function historialAnual(conexion) {
 }
 
 module.exports = {
-  filtroFechaPago, listarConceptos, listarTarifas, listarObligaciones, obligacionesPorCedula, periodosObligaciones,
+  filtroFechaPago, listarConceptos, listarTarifas, listarObligaciones, obligacionesPorCedula,
   listarPagos, detallePago, listarPagosAnuales, detallePagoAnual, listarEgresos, balance, historialAnual
 };

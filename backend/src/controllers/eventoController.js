@@ -13,12 +13,17 @@ const { badRequest, notFound } = require('../shared/errors');
 const { idParam } = require('../shared/schemas');
 const { z } = require('zod');
 const {
-  listarSchema, crearSchema, puntosSchema, documentoSchema
+  listarSchema, crearSchema, actualizarSchema, puntosSchema, documentoSchema
 } = require('../schemas/eventos');
 
 const eventoPersonaParam = z.object({
   id: z.coerce.number().int().positive(),
   personaId: z.coerce.number().int().positive()
+});
+
+const eventoDocumentoParam = z.object({
+  id: z.coerce.number().int().positive(),
+  documentoId: z.coerce.number().int().positive()
 });
 
 /** Listar asambleas y mingas con sus métricas de asistencia y documentos. */
@@ -50,6 +55,22 @@ async function createEvento(req, res) {
     detalle: { tipo: datos.tipo, titulo: datos.titulo, fecha: datos.fecha, valorMulta, puntos, sectorId: datos.sector_id ?? null }
   });
   return res.status(201).json({ status: 'OK', message: 'Evento registrado exitosamente.', eventoId });
+}
+
+/** Actualizar datos generales de una asamblea o minga antes de que finalice. */
+async function updateEvento(req, res) {
+  const { id } = idParam.parse(req.params);
+  const datos = actualizarSchema.parse(req.body);
+  const resultado = await withTransaction((conexion) => eventos.actualizarEvento(conexion, id, datos));
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId,
+    accion: 'ACTUALIZAR',
+    entidad: 'eventos',
+    entidadId: id,
+    ip: req.ip,
+    detalle: { tipo: resultado.tipo, titulo: resultado.titulo, fecha: resultado.fecha }
+  });
+  return res.json({ status: 'OK', message: 'Evento actualizado exitosamente.', data: resultado });
 }
 
 /** Guardar los puntos del orden del día y su desarrollo en el acta general. */
@@ -264,11 +285,27 @@ async function eliminarJustificante(req, res) {
   return res.json({ status: 'OK', message: 'Archivo de justificación quitado de la asistencia.' });
 }
 
+/** Eliminar un documento firmado del evento con borrado físico seguro en disco. */
+async function eliminarDocumentoEvento(req, res) {
+  const { id, documentoId } = eventoDocumentoParam.parse(req.params);
+  const { documento } = await documentos.eliminarDocumentoFirmado({ eventoId: id, documentoId });
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId,
+    accion: 'ELIMINAR',
+    entidad: 'documentos_evento',
+    entidadId: documentoId,
+    ip: req.ip,
+    detalle: { eventoId: id, tipo: documento.tipo }
+  });
+  return res.json({ status: 'OK', message: 'Documento eliminado exitosamente.' });
+}
+
 module.exports = {
   getEventos,
   getEventosPublicos,
   getEventoById,
   createEvento,
+  updateEvento,
   savePuntosAsamblea,
   cambiarEstado,
   registrarAsistencias,
@@ -276,6 +313,7 @@ module.exports = {
   finalizarEventoYGenerarMultas,
   guardarDocumentoEvento,
   getDocumentosEvento,
+  eliminarDocumentoEvento,
   descargarPDFAsistencia,
   subirJustificante,
   descargarJustificante,

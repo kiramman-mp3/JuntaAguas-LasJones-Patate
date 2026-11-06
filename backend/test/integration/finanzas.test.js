@@ -214,3 +214,41 @@ test('el historial anual agrupa por año y mes y cuadra con el balance', async (
 
   assert.equal((await request(app).get('/api/financiero/historial').set(auth(usuario))).status, 403);
 });
+
+test('anula un egreso y lo descuenta del balance y del historial anual (H-02)', async () => {
+  const egreso = await request(app).post('/api/financiero/egresos').set(auth(admin)).send({
+    fecha: '2025-06-15', concepto: 'Herramientas de minga erróneas', valor: 250.75
+  });
+  assert.equal(egreso.status, 201);
+  const egresoId = egreso.body.egresoId;
+
+  // Comprueba que suma en el balance
+  const balanceAntes = (await request(app).get('/api/financiero/balance?desde=2025-06-01&hasta=2025-06-30').set(auth(admin))).body.balance;
+  assert.equal(balanceAntes.totalEgresos, 250.75);
+
+  // Usuario no puede anular
+  const resNoAdmin = await request(app).post(`/api/financiero/egresos/${egresoId}/anular`).set(auth(usuario)).send({ motivo: 'Error' });
+  assert.equal(resNoAdmin.status, 403);
+
+  // Motivo obligatorio
+  const resSinMotivo = await request(app).post(`/api/financiero/egresos/${egresoId}/anular`).set(auth(admin)).send({ motivo: '  ' });
+  assert.equal(resSinMotivo.status, 400);
+
+  // Anulación exitosa
+  const resAnular = await request(app).post(`/api/financiero/egresos/${egresoId}/anular`).set(auth(admin)).send({ motivo: 'Factura duplicada' });
+  assert.equal(resAnular.status, 200);
+
+  // Segundo intento falla con 409
+  const resReanular = await request(app).post(`/api/financiero/egresos/${egresoId}/anular`).set(auth(admin)).send({ motivo: 'Otro motivo' });
+  assert.equal(resReanular.status, 409);
+
+  // Verificación en base de datos
+  const [[dbEgreso]] = await db.query('SELECT estado, motivo_anulacion, anulado_por_cuenta_id FROM egresos WHERE id = ?', [egresoId]);
+  assert.equal(dbEgreso.estado, 'ANULADO');
+  assert.equal(dbEgreso.motivo_anulacion, 'Factura duplicada');
+  assert.equal(Number(dbEgreso.anulado_por_cuenta_id), admin.cuentaId);
+
+  // Comprueba que ya no suma en el balance
+  const balanceDespues = (await request(app).get('/api/financiero/balance?desde=2025-06-01&hasta=2025-06-30').set(auth(admin))).body.balance;
+  assert.equal(balanceDespues.totalEgresos, 0);
+});

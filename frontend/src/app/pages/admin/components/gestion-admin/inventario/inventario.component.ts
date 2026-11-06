@@ -1,5 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
+import { RespuestaApi } from '../../../../../core/models/api-payloads';
 import {
   BienInventario,
   EstadoFisico,
@@ -86,6 +88,7 @@ const formularioVacio = (): NuevoBien => ({
                 <th scope="col" class="num">Total</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Ubicación</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -124,6 +127,16 @@ const formularioVacio = (): NuevoBien => ({
                     >
                   </td>
                   <td>{{ b.ubicacion || '—' }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn--ghost btn--sm"
+                      [attr.aria-label]="'Editar ' + b.nombre"
+                      (click)="editar(b)"
+                    >
+                      <i class="ri-edit-line" aria-hidden="true"></i> Editar
+                    </button>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -134,7 +147,7 @@ const formularioVacio = (): NuevoBien => ({
 
     @if (formularioAbierto()) {
       <app-modal
-        titulo="Registrar bien"
+        [titulo]="editandoId() ? 'Editar bien' : 'Registrar bien'"
         icono="ri-archive-line"
         [bloqueado]="guardando()"
         (cerrar)="formularioAbierto.set(false)"
@@ -171,7 +184,7 @@ const formularioVacio = (): NuevoBien => ({
                   name="cantidad"
                   class="input"
                   type="number"
-                  min="1"
+                  [min]="editandoId() ? 0 : 1"
                   step="1"
                   [(ngModel)]="form.cantidad"
                 />
@@ -200,6 +213,11 @@ const formularioVacio = (): NuevoBien => ({
                     <option [ngValue]="e.valor">{{ e.etiqueta }}</option>
                   }
                 </select>
+                @if (form.estado_fisico === 'DADO_DE_BAJA') {
+                  <small class="text-muted"
+                    >Al guardar, el bien dejará de aparecer en el inventario activo.</small
+                  >
+                }
               </div>
               <div class="form-group">
                 <label for="bien-fecha">Fecha de adquisición</label>
@@ -245,7 +263,7 @@ const formularioVacio = (): NuevoBien => ({
               Cancelar
             </button>
             <button type="submit" class="btn btn--primary" [disabled]="guardando()">
-              {{ guardando() ? 'Guardando…' : 'Registrar' }}
+              {{ guardando() ? 'Guardando…' : editandoId() ? 'Guardar cambios' : 'Registrar' }}
             </button>
           </div>
         </form>
@@ -264,6 +282,8 @@ export class InventarioComponent {
   readonly error = signal('');
   readonly formularioAbierto = signal(false);
   readonly guardando = signal(false);
+  /** Id del bien que se edita; null cuando el formulario registra uno nuevo. */
+  readonly editandoId = signal<number | null>(null);
   form: NuevoBien = formularioVacio();
 
   readonly valorTotal = computed(
@@ -301,35 +321,62 @@ export class InventarioComponent {
   }
 
   abrir(): void {
+    this.editandoId.set(null);
     this.form = formularioVacio();
+    this.formularioAbierto.set(true);
+  }
+
+  editar(bien: BienInventario): void {
+    this.editandoId.set(bien.id);
+    this.form = {
+      nombre: bien.nombre,
+      codigo: bien.codigo ?? '',
+      cantidad: bien.cantidad,
+      valor_unitario: bien.valor_unitario,
+      estado_fisico: bien.estado_fisico ?? 'BUENO',
+      ubicacion: bien.ubicacion ?? '',
+      fecha_adquisicion: bien.fecha_adquisicion ?? '',
+      descripcion: bien.descripcion ?? '',
+    };
     this.formularioAbierto.set(true);
   }
 
   guardar(): void {
     const f = this.form;
+    const id = this.editandoId();
     if (f.nombre.trim().length < 2) return this.notify.warning('Indique el nombre del bien.');
-    if (!(Number(f.cantidad) >= 1)) return this.notify.warning('La cantidad debe ser al menos 1.');
+    if (!(Number(f.cantidad) >= (id ? 0 : 1)))
+      return this.notify.warning(
+        id ? 'La cantidad no puede ser negativa.' : 'La cantidad debe ser al menos 1.',
+      );
     if (!(Number(f.valor_unitario) >= 0))
       return this.notify.warning('El valor unitario no puede ser negativo.');
     this.guardando.set(true);
-    this.gestion
-      .registrarBien({
-        ...f,
-        nombre: f.nombre.trim(),
-        cantidad: Number(f.cantidad),
-        valor_unitario: Number(f.valor_unitario),
-      })
-      .subscribe({
-        next: (res) => {
-          this.guardando.set(false);
-          this.formularioAbierto.set(false);
-          this.notify.success(res.message || 'Bien registrado.');
-          this.cargar();
-        },
-        error: (err) => {
-          this.guardando.set(false);
-          this.notify.error(mensajeError(err, 'No se pudo registrar el bien.'));
-        },
-      });
+    const datos: NuevoBien = {
+      ...f,
+      nombre: f.nombre.trim(),
+      cantidad: Number(f.cantidad),
+      valor_unitario: Number(f.valor_unitario),
+    };
+    const peticion: Observable<RespuestaApi<unknown>> = id
+      ? this.gestion.actualizarBien(id, datos)
+      : this.gestion.registrarBien(datos);
+    peticion.subscribe({
+      next: (res) => {
+        this.guardando.set(false);
+        this.formularioAbierto.set(false);
+        this.notify.success(res.message || (id ? 'Bien actualizado.' : 'Bien registrado.'));
+        this.cargar();
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        this.notify.error(
+          mensajeError(
+            err,
+            id ? 'No se pudo actualizar el bien.' : 'No se pudo registrar el bien.',
+          ),
+        );
+      },
+    });
   }
 }

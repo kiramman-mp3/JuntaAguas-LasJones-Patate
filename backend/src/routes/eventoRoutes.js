@@ -53,6 +53,7 @@ router.get('/', ...soloAdmin, eventoController.getEventos);
 router.post('/', ...soloAdmin, eventoController.createEvento);
 
 router.get('/:id', ...soloAdmin, eventoController.getEventoById);
+router.put('/:id', ...soloAdmin, eventoController.updateEvento);
 router.post('/:id/estado', ...soloAdmin, eventoController.cambiarEstado);
 router.post('/:id/finalizar', ...soloAdmin, eventoController.finalizarEventoYGenerarMultas);
 router.post('/:id/puntos', ...soloAdmin, eventoController.savePuntosAsamblea);
@@ -64,6 +65,7 @@ router.delete('/:id/asistencias/:personaId/justificante', ...soloAdmin, eventoCo
 router.get('/:id/pdf-asistencia', ...soloAdmin, eventoController.descargarPDFAsistencia);
 router.post('/:id/documentos', ...soloAdmin, recibirArchivo, eventoController.guardarDocumentoEvento);
 router.get('/:id/documentos', ...soloAdmin, eventoController.getDocumentosEvento);
+router.delete('/:id/documentos/:documentoId', ...soloAdmin, eventoController.eliminarDocumentoEvento);
 
 module.exports = router;
 

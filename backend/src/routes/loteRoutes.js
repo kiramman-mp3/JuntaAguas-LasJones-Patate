@@ -17,6 +17,8 @@ const router = express.Router();
  */
 router.get('/sectores', loteController.getSectores);
 router.post('/sectores', ...soloAdmin, loteController.createSector);
+router.put('/sectores/:id', ...soloAdmin, loteController.updateSector);
+router.delete('/sectores/:id', ...soloAdmin, loteController.deleteSector);
 
 /**
  * @openapi
@@ -51,6 +53,7 @@ router.post('/sectores', ...soloAdmin, loteController.createSector);
 router.get('/sugerir-codigo', ...soloAdmin, loteController.sugerirCodigo);
 router.get('/', verificarToken, loteController.getLotes);
 router.post('/', ...soloAdmin, loteController.createLote);
+router.put('/:id', ...soloAdmin, loteController.updateLote);
 router.post('/:loteId/vincular-persona', ...soloAdmin, loteController.linkPersonaLote);
 
 module.exports = router;

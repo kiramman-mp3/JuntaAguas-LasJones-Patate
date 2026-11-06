@@ -47,3 +47,48 @@ test('valida los datos y rechaza códigos repetidos', async () => {
   assert.equal(repetido.status, 409);
   assert.match(repetido.body.message, /INV-100/);
 });
+
+test('actualiza un bien de inventario con validación de código único y estado (H-03)', async () => {
+  const creado = await registrar({ codigo: 'INV-200', nombre: 'Carretilla reforzada', valor_unitario: 65, cantidad: 2 });
+  assert.equal(creado.status, 201);
+  const bienId = creado.body.bienId;
+
+  // Usuario común no puede actualizar
+  assert.equal((await request(app).patch(`/api/inventario/${bienId}`).set(auth(usuario)).send({ cantidad: 5 })).status, 403);
+
+  // Actualización exitosa
+  const resOk = await request(app).patch(`/api/inventario/${bienId}`).set(auth(admin)).send({
+    cantidad: 3,
+    ubicacion: 'Bodega Central',
+    estado_fisico: 'REGULAR',
+    valor_unitario: 60
+  });
+  assert.equal(resOk.status, 200);
+
+  const [[actualizado]] = await db.query('SELECT cantidad, ubicacion, estado_fisico, valor_unitario, activo FROM bienes_inventario WHERE id = ?', [bienId]);
+  assert.equal(actualizado.cantidad, 3);
+  assert.equal(actualizado.ubicacion, 'Bodega Central');
+  assert.equal(actualizado.estado_fisico, 'REGULAR');
+  assert.equal(Number(actualizado.valor_unitario), 60);
+  assert.equal(actualizado.activo, 1);
+
+  // Dar de baja inactiva el bien
+  const resBaja = await request(app).patch(`/api/inventario/${bienId}`).set(auth(admin)).send({
+    estado_fisico: 'DADO_DE_BAJA'
+  });
+  assert.equal(resBaja.status, 200);
+  const [[dadoDeBaja]] = await db.query('SELECT estado_fisico, activo FROM bienes_inventario WHERE id = ?', [bienId]);
+  assert.equal(dadoDeBaja.estado_fisico, 'DADO_DE_BAJA');
+  assert.equal(dadoDeBaja.activo, 0);
+
+  // Ya no aparece en el listado de activos
+  const lista = await request(app).get('/api/inventario').set(auth(admin));
+  assert.ok(!lista.body.data.some(b => b.id === bienId));
+
+  // Rechaza código duplicado
+  const resDup = await request(app).patch(`/api/inventario/${bienId}`).set(auth(admin)).send({ codigo: 'INV-100' });
+  assert.equal(resDup.status, 409);
+
+  // 404 en bien inexistente
+  assert.equal((await request(app).patch('/api/inventario/999999').set(auth(admin)).send({ cantidad: 1 })).status, 404);
+});

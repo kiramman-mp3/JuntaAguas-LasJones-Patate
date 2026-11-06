@@ -18,5 +18,6 @@ const router = express.Router();
  */
 router.get('/', ...soloAdmin, inventarioController.getInventario);
 router.post('/', ...soloAdmin, inventarioController.createBien);
+router.patch('/:id', ...soloAdmin, inventarioController.updateBien);
 
 module.exports = router;

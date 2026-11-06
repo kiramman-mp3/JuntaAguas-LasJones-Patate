@@ -52,6 +52,20 @@ const loteSchema = z.object({
   porcentaje: porcentajeTitularidad
 });
 
+const loteUpdateSchema = z.object({
+  sector_id: s.id.optional(),
+  codigo: z.string().transform(normalizarCodigo)
+    .refine((c) => FORMATO_CODIGO_LOTE.test(c), 'El código debe tener tres letras y de tres a ocho dígitos separados por un guion. Ejemplo: LJA-001.').optional(),
+  superficie_m2: numeroOpcional(z.coerce.number().positive('La superficie debe ser mayor a cero.').max(10_000_000)),
+  ancho_m: numeroOpcional(z.coerce.number().positive().max(100_000)),
+  largo_m: numeroOpcional(z.coerce.number().positive().max(100_000)),
+  latitud_aproximada: numeroOpcional(z.coerce.number().min(-90).max(90)),
+  longitud_aproximada: numeroOpcional(z.coerce.number().min(-180).max(180)),
+  radio_error_m: numeroOpcional(z.coerce.number().min(0).max(10_000)),
+  referencia_ubicacion: s.textoOpcional(255),
+  observacion: s.textoOpcional(255)
+});
+
 const vincularSchema = z.object({
   persona_id: s.id,
   tipo_relacion: relacion,
@@ -110,6 +124,38 @@ async function createSector(req, res) {
   }
   await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'CREAR', entidad: 'sectores', entidadId: sectorId, ip: req.ip, detalle: { nombre } });
   return res.status(201).json({ status: 'OK', message: 'Sector creado exitosamente.', sectorId });
+}
+
+async function updateSector(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  const { nombre, descripcion } = sectorSchema.parse(req.body);
+  const [existentes] = await db.query('SELECT id FROM sectores WHERE id = ?', [id]);
+  if (!existentes.length) throw notFound('El sector no existe.');
+  try {
+    await db.query('UPDATE sectores SET nombre = ?, descripcion = ? WHERE id = ?', [nombre, descripcion, id]);
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') throw conflict(`Ya existe otro sector con el nombre ${nombre}.`);
+    throw error;
+  }
+  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'ACTUALIZAR', entidad: 'sectores', entidadId: id, ip: req.ip, detalle: { nombre } });
+  return res.json({ status: 'OK', message: 'Sector actualizado exitosamente.' });
+}
+
+async function deleteSector(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  const [existentes] = await db.query('SELECT id, activo FROM sectores WHERE id = ?', [id]);
+  if (!existentes.length) throw notFound('El sector no existe.');
+  const [[{ lotesCount }]] = await db.query('SELECT COUNT(*) AS lotesCount FROM lotes WHERE sector_id = ? AND activo = TRUE', [id]);
+  if (lotesCount > 0) throw conflict('No se puede eliminar el sector porque tiene lotes activos asignados.');
+  const [[{ turnosCount }]] = await db.query(
+    'SELECT COUNT(*) AS turnosCount FROM turnos_riego t JOIN lotes l ON l.id = t.lote_id WHERE l.sector_id = ? AND t.estado = "ACTIVO"',
+    [id]
+  );
+  if (turnosCount > 0) throw conflict('No se puede eliminar el sector porque tiene turnos de riego asociados.');
+
+  await db.query('UPDATE sectores SET activo = FALSE WHERE id = ?', [id]);
+  await registrarAuditoria({ cuentaId: req.user.cuentaId, accion: 'ELIMINAR', entidad: 'sectores', entidadId: id, ip: req.ip, detalle: { id } });
+  return res.json({ status: 'OK', message: 'Sector eliminado exitosamente.' });
 }
 
 /** Lotes activos con su titular. Un usuario solo recibe los suyos. */
@@ -193,6 +239,56 @@ async function createLote(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Lote georreferenciado creado correctamente.', loteId });
 }
 
+async function updateLote(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  const datos = loteUpdateSchema.parse(req.body);
+
+  const [existentes] = await db.query('SELECT * FROM lotes WHERE id = ?', [id]);
+  if (!existentes.length) throw notFound('El lote no existe.');
+  const loteActual = existentes[0];
+
+  if (datos.sector_id && datos.sector_id !== loteActual.sector_id) {
+    const [sectores] = await db.query('SELECT id FROM sectores WHERE id = ? AND activo = TRUE', [datos.sector_id]);
+    if (!sectores.length) throw notFound('El sector seleccionado no existe o está inactivo.');
+  }
+
+  if (datos.codigo && datos.codigo !== loteActual.codigo) {
+    const [dup] = await db.query('SELECT id FROM lotes WHERE codigo = ? AND id != ?', [datos.codigo, id]);
+    if (dup.length) throw conflict('Este código de lote ya está registrado para otro lote.');
+  }
+
+  const nuevoSectorId = datos.sector_id !== undefined ? datos.sector_id : loteActual.sector_id;
+  const nuevoCodigo = datos.codigo !== undefined ? datos.codigo : loteActual.codigo;
+  const nuevaSuperficie = datos.superficie_m2 !== undefined ? datos.superficie_m2 : loteActual.superficie_m2;
+  const nuevoAncho = datos.ancho_m !== undefined ? datos.ancho_m : loteActual.ancho_m;
+  const nuevoLargo = datos.largo_m !== undefined ? datos.largo_m : loteActual.largo_m;
+  const nuevaLatitud = datos.latitud_aproximada !== undefined ? datos.latitud_aproximada : loteActual.latitud_aproximada;
+  const nuevaLongitud = datos.longitud_aproximada !== undefined ? datos.longitud_aproximada : loteActual.longitud_aproximada;
+  const nuevoRadio = datos.radio_error_m !== undefined ? datos.radio_error_m : loteActual.radio_error_m;
+  const nuevaReferencia = datos.referencia_ubicacion !== undefined ? datos.referencia_ubicacion : loteActual.referencia_ubicacion;
+  const nuevaObservacion = datos.observacion !== undefined ? datos.observacion : loteActual.observacion;
+
+  await db.query(
+    `UPDATE lotes
+     SET sector_id = ?, codigo = ?, superficie_m2 = ?, ancho_m = ?, largo_m = ?,
+         latitud_aproximada = ?, longitud_aproximada = ?, radio_error_m = ?,
+         referencia_ubicacion = ?, observacion = ?
+     WHERE id = ?`,
+    [nuevoSectorId, nuevoCodigo, nuevaSuperficie, nuevoAncho, nuevoLargo, nuevaLatitud, nuevaLongitud, nuevoRadio, nuevaReferencia, nuevaObservacion, id]
+  );
+
+  await registrarAuditoria({
+    cuentaId: req.user.cuentaId,
+    accion: 'ACTUALIZAR',
+    entidad: 'lotes',
+    entidadId: id,
+    ip: req.ip,
+    detalle: { codigo: nuevoCodigo, sector_id: nuevoSectorId }
+  });
+
+  return res.json({ status: 'OK', message: 'Lote actualizado exitosamente.', data: { id, codigo: nuevoCodigo } });
+}
+
 /**
  * Asignar o transferir la titularidad de un lote (un lote tiene un solo titular).
  * La transferencia queda en la auditoría con el titular anterior y la fecha desde la que tenía el lote.
@@ -261,4 +357,14 @@ async function linkPersonaLote(req, res) {
   });
 }
 
-module.exports = { sugerirCodigo, getSectores, createSector, getLotes, createLote, linkPersonaLote };
+module.exports = {
+  sugerirCodigo,
+  getSectores,
+  createSector,
+  updateSector,
+  deleteSector,
+  getLotes,
+  createLote,
+  updateLote,
+  linkPersonaLote
+};

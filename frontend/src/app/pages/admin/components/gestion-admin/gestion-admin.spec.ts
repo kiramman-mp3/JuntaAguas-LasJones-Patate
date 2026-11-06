@@ -105,6 +105,78 @@ describe('Gestión interna', () => {
     );
   });
 
+  it('el inventario edita un bien existente y permite dar de baja (H-03)', () => {
+    const actualizarBien = vi.fn(() => of({ status: 'OK' as const, data: null }));
+    const registrarBien = vi.fn();
+    configurar({ actualizarBien, registrarBien });
+    const c = TestBed.createComponent(InventarioComponent).componentInstance;
+    c.editar({
+      id: 7,
+      codigo: 'INV-7',
+      nombre: 'Bomba',
+      descripcion: null,
+      cantidad: 2,
+      valor_unitario: 300,
+      fecha_adquisicion: null,
+      estado_fisico: 'MALO',
+      ubicacion: null,
+    });
+    expect(c.editandoId()).toBe(7);
+    expect(c.form.codigo).toBe('INV-7');
+    c.form.estado_fisico = 'DADO_DE_BAJA';
+    c.form.cantidad = 0;
+    c.guardar();
+    expect(registrarBien).not.toHaveBeenCalled();
+    expect(actualizarBien).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ nombre: 'Bomba', cantidad: 0, estado_fisico: 'DADO_DE_BAJA' }),
+    );
+    c.abrir();
+    expect(c.editandoId()).toBeNull();
+  });
+
+  it('una actividad cumplida exige fecha de cumplimiento y se actualiza por PATCH (H-04)', () => {
+    const actualizarActividad = vi.fn(() => of({ status: 'OK' as const, data: null }));
+    const { notify } = configurar({ actualizarActividad });
+    const c = TestBed.createComponent(PlanAnualComponent).componentInstance;
+    const actividad = {
+      id: 11,
+      plan_id: 4,
+      nombre: 'Limpieza del canal',
+      descripcion: null,
+      fecha_inicio: '2026-05-01',
+      fecha_fin: '2026-05-31',
+      estado: 'PENDIENTE' as const,
+      fecha_cumplimiento: null,
+      observacion_resultado: null,
+    };
+    const plan = {
+      id: 4,
+      anio: 2026,
+      descripcion: null,
+      estado: 'ACTIVO' as const,
+      actividades: [actividad],
+    };
+    c.editarActividad(plan, actividad);
+    expect(c.editandoId()).toBe(11);
+    c.edicion.estado = 'CUMPLIDA';
+    c.guardarActividad(plan);
+    expect(notify.warning).toHaveBeenCalled();
+    expect(actualizarActividad).not.toHaveBeenCalled();
+    c.edicion.fecha_cumplimiento = '2026-05-20';
+    c.edicion.observacion_resultado = ' Participaron 40 usuarios ';
+    c.guardarActividad(plan);
+    expect(actualizarActividad).toHaveBeenCalledWith(
+      4,
+      11,
+      expect.objectContaining({
+        estado: 'CUMPLIDA',
+        fecha_cumplimiento: '2026-05-20',
+        observacion_resultado: 'Participaron 40 usuarios',
+      }),
+    );
+  });
+
   it('una actividad del plan exige nombre y fechas en orden', () => {
     const agregarActividad = vi.fn(() => of({ status: 'OK' as const, data: null, actividadId: 9 }));
     const { notify } = configurar({ agregarActividad });

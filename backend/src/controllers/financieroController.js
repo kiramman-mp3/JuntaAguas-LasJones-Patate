@@ -126,6 +126,17 @@ async function createEgreso(req, res) {
   return res.status(201).json({ status: 'OK', message: 'Egreso registrado exitosamente.', egresoId });
 }
 
+async function anularEgreso(req, res) {
+  const { id } = s.idParam.parse(req.params);
+  const { motivo } = motivoSchema.parse(req.body);
+  await conAuditoria(
+    req,
+    (conexion) => finanzas.anularEgreso(conexion, { egresoId: id, motivo, cuentaId: req.user.cuentaId }),
+    ({ egreso }) => ({ accion: 'ANULAR', entidad: 'egresos', entidadId: id, detalle: { motivo, valor: egreso.valor, concepto: egreso.concepto } })
+  );
+  return res.json({ status: 'OK', message: 'Egreso anulado exitosamente.' });
+}
+
 /** Balance del período: ingresos, egresos, cartera, resumen mensual y cartera por concepto. */
 async function getBalanceReport(req, res) {
   const reporte = await consultas.balance(db, rangoFechas.parse(req.query));
@@ -135,11 +146,6 @@ async function getBalanceReport(req, res) {
 /** Historial anual: ingresos, egresos y balance por año y por mes. */
 async function getHistorialAnual(req, res) {
   return res.json({ status: 'OK', data: await consultas.historialAnual(db) });
-}
-
-/** Años con obligaciones registradas (sin anuladas). */
-async function getPeriodosObligaciones(req, res) {
-  return res.json({ status: 'OK', data: await consultas.periodosObligaciones(db) });
 }
 
 /** Multas y otros cobros de un usuario, buscado por cédula (el agua se cobra aparte, una vez al año). */
@@ -236,9 +242,9 @@ module.exports = {
   getPagoById,
   getEgresos,
   createEgreso,
+  anularEgreso,
   getBalanceReport,
   getHistorialAnual,
-  getPeriodosObligaciones,
   getObligacionesMultas,
   generarObligacionesAnualesAgua,
   getResumenAnualAgua,

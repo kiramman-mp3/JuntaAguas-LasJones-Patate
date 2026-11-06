@@ -123,3 +123,35 @@ test('no sirve archivos no registrados ni nombres con rutas', async () => {
   assert.equal((await request(app).get('/uploads/documentos/..%2F..%2Fpackage.json').set(auth(admin))).status, 404);
   assert.equal((await request(app).get('/uploads/documentos/.env').set(auth(admin))).status, 404);
 });
+
+test('elimina un documento firmado de un evento con borrado físico en disco y auditoría (H-05)', async () => {
+  const eventoId = await crearEvento();
+  const subida = await subir(eventoId, { tipo: 'RESOLUCION' });
+  assert.equal(subida.status, 200);
+
+  const lista = await request(app).get(`/api/eventos/${eventoId}/documentos`).set(auth(admin));
+  const doc = lista.body.data.find(d => d.tipo === 'RESOLUCION');
+  assert.ok(doc, 'El documento debe estar en la lista');
+  const rutaFisica = path.join(DIR, path.basename(doc.ruta_archivo_firmado));
+  assert.ok(fs.existsSync(rutaFisica), 'El archivo físico debe existir');
+
+  // Usuario común no puede eliminar
+  const resNoAdmin = await request(app).delete(`/api/eventos/${eventoId}/documentos/${doc.id}`).set(auth(usuario));
+  assert.equal(resNoAdmin.status, 403);
+
+  // Eliminación por admin
+  const resDel = await request(app).delete(`/api/eventos/${eventoId}/documentos/${doc.id}`).set(auth(admin));
+  assert.equal(resDel.status, 200);
+  assert.equal(resDel.body.message, 'Documento eliminado exitosamente.');
+
+  // Archivo físico debe haber sido eliminado del disco
+  assert.ok(!fs.existsSync(rutaFisica), 'El archivo físico debe haber sido borrado');
+
+  // Registro en base de datos debe haber desaparecido
+  const [[dbDoc]] = await db.query('SELECT id FROM documentos_evento WHERE id = ?', [doc.id]);
+  assert.ok(!dbDoc, 'El registro en BD debe haber desaparecido');
+
+  // Intentar borrar de nuevo da 404
+  const resReDel = await request(app).delete(`/api/eventos/${eventoId}/documentos/${doc.id}`).set(auth(admin));
+  assert.equal(resReDel.status, 404);
+});

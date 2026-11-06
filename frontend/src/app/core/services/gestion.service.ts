@@ -62,6 +62,7 @@ export interface ActividadPlan {
   fecha_fin: string;
   estado: EstadoActividad;
   fecha_cumplimiento: string | null;
+  observacion_resultado: string | null;
 }
 
 export interface PlanAnual {
@@ -112,6 +113,13 @@ export class GestionService {
     );
   }
 
+  actualizarBien(
+    id: number,
+    datos: Partial<NuevoBien> & { activo?: boolean },
+  ): Observable<RespuestaApi<unknown>> {
+    return this.http.patch<RespuestaApi<unknown>>(`${this.url}/inventario/${id}`, datos);
+  }
+
   getPlanes(): Observable<RespuestaApi<PlanAnual[]>> {
     return this.http.get<RespuestaApi<PlanAnual[]>>(`${this.url}/planes`);
   }
@@ -133,6 +141,21 @@ export class GestionService {
     return this.http.post<RespuestaApi<unknown> & { actividadId: number }>(
       `${this.url}/planes/${planId}/actividades`,
       actividad,
+    );
+  }
+
+  actualizarActividad(
+    planId: number,
+    actividadId: number,
+    datos: Partial<NuevaActividad> & {
+      estado?: EstadoActividad;
+      fecha_cumplimiento?: string | null;
+      observacion_resultado?: string | null;
+    },
+  ): Observable<RespuestaApi<unknown>> {
+    return this.http.patch<RespuestaApi<unknown>>(
+      `${this.url}/planes/${planId}/actividades/${actividadId}`,
+      datos,
     );
   }
 }
