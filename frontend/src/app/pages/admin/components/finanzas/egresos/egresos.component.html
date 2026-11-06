@@ -6,7 +6,7 @@
       </h3>
       <p class="fin-panel__desc">
         {{ filtrados().length }} {{ filtrados().length === 1 ? 'egreso' : 'egresos' }} · total
-        <strong class="money">${{ total().toFixed(2) }}</strong>
+        <strong class="money">{{ total() | moneda }}</strong>
       </p>
     </div>
     <button type="button" class="btn btn--primary pressable" (click)="abrirFormulario()">
@@ -101,7 +101,7 @@
               </td>
               <td class="money">{{ e.numero_factura || '—' }}</td>
               <td class="num">
-                <span class="money">${{ e.valor.toFixed(2) }}</span>
+                <span class="money">{{ e.valor | moneda }}</span>
               </td>
             </tr>
           }

@@ -21,6 +21,7 @@ import { AsambleaFormComponent } from './asamblea-form/asamblea-form.component';
 import { AsambleaAsistenciaComponent } from './asamblea-asistencia/asamblea-asistencia.component';
 import { AsambleaActasComponent } from './asamblea-actas/asamblea-actas.component';
 import { DocumentoFirmadoComponent } from './documento-firmado/documento-firmado.component';
+import { formatearDinero } from '../../../../core/utils/dinero';
 
 export type { AsambleaItem, PuntoAsamblea } from './asamblea.model';
 
@@ -207,7 +208,7 @@ export class AsambleasAdminComponent implements OnInit {
       return;
     }
     const multa = asamblea.genera_multa_ausencia
-      ? ` Se emitirán multas de $${asamblea.valor_multa.toFixed(2)} a los ausentes sin justificación.`
+      ? ` Se emitirán multas de ${formatearDinero(asamblea.valor_multa)} a los ausentes sin justificación.`
       : '';
     const confirmado = await this.dialog.confirmar({
       tipo: 'CONFIRM',

@@ -2,6 +2,7 @@ import { Component, computed, input, output, signal } from '@angular/core';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { MenuComponent } from '../../../../../shared/ui/menu.component';
 import { AsambleaItem, estadoBadge, estadoIcono, estadoTexto } from '../asamblea.model';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
 
 export type TipoDocumentoAsamblea = 'CONVOCATORIA' | 'ASISTENCIA';
 export interface SubidaDocumento {
@@ -18,7 +19,7 @@ export interface SubidaDocumento {
 @Component({
   selector: 'app-asamblea-card',
   standalone: true,
-  imports: [FechaLocalPipe, MenuComponent],
+  imports: [MonedaPipe, FechaLocalPipe, MenuComponent],
   templateUrl: './asamblea-card.component.html',
 })
 export class AsambleaCardComponent {

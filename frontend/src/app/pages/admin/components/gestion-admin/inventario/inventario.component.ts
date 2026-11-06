@@ -15,6 +15,7 @@ import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
 
 const ESTADOS: { valor: EstadoFisico; etiqueta: string }[] = [
   { valor: 'NUEVO', etiqueta: 'Nuevo' },
@@ -39,7 +40,14 @@ const formularioVacio = (): NuevoBien => ({
 @Component({
   selector: 'app-inventario',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, EmptyStateComponent, SkeletonComponent, ModalComponent],
+  imports: [
+    MonedaPipe,
+    FormsModule,
+    FechaLocalPipe,
+    EmptyStateComponent,
+    SkeletonComponent,
+    ModalComponent,
+  ],
   template: `
     <section class="fin-panel" aria-labelledby="inventario-titulo">
       <div class="fin-panel__head">
@@ -49,7 +57,7 @@ const formularioVacio = (): NuevoBien => ({
           </h3>
           <p class="fin-panel__desc">
             {{ bienes().length }} {{ bienes().length === 1 ? 'bien' : 'bienes' }} · valor total
-            <strong class="money">\${{ valorTotal().toFixed(2) }}</strong>
+            <strong class="money">{{ valorTotal() | moneda }}</strong>
           </p>
         </div>
         <button type="button" class="btn btn--primary btn--sm pressable" (click)="abrir()">
@@ -108,10 +116,10 @@ const formularioVacio = (): NuevoBien => ({
                   </td>
                   <td class="num">{{ b.cantidad }}</td>
                   <td class="num">
-                    <span class="money">\${{ b.valor_unitario.toFixed(2) }}</span>
+                    <span class="money">{{ b.valor_unitario | moneda }}</span>
                   </td>
                   <td class="num">
-                    <span class="money">\${{ (b.cantidad * b.valor_unitario).toFixed(2) }}</span>
+                    <span class="money">{{ b.cantidad * b.valor_unitario | moneda }}</span>
                   </td>
                   <td>
                     <span

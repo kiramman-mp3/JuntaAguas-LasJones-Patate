@@ -3,6 +3,7 @@ import type { jsPDF } from 'jspdf';
 import { NotificationService } from './notification.service';
 import { diaEnEcuador } from '../utils/fechas';
 import { CARGADOR_JSPDF } from '../utils/jspdf';
+import { formatearDinero } from '../utils/dinero';
 
 /** Datos del evento que usan el acta y la convocatoria. Los campos opcionales se completan a mano al imprimir. */
 export interface EventoDocumento {
@@ -360,7 +361,7 @@ export class ActasService {
     const { texto: fechaTexto } = fechaDelEvento(evento);
     const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
     const multa = evento.genera_multa_ausencia
-      ? `* IMPORTANTE: La inasistencia no justificada estará sujeta a la sanción/multa establecida de $${Number(evento.valor_multa || 10).toFixed(2)}.`
+      ? `* IMPORTANTE: La inasistencia no justificada estará sujeta a la sanción/multa establecida de ${formatearDinero(Number(evento.valor_multa || 10))}.`
       : 'Asistencia obligatoria para los miembros registrados.';
 
     return this.generar(`Convocatoria_${evento.tipo}_${evento.fecha}.pdf`, 45, (r) => {

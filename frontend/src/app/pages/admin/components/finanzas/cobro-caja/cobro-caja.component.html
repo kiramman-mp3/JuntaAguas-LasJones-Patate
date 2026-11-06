@@ -147,7 +147,7 @@
                   <span>
                     <span class="check-row__title">Pago anual de agua · {{ o.periodo_anio }}</span>
                   </span>
-                  <span class="check-row__value money">${{ o.valor_total.toFixed(2) }}</span>
+                  <span class="check-row__value money">{{ o.valor_total | moneda }}</span>
                 </label>
               </li>
             }
@@ -155,9 +155,9 @@
           <div class="cobro-tree__resumen" aria-live="polite">
             <span class="text-muted">Seleccionado</span>
             <span
-              ><strong class="money">${{ totalSeleccionadoAgua().toFixed(2) }}</strong>
+              ><strong class="money">{{ totalSeleccionadoAgua() | moneda }}</strong>
               <span class="text-muted">de</span>
-              <span class="money">${{ totalAgua().toFixed(2) }}</span></span
+              <span class="money">{{ totalAgua() | moneda }}</span></span
             >
           </div>
         }
@@ -216,7 +216,7 @@
                     </span>
                     <span class="cobro-tree__cifra">
                       <span class="cobro-tree__rotulo">Total del año</span>
-                      <strong class="money">${{ a.total.toFixed(2) }}</strong>
+                      <strong class="money">{{ a.total | moneda }}</strong>
                     </span>
                   </button>
                 </div>
@@ -250,7 +250,7 @@
                             <span class="fin-tree__etiqueta">{{ m.etiqueta }}</span>
                             <span class="cobro-tree__cifra">
                               <span class="cobro-tree__rotulo">Subtotal</span>
-                              <strong class="money">${{ m.subtotal.toFixed(2) }}</strong>
+                              <strong class="money">{{ m.subtotal | moneda }}</strong>
                             </span>
                           </button>
                         </div>
@@ -288,9 +288,7 @@
                                       </span>
                                     }
                                   </span>
-                                  <span class="check-row__value money"
-                                    >${{ o.valor.toFixed(2) }}</span
-                                  >
+                                  <span class="check-row__value money">{{ o.valor | moneda }}</span>
                                 </label>
                               </li>
                             }
@@ -306,9 +304,9 @@
           <div class="cobro-tree__resumen" aria-live="polite">
             <span class="text-muted">Seleccionado</span>
             <span
-              ><strong class="money">${{ totalSeleccionadoOtras().toFixed(2) }}</strong>
+              ><strong class="money">{{ totalSeleccionadoOtras() | moneda }}</strong>
               <span class="text-muted">de</span>
-              <span class="money">${{ totalOtras().toFixed(2) }}</span></span
+              <span class="money">{{ totalOtras() | moneda }}</span></span
             >
           </div>
         }
@@ -326,7 +324,7 @@
           ></i>
           <strong>Pago {{ c.numero }} registrado</strong>
           <p>
-            <span class="money">${{ c.total.toFixed(2) }}</span>
+            <span class="money">{{ c.total | moneda }}</span>
           </p>
         </div>
         @if (pagoRegistradoId(); as id) {
@@ -380,7 +378,7 @@
               {{ pestana() === 'AGUA' ? 'agua anual' : 'multas y otros' }}</span
             >
           </div>
-          <div class="summary__total money" aria-live="polite">${{ total().toFixed(2) }}</div>
+          <div class="summary__total money" aria-live="polite">{{ total() | moneda }}</div>
           <hr class="summary__divider" />
 
           <div class="field">

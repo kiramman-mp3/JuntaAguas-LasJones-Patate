@@ -90,7 +90,7 @@
         </dt>
         <dd>
           @if (a.genera_multa_ausencia) {
-            Multa <span class="money text-danger">${{ a.valor_multa.toFixed(2) }}</span>
+            Multa <span class="money text-danger">{{ a.valor_multa | moneda }}</span>
           } @else {
             <span class="text-muted">Sin multa</span>
           }

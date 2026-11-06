@@ -15,21 +15,21 @@
         [class.stat-tile--negative]="k.historico.balanceAlDia < 0"
       >
         <span class="stat-tile__label">Saldo de caja</span>
-        <span class="stat-tile__value">${{ k.historico.balanceAlDia.toFixed(2) }}</span>
+        <span class="stat-tile__value">{{ k.historico.balanceAlDia | moneda }}</span>
         <span class="stat-tile__hint">Ingresos menos egresos históricos</span>
       </div>
       <div class="stat-tile">
         <span class="stat-tile__label">Cobrado este mes</span>
-        <span class="stat-tile__value">${{ k.mes.totalIngresos.toFixed(2) }}</span>
+        <span class="stat-tile__value">{{ k.mes.totalIngresos | moneda }}</span>
         <span class="stat-tile__hint"
-          >Egresos del mes: <span class="money">${{ k.mes.totalEgresos.toFixed(2) }}</span></span
+          >Egresos del mes: <span class="money">{{ k.mes.totalEgresos | moneda }}</span></span
         >
       </div>
       <div class="stat-tile stat-tile--warning">
         <span class="stat-tile__label">Por cobrar</span>
-        <span class="stat-tile__value">${{ k.historico.totalPendientes.toFixed(2) }}</span>
+        <span class="stat-tile__value">{{ k.historico.totalPendientes | moneda }}</span>
         <span class="stat-tile__hint"
-          ><span class="money">${{ k.historico.totalVencido.toFixed(2) }}</span> vencido</span
+          ><span class="money">{{ k.historico.totalVencido | moneda }}</span> vencido</span
         >
       </div>
       <div class="stat-tile">

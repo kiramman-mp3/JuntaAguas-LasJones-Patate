@@ -6,7 +6,7 @@
       </h3>
       <p class="fin-panel__desc">
         {{ filtrados().length }} {{ filtrados().length === 1 ? 'recibo' : 'recibos' }} · vigentes
-        <strong class="money">${{ totalVigente().toFixed(2) }}</strong>
+        <strong class="money">{{ totalVigente() | moneda }}</strong>
       </p>
     </div>
   </div>
@@ -124,7 +124,7 @@
                 }
               </td>
               <td class="num">
-                <span class="money">${{ r.valor_total.toFixed(2) }}</span>
+                <span class="money">{{ r.valor_total | moneda }}</span>
               </td>
               <td>
                 @if (r.estado === 'ANULADO') {

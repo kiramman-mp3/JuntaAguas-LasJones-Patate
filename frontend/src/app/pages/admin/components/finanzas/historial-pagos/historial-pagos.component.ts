@@ -9,6 +9,8 @@ import { EstadoPago, Recibo, TipoRecibo } from '../../../../../core/models/finan
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobante-bancario.component';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
+import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { formatearDinero } from '../../../../../core/utils/dinero';
 
 /**
  * Historial de recibos de un rango de fechas: los pagos de multas y otros cobros (REC-…) y los
@@ -17,7 +19,7 @@ import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 @Component({
   selector: 'app-historial-pagos',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, TitleCasePipe, ComprobanteBancarioComponent],
+  imports: [MonedaPipe, FormsModule, FechaLocalPipe, TitleCasePipe, ComprobanteBancarioComponent],
   templateUrl: './historial-pagos.component.html',
 })
 export class HistorialPagosComponent {
@@ -127,7 +129,7 @@ export class HistorialPagosComponent {
     if (recibo.estado === 'ANULADO' || this.procesando()) return;
     const motivo = await this.dialog.solicitar({
       titulo: `Anular ${recibo.numero}`,
-      mensaje: `El pago de ${recibo.usuario_nombre} por $${recibo.valor_total.toFixed(2)} quedará anulado y sus obligaciones volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
+      mensaje: `El pago de ${recibo.usuario_nombre} por ${formatearDinero(recibo.valor_total)} quedará anulado y sus obligaciones volverán a estar pendientes. Indique el motivo (mínimo 5 caracteres).`,
       placeholder: 'Motivo de la anulación',
       textoConfirmar: 'Anular pago',
       tipo: 'DANGER',
