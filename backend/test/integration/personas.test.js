@@ -64,3 +64,10 @@ test('el alta exige una fecha de nacimiento de mayor de edad (18 años)', async 
   assert.equal((await crear('1710034065', `${a}-${m}-${d}`)).status, 201);
   assert.equal((await crear('0926687856', '')).status, 201, 'la fecha de nacimiento sigue siendo opcional');
 });
+
+test('la búsqueda trata % y _ como texto, no como comodines', async () => {
+  assert.deepEqual(await cedulasDe('%'), []);
+  assert.deepEqual(await cedulasDe('_'), []);
+  assert.deepEqual(await cedulasDe('Carl_s'), []);
+  assert.deepEqual(await cedulasDe('Carlos'), [moreta.cedula]);
+});

@@ -5,6 +5,7 @@ const { withTransaction } = require('../shared/transaction');
 const { hoy } = require('../shared/dates');
 const { badRequest, notFound, conflict } = require('../shared/errors');
 const { FORMATO_CODIGO_LOTE, normalizarCodigo, prefijoSector } = require('../utils/loteCodigo');
+const { patronContiene } = require('../shared/sql');
 const s = require('../shared/schemas');
 const { z } = s;
 
@@ -171,7 +172,8 @@ async function getLotes(req, res) {
   if (filtros.sector_id) { condiciones.push('l.sector_id = ?'); params.push(filtros.sector_id); }
   if (filtros.busqueda) {
     condiciones.push('(l.codigo LIKE ? OR l.referencia_ubicacion LIKE ?)');
-    params.push(`%${filtros.busqueda}%`, `%${filtros.busqueda}%`);
+    const patron = patronContiene(filtros.busqueda);
+    params.push(patron, patron);
   }
 
   const where = condiciones.join(' AND ');

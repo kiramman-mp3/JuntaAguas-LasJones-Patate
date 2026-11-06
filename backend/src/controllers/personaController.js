@@ -6,6 +6,7 @@ const { generarPasswordTemporal, hashPassword } = require('../shared/passwords')
 const { ROLES, esAdmin } = require('../shared/roles');
 const { badRequest, forbidden, notFound, conflict } = require('../shared/errors');
 const { aCentavos, aDolares } = require('../shared/money');
+const { patronContiene } = require('../shared/sql');
 const s = require('../shared/schemas');
 const { z } = s;
 
@@ -95,7 +96,7 @@ async function getPersonas(req, res) {
   }
   if (busqueda) {
     where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ? OR CONCAT(p.apellidos, \' \', p.nombres) LIKE ?)';
-    const term = `%${busqueda}%`;
+    const term = patronContiene(busqueda);
     params.push(term, term, term, term, term);
   }
 

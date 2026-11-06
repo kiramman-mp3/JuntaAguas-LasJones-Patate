@@ -263,3 +263,16 @@ test('un egreso rechaza fechas anteriores al año 2000 y valores no numéricos',
   }
   assert.equal((await egreso({ valor: '12.50' })).status, 201);
 });
+
+test('el filtro de proveedor de egresos trata % y _ como texto, no como comodines', async () => {
+  const lista = (proveedor) => request(app).get('/api/financiero/egresos').query({ proveedor }).set(auth(admin));
+  await request(app).post('/api/financiero/egresos').set(auth(admin)).send({
+    fecha: '2025-04-01', concepto: 'Cemento', proveedor: 'Ferretería Patate', valor: 30
+  });
+  assert.equal((await lista('Ferretería')).body.data.length > 0, true);
+  for (const comodin of ['%', '_', 'Ferret_ría']) {
+    const res = await lista(comodin);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.length, 0, `"${comodin}" no debería coincidir con nada`);
+  }
+});
