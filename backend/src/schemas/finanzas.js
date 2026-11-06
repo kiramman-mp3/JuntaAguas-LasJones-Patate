@@ -7,6 +7,8 @@ const ESTADOS_OBLIGACION = ['PENDIENTE', 'PAGADA', 'ANULADA'];
 const METODOS = ['TRANSFERENCIA', 'DEPOSITO'];
 const anio = z.coerce.number().int().min(2000).max(2100);
 const mes = z.coerce.number().int().min(1).max(12);
+/** Primer día del primer año que acepta el sistema (igual que el año mínimo de las obligaciones). */
+const FECHA_MINIMA_EGRESO = '2000-01-01';
 
 const obligacionesQuery = z.object({
   persona_id: s.id.optional(),
@@ -68,7 +70,9 @@ const egresosQuery = rangoFechas.and(z.object({ proveedor: z.string().trim().max
 const pagosQuery = rangoFechas.and(z.object({ persona_id: s.id.optional(), estado: z.enum(['VIGENTE', 'ANULADO']).optional() }));
 
 const egresoSchema = z.object({
-  fecha: s.fecha.refine((f) => f <= hoy(), 'La fecha del egreso no puede ser futura.'),
+  fecha: s.fecha
+    .refine((f) => f >= FECHA_MINIMA_EGRESO, 'La fecha del egreso no puede ser anterior al año 2000.')
+    .refine((f) => f <= hoy(), 'La fecha del egreso no puede ser futura.'),
   concepto: z.string().trim().min(3, 'Indique el concepto del egreso.').max(200),
   proveedor: s.textoOpcional(150),
   ruc_proveedor: z.preprocess((v) => (v === '' ? null : v), z.string().trim().regex(/^\d{10}(\d{3})?$/, 'El RUC/cédula del proveedor debe tener 10 o 13 dígitos.').nullish()).transform((v) => v ?? null),

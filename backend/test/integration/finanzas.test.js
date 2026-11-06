@@ -252,3 +252,14 @@ test('anula un egreso y lo descuenta del balance y del historial anual (H-02)', 
   const balanceDespues = (await request(app).get('/api/financiero/balance?desde=2025-06-01&hasta=2025-06-30').set(auth(admin))).body.balance;
   assert.equal(balanceDespues.totalEgresos, 0);
 });
+
+test('un egreso rechaza fechas anteriores al año 2000 y valores no numéricos', async () => {
+  const egreso = (cuerpo) => request(app).post('/api/financiero/egresos').set(auth(admin)).send({ concepto: 'Límites', valor: 10, fecha: '2026-01-15', ...cuerpo });
+  assert.equal((await egreso({ fecha: '1999-12-31' })).status, 400);
+  assert.equal((await egreso({ fecha: '1900-01-01' })).status, 400);
+  assert.equal((await egreso({ fecha: '2000-01-01' })).status, 201);
+  for (const valor of [true, '0x10', '', null, '1e3']) {
+    assert.equal((await egreso({ valor })).status, 400, `debería rechazar valor ${JSON.stringify(valor)}`);
+  }
+  assert.equal((await egreso({ valor: '12.50' })).status, 201);
+});
