@@ -142,4 +142,19 @@ export class GestionService {
       actividad,
     );
   }
+
+  actualizarActividad(
+    planId: number,
+    actividadId: number,
+    datos: Partial<NuevaActividad> & {
+      estado?: EstadoActividad;
+      fecha_cumplimiento?: string | null;
+      observacion_resultado?: string | null;
+    },
+  ): Observable<RespuestaApi<unknown>> {
+    return this.http.patch<RespuestaApi<unknown>>(
+      `${this.url}/planes/${planId}/actividades/${actividadId}`,
+      datos,
+    );
+  }
 }
