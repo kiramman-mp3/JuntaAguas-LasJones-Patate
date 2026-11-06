@@ -48,17 +48,11 @@ router.post('/tarifas', ...soloAdmin, financieroController.createTarifa);
  *     tags: [Gestión Financiera]
  *     summary: Multas y otros cobros de un usuario por cédula
  *     security: [{ bearerAuth: [] }]
- * /financiero/periodosobligaciones:
- *   get:
- *     tags: [Gestión Financiera]
- *     summary: Años con obligaciones registradas
- *     security: [{ bearerAuth: [] }]
  */
 router.get('/obligaciones', verificarToken, financieroController.getObligaciones);
 router.post('/obligaciones', ...soloAdmin, financieroController.createObligacionManual);
 router.get('/obligaciones/multas', ...soloAdmin, financieroController.getObligacionesMultas);
 router.post('/obligaciones/:id/anular', ...soloAdmin, financieroController.anularObligacion);
-router.get('/periodosobligaciones', ...soloAdmin, financieroController.getPeriodosObligaciones);
 
 /**
  * @openapi

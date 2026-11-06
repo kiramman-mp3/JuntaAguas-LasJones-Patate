@@ -87,15 +87,6 @@ async function obligacionesPorCedula(conexion, { cedula, estado, anio, mes }) {
   return filas;
 }
 
-/** Años con obligaciones registradas (sin anuladas). */
-async function periodosObligaciones(conexion) {
-  const [filas] = await conexion.query(
-    `SELECT DISTINCT periodo_anio FROM obligaciones
-     WHERE periodo_anio IS NOT NULL AND estado <> 'ANULADA' ORDER BY periodo_anio ASC`
-  );
-  return filas;
-}
-
 async function listarPagos(conexion, { personaId, estado, desde, hasta }) {
   const condiciones = [];
   const params = [];
@@ -339,6 +330,6 @@ async function historialAnual(conexion) {
 }
 
 module.exports = {
-  filtroFechaPago, listarConceptos, listarTarifas, listarObligaciones, obligacionesPorCedula, periodosObligaciones,
+  filtroFechaPago, listarConceptos, listarTarifas, listarObligaciones, obligacionesPorCedula,
   listarPagos, detallePago, listarPagosAnuales, detallePagoAnual, listarEgresos, balance, historialAnual
 };

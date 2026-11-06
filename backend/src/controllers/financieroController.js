@@ -148,11 +148,6 @@ async function getHistorialAnual(req, res) {
   return res.json({ status: 'OK', data: await consultas.historialAnual(db) });
 }
 
-/** Años con obligaciones registradas (sin anuladas). */
-async function getPeriodosObligaciones(req, res) {
-  return res.json({ status: 'OK', data: await consultas.periodosObligaciones(db) });
-}
-
 /** Multas y otros cobros de un usuario, buscado por cédula (el agua se cobra aparte, una vez al año). */
 async function getObligacionesMultas(req, res) {
   const filtros = porCedulaQuery.parse(req.query);
@@ -250,7 +245,6 @@ module.exports = {
   anularEgreso,
   getBalanceReport,
   getHistorialAnual,
-  getPeriodosObligaciones,
   getObligacionesMultas,
   generarObligacionesAnualesAgua,
   getResumenAnualAgua,
