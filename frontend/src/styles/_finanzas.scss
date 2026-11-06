@@ -69,7 +69,7 @@
     color: var(--color-danger);
   }
   &--warning .stat-tile__value {
-    color: #b45309;
+    color: var(--color-warning-strong);
   }
 }
 
