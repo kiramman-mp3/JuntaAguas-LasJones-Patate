@@ -1,3 +1,5 @@
+<a class="skip-link" href="#contenido" (click)="saltarAlContenido($event)">Saltar al contenido</a>
+
 <!-- TOP NAVIGATION BAR GLOBAL -->
 <nav class="main-nav" aria-label="Navegación principal">
   <div class="container main-nav__container">
@@ -111,9 +113,9 @@
 </nav>
 
 <!-- CONTENIDO DINÁMICO DE RUTAS -->
-<div class="app-body">
+<main id="contenido" class="app-body" tabindex="-1">
   <router-outlet></router-outlet>
-</div>
+</main>
 
 <!-- NOTIFICACIONES Y DIÁLOGOS GLOBALES -->
 <app-toast-container></app-toast-container>
