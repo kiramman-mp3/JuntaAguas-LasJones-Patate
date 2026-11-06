@@ -112,6 +112,13 @@ export class GestionService {
     );
   }
 
+  actualizarBien(
+    id: number,
+    datos: Partial<NuevoBien> & { activo?: boolean },
+  ): Observable<RespuestaApi<unknown>> {
+    return this.http.patch<RespuestaApi<unknown>>(`${this.url}/inventario/${id}`, datos);
+  }
+
   getPlanes(): Observable<RespuestaApi<PlanAnual[]>> {
     return this.http.get<RespuestaApi<PlanAnual[]>>(`${this.url}/planes`);
   }
