@@ -28,6 +28,12 @@ async function verificarPersonaYLote(conexion, personaId, loteId) {
  */
 async function verificarSolape(conexion, { loteId, diaSemana, horaInicio, horaFin, excluirId = null }) {
   if (!loteId) return;
+  // Bloqueo pesimista del sector para serializar asignaciones concurrentes en el mismo canal
+  const [lotes] = await conexion.query('SELECT sector_id FROM lotes WHERE id = ?', [loteId]);
+  if (lotes.length && lotes[0].sector_id) {
+    await conexion.query('SELECT id FROM sectores WHERE id = ? FOR UPDATE', [lotes[0].sector_id]);
+  }
+
   const [solapados] = await conexion.query(
     `SELECT t.id, t.hora_inicio, t.hora_fin, l.codigo AS lote_codigo
      FROM turnos_riego t
