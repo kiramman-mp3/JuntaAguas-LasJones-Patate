@@ -178,6 +178,21 @@ test('las justificaciones requieren motivo, admiten archivo opcional y no genera
   const comunero = padronActual.find((p) => p.persona_id === personaId);
   assert.equal(comunero.archivo_justificacion_nombre, 'justificante_medico.pdf');
   assert.ok(comunero.archivo_justificacion_url);
+
+  // El motivo largo se rechaza en lugar de truncarse en silencio (H-12)
+  const subirConMotivo = (motivo) => request(app)
+    .post(`/api/mingas/${id}/asistencias/${personaId}/justificante`)
+    .set(auth(admin))
+    .field('motivo_justificacion', motivo)
+    .attach('archivo', pdfFirma, 'justificante_medico.pdf');
+  const demasiado = await subirConMotivo('m'.repeat(256));
+  assert.equal(demasiado.status, 400);
+  assert.match(demasiado.body.message, /255/);
+  assert.equal((await subirConMotivo('m'.repeat(255))).status, 200);
+  const [[guardado]] = await db.query(
+    'SELECT motivo_justificacion FROM asistencias WHERE evento_id = ? AND persona_id = ?', [id, personaId]
+  );
+  assert.equal(guardado.motivo_justificacion, 'm'.repeat(255));
 });
 
 test('rechaza personas repetidas o ajenas al padrón', async () => {
