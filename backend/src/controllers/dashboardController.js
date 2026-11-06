@@ -24,11 +24,11 @@ async function getResumen(req, res) {
          (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoMes,
        (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE' AND fecha_pago >= ?) +
          (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE estado = 'VIGENTE' AND fecha_pago >= ?) AS recaudadoAnio,
-       (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE fecha >= ?) AS egresosMes,
-       (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE fecha >= ?) AS egresosAnio,
+       (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE estado = 'VIGENTE' AND fecha >= ?) AS egresosMes,
+       (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE estado = 'VIGENTE' AND fecha >= ?) AS egresosAnio,
        (SELECT COALESCE(SUM(valor_total), 0) FROM pagos WHERE estado = 'VIGENTE') +
          (SELECT COALESCE(SUM(valor_total), 0) FROM pago_anual_agua WHERE estado = 'VIGENTE') -
-         (SELECT COALESCE(SUM(valor), 0) FROM egresos) AS saldoCaja,
+         (SELECT COALESCE(SUM(valor), 0) FROM egresos WHERE estado = 'VIGENTE') AS saldoCaja,
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE') +
          (SELECT COALESCE(SUM(valor_total), 0) FROM obligacion_anual_agua WHERE estado = 'PENDIENTE') AS carteraPendiente,
        (SELECT COALESCE(SUM(valor), 0) FROM obligaciones WHERE estado = 'PENDIENTE' AND fecha_vencimiento < ?) +

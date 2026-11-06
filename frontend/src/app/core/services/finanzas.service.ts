@@ -120,6 +120,10 @@ export class FinanzasService {
     return this.http.post<Respuesta<unknown> & { egresoId: number }>(`${this.url}/egresos`, egreso);
   }
 
+  anularEgreso(id: number, motivo: string): Observable<Respuesta<unknown>> {
+    return this.http.post<Respuesta<unknown>>(`${this.url}/egresos/${id}/anular`, { motivo });
+  }
+
   getConceptos(): Observable<Respuesta<ConceptoCobro[]>> {
     return this.http.get<Respuesta<ConceptoCobro[]>>(`${this.url}/conceptos`);
   }

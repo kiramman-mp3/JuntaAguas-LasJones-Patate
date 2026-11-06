@@ -137,6 +137,7 @@ router.post('/pagos/:id/anular', ...soloAdmin, financieroController.anularPago);
  */
 router.get('/egresos', ...soloAdmin, financieroController.getEgresos);
 router.post('/egresos', ...soloAdmin, financieroController.createEgreso);
+router.post('/egresos/:id/anular', ...soloAdmin, financieroController.anularEgreso);
 router.get('/balance', ...soloAdmin, financieroController.getBalanceReport);
 router.get('/historial', ...soloAdmin, financieroController.getHistorialAnual);
 /**
