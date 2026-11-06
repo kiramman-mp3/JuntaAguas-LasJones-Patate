@@ -118,6 +118,7 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | `POST` | `/financiero/agua-anual/pagos` | ADMIN | Registra el pago (solo `TRANSFERENCIA` o `DEPOSITO`, con referencia) de una o varias obligaciones anuales de agua en una transacción atómica. |
 | `GET` | `/financiero/egresos` | Autenticado | Gastos y compras realizadas por la Junta. |
 | `POST` | `/financiero/egresos` | ADMIN / TESORERO | Registrar gasto o compra con número de factura. |
+| `POST` | `/financiero/egresos/:id/anular` | ADMIN | Anula un egreso con motivo obligatorio y deja registro de auditoría (migración 028). |
 | `GET` | `/financiero/balance` | Autenticado | **Reporte de Balance General Al Día:** Suma de Total Ingresos (pagos y pagos anuales de agua) - Total Egresos, con la cartera pendiente de ambos. |
 
 ---
@@ -128,9 +129,11 @@ Los endpoints protegidos requieren autenticación mediante **JSON Web Tokens (JW
 | :--- | :--- | :--- | :--- |
 | `GET` | `/inventario` | Autenticado | Catálogo de bienes físicos y equipos pertenecientes a la Junta. |
 | `POST` | `/inventario` | ADMIN / TESORERO | Registrar nuevo bien en inventario. |
+| `PATCH` | `/inventario/:id` | ADMIN | Editar un bien del inventario. |
 | `GET` | `/planes` | Autenticado | Planes operativos anuales de trabajo y sus actividades asociadas. |
 | `POST` | `/planes` | ADMIN | Crear plan anual o añadir actividades con fechas de inicio/fin. |
-| `GET` | `/auditoria` | **ADMIN** | Bitácora imborrable de auditoría para trazabilidad de cambios en el sistema. |
+| `PATCH` | `/planes/:planId/actividades/:actividadId` | ADMIN | Editar una actividad del plan (estado, fechas, observación del resultado). |
+| `GET` | `/auditoria` | **ADMIN** | Bitácora imborrable de auditoría para trazabilidad de cambios en el sistema. Paginada con `?page=1&limit=25`; devuelve `data` y `pagination` (`total`, `page`, `limit`). |
 
 ### 3.7.1. 📰 Noticias (`/api/noticias`)
 
