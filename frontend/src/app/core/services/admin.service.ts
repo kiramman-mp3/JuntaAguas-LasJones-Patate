@@ -113,6 +113,10 @@ export class AdminService {
     return this.http.post<RespuestaMensaje & { loteId: number }>(`${this.baseUrl}/lotes`, data);
   }
 
+  updateLote(id: number, data: object): Observable<RespuestaMensaje> {
+    return this.http.put<RespuestaMensaje>(`${this.baseUrl}/lotes/${id}`, data);
+  }
+
   sugerirCodigoLote(sectorId: number): Observable<RespuestaApi<{ codigo: string }>> {
     return this.http.get<RespuestaApi<{ codigo: string }>>(`${this.baseUrl}/lotes/sugerir-codigo`, {
       params: { sector_id: sectorId },
@@ -134,6 +138,17 @@ export class AdminService {
       `${this.baseUrl}/lotes/sectores`,
       data,
     );
+  }
+
+  updateSector(
+    id: number,
+    data: { nombre: string; descripcion?: string },
+  ): Observable<RespuestaMensaje> {
+    return this.http.put<RespuestaMensaje>(`${this.baseUrl}/lotes/sectores/${id}`, data);
+  }
+
+  deleteSector(id: number): Observable<RespuestaMensaje> {
+    return this.http.delete<RespuestaMensaje>(`${this.baseUrl}/lotes/sectores/${id}`);
   }
 
   getSectores(): Observable<RespuestaApi<SectorItem[]>> {
