@@ -11,6 +11,7 @@ class ClienteFalso extends EventEmitter {
     this.enviados = [];
     this.destruido = false;
     this.cerroSesion = false;
+    this.consultasGrupos = 0;
   }
 
   async initialize() {
@@ -26,6 +27,7 @@ class ClienteFalso extends EventEmitter {
   }
 
   async listarGrupos() {
+    this.consultasGrupos++;
     if (this.falloListar) throw this.falloListar;
     return this.chats
       .filter(({ esGrupo = true }) => esGrupo)

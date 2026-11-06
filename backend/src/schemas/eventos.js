@@ -62,4 +62,11 @@ const documentoSchema = z.object({
   tipo: z.enum(['CONVOCATORIA', 'ACTA', 'RESOLUCION', 'OTRO'], { error: 'Tipo de documento inválido.' })
 });
 
-module.exports = { TIPOS, ESTADOS, listarSchema, crearSchema, actualizarSchema, puntosSchema, documentoSchema };
+/** Estados que se pueden fijar a mano; REALIZADO solo se alcanza al finalizar el evento. */
+const cambioEstadoSchema = z.object({
+  estado: z.enum(['PROGRAMADO', 'CONVOCADO', 'CANCELADO'], {
+    error: 'Seleccione Programada, Convocada o Cancelada. Para realizarla, use Finalizar.'
+  })
+});
+
+module.exports = { TIPOS, ESTADOS, listarSchema, crearSchema, actualizarSchema, puntosSchema, documentoSchema, cambioEstadoSchema };

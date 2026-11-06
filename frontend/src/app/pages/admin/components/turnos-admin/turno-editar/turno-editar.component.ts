@@ -2,6 +2,7 @@ import { Component, OnInit, inject, input, output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
+import { errorHorarioTurno } from '../../../../../core/utils/turnos';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA, Turno } from '../turno.model';
 
@@ -110,8 +111,8 @@ export class TurnoEditarComponent implements OnInit {
     const f = this.form;
     if (!f.dia_semana || !f.hora_inicio || !f.hora_fin)
       return this.notify.warning('Día de semana y horarios son requeridos.');
-    if (f.hora_inicio >= f.hora_fin)
-      return this.notify.warning('La hora de fin debe ser mayor a la hora de inicio.');
+    const errorHorario = errorHorarioTurno(f.hora_inicio, f.hora_fin);
+    if (errorHorario) return this.notify.warning(errorHorario);
 
     const t = this.turno();
     this.guardando.set(true);

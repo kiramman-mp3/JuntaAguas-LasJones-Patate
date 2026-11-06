@@ -1,6 +1,10 @@
 /** Hoja de asistencia en PDF (A4) con el padrón de un evento, para recoger firmas. */
 const PDFDocument = require('pdfkit');
 
+const ANCHO_NOMBRE = 220;
+const ALTO_FILA_MINIMO = 22;
+const LIMITE_PAGINA = 780;
+
 const fechaLegible = (iso) => {
   const [a, m, d] = String(iso).slice(0, 10).split('-');
   return `${d}/${m}/${a}`;
@@ -41,17 +45,20 @@ function escribirListaAsistencia(destino, evento, personas) {
 
   let y = encabezado(doc.y);
   personas.forEach((p, i) => {
-    if (y > 750) {
+    // Un nombre largo ocupa varios renglones: la fila crece lo que mida el texto para no pisar la siguiente.
+    doc.fillColor('#333333').fontSize(9);
+    const alto = Math.max(ALTO_FILA_MINIMO, doc.heightOfString(p.nombre, { width: ANCHO_NOMBRE }) + 8);
+    if (y + alto > LIMITE_PAGINA) {
       doc.addPage();
       y = encabezado(40);
+      doc.fillColor('#333333').fontSize(9);
     }
-    doc.fillColor('#333333').fontSize(9);
     doc.text(String(i + 1), 45, y + 4, { width: 30 });
     doc.text(p.cedula, 80, y + 4, { width: 80 });
-    doc.text(p.nombre, 165, y + 4, { width: 220 });
-    doc.moveTo(390, y + 16).lineTo(540, y + 16).stroke('#cbd5e1');
-    doc.moveTo(40, y + 20).lineTo(555, y + 20).stroke('#f1f5f9');
-    y += 22;
+    doc.text(p.nombre, 165, y + 4, { width: ANCHO_NOMBRE });
+    doc.moveTo(390, y + alto - 6).lineTo(540, y + alto - 6).stroke('#cbd5e1');
+    doc.moveTo(40, y + alto - 2).lineTo(555, y + alto - 2).stroke('#f1f5f9');
+    y += alto;
   });
   doc.end();
 }

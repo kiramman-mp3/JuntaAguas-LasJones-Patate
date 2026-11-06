@@ -94,9 +94,9 @@ async function getPersonas(req, res) {
     params.push(sector_id);
   }
   if (busqueda) {
-    where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ?)';
+    where += ' AND (p.cedula LIKE ? OR p.nombres LIKE ? OR p.apellidos LIKE ? OR CONCAT(p.nombres, \' \', p.apellidos) LIKE ? OR CONCAT(p.apellidos, \' \', p.nombres) LIKE ?)';
     const term = `%${busqueda}%`;
-    params.push(term, term, term, term);
+    params.push(term, term, term, term, term);
   }
 
   const [personas] = await db.query(
@@ -462,6 +462,9 @@ async function actualizarCuenta(req, res) {
  */
 async function restablecerPassword(req, res) {
   const { id } = s.idParam.parse(req.params);
+  if (id === req.user.personaId) {
+    throw forbidden('No puede restablecer su propia contraseña; use la opción de cambio de contraseña.');
+  }
 
   const passwordTemporal = await withTransaction(async (conexion) => {
     const cuenta = await cuentaDePersona(conexion, id, { bloquear: true });

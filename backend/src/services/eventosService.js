@@ -530,6 +530,9 @@ async function guardarJustificante(conexion, evento, personaId, { buffer, nombre
   const { personas } = await obtenerPadron(conexion, evento);
   const persona = personas.find((p) => Number(p.persona_id) === Number(personaId));
   if (!persona) throw badRequest(`La persona no pertenece al padrón de esta ${NOMBRE[evento.tipo]}.`);
+  if (typeof motivo === 'string' && motivo.trim().length > 255) {
+    throw badRequest('El motivo no puede superar los 255 caracteres.');
+  }
 
   const nuevo = await guardarDocumento(buffer, 'justificante_asistencia');
   const [existente] = await conexion.query(
@@ -537,7 +540,7 @@ async function guardarJustificante(conexion, evento, personaId, { buffer, nombre
     [evento.id, personaId]
   );
   const anteriorUrl = existente[0]?.archivo_justificacion_url;
-  const motivoFinal = (motivo?.trim() || existente[0]?.motivo_justificacion?.trim() || 'Inasistencia justificada con documento').slice(0, 255);
+  const motivoFinal = (motivo?.trim() || existente[0]?.motivo_justificacion?.trim() || 'Inasistencia justificada con documento');
   const ahora = new Date();
 
   await conexion.query(
