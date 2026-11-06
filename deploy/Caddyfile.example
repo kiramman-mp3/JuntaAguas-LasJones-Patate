@@ -2,6 +2,12 @@
 # Copie como /etc/caddy/Caddyfile, cambie el dominio y recargue: sudo systemctl reload caddy
 # Requisitos: el dominio apunta a este servidor y los puertos 80 y 443 están abiertos.
 # En backend/.env: HOST=127.0.0.1, TRUST_PROXY=1 y FRONTEND_URL=https://agua.ejemplo.ec
+
+# La variante con www redirige a la dirección principal (ambos nombres deben apuntar a este servidor en el DNS).
+www.agua.ejemplo.ec {
+	redir https://agua.ejemplo.ec{uri} permanent
+}
+
 agua.ejemplo.ec {
 	encode zstd gzip
 
