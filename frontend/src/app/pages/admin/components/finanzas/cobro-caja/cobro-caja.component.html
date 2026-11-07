@@ -19,7 +19,7 @@
         class="input"
         type="search"
         autocomplete="off"
-        placeholder="Ej.: Chicaiza o 1804567890"
+        placeholder="Ej. Chicaiza o 1804567890"
         aria-label="Buscar usuario"
         aria-describedby="cobro-busqueda-ayuda"
         [ngModel]="termino()"
@@ -399,23 +399,24 @@
             </div>
           </div>
 
+          <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campo obligatorio</p>
           <div class="field">
-            <label for="cobro-referencia">Número de referencia</label>
+            <label for="cobro-referencia"
+              >Número de referencia <span class="req" aria-hidden="true">*</span></label
+            >
             <input
               id="cobro-referencia"
               class="input"
               type="text"
               maxlength="100"
-              placeholder="Referencia bancaria"
+              placeholder="Ej. 123456789 (número de la transferencia o papeleta)"
               [ngModel]="referencia()"
               (ngModelChange)="referencia.set($event)"
             />
           </div>
 
           <div class="field">
-            <label for="cobro-observacion"
-              >Observación <span class="text-muted">(opcional)</span></label
-            >
+            <label for="cobro-observacion">Observación <span class="opt">(Opcional)</span></label>
             <input
               id="cobro-observacion"
               class="input"

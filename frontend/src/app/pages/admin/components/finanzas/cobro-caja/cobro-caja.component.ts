@@ -27,6 +27,7 @@ import {
   Comprobante,
   ComprobanteLinea,
 } from '../../../../../core/services/comprobante-pdf.service';
+import { DialogService } from '../../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import {
   UsuarioBusqueda,
@@ -97,6 +98,7 @@ export class CobroCajaComponent {
   private finanzas = inject(FinanzasService);
   private pdf = inject(ComprobantePdfService);
   private notify = inject(NotificationService);
+  private dialog = inject(DialogService);
   private destroyRef = inject(DestroyRef);
 
   /** Se emite tras registrar un pago, para refrescar los indicadores. */
@@ -401,7 +403,7 @@ export class CobroCajaComponent {
     this.seleccion.set(nueva);
   }
 
-  cobrar(): void {
+  async cobrar(): Promise<void> {
     const c = this.usuario();
     if (!c || this.bloqueo() || this.procesando()) return;
 
@@ -427,6 +429,14 @@ export class CobroCajaComponent {
       observacion: this.observacion().trim() || undefined,
     };
     const total = this.total();
+    const forma = this.metodos.find((m) => m.valor === datos.metodo)?.etiqueta.toLowerCase();
+    const confirmado = await this.dialog.confirmar({
+      tipo: 'CONFIRM',
+      titulo: 'Registrar este pago',
+      mensaje: `Se registrará un pago de ${formatearDinero(total)} de ${c.nombres} ${c.apellidos} (${lineas.length} ${lineas.length === 1 ? 'obligación' : 'obligaciones'}) por ${forma}, referencia ${datos.referencia}. Si hay un error, podrá anularlo después desde el historial de pagos indicando el motivo.`,
+      textoConfirmar: 'Registrar pago',
+    });
+    if (!confirmado || this.procesando()) return;
     const peticion: Observable<PagoRegistrado> = anual
       ? this.finanzas.registrarPagoAnualAgua(datos)
       : this.finanzas.registrarPago(datos);
