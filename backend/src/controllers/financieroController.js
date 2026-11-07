@@ -48,7 +48,7 @@ async function getObligaciones(req, res) {
   return res.json({ status: 'OK', data: await consultas.listarObligaciones(db, { ...filtros, personaId }) });
 }
 
-/** Crear una obligación manual (cuota extraordinaria, reposición, etc.). */
+/** Crear una obligación manual de un concepto de cobro vigente. */
 async function createObligacionManual(req, res) {
   const datos = obligacionSchema.parse(req.body);
   const obligacionId = await conAuditoria(req, (conexion) => finanzas.crearObligacionManual(conexion, datos), (id) => ({
