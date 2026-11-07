@@ -19,6 +19,8 @@ const asambleaMock: AsambleaItem = {
   fecha: '2026-10-20',
   hora_inicio: '18:00',
   lugar: 'Casa Comunal Junta La Jones',
+  sector_id: null,
+  sector_nombre: null,
   estado: 'BORRADOR',
   genera_multa_ausencia: true,
   valor_multa: 10,
@@ -35,6 +37,14 @@ describe('Módulo de Asambleas', () => {
   beforeEach(async () => {
     adminMock = {
       getEventos: vi.fn(() => of({ data: [asambleaMock] })),
+      getSectores: vi.fn(() =>
+        of({
+          data: [
+            { id: 1, nombre: 'La Merced' },
+            { id: 2, nombre: 'San Javier' },
+          ],
+        }),
+      ),
       createEvento: vi.fn(() => of({ status: 'OK', eventoId: 10 })),
       cambiarEstadoAsamblea: vi.fn((_id: number, estado: string) => of({ status: 'OK', estado })),
       finalizarAsamblea: vi.fn(() => of({ status: 'OK', multasGeneradas: 3 })),
@@ -133,6 +143,22 @@ describe('Módulo de Asambleas', () => {
       expect(component.filtradas().length).toBe(1);
     });
 
+    it('filtra y busca por sector convocado', () => {
+      component.asambleas.set([
+        asambleaMock,
+        { ...asambleaMock, id: 11, sector_id: 2, sector_nombre: 'San Javier' },
+      ]);
+      expect(component.filtradas().length).toBe(2);
+
+      component.sectorFiltro.set(2);
+      expect(component.filtradas().map((a) => a.id)).toEqual([11]);
+      expect(component.hayFiltros()).toBe(true);
+
+      component.limpiarFiltros();
+      component.busqueda.set('san javier');
+      expect(component.filtradas().map((a) => a.id)).toEqual([11]);
+    });
+
     it('soporta la transición de estados clara (C10, F05)', async () => {
       await component.cambiarEstado(component.asambleas()[0], 'PROGRAMADO');
       expect(adminMock.cambiarEstadoAsamblea).toHaveBeenCalledWith(10, 'PROGRAMADO');
@@ -181,6 +207,7 @@ describe('Módulo de Asambleas', () => {
       hora_inicio: '19:00',
       hora_fin: '21:00',
       lugar: 'Sede Central',
+      sector_id: null,
       genera_multa_ausencia: true,
       puntos_orden_dia: ['Punto 1', 'Punto 2'],
     };
@@ -191,7 +218,19 @@ describe('Módulo de Asambleas', () => {
     expect(payload.puntos_orden_dia).toEqual(['Punto 1', 'Punto 2']);
     expect(payload.genera_multa_ausencia).toBe(true);
     expect(payload).not.toHaveProperty('valor_multa');
+    expect(payload.sector_id).toBeNull();
     expect(creada).toHaveBeenCalled();
+  });
+
+  it('convoca la asamblea a un solo sector cuando se elige uno', () => {
+    const fixture = TestBed.createComponent(AsambleaFormComponent);
+    const component = fixture.componentInstance;
+    component.ngOnInit();
+    expect(component.sectores().map((x) => x.nombre)).toEqual(['La Merced', 'San Javier']);
+
+    component.formulario.sector_id = 2;
+    component.guardar();
+    expect(adminMock.createEvento.mock.calls[0][0].sector_id).toBe(2);
   });
 
   it('al reabrir la asistencia muestra los estados ya guardados en el servidor', () => {

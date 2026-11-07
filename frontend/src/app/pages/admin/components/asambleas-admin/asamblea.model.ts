@@ -20,6 +20,9 @@ export interface AsambleaItem {
   hora_inicio: string;
   hora_fin?: string;
   lugar?: string;
+  /** Sector convocado; null convoca a todos los usuarios. */
+  sector_id?: number | null;
+  sector_nombre?: string | null;
   estado: EstadoAsamblea;
   genera_multa_ausencia: boolean;
   valor_multa: number;

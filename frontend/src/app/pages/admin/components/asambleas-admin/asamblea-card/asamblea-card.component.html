@@ -16,6 +16,10 @@
       <span class="badge" [class]="estadoBadge(a.estado)">
         <i [class]="estadoIcono(a.estado)" aria-hidden="true"></i> {{ estadoTexto(a.estado) }}
       </span>
+      <span class="pill" title="Sector convocado">
+        <i class="ri-map-pin-range-line" aria-hidden="true"></i>
+        {{ a.sector_nombre || 'Todos los sectores' }}
+      </span>
     </div>
     <div class="event-card__tools">
       @if (ocupada()) {
