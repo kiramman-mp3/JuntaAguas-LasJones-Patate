@@ -18,9 +18,9 @@ async function abrirAsignacion(page, cedula, codigo) {
   const fila = await buscarEnPadron(page, cedula);
   await fila.getByRole('button', { name: /^Asignar terreno a / }).click();
   await page.getByLabel('Buscar lote').fill(codigo);
-  const lote = page.locator('#vin-lote option', { hasText: `Lote ${codigo}` });
+  const lote = page.locator('.lote-opt', { hasText: `Lote ${codigo}` });
   await expect(lote).toHaveCount(1);
-  await page.locator('#vin-lote').selectOption({ label: (await lote.innerText()).trim() });
+  await lote.click();
 }
 
 test('crear un sector lo deja disponible para los lotes', async ({ page }) => {

@@ -253,6 +253,25 @@ describe('Titularidad única (VincularLoteComponent)', () => {
     expect(c.lotesFiltrados().length).toBe(3);
   });
 
+  it('filtra los lotes por sector y lo combina con la búsqueda', () => {
+    const c = crear();
+    c.lotes.set([
+      { id: 1, sector_id: 5, sector_nombre: 'La Merced', codigo: 'LJB-001' },
+      { id: 2, sector_id: 5, sector_nombre: 'La Merced', codigo: 'LJB-002' },
+      { id: 3, sector_id: 9, sector_nombre: 'San Javier', codigo: 'LJB-003' },
+    ] as never);
+    expect(c.sectores().map((s) => s.nombre)).toEqual(['La Merced', 'San Javier']);
+
+    c.sectorId.set(5);
+    expect(c.lotesFiltrados().map((l) => l.id)).toEqual([1, 2]);
+
+    c.busqueda.set('002');
+    expect(c.lotesFiltrados().map((l) => l.id)).toEqual([2]);
+
+    c.sectorId.set(9);
+    expect(c.lotesFiltrados().length).toBe(0);
+  });
+
   it('mantiene el lote actualmente seleccionado en la lista si no coincide con el filtro', () => {
     const c = crear();
     c.loteId.set(11);
