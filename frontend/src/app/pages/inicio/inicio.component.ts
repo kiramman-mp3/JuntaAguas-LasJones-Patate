@@ -14,6 +14,7 @@ import {
   SectorItem,
   TurnoCronogramaPublico,
 } from '../../core/models/api-payloads';
+import { AYUDAS_FORMULARIO } from '../../core/directives/formularios';
 
 type DiaCronograma = CronogramaSectorPublico['dias'][number];
 type DiaVisible = DiaCronograma & { turnosFiltrados: TurnoCronogramaPublico[] };
@@ -27,7 +28,14 @@ interface StatsPublicos {
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [CommonModule, FormsModule, FechaLocalPipe, RouterLink, CurvasNivelComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    RouterLink,
+    CurvasNivelComponent,
+  ],
   templateUrl: './inicio.component.html',
   styleUrls: ['./inicio.portada.scss', './inicio.component.scss'],
 })

@@ -15,6 +15,7 @@ import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { PaginadorComponent } from '../../shared/ui/paginador.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton.component';
 import { NoticiaTarjetaComponent } from './noticia-tarjeta.component';
+import { AYUDAS_FORMULARIO } from '../../core/directives/formularios';
 
 interface GrupoMes {
   clave: string;
@@ -32,6 +33,7 @@ interface GrupoMes {
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     RouterLink,
     CurvasNivelComponent,
     EmptyStateComponent,

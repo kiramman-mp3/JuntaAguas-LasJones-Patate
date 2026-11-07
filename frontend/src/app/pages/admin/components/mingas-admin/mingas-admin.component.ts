@@ -18,6 +18,7 @@ import { Minga } from './minga.model';
 import { MingaFormComponent } from './minga-form/minga-form.component';
 import { MingaAsistenciaComponent } from './minga-asistencia/minga-asistencia.component';
 import { mensajeError } from '../../../../core/utils/errores';
+import { AYUDAS_FORMULARIO } from '../../../../core/directives/formularios';
 
 /**
  * Listado de mingas y su flujo (borrador → programada → convocada → realizada).
@@ -31,6 +32,7 @@ import { mensajeError } from '../../../../core/utils/errores';
     CurrencyPipe,
     FechaLocalPipe,
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     EmptyStateComponent,
     SkeletonComponent,
     MenuComponent,

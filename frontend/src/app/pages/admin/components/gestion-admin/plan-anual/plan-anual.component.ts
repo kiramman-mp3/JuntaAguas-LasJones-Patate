@@ -14,6 +14,7 @@ import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
   PENDIENTE: 'Pendiente',
@@ -27,7 +28,14 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
 @Component({
   selector: 'app-plan-anual',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, EmptyStateComponent, SkeletonComponent, ModalComponent],
+  imports: [
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    EmptyStateComponent,
+    SkeletonComponent,
+    ModalComponent,
+  ],
   template: `
     <section class="fin-panel" aria-labelledby="plan-titulo">
       <div class="fin-panel__head">

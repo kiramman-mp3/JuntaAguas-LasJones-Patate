@@ -4,6 +4,7 @@ import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { LoteItem, PersonaListado } from '../../../../../core/models/api-payloads';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Titularidad única: un lote pertenece al 100 % a un solo usuario (lo valida también el servidor). */
 export const PORCENTAJE_TITULARIDAD = 100;
@@ -15,7 +16,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
 @Component({
   selector: 'app-vincular-lote',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent],
   template: `
     @let c = usuario();
     <app-modal

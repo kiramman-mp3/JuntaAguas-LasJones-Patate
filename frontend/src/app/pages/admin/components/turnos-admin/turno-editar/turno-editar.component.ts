@@ -5,12 +5,13 @@ import { NotificationService } from '../../../../../core/services/notification.s
 import { errorHorarioTurno } from '../../../../../core/utils/turnos';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA, Turno } from '../turno.model';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Edición del horario y observaciones de un turno existente. */
 @Component({
   selector: 'app-turno-editar',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent],
   template: `
     <app-modal
       titulo="Editar turno"

@@ -10,6 +10,7 @@ import { PaginadorComponent } from '../../../../../shared/ui/paginador.component
 import { LoteFormComponent } from '../lote-form/lote-form.component';
 import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
 import { SectorFormComponent } from '../sector-form/sector-form.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Catastro de lotes: búsqueda por código, filtro por sector, paginación en el servidor, alta de lotes y ficha de cada uno. */
 @Component({
@@ -17,6 +18,7 @@ import { SectorFormComponent } from '../sector-form/sector-form.component';
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     EmptyStateComponent,
     SkeletonComponent,
     PaginadorComponent,

@@ -22,6 +22,7 @@ import { AsambleaAsistenciaComponent } from './asamblea-asistencia/asamblea-asis
 import { AsambleaActasComponent } from './asamblea-actas/asamblea-actas.component';
 import { DocumentoFirmadoComponent } from './documento-firmado/documento-firmado.component';
 import { formatearDinero } from '../../../../core/utils/dinero';
+import { AYUDAS_FORMULARIO } from '../../../../core/directives/formularios';
 
 export type { AsambleaItem, PuntoAsamblea } from './asamblea.model';
 
@@ -37,6 +38,7 @@ type EstadoDestino = 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO';
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     EmptyStateComponent,
     SkeletonComponent,
     AsambleaCardComponent,

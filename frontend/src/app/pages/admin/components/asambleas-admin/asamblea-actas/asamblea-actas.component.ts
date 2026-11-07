@@ -11,12 +11,20 @@ import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { AsambleaItem, PuntoAsamblea } from '../asamblea.model';
 import { AsambleasService } from '../asambleas.service';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Redacción del acta general de una asamblea: los puntos tratados y los temas nuevos de la sesión (F07). */
 @Component({
   selector: 'app-asamblea-actas',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, ModalComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    ModalComponent,
+    SkeletonComponent,
+    EmptyStateComponent,
+  ],
   templateUrl: './asamblea-actas.component.html',
 })
 export class AsambleaActasComponent implements OnInit {

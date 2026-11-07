@@ -7,6 +7,7 @@ import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Acciones que registra el sistema, para filtrar el registro. */
 const ACCIONES = [
@@ -31,6 +32,7 @@ const ACCIONES = [
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     FechaLocalPipe,
     EmptyStateComponent,
     SkeletonComponent,

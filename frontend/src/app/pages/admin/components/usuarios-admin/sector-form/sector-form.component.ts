@@ -3,12 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Registro de un sector de riego. Los lotes pertenecen a un sector y su código usa su prefijo. */
 @Component({
   selector: 'app-sector-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent],
   template: `
     <app-modal
       titulo="Nuevo sector"

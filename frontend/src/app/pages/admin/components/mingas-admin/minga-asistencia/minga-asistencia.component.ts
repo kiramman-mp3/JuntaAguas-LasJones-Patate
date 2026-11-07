@@ -18,12 +18,20 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { AsistenciaMinga, EstadoAsistenciaMinga, Minga } from '../minga.model';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Registro de asistencia de una minga. Los usuarios sin marcar quedan pendientes. */
 @Component({
   selector: 'app-minga-asistencia',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, ModalComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    ModalComponent,
+    SkeletonComponent,
+    EmptyStateComponent,
+  ],
   templateUrl: './minga-asistencia.component.html',
 })
 export class MingaAsistenciaComponent implements OnInit {

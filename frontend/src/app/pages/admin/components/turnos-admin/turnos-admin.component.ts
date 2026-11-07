@@ -16,6 +16,7 @@ import { TurnosCronogramaComponent } from './turnos-cronograma/turnos-cronograma
 import { TurnoAsignarComponent } from './turno-asignar/turno-asignar.component';
 import { TurnoEditarComponent } from './turno-editar/turno-editar.component';
 import { TurnoDetalleComponent } from './turno-detalle/turno-detalle.component';
+import { AYUDAS_FORMULARIO } from '../../../../core/directives/formularios';
 
 type Vista = 'TABLA' | 'CALENDARIO' | 'CRONOGRAMA';
 const CLAVE_VISTA = 'turnos.vista';
@@ -29,6 +30,7 @@ const CLAVE_VISTA = 'turnos.vista';
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     PageHeaderComponent,
     EmptyStateComponent,
     SkeletonComponent,

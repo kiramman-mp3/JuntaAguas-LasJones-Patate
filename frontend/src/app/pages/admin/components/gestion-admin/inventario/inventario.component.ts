@@ -16,6 +16,7 @@ import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.compon
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 const ESTADOS: { valor: EstadoFisico; etiqueta: string }[] = [
   { valor: 'NUEVO', etiqueta: 'Nuevo' },
@@ -43,6 +44,7 @@ const formularioVacio = (): NuevoBien => ({
   imports: [
     MonedaPipe,
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     FechaLocalPipe,
     EmptyStateComponent,
     SkeletonComponent,

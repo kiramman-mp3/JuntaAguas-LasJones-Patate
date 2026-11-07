@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ROLES } from '../../core/auth/session';
 import { HttpErrorResponse } from '@angular/common/http';
 import { REQUISITOS_PASSWORD, problemaConPassword } from '../../core/auth/password-policy';
+import { AYUDAS_FORMULARIO } from '../../core/directives/formularios';
 
 /**
  * Mensaje para el usuario según el error HTTP. Sin respuesta (status 0) el problema es la red
@@ -25,7 +26,7 @@ export function mensajeDeError(err: HttpErrorResponse, porDefecto: string): stri
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, CurvasNivelComponent, ModalComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, CurvasNivelComponent, ModalComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })

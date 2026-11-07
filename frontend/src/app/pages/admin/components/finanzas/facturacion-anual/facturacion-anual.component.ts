@@ -10,6 +10,7 @@ import {
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
 import { formatearDinero } from '../../../../../core/utils/dinero';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /**
  * Pago anual de agua: estado del año (emitidas, cobradas, pendientes) y emisión de la obligación
@@ -19,7 +20,7 @@ import { formatearDinero } from '../../../../../core/utils/dinero';
 @Component({
   selector: 'app-facturacion-anual',
   standalone: true,
-  imports: [MonedaPipe, FormsModule],
+  imports: [MonedaPipe, FormsModule, ...AYUDAS_FORMULARIO],
   templateUrl: './facturacion-anual.component.html',
 })
 export class FacturacionAnualComponent {

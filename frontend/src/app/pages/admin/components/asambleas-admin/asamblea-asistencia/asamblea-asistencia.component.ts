@@ -15,6 +15,7 @@ import {
 } from '../asamblea.model';
 import { AsambleasService } from '../asambleas.service';
 import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 type FiltroEstado = 'TODOS' | EstadoAsistencia;
 
@@ -24,6 +25,7 @@ type FiltroEstado = 'TODOS' | EstadoAsistencia;
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     FechaLocalPipe,
     MonedaPipe,
     ModalComponent,

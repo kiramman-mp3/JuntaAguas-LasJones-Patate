@@ -17,6 +17,7 @@ import {
   esCedulaValida,
   fechaMaximaNacimiento,
 } from '../../../../../core/utils/personas';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /**
  * Alta y edición de un usuario, con la gestión de su cuenta de acceso web.
@@ -26,7 +27,13 @@ import {
 @Component({
   selector: 'app-usuario-form',
   standalone: true,
-  imports: [FormsModule, LowerCasePipe, ModalComponent, PasswordTemporalComponent],
+  imports: [
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    LowerCasePipe,
+    ModalComponent,
+    PasswordTemporalComponent,
+  ],
   templateUrl: './usuario-form.component.html',
 })
 export class UsuarioFormComponent implements OnInit {
