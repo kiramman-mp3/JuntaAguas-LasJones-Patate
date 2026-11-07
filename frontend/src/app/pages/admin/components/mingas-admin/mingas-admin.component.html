@@ -228,15 +228,15 @@
                     class="btn btn--outline btn--sm"
                     (click)="descargarLista(m)"
                     [disabled]="descargandoId !== null"
-                    title="Descargar para firmar"
-                    aria-label="Descargar lista para firmar"
+                    title="Generar PDF para firmar"
+                    aria-label="Generar PDF de la lista para firmar"
                   >
                     @if (descargandoId === m.id) {
                       <span class="spinner spinner--sm" aria-hidden="true"></span>
                     } @else {
-                      <i class="ri-download-line" aria-hidden="true"></i>
+                      <i class="ri-file-pdf-2-line" aria-hidden="true"></i>
                     }
-                    Descargar
+                    Generar PDF
                   </button>
                   <button
                     type="button"

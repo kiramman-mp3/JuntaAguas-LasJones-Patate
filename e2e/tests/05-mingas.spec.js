@@ -122,7 +122,7 @@ test('la lista de asistencia se descarga para firmar y la firmada se adjunta', a
   const card = tarjeta(page, TITULO);
   await expect(card).toContainText('Pendiente de firma');
 
-  await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Descargar lista para firmar' }).click());
+  await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Generar PDF de la lista para firmar' }).click());
 
   const archivo = card.locator('input[type=file]');
   await archivo.setInputFiles(fixture('no-es-pdf.txt'));
