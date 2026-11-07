@@ -145,8 +145,8 @@
                     </div>
                   </div>
                 </td>
-                <td data-label="Cédula" class="money">{{ u.cedula }}</td>
-                <td data-label="Sector">
+                <td data-label="Cédula" class="money cell-nowrap">{{ u.cedula }}</td>
+                <td data-label="Sector" class="cell-nowrap">
                   @if (u.sector_nombre) {
                     <span class="pill pill--primary" [title]="'Sector: ' + u.sector_nombre">
                       <i class="ri-map-pin-2-line" aria-hidden="true"></i> {{ u.sector_nombre }}
@@ -155,18 +155,26 @@
                     <span class="text-muted">Sin sector</span>
                   }
                 </td>
-                <td data-label="Contacto">
+                <td data-label="Contacto" class="cell-nowrap">
                   @if (u.celular || u.telefono) {
-                    {{ u.celular }}
-                    @if (u.celular && u.telefono) {
-                      ·
-                    }
-                    {{ u.telefono }}
+                    <div class="contact-list">
+                      @if (u.celular) {
+                        <span
+                          ><i class="ri-smartphone-line" aria-hidden="true"></i>
+                          {{ u.celular }}</span
+                        >
+                      }
+                      @if (u.telefono) {
+                        <span
+                          ><i class="ri-phone-line" aria-hidden="true"></i> {{ u.telefono }}</span
+                        >
+                      }
+                    </div>
                   } @else {
                     <span class="text-muted">N/D</span>
                   }
                 </td>
-                <td data-label="Lotes">
+                <td data-label="Lotes" class="cell-nowrap">
                   @if ((u.lotes_count ?? 0) > 0) {
                     <button
                       type="button"
@@ -181,7 +189,7 @@
                     <span class="pill pill--warning">Sin lotes</span>
                   }
                 </td>
-                <td data-label="Estado">
+                <td data-label="Estado" class="cell-nowrap">
                   <span
                     class="badge"
                     [ngClass]="u.estado === 'ACTIVO' ? 'badge--success' : 'badge--danger'"
