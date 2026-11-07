@@ -4,6 +4,7 @@ import { NotificationService } from './notification.service';
 import { diaEnEcuador } from '../utils/fechas';
 import { CARGADOR_JSPDF } from '../utils/jspdf';
 import { formatearDinero } from '../utils/dinero';
+import { NOMBRES_DIRECTIVA } from '../utils/directiva';
 
 /** Datos del evento que usan el acta y la convocatoria. Los campos opcionales se completan a mano al imprimir. */
 export interface EventoDocumento {
@@ -64,8 +65,8 @@ const MESES = [
 ];
 /** Directiva que firma las actas y las convocatorias de la Junta. */
 export const DIRECTIVA = {
-  presidente: { nombre: 'Ramiro Cepeda Caicedo', cedula: '1801701366' },
-  secretario: { nombre: 'John Mora Pérez', cedula: '1801371327' },
+  presidente: { ...NOMBRES_DIRECTIVA.presidente, cedula: '1801701366' },
+  secretario: { ...NOMBRES_DIRECTIVA.secretario, cedula: '1801371327' },
 };
 const AZUL: [number, number, number] = [43, 84, 126];
 const ROJO: [number, number, number] = [220, 38, 38];
