@@ -103,6 +103,22 @@
         />
       </div>
 
+      <div class="form-group">
+        <label for="asamblea-sector">Sector convocado <span class="opt">(Opcional)</span></label>
+        <select
+          id="asamblea-sector"
+          class="input"
+          name="sector_id"
+          [(ngModel)]="formulario.sector_id"
+        >
+          <option [ngValue]="null">Todos (todos los sectores)</option>
+          @for (s of sectores(); track s.id) {
+            <option [ngValue]="s.id">{{ s.nombre }}</option>
+          }
+        </select>
+        <small class="field__hint">Si no elige un sector, se convoca a todos los usuarios.</small>
+      </div>
+
       <section class="inset-panel">
         <div class="inset-panel__head">
           <h4 class="inset-panel__title">

@@ -6,6 +6,7 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import { DocumentosService } from '../../../../core/services/documentos.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
+import { SectorItem } from '../../../../core/models/api-payloads';
 import { formatearFecha, hoyEnEcuador } from '../../../../core/utils/fechas';
 import { agruparPorFecha } from '../../../../core/utils/eventos';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
@@ -69,6 +70,9 @@ export class AsambleasAdminComponent implements OnInit {
   readonly busqueda = signal('');
   readonly subtipoFiltro = signal<'TODAS' | 'ORDINARIA' | 'EXTRAORDINARIA'>('TODAS');
   readonly periodo = signal<'TODAS' | 'PROXIMAS' | 'ANTERIORES'>('TODAS');
+  readonly sectores = signal<SectorItem[]>([]);
+  /** Sector elegido en el filtro; null muestra todas las asambleas. */
+  readonly sectorFiltro = signal<number | null>(null);
 
   // Modales abiertos (cada uno es un componente independiente)
   readonly formularioAbierto = signal(false);
@@ -81,14 +85,17 @@ export class AsambleasAdminComponent implements OnInit {
     const q = this.busqueda().toLowerCase().trim();
     const subtipo = this.subtipoFiltro();
     const periodo = this.periodo();
+    const sector = this.sectorFiltro();
     return this.asambleas().filter(
       (a) =>
         (subtipo === 'TODAS' || a.subtipo_asamblea === subtipo) &&
+        (sector === null || a.sector_id === sector) &&
         !(periodo === 'PROXIMAS' && a.fecha < hoy) &&
         !(periodo === 'ANTERIORES' && a.fecha >= hoy) &&
         (!q ||
           a.titulo.toLowerCase().includes(q) ||
           !!a.lugar?.toLowerCase().includes(q) ||
+          !!a.sector_nombre?.toLowerCase().includes(q) ||
           !!a.descripcion?.toLowerCase().includes(q)),
     );
   });
@@ -98,13 +105,17 @@ export class AsambleasAdminComponent implements OnInit {
 
   readonly hayFiltros = computed(
     () =>
-      !!this.busqueda().trim() || this.subtipoFiltro() !== 'TODAS' || this.periodo() !== 'TODAS',
+      !!this.busqueda().trim() ||
+      this.subtipoFiltro() !== 'TODAS' ||
+      this.sectorFiltro() !== null ||
+      this.periodo() !== 'TODAS',
   );
 
   ngOnInit(): void {
     if (this.nuevo() === 'asamblea') this.formularioAbierto.set(true);
     // El botón de WhatsApp refleja la conexión desde que se abre la vista (consultar no inicia WhatsApp).
     this.whatsapp.consultar(true);
+    this.admin.getSectores().subscribe({ next: (res) => this.sectores.set(res.data ?? []) });
     this.cargar();
   }
 
@@ -126,6 +137,7 @@ export class AsambleasAdminComponent implements OnInit {
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.subtipoFiltro.set('TODAS');
+    this.sectorFiltro.set(null);
     this.periodo.set('TODAS');
   }
 

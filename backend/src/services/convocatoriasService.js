@@ -20,17 +20,19 @@ const recortar = (texto, max) => (texto.length > max ? `${texto.slice(0, max - 1
 function textoConvocatoria(evento, puntos = []) {
   const esMinga = evento.tipo === 'MINGA';
   const horario = evento.hora_fin ? `${hora(evento.hora_inicio)} a ${hora(evento.hora_fin)}` : hora(evento.hora_inicio);
+  const convocados = evento.sector_nombre ? `a los usuarios del sector *${evento.sector_nombre}*` : 'a todos los usuarios';
   const lineas = [
     esMinga ? '📢 *CONVOCATORIA A MINGA COMUNITARIA*' : '📢 *CONVOCATORIA A ASAMBLEA GENERAL*',
     'Junta de Agua y Riego La Jones',
     '',
-    esMinga ? `📌 *Trabajo:* ${evento.titulo}` : `Se convoca a todos los usuarios a la asamblea: *${evento.titulo}*`,
+    esMinga ? `📌 *Trabajo:* ${evento.titulo}` : `Se convoca ${convocados} a la asamblea: *${evento.titulo}*`,
     `📅 *Fecha:* ${fechaLarga(evento.fecha)}`,
     `⏰ *Hora:* ${horario}`,
     `📍 *Lugar:* ${evento.lugar || LUGAR_POR_DEFECTO}`
   ];
 
-  if (esMinga) {
+  // Una asamblea de todos los usuarios no repite el sector; una de un sector, sí.
+  if (esMinga || evento.sector_nombre) {
     lineas.push(`🌱 *Sector:* ${evento.sector_nombre || 'Todos los sectores'}`);
   }
 

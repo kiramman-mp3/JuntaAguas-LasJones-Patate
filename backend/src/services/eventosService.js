@@ -400,7 +400,8 @@ async function crearEvento(conexion, datos, cuentaId) {
       .filter((p) => p.punto_tratar)
     : [];
 
-  const sectorId = datos.tipo === 'MINGA' && datos.sector_id ? datos.sector_id : null;
+  // Asambleas y mingas pueden convocarse a un solo sector; sin sector se convoca a todos los usuarios.
+  const sectorId = datos.sector_id || null;
   if (sectorId) {
     const [sectores] = await conexion.query('SELECT id FROM sectores WHERE id = ? AND activo = TRUE', [sectorId]);
     if (!sectores.length) throw badRequest('El sector seleccionado no existe o está inactivo.');
@@ -444,7 +445,7 @@ async function actualizarEvento(conexion, id, datos) {
   }
 
   let nuevoSectorId = evento.sector_id;
-  if (evento.tipo === 'MINGA' && datos.sector_id !== undefined) {
+  if (datos.sector_id !== undefined) {
     nuevoSectorId = datos.sector_id;
     if (nuevoSectorId) {
       const [sectores] = await conexion.query('SELECT id FROM sectores WHERE id = ? AND activo = TRUE', [nuevoSectorId]);
