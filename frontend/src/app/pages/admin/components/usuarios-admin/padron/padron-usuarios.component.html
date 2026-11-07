@@ -139,16 +139,16 @@
                     <span class="avatar" aria-hidden="true">{{ iniciales(u) }}</span>
                     <div class="person__text">
                       <strong>{{ u.apellidos }} {{ u.nombres }}</strong>
-                      <span class="person__meta" [title]="u.direccion || ''">{{
-                        u.email || u.direccion || 'Sin correo ni dirección'
-                      }}</span>
                     </div>
                   </div>
                 </td>
                 <td data-label="Cédula" class="money cell-nowrap">{{ u.cedula }}</td>
-                <td data-label="Sector" class="cell-nowrap">
+                <td data-label="Sector">
                   @if (u.sector_nombre) {
-                    <span class="pill pill--primary" [title]="'Sector: ' + u.sector_nombre">
+                    <span
+                      class="pill pill--primary pill--wrap"
+                      [title]="'Sector: ' + u.sector_nombre"
+                    >
                       <i class="ri-map-pin-2-line" aria-hidden="true"></i> {{ u.sector_nombre }}
                     </span>
                   } @else {

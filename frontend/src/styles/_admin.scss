@@ -163,6 +163,13 @@
     background: var(--color-success-light);
     color: var(--color-success-strong);
   }
+
+  /* Nombres largos (p. ej. sectores) bajan de línea en vez de ensanchar la columna. */
+  &--wrap {
+    white-space: normal;
+    max-width: 6.5rem;
+    line-height: 1.25;
+  }
 }
 
 /* --- Formularios en modales --- */
