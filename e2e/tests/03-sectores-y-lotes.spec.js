@@ -45,10 +45,10 @@ test('crear un lote valida el código, sugiere uno y registra la ubicación en e
 
   // Sin sector ni código el formulario no se puede guardar.
   await expect(guardar).toBeDisabled();
-  await page.getByLabel('Sector *').selectOption({ label: sector });
+  await page.getByLabel('Sector', { exact: true }).selectOption({ label: sector });
 
   // Un código con formato incorrecto se señala.
-  const codigo = page.getByLabel('Código interno *');
+  const codigo = page.getByLabel('Código interno', { exact: true });
   await codigo.fill('malo');
   await codigo.blur();
   await expect(page.getByText('Ingrese un código como LJA-001')).toBeVisible();

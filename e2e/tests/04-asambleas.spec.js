@@ -14,10 +14,10 @@ async function crearAsamblea(page, { titulo, subtipo = 'Ordinaria', fecha, punto
   await page.goto('/admin/asistencias/asambleas');
   await page.getByRole('button', { name: 'Nueva asamblea' }).click();
   await page.getByRole('radio', { name: new RegExp(subtipo) }).check();
-  await page.getByLabel('Título o asunto *').fill(titulo);
-  await page.getByLabel('Fecha de la sesión *').fill(fecha);
-  await page.getByLabel('Hora de inicio *').fill('00:01');
-  await page.getByLabel('Lugar *').fill('Casa comunal de La Jones');
+  await page.getByLabel('Título o asunto', { exact: true }).fill(titulo);
+  await page.getByLabel('Fecha de la sesión', { exact: true }).fill(fecha);
+  await page.getByLabel('Hora de inicio', { exact: true }).fill('00:01');
+  await page.getByLabel('Lugar', { exact: true }).fill('Casa comunal de La Jones');
   for (const [i, punto] of puntos.entries()) {
     await page.getByRole('button', { name: 'Añadir punto' }).click();
     await punto(page, i + 1).fill(punto);
@@ -29,7 +29,7 @@ test('la convocatoria exige título y guarda el orden del día con sus puntos', 
   const guardar = await crearAsamblea(page, { titulo: '', fecha: fechaEcuador(0) });
   await expect(guardar).toBeDisabled();
 
-  await page.getByLabel('Título o asunto *').fill(TITULO);
+  await page.getByLabel('Título o asunto', { exact: true }).fill(TITULO);
   await page.getByRole('button', { name: 'Añadir punto' }).click();
   await punto(page, 1).fill('Lectura del acta anterior');
   await page.getByRole('button', { name: 'Añadir punto' }).click();
@@ -151,7 +151,7 @@ test('el acta recoge los temas tratados, se descarga en PDF y admite la versión
   const modal = page.getByRole('dialog');
 
   await modal.getByRole('button', { name: 'Añadir tema nuevo' }).click();
-  await modal.getByLabel('Tema o asunto *').fill('Compra de una compuerta para el canal');
+  await modal.getByLabel('Tema o asunto', { exact: true }).fill('Compra de una compuerta para el canal');
   await modal.getByLabel('Deliberación').first().fill('Se discutió el costo y la urgencia.');
   await modal.getByLabel('Resolución aprobada').fill('Se aprueba comprar la compuerta hasta $400.');
   await modal.getByRole('button', { name: 'Agregar', exact: false }).last().click();

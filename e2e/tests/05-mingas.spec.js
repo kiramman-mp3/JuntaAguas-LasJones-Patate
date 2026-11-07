@@ -13,7 +13,7 @@ async function abrirNueva(page, { titulo, fecha, sector, conMulta = true }) {
   await page.getByRole('button', { name: 'Nueva minga' }).click();
   await page.getByLabel('Actividad / título').fill(titulo);
   await page.getByLabel('Trabajo a realizar').fill('Trabajo comunitario de prueba de extremo a extremo.');
-  await page.getByLabel('Fecha *').fill(fecha);
+  await page.getByLabel('Fecha', { exact: true }).fill(fecha);
   await page.getByLabel('Hora de inicio').fill('00:01');
   await page.getByLabel('Lugar de encuentro').fill('Bocatoma del canal matriz');
   if (sector) await page.getByLabel('Sector convocado').selectOption({ label: sector });

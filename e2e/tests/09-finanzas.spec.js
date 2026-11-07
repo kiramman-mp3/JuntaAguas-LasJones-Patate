@@ -171,6 +171,7 @@ test.describe('pago anual de agua', () => {
     await page.getByRole('radio', { name: 'Depósito' }).click();
     await page.getByLabel('Número de referencia').fill(REFERENCIA_ANUAL);
     await page.getByRole('button', { name: 'Registrar pago' }).click();
+    await dialogo(page).getByRole('button', { name: 'Registrar pago' }).click();
     await expect(page.locator('strong', { hasText: /Pago .+ registrado/ })).toBeVisible();
 
     // El comprobante se puede descargar como PDF.
@@ -231,6 +232,7 @@ test.describe('historial', () => {
     await page.getByRole('radio', { name: 'Transferencia' }).click();
     await page.getByLabel('Número de referencia').fill(`E2E-BANCO-${Date.now()}`);
     await page.getByRole('button', { name: 'Registrar pago' }).click();
+    await dialogo(page).getByRole('button', { name: 'Registrar pago' }).click();
     const titulo = page.locator('strong', { hasText: /Pago .+ registrado/ });
     await expect(titulo).toBeVisible();
     const numero = (await titulo.innerText()).match(/REC-[\w-]+/)[0];

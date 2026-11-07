@@ -20,7 +20,7 @@ async function crearMinga(page, titulo) {
   await page.getByRole('button', { name: 'Nueva minga' }).click();
   await page.getByLabel('Actividad / título').fill(titulo);
   await page.getByLabel('Trabajo a realizar').fill('Limpieza del canal (prueba de WhatsApp).');
-  await page.getByLabel('Fecha *').fill(fechaEcuador(8));
+  await page.getByLabel('Fecha', { exact: true }).fill(fechaEcuador(8));
   await page.getByLabel('Hora de inicio').fill('07:00');
   await page.getByLabel('Lugar de encuentro').fill('Bocatoma del canal matriz');
   await page.getByRole('button', { name: 'Guardar minga' }).click();
@@ -99,10 +99,10 @@ test('una convocatoria ya publicada no se vuelve a enviar al grupo', async ({ pa
 test('si WhatsApp rechaza el mensaje, la asamblea sigue sin convocar y se puede reintentar', async ({ page, request }) => {
   await page.goto('/admin/asistencias/asambleas');
   await page.getByRole('button', { name: 'Nueva asamblea' }).click();
-  await page.getByLabel('Título o asunto *').fill(ASAMBLEA);
-  await page.getByLabel('Fecha de la sesión *').fill(fechaEcuador(9));
-  await page.getByLabel('Hora de inicio *').fill('08:00');
-  await page.getByLabel('Lugar *').fill('Casa comunal de La Jones');
+  await page.getByLabel('Título o asunto', { exact: true }).fill(ASAMBLEA);
+  await page.getByLabel('Fecha de la sesión', { exact: true }).fill(fechaEcuador(9));
+  await page.getByLabel('Hora de inicio', { exact: true }).fill('08:00');
+  await page.getByLabel('Lugar', { exact: true }).fill('Casa comunal de La Jones');
   await page.getByRole('button', { name: 'Añadir punto' }).click();
   await page.getByRole('textbox', { name: 'Punto 1', exact: true }).fill('Rendición de cuentas');
   await page.getByRole('button', { name: 'Guardar convocatoria' }).click();

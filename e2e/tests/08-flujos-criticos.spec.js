@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { test, expect } = require('@playwright/test');
 const { ARCHIVO_CREDENCIALES } = require('../entorno');
+const { dialogo } = require('./ayudas');
 
 // Los tres flujos comparten estado (la multa que nace en el primero se cobra en el segundo y se
 // libera en el tercero), así que corren en orden y se detienen al primer fallo.
@@ -37,7 +38,7 @@ test('una minga finalizada multa a quien faltó y solo a esa persona', async ({ 
 
   await page.getByLabel('Actividad / título').fill(TITULO_MINGA);
   await page.getByLabel('Trabajo a realizar').fill('Prueba de extremo a extremo de la multa por ausencia.');
-  await page.getByLabel('Fecha *').fill(hoyEcuador);
+  await page.getByLabel('Fecha', { exact: true }).fill(hoyEcuador);
   await page.getByLabel('Hora de inicio').fill('00:01');
   await page.getByLabel('Lugar de encuentro').fill('Bocatoma del canal matriz');
   await page.getByRole('button', { name: /guardar|crear|programar/i }).last().click();
@@ -79,6 +80,7 @@ test('el cobro en caja registra el pago y deja al usuario sin la multa pendiente
   await page.getByRole('radio', { name: 'Transferencia' }).click();
   await page.getByLabel('Número de referencia').fill(REFERENCIA);
   await page.getByRole('button', { name: 'Registrar pago' }).click();
+  await dialogo(page).getByRole('button', { name: 'Registrar pago' }).click();
   await expect(page.locator('strong', { hasText: /Pago .+ registrado/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Seguir cobrando a este usuario' }).click();

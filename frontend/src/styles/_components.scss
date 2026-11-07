@@ -330,12 +330,14 @@ textarea.input {
 /* Texto de ayuda y de error bajo un campo (formato esperado, ejemplo, qué corregir). */
 .field__hint,
 .form-group > small {
+  display: block;
   font-size: 0.78rem;
   line-height: 1.4;
   color: var(--text-muted);
 }
 
 .field__error {
+  display: block;
   font-size: 0.8rem;
   line-height: 1.4;
   font-weight: 500;

@@ -15,9 +15,9 @@ test.describe('administración de usuarios', () => {
     await page.goto('/admin/usuarios/padron');
     await page.getByRole('button', { name: 'Nuevo usuario' }).click();
 
-    await page.getByLabel('Cédula *').fill(cedula);
-    await page.getByLabel('Nombres *').fill(nombres);
-    await page.getByLabel('Apellidos *').fill('Usuario E2E');
+    await page.getByLabel('Cédula', { exact: true }).fill(cedula);
+    await page.getByLabel('Nombres', { exact: true }).fill(nombres);
+    await page.getByLabel('Apellidos', { exact: true }).fill('Usuario E2E');
     await page.getByLabel('Celular').fill('0991234567');
     await page.getByLabel('Correo electrónico').fill('prueba.e2e@ejemplo.com');
     await page.getByLabel('Generar cuenta de acceso para este usuario').check();
@@ -47,20 +47,20 @@ test.describe('administración de usuarios', () => {
     await page.goto('/admin/usuarios/padron');
 
     await page.getByRole('button', { name: 'Nuevo usuario' }).click();
-    await page.getByLabel('Cédula *').fill('1801234560');
-    await page.getByLabel('Nombres *').fill('Inválida');
-    await page.getByLabel('Apellidos *').fill('Prueba');
+    await page.getByLabel('Cédula', { exact: true }).fill('1801234560');
+    await page.getByLabel('Nombres', { exact: true }).fill('Inválida');
+    await page.getByLabel('Apellidos', { exact: true }).fill('Prueba');
     // El dígito verificador se valida en el formulario, sin llegar al servidor.
     await expect(page.locator('#com-cedula-error')).toContainText('no es una cédula ecuatoriana válida');
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.locator('.toast--warning').first()).toBeVisible();
-    await expect(page.getByLabel('Cédula *')).toBeVisible(); // el formulario sigue abierto
+    await expect(page.getByLabel('Cédula', { exact: true })).toBeVisible(); // el formulario sigue abierto
 
-    await page.getByLabel('Cédula *').fill(nuevo.cedula);
+    await page.getByLabel('Cédula', { exact: true }).fill(nuevo.cedula);
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.locator('.toast--error, .toast--danger').last()).toBeVisible();
     await page.getByRole('button', { name: 'Cancelar' }).click();
-    await expect(page.getByLabel('Cédula *')).toBeHidden();
+    await expect(page.getByLabel('Cédula', { exact: true })).toBeHidden();
   });
 
   test('el padrón filtra por texto, sector y estado y pagina los resultados', async ({ page }) => {

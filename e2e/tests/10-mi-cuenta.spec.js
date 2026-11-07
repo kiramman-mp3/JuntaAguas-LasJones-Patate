@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { credenciales, iniciarSesion, crearObligacionManual, personaIdPorCedula, fechaEcuador, descargarPdf, tokenAdmin } = require('./ayudas');
+const { credenciales, dialogo, iniciarSesion, crearObligacionManual, personaIdPorCedula, fechaEcuador, descargarPdf, tokenAdmin } = require('./ayudas');
 
 // El usuario consulta su propia cuenta; lo que cobra el administrador aparece en su portal.
 test.describe.configure({ mode: 'serial' });
@@ -86,6 +86,7 @@ test.describe('el administrador cobra y el usuario lo ve', () => {
     await page.getByRole('radio', { name: 'Transferencia' }).click();
     await page.getByLabel('Número de referencia').fill(`E2E-CUENTA-${Date.now()}`);
     await page.getByRole('button', { name: 'Registrar pago' }).click();
+    await dialogo(page).getByRole('button', { name: 'Registrar pago' }).click();
     await expect(page.locator('strong', { hasText: /Pago .+ registrado/ })).toBeVisible();
   });
 });
