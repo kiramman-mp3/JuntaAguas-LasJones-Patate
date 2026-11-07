@@ -160,7 +160,9 @@ test('el acta recoge los temas tratados, se descarga en PDF y admite la versión
   await modal.getByRole('button', { name: 'Guardar acta' }).click();
   await expect(aviso(page, /acta/i)).toBeVisible();
 
-  await modal.getByRole('button', { name: 'Acta general (PDF)' }).click();
+  // El PDF se arma con la asistencia registrada y los puntos guardados.
+  const { nombre } = await descargarPdf(page, () => modal.getByRole('button', { name: 'Generar PDF' }).click());
+  expect(nombre).toMatch(/\.pdf$/);
   await modal.locator('input[type=file]').setInputFiles(fixture('documento-firmado.pdf'));
   await expect(modal.getByRole('button', { name: 'Ver firmada' })).toBeVisible();
   await modal.getByRole('button', { name: 'Cerrar' }).last().click();
