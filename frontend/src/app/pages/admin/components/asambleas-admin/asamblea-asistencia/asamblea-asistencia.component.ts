@@ -46,6 +46,8 @@ export class AsambleaAsistenciaComponent implements OnInit {
   readonly cargando = signal(true);
   readonly errorCarga = signal(false);
   readonly guardando = signal(false);
+  /** Hay marcas de asistencia sin guardar: al cerrar con la X o Escape se pregunta antes. */
+  readonly cambios = signal(false);
   readonly personas = signal<AsistentePadron[]>([]);
   readonly filtro = signal('');
   readonly estadoFiltro = signal<FiltroEstado>('TODOS');
@@ -78,6 +80,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
     this.asambleas.padron(this.asamblea().id).subscribe({
       next: (padron) => {
         this.personas.set(padron);
+        this.cambios.set(false);
         this.cargando.set(false);
       },
       error: () => {
@@ -88,6 +91,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
   }
 
   marcarTodos(estado: 'PRESENTE' | 'AUSENTE'): void {
+    this.cambios.set(true);
     this.personas.update((lista) =>
       lista.map((p) => ({
         ...p,
@@ -100,6 +104,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
   }
 
   setEstado(persona: AsistentePadron, estado: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO'): void {
+    this.cambios.set(true);
     this.personas.update((lista) =>
       lista.map((p) =>
         p === persona

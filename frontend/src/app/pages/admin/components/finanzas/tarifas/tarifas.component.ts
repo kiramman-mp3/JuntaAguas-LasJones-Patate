@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
+import { DialogService } from '../../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalA11yDirective } from '../../../../../core/directives/modal-a11y.directive';
 import { ConceptoCobro, Tarifa } from '../../../../../core/models/finanzas';
@@ -36,6 +37,7 @@ function inicioMesSiguiente(hoy: string): string {
 export class TarifasComponent {
   private finanzas = inject(FinanzasService);
   private notify = inject(NotificationService);
+  private dialog = inject(DialogService);
 
   readonly hoy = hoyEnEcuador();
   readonly conceptos = signal<ConceptoCobro[]>([]);
@@ -123,8 +125,10 @@ export class TarifasComponent {
     return ultimo && ultimo >= sugerida ? sumarDias(ultimo, 1) : sugerida;
   }
 
-  cerrarFormulario(): void {
+  /** `sinGuardar`: se cierra con la X o Escape teniendo datos escritos; antes se pregunta. */
+  async cerrarFormulario(sinGuardar: boolean | null = false): Promise<void> {
     if (this.guardando()) return;
+    if (sinGuardar && !(await this.dialog.confirmarDescartar())) return;
     this.formularioVisible.set(false);
   }
 

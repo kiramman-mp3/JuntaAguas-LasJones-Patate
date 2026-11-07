@@ -48,6 +48,8 @@ export class MingaAsistenciaComponent implements OnInit {
   estado = '';
   cargando = false;
   guardando = false;
+  /** Hay marcas de asistencia sin guardar: al cerrar con la X o Escape se pregunta antes. */
+  cambios = false;
   subiendoPersonaId: number | null = null;
   error = '';
   buscar = '';
@@ -99,6 +101,7 @@ export class MingaAsistenciaComponent implements OnInit {
           this.estado = res.estado;
           this.disponible = true;
           this.asistencias = res.data || [];
+          this.cambios = false;
         },
         error: () =>
           (this.error =
@@ -109,6 +112,7 @@ export class MingaAsistenciaComponent implements OnInit {
   /** Pulsar el estado activo lo devuelve a pendiente. */
   setEstado(a: AsistenciaMinga, estado: Exclude<EstadoAsistenciaMinga, 'PENDIENTE'>): void {
     if (this.cerrada || this.guardando) return;
+    this.cambios = true;
     a.estado = a.estado === estado ? 'PENDIENTE' : estado;
     if (a.estado !== 'JUSTIFICADO') {
       a.motivo_justificacion = '';
@@ -119,6 +123,7 @@ export class MingaAsistenciaComponent implements OnInit {
 
   marcarPresentes(): void {
     if (this.cerrada) return;
+    this.cambios = true;
     // Respeta las justificaciones previamente registradas.
     this.filtradas
       .filter((a) => a.estado !== 'JUSTIFICADO')

@@ -610,8 +610,8 @@ describe('Apartados de finanzas', () => {
   it('define tres apartados del menú con sus secciones', () => {
     expect(GRUPOS_FINANZAS.map((g) => [g.etiqueta, g.secciones.map((s) => s.id)])).toEqual([
       ['Cobros y pagos', ['cobrar', 'egresos']],
-      ['Ajustes', ['tarifas', 'facturacion']],
-      ['Historial', ['pagos', 'historial']],
+      ['Tarifas y pago anual', ['tarifas', 'facturacion']],
+      ['Historial financiero', ['pagos', 'historial']],
     ]);
   });
 
@@ -632,7 +632,7 @@ describe('Apartados de finanzas', () => {
     expect(c.indicadores()?.historico.balanceAlDia).toBe(60);
   });
 
-  it('Ajustes no muestra indicadores de caja; Cobros e Historial sí', () => {
+  it('Tarifas y pago anual no muestra indicadores de caja; Cobros e Historial sí', () => {
     configurar({});
     expect(crear('ajustes').componentInstance.grupoActual().indicadores).toBe(false);
     expect(crear('cobros').componentInstance.grupoActual().indicadores).toBe(true);
