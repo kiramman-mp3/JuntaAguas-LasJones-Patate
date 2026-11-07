@@ -6,7 +6,7 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import { DocumentosService } from '../../../../core/services/documentos.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
-import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { formatearFecha, hoyEnEcuador } from '../../../../core/utils/fechas';
 import { agruparPorFecha } from '../../../../core/utils/eventos';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
@@ -196,7 +196,7 @@ export class AsambleasAdminComponent implements OnInit {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'La sesión aún no ocurre',
-        mensaje: `La asamblea "${asamblea.titulo}" está programada para el ${asamblea.fecha}. Solo puede darse por realizada desde esa fecha. Si se suspendió, use "Cancelar".`,
+        mensaje: `La asamblea "${asamblea.titulo}" está programada para el ${formatearFecha(asamblea.fecha, 'larga')}. Solo puede darse por realizada desde esa fecha. Si se suspendió, use "Cancelar".`,
       });
       return;
     }
