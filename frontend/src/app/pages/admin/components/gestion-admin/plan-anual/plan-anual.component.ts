@@ -430,6 +430,7 @@ export class PlanAnualComponent {
   }
 
   guardarPlan(): void {
+    if (this.guardando()) return;
     if (!Number.isInteger(Number(this.anio)) || this.anio < 2000 || this.anio > 2100)
       return this.notify.warning('Indique un año válido.');
     this.guardando.set(true);
@@ -441,6 +442,7 @@ export class PlanAnualComponent {
   }
 
   guardarActividad(plan: PlanAnual): void {
+    if (this.guardando()) return;
     const a = this.actividad;
     if (a.nombre.trim().length < 3)
       return this.notify.warning('Describa la actividad (mínimo 3 caracteres).');

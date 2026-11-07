@@ -372,6 +372,7 @@ export class InventarioComponent {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const f = this.form;
     const id = this.editandoId();
     if (f.nombre.trim().length < 2) return this.notify.warning('Indique el nombre del bien.');

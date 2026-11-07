@@ -113,6 +113,7 @@ export class UsuarioFormComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     if (!this.form.cedula || !this.form.nombres || !this.form.apellidos) {
       this.notify.warning('Cédula, nombres y apellidos son obligatorios.');
       return;

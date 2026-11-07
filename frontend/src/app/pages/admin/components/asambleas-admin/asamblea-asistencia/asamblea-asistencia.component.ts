@@ -220,6 +220,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const personas = this.personas();
     const sinMotivo = personas.filter(
       (p) => p.estado === 'JUSTIFICADO' && !p.motivo_justificacion.trim(),

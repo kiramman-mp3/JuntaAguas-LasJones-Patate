@@ -90,6 +90,7 @@ export class AsambleaActasComponent implements OnInit {
   }
 
   guardarTodos(): void {
+    if (this.guardando()) return;
     this.guardando.set(true);
     this.admin.guardarPuntosAsamblea(this.asamblea().id, this.puntos).subscribe({
       next: (res) => {

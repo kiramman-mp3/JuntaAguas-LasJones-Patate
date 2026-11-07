@@ -88,6 +88,7 @@ export class SectorFormComponent {
   descripcion = '';
 
   guardar(): void {
+    if (this.guardando()) return;
     const nombre = this.nombre.trim();
     if (nombre.length < 2) {
       this.error.set('Ingrese el nombre del sector.');

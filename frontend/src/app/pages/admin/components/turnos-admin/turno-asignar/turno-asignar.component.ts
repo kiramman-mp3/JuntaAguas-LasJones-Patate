@@ -95,6 +95,7 @@ export class TurnoAsignarComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const t = this.turno;
     if (!t.persona_id) return this.notify.warning('Debe seleccionar un usuario.');
     if (!t.lote_id) return this.notify.warning('Debe seleccionar un lote para asignar el turno.');

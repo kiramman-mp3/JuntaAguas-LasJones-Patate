@@ -116,6 +116,7 @@ export class TurnoEditarComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const f = this.form;
     if (!f.dia_semana || !f.hora_inicio || !f.hora_fin)
       return this.notify.warning('Día de semana y horarios son requeridos.');

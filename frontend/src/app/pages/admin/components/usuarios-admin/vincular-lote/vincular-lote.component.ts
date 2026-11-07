@@ -204,6 +204,7 @@ export class VincularLoteComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const loteId = this.loteId();
     if (!loteId) {
       this.notify.warning('Seleccione un lote.');
