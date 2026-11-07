@@ -59,7 +59,10 @@ test.describe('administración de usuarios', () => {
     await page.getByLabel(/^\s*Cédula\s*\*?\s*$/).fill(nuevo.cedula);
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.locator('.toast--error, .toast--danger').last()).toBeVisible();
+    // Hay datos escritos: Cancelar pregunta antes de descartarlos.
     await page.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page.getByText('¿Salir sin guardar?')).toBeVisible();
+    await page.getByRole('button', { name: 'Salir sin guardar' }).click();
     await expect(page.getByLabel(/^\s*Cédula\s*\*?\s*$/)).toBeHidden();
   });
 
