@@ -86,7 +86,7 @@ test('el padrón para firmas se descarga en PDF y el firmado se adjunta', async 
   await page.goto('/admin/asistencias/asambleas');
   const card = tarjeta(page, TITULO);
   await card.getByRole('button', { name: /Documentos firmados/ }).click();
-  const pdf = await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Descargar padrón para firmas' }).click());
+  const pdf = await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Generar PDF del padrón para firmas' }).click());
   expect(pdf.length).toBeGreaterThan(1500);
 
   await card.locator('input[type=file]').nth(1).setInputFiles(fixture('documento-firmado.pdf'));
