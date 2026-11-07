@@ -14,8 +14,8 @@
       class="segmented segmented--compact"
       role="tablist"
       aria-label="Vista de turnos"
-      style="--n: 3"
-      [style.--i]="vista() === 'TABLA' ? 0 : vista() === 'CALENDARIO' ? 1 : 2"
+      style="--n: 2"
+      [style.--i]="vista() === 'TABLA' ? 0 : 1"
     >
       <span class="segmented__thumb" aria-hidden="true"></span>
       <button
@@ -38,17 +38,6 @@
       >
         <i class="ri-calendar-event-line" aria-hidden="true"></i>
         <span class="segmented__label">Calendario semanal</span>
-      </button>
-      <button
-        type="button"
-        role="tab"
-        class="segmented__item"
-        [class.segmented__item--active]="vista() === 'CRONOGRAMA'"
-        [attr.aria-selected]="vista() === 'CRONOGRAMA'"
-        (click)="cambiarVista('CRONOGRAMA')"
-      >
-        <i class="ri-route-line" aria-hidden="true"></i>
-        <span class="segmented__label">Cronograma por sectores</span>
       </button>
     </div>
   </div>
@@ -151,15 +140,8 @@
             (editar)="enEdicion.set($event)"
             (eliminar)="eliminar($event)"
           />
-        } @else if (vista() === 'CALENDARIO') {
-          <app-turnos-calendario
-            [turnos]="filtrados()"
-            (ver)="enDetalle.set($event)"
-            (editar)="enEdicion.set($event)"
-            (eliminar)="eliminar($event)"
-          />
         } @else {
-          <app-turnos-cronograma
+          <app-turnos-calendario
             [turnos]="filtrados()"
             (ver)="enDetalle.set($event)"
             (editar)="enEdicion.set($event)"

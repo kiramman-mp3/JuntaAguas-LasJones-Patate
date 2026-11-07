@@ -474,8 +474,6 @@
   }
 }
 
-/* Tres pestañas con texto: el ancho justo para que "Cronograma por sectores" no se corte. */
 .section-nav .segmented--compact {
-  width: 100%;
-  max-width: 680px;
+  max-width: 420px;
 }
