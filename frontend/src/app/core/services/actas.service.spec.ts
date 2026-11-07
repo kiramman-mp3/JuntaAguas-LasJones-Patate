@@ -83,6 +83,26 @@ describe('ActasService', () => {
     expect(notify.error).not.toHaveBeenCalled();
   });
 
+  it('la convocatoria nombra el sector convocado, o todos los sectores si no hay uno', async () => {
+    const actas = TestBed.inject(ActasService);
+    const base = {
+      tipo: 'ASAMBLEA',
+      titulo: 'Asamblea',
+      fecha: '2026-10-18',
+      hora_inicio: '08:00:00',
+    };
+    await actas.generarConvocatoriaPDF({ ...base, sector_nombre: 'San Javier' });
+    expect(pdf.textos).toContain(
+      'Se convoca con carácter de OBLIGATORIO a todos los usuarios pertenecientes a la Junta de Riego La Jones - Patate, sector San Javier a participar en el siguiente evento programado:',
+    );
+    expect(pdf.textos).toContain('Sector: San Javier');
+
+    pdf.textos = [];
+    await actas.generarConvocatoriaPDF(base);
+    expect(pdf.textos.join(' ')).not.toContain(', sector');
+    expect(pdf.textos).toContain('Sector: Todos los sectores');
+  });
+
   it('el acta numera los puntos del orden del día después de los dos fijos', async () => {
     const actas = TestBed.inject(ActasService);
     await actas.generarActaPDF(

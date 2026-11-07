@@ -66,7 +66,15 @@ async function obtenerPadron(conexion, evento) {
     `SELECT p.id AS persona_id, CONCAT(p.apellidos, ' ', p.nombres) AS nombre, p.cedula,
             COALESCE(a.estado, 'PENDIENTE') AS estado, COALESCE(a.motivo_justificacion, '') AS motivo_justificacion,
             a.archivo_justificacion_url, a.archivo_justificacion_nombre,
-            a.hora_registro
+            a.hora_registro,
+            -- Sector donde la persona tiene más lotes (empata por nombre): agrupa la hoja de firmas.
+            (SELECT s.nombre FROM persona_lotes pl
+               JOIN lotes l ON l.id = pl.lote_id AND l.activo = TRUE
+               JOIN sectores s ON s.id = l.sector_id
+              WHERE pl.persona_id = p.id
+              GROUP BY s.id, s.nombre
+              ORDER BY COUNT(*) DESC, s.nombre
+              LIMIT 1) AS sector_nombre
      FROM personas p
      LEFT JOIN asistencias a ON a.persona_id = p.id AND a.evento_id = ?
      WHERE ${wherePersona} OR a.id IS NOT NULL
