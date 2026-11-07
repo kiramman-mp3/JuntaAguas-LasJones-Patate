@@ -9,8 +9,11 @@
 >
   <form #mingaForm="ngForm" (ngSubmit)="guardar()">
     <fieldset class="modal__body form-stack" [disabled]="guardando">
+      <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
       <div class="form-group">
-        <label for="minga-titulo">Actividad / título *</label>
+        <label for="minga-titulo"
+          >Actividad / título <span class="req" aria-hidden="true">*</span></label
+        >
         <input
           id="minga-titulo"
           class="input"
@@ -18,11 +21,13 @@
           [(ngModel)]="formulario.titulo"
           required
           maxlength="200"
-          placeholder="Limpieza del canal principal"
+          placeholder="Ej. Limpieza del canal principal"
         />
       </div>
       <div class="form-group">
-        <label for="minga-descripcion">Trabajo a realizar *</label>
+        <label for="minga-descripcion"
+          >Trabajo a realizar <span class="req" aria-hidden="true">*</span></label
+        >
         <textarea
           id="minga-descripcion"
           class="input"
@@ -30,12 +35,12 @@
           [(ngModel)]="formulario.descripcion"
           required
           rows="3"
-          placeholder="Detalle las actividades y las herramientas necesarias"
+          placeholder="Ej. Retirar maleza y sedimentos; llevar pala, machete y botas"
         ></textarea>
       </div>
       <div class="grid-2">
         <div class="form-group">
-          <label for="minga-fecha">Fecha *</label>
+          <label for="minga-fecha">Fecha <span class="req" aria-hidden="true">*</span></label>
           <input
             id="minga-fecha"
             class="input"
@@ -47,7 +52,9 @@
           />
         </div>
         <div class="form-group">
-          <label for="minga-hora">Hora de inicio *</label>
+          <label for="minga-hora"
+            >Hora de inicio <span class="req" aria-hidden="true">*</span></label
+          >
           <input
             id="minga-hora"
             class="input"
@@ -60,7 +67,9 @@
       </div>
       <div class="grid-2">
         <div class="form-group">
-          <label for="minga-lugar">Lugar de encuentro *</label>
+          <label for="minga-lugar"
+            >Lugar de encuentro <span class="req" aria-hidden="true">*</span></label
+          >
           <input
             id="minga-lugar"
             class="input"
@@ -68,11 +77,11 @@
             [(ngModel)]="formulario.lugar"
             required
             maxlength="255"
-            placeholder="Punto de encuentro de los usuarios"
+            placeholder="Ej. Casa comunal La Jones"
           />
         </div>
         <div class="form-group">
-          <label for="minga-sector">Sector convocado</label>
+          <label for="minga-sector">Sector convocado <span class="opt">(Opcional)</span></label>
           <select
             id="minga-sector"
             class="input"
@@ -84,6 +93,7 @@
               <option [ngValue]="s.id">{{ s.nombre }}</option>
             }
           </select>
+          <small class="field__hint">Si no elige un sector, se convoca a todos los usuarios.</small>
         </div>
       </div>
       <section class="inset-panel">
@@ -108,7 +118,7 @@
       <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando">
         Cancelar
       </button>
-      <button type="submit" class="btn btn--primary" [disabled]="mingaForm.invalid || guardando">
+      <button type="submit" class="btn btn--primary" [disabled]="guardando">
         @if (guardando) {
           <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
         } @else {

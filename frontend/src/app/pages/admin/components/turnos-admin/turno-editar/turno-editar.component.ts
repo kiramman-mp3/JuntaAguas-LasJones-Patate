@@ -23,38 +23,45 @@ import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
     >
       <form (ngSubmit)="guardar()">
         <div class="modal__body form-stack">
+          <p class="form-legend">
+            <span class="req" aria-hidden="true">*</span> Campos obligatorios
+          </p>
           <div class="grid-2">
             <div class="form-group">
-              <label for="edit-dia">Día *</label>
-              <select id="edit-dia" class="input" name="dia" [(ngModel)]="form.dia_semana">
+              <label for="edit-dia">Día <span class="req" aria-hidden="true">*</span></label>
+              <select id="edit-dia" class="input" name="dia" [(ngModel)]="form.dia_semana" required>
                 @for (d of dias; track d.valor) {
                   <option [ngValue]="d.valor">{{ d.label }}</option>
                 }
               </select>
             </div>
             <div class="form-group">
-              <label for="edit-inicio">Hora inicio *</label>
+              <label for="edit-inicio"
+                >Hora inicio <span class="req" aria-hidden="true">*</span></label
+              >
               <input
                 id="edit-inicio"
                 type="time"
                 class="input"
                 name="inicio"
                 [(ngModel)]="form.hora_inicio"
+                required
               />
             </div>
             <div class="form-group">
-              <label for="edit-fin">Hora fin *</label>
+              <label for="edit-fin">Hora fin <span class="req" aria-hidden="true">*</span></label>
               <input
                 id="edit-fin"
                 type="time"
                 class="input"
                 name="fin"
                 [(ngModel)]="form.hora_fin"
+                required
               />
             </div>
           </div>
           <div class="form-group">
-            <label for="edit-obs">Observaciones <span class="text-muted">(opcional)</span></label>
+            <label for="edit-obs">Observaciones <span class="opt">(Opcional)</span></label>
             <textarea
               id="edit-obs"
               class="input"

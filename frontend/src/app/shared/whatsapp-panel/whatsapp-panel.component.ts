@@ -109,7 +109,7 @@ import { ModalComponent } from '../ui/modal.component';
                   @if (
                     busquedaGrupo() && gruposFiltrados().length === 0 && !sesion.cargandoGrupos()
                   ) {
-                    <small class="field-error" style="margin-top: 0.25rem;">
+                    <small class="field__error" style="margin-top: 0.25rem;">
                       <i class="ri-information-line" aria-hidden="true"></i> Ningún grupo coincide
                       con "{{ busquedaGrupo() }}".
                     </small>
