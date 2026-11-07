@@ -91,7 +91,7 @@ Las organizaciones comunitarias de riego suelen gestionar su padrón de socios, 
   - Sistema de migraciones SQL y JS versionadas y ordenadas
 * **Pruebas y Calidad de Código:**
   - ESLint para análisis estático en frontend, backend y microservicio
-  - Vitest (203 pruebas unitarias en frontend)
+  - Vitest (225 pruebas unitarias en frontend)
   - Runner nativo de Node (`node --test`) con base de datos real (206 pruebas unitarias y de integración en backend)
   - Playwright para pruebas E2E automatizadas (186 pruebas, con revisión de accesibilidad WCAG AA mediante axe-core en ambos temas)
 * **Despliegue e Infraestructura:**
@@ -285,7 +285,7 @@ npm run prod
 | Backend | `npm run db:setup` | Prepara la base de datos e inicializa el primer administrador en producción |
 | Backend | `npm run db:reset-admin -- <cédula>` | Recupera a un administrador que perdió su contraseña (genera una temporal; solo con acceso al servidor) |
 | Backend | `npm run db:seed` | Siembra usuarios, turnos, lotes y cobros simulados para demostración |
-| Frontend | `npm test -- --watch=false` | Ejecuta las 203 pruebas unitarias con Vitest |
+| Frontend | `npm test -- --watch=false` | Ejecuta las 225 pruebas unitarias con Vitest |
 | Frontend | `npm run build` | Compila el bundle optimizado para despliegue en producción |
 
 ---
@@ -383,8 +383,8 @@ Información recopilada a partir del historial de versiones (`git shortlog -sn`)
 | Puesto | Colaborador | Commits registrados |
 |:---:|---|:---:|
 | 1 | Johan Rodríguez | 197 |
-| 2 | JoseM151 | 165 |
-| 3 | kiramman-mp3 | 102 |
+| 2 | JoseM151 | 169 |
+| 3 | kiramman-mp3 | 123 |
 | 4 | app-secure | 19 |
 | 5 | Alejandro Falcon | 18 |
 | 6 | T1Angel4220 | 16 |
