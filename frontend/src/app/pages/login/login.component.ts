@@ -9,18 +9,14 @@ import { ROLES } from '../../core/auth/session';
 import { HttpErrorResponse } from '@angular/common/http';
 import { REQUISITOS_PASSWORD, problemaConPassword } from '../../core/auth/password-policy';
 import { AYUDAS_FORMULARIO } from '../../core/directives/formularios';
+import { mensajeAmigable } from '../../core/utils/errores';
 
 /**
  * Mensaje para el usuario según el error HTTP. Sin respuesta (status 0) el problema es la red
  * o el servidor apagado, no las credenciales: se dice así para que no reintente la contraseña.
  */
 export function mensajeDeError(err: HttpErrorResponse, porDefecto: string): string {
-  if (err.status === 0)
-    return 'No hay conexión con el servidor. Revise su conexión a internet e intente de nuevo.';
-  if (err.error?.message) return err.error.message;
-  if (err.status === 429) return 'Demasiados intentos. Espere unos minutos e intente de nuevo.';
-  if (err.status >= 500) return 'El servidor tuvo un problema. Intente de nuevo en unos minutos.';
-  return porDefecto;
+  return mensajeAmigable(err.status, err.error?.message) || porDefecto;
 }
 
 @Component({
