@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ActasService } from '../../../../core/services/actas.service';
@@ -58,6 +58,9 @@ export class AsambleasAdminComponent implements OnInit {
   private notify = inject(NotificationService);
   readonly whatsapp = inject(WhatsAppSesionService);
 
+  /** ?nuevo=asamblea abre el formulario desde el acceso rápido del dashboard. */
+  readonly nuevo = input<string | undefined>();
+
   readonly asambleas = signal<AsambleaItem[]>([]);
   readonly cargando = signal(false);
   readonly error = signal('');
@@ -99,6 +102,7 @@ export class AsambleasAdminComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    if (this.nuevo() === 'asamblea') this.formularioAbierto.set(true);
     this.cargar();
   }
 

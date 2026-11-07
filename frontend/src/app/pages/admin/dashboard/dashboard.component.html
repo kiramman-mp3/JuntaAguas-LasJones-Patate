@@ -128,6 +128,29 @@
         >
         <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
       </a>
+      <a
+        class="quick-tile"
+        routerLink="/admin/asistencias/asambleas"
+        [queryParams]="{ nuevo: 'asamblea' }"
+      >
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-team-line"></i></span>
+        <span class="quick-tile__text"
+          ><strong>Convocar asamblea</strong><span>Fecha, lugar y temas a tratar</span></span
+        >
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
+      <a
+        class="quick-tile quick-tile--warning"
+        routerLink="/admin/asistencias/mingas"
+        [queryParams]="{ nuevo: 'minga' }"
+      >
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-tools-line"></i></span>
+        <span class="quick-tile__text"
+          ><strong>Convocar minga</strong
+          ><span>Trabajo comunitario y multa por ausencia</span></span
+        >
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
     </div>
   </section>
 
