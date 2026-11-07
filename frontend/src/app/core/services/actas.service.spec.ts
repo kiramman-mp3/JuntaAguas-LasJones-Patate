@@ -70,6 +70,16 @@ describe('ActasService', () => {
     expect(pdf.save).toHaveBeenCalledWith('Convocatoria_ASAMBLEA_2026-10-18.pdf');
     expect(pdf.textos).toContain('Patate, 18 de octubre de 2026');
     expect(pdf.textos).toContain('Hora de Inicio: 08:00 hs');
+    expect(pdf.textos).toEqual(
+      expect.arrayContaining([
+        'Ramiro Cepeda Caicedo',
+        'Presidente',
+        'C.I. 1801701366',
+        'John Mora Pérez',
+        'Secretario',
+        'C.I. 1801371327',
+      ]),
+    );
     expect(notify.error).not.toHaveBeenCalled();
   });
 

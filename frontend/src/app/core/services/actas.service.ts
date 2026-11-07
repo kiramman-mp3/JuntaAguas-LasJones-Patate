@@ -391,8 +391,8 @@ export class ActasService {
       r.espacio(14);
       r.parrafo('Atentamente,');
       r.firmas([
-        ['PRESIDENTE DE LA JUNTA', '', 'Junta de Riego La Jones - Patate'],
-        ['SECRETARIO/A', '', 'Junta de Riego La Jones - Patate'],
+        ['Ramiro Cepeda Caicedo', 'Presidente', 'C.I. 1801701366'],
+        ['John Mora Pérez', 'Secretario', 'C.I. 1801371327'],
       ]);
     });
   }
