@@ -24,12 +24,17 @@ const persona = (i, nombre) => ({ cedula: String(1700000000 + i), nombre });
 test('un nombre largo ocupa varios renglones y la hoja reserva su altura real (H-27)', async () => {
   const cortos = Array.from({ length: 60 }, (_, i) => persona(i, `Perez Juan ${i}`));
   const largos = Array.from({ length: 60 }, (_, i) =>
-    persona(i, `Maria de los Angeles Fernanda del Carmen Acosta Villacis de la Torre ${i}`));
+    persona(i, `${'Maria de los Angeles Fernanda del Carmen Acosta Villacis de la Torre '.repeat(4)}${i}`));
 
   const paginasCortos = await paginasDe(cortos);
   const paginasLargos = await paginasDe(largos);
   // Con altura fija las dos hojas ocuparían lo mismo y los nombres largos se pisarían entre filas.
   assert.ok(paginasLargos > paginasCortos, `${paginasLargos} páginas con nombres largos y ${paginasCortos} con cortos`);
+});
+
+test('cada renglón deja espacio para firmar: 25 nombres cortos ya no caben en una sola página', async () => {
+  const cortos = Array.from({ length: 25 }, (_, i) => persona(i, `Perez Juan ${i}`));
+  assert.equal(await paginasDe(cortos), 2);
 });
 
 test('la hoja sin personas igual se genera', async () => {

@@ -2,7 +2,8 @@
 const PDFDocument = require('pdfkit');
 
 const ANCHO_NOMBRE = 220;
-const ALTO_FILA_MINIMO = 22;
+// Alto holgado para que cada usuario pueda firmar o poner su huella en su renglón.
+const ALTO_FILA_MINIMO = 40;
 const LIMITE_PAGINA = 780;
 
 const fechaLegible = (iso) => {
