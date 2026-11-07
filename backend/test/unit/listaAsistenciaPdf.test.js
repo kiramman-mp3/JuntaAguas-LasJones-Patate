@@ -24,12 +24,29 @@ const persona = (i, nombre) => ({ cedula: String(1700000000 + i), nombre });
 test('un nombre largo ocupa varios renglones y la hoja reserva su altura real (H-27)', async () => {
   const cortos = Array.from({ length: 60 }, (_, i) => persona(i, `Perez Juan ${i}`));
   const largos = Array.from({ length: 60 }, (_, i) =>
-    persona(i, `Maria de los Angeles Fernanda del Carmen Acosta Villacis de la Torre ${i}`));
+    persona(i, `${'Maria de los Angeles Fernanda del Carmen Acosta Villacis de la Torre '.repeat(4)}${i}`));
 
   const paginasCortos = await paginasDe(cortos);
   const paginasLargos = await paginasDe(largos);
   // Con altura fija las dos hojas ocuparían lo mismo y los nombres largos se pisarían entre filas.
   assert.ok(paginasLargos > paginasCortos, `${paginasLargos} páginas con nombres largos y ${paginasCortos} con cortos`);
+});
+
+test('cada renglón deja espacio para firmar: 25 nombres cortos ya no caben en una sola página', async () => {
+  const cortos = Array.from({ length: 25 }, (_, i) => persona(i, `Perez Juan ${i}`));
+  assert.equal(await paginasDe(cortos), 2);
+});
+
+test('el padrón se separa por sector: cada sector (y los usuarios sin lote) empieza en su página', async () => {
+  const conSector = (i, sector) => ({ ...persona(i, `Perez Juan ${i}`), sector_nombre: sector });
+  const mezclados = [
+    conSector(1, 'San Javier'),
+    conSector(2, 'La Merced'),
+    conSector(3, null),
+    conSector(4, 'San Javier'),
+  ];
+  assert.equal(await paginasDe(mezclados), 3);
+  assert.equal(await paginasDe([conSector(1, 'La Merced'), conSector(2, 'La Merced')]), 1);
 });
 
 test('la hoja sin personas igual se genera', async () => {

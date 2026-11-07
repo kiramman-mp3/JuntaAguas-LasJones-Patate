@@ -336,10 +336,15 @@
   justify-content: center;
 }
 
-/* Un <fieldset> puede ser el cuerpo del modal para deshabilitar todo el formulario a la vez. */
-fieldset.modal__body {
+/*
+ * Un <fieldset> deshabilita todo el formulario a la vez. Se deja sin caja propia para que el
+ * cuerpo del modal siga siendo el que se desplaza y el pie no tape el contenido.
+ */
+fieldset.modal__fieldset {
+  display: contents;
   border: 0;
   margin: 0;
+  padding: 0;
   min-width: 0;
 }
 

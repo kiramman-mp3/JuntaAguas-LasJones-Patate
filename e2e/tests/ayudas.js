@@ -38,7 +38,7 @@ const cedulaNueva = () => cedulaValida(cedulaSiguiente++);
 async function iniciarSesion(page, { cedula, password, recordar = false }) {
   await page.goto('/login');
   await page.getByLabel('Usuario o Cédula').fill(cedula);
-  await page.getByLabel('Contraseña', { exact: true }).fill(password);
+  await page.getByLabel(/^\s*Contraseña\s*\*?\s*$/).fill(password);
   if (recordar) await page.getByLabel('Recordar mi sesión').check();
   await page.getByRole('button', { name: 'Ingresar al Sistema' }).click();
 }
@@ -103,7 +103,7 @@ async function personaIdPorCedula(request, cedula) {
 }
 
 /**
- * Crea por API una obligación manual pendiente (cuota extraordinaria, reposición…): la interfaz no tiene
+ * Crea por API una obligación manual pendiente (por ejemplo una multa): la interfaz no tiene
  * pantalla para ello, pero sí la cobra y la muestra. Devuelve su id.
  */
 async function crearObligacionManual(request, { personaId, valor, observacion, vencimiento = fechaEcuador(30) }) {

@@ -8,7 +8,7 @@ const db = require('../../src/config/db');
 const { hoy } = require('../../src/shared/dates');
 const { crearUsuario, crearPersona, auth, conceptoId, crearObligacion, crearSector, crearLote } = require('../helpers/fixtures');
 
-let admin, usuario, vecino, aguaId, extraordinariaId;
+let admin, usuario, vecino, aguaId, multaAsambleaId;
 
 before(async () => {
   await resetDatabase();
@@ -16,7 +16,7 @@ before(async () => {
   usuario = await crearUsuario();
   vecino = await crearUsuario();
   aguaId = await conceptoId('AGUA_ANUAL');
-  extraordinariaId = await conceptoId('CUOTA_EXTRAORDINARIA');
+  multaAsambleaId = await conceptoId('MULTA_ASAMBLEA');
   const sector = await crearSector('La Jones Baja');
   await crearLote({ sectorId: sector, personaId: usuario.personaId, codigo: 'LJB-001' });
   await crearLote({ sectorId: sector, personaId: vecino.personaId, codigo: 'LJB-002' });
@@ -40,6 +40,7 @@ test('una tarifa nueva cierra la vigencia de la anterior y no se permiten solape
   const conceptos = await request(app).get('/api/financiero/conceptos').set(auth(admin));
   assert.equal(conceptos.body.data.find((c) => c.codigo === 'AGUA_ANUAL').tarifa_actual, 45);
   assert.ok(!conceptos.body.data.some((c) => c.codigo === 'AGUA_MENSUAL'), 'la cuota mensual ya no se ofrece');
+  assert.ok(!conceptos.body.data.some((c) => c.codigo === 'CUOTA_EXTRAORDINARIA'), 'la cuota extraordinaria se retiró del catálogo');
 });
 
 test('el agua ya no se factura mes a mes', async () => {
@@ -151,7 +152,7 @@ test('solo se anulan obligaciones pendientes', async () => {
 });
 
 test('una obligación manual duplicada en el mismo período devuelve 409', async () => {
-  const cuerpo = { persona_id: vecino.personaId, concepto_id: extraordinariaId, periodo_anio: 2023, periodo_mes: 1, fecha_emision: '2023-01-01', valor: 3 };
+  const cuerpo = { persona_id: vecino.personaId, concepto_id: multaAsambleaId, periodo_anio: 2023, periodo_mes: 1, fecha_emision: '2023-01-01', valor: 3 };
   const creada = await request(app).post('/api/financiero/obligaciones').set(auth(admin)).send(cuerpo);
   assert.equal(creada.status, 201);
   assert.equal((await request(app).post('/api/financiero/obligaciones').set(auth(admin)).send(cuerpo)).status, 409);

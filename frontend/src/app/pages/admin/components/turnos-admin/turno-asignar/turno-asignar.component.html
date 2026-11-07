@@ -7,12 +7,14 @@
   (cerrar)="cerrar.emit()"
 >
   <div class="modal__body">
+    <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
     <div class="split">
       <!-- Buscador de usuarios -->
       <section class="picker" aria-labelledby="picker-titulo">
         <div class="picker__head">
           <h4 id="picker-titulo" class="inset-panel__title">
             <i class="ri-user-search-line" aria-hidden="true"></i> Usuario
+            <span class="req" aria-hidden="true">*</span>
           </h4>
           <span class="picker__count" aria-live="polite">
             @if (buscando()) {
@@ -85,11 +87,14 @@
         </div>
 
         <div class="form-group">
-          <label for="turno-lote">Lote beneficiario *</label>
+          <label for="turno-lote"
+            >Lote beneficiario <span class="req" aria-hidden="true">*</span></label
+          >
           <select
             id="turno-lote"
             class="input"
             [(ngModel)]="turno.lote_id"
+            required
             [disabled]="!turno.persona_id || cargandoLotes()"
           >
             <option [ngValue]="null">
@@ -111,7 +116,7 @@
             }
           </select>
           @if (turno.persona_id && !cargandoLotes() && lotes().length === 0) {
-            <small class="field-error"
+            <small class="field__error"
               ><i class="ri-alert-line" aria-hidden="true"></i> El usuario no posee lotes
               registrados.</small
             >
@@ -120,31 +125,37 @@
 
         <div class="grid-3">
           <div class="form-group">
-            <label for="turno-dia">Día *</label>
-            <select id="turno-dia" class="input" [(ngModel)]="turno.dia_semana">
+            <label for="turno-dia">Día <span class="req" aria-hidden="true">*</span></label>
+            <select id="turno-dia" class="input" [(ngModel)]="turno.dia_semana" required>
               @for (d of dias; track d.valor) {
                 <option [ngValue]="d.valor">{{ d.label }}</option>
               }
             </select>
           </div>
           <div class="form-group">
-            <label for="turno-inicio">Inicio *</label>
-            <input id="turno-inicio" type="time" class="input" [(ngModel)]="turno.hora_inicio" />
+            <label for="turno-inicio">Inicio <span class="req" aria-hidden="true">*</span></label>
+            <input
+              id="turno-inicio"
+              type="time"
+              class="input"
+              [(ngModel)]="turno.hora_inicio"
+              required
+            />
           </div>
           <div class="form-group">
-            <label for="turno-fin">Fin *</label>
-            <input id="turno-fin" type="time" class="input" [(ngModel)]="turno.hora_fin" />
+            <label for="turno-fin">Fin <span class="req" aria-hidden="true">*</span></label>
+            <input id="turno-fin" type="time" class="input" [(ngModel)]="turno.hora_fin" required />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="turno-obs">Observaciones <span class="text-muted">(opcional)</span></label>
+          <label for="turno-obs">Observaciones <span class="opt">(Opcional)</span></label>
           <textarea
             id="turno-obs"
             class="input"
             [(ngModel)]="turno.observacion"
             rows="2"
-            placeholder="Ej: Riego por la toma norte del canal…"
+            placeholder="Ej. Riego por la toma norte del canal…"
           ></textarea>
         </div>
       </div>
@@ -152,15 +163,10 @@
   </div>
 
   <div class="modal__footer">
-    <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando()">
+    <button type="button" class="btn btn--outline" data-cancelar [disabled]="guardando()">
       Cancelar
     </button>
-    <button
-      type="button"
-      class="btn btn--primary"
-      (click)="guardar()"
-      [disabled]="!turno.persona_id || !turno.lote_id || guardando()"
-    >
+    <button type="button" class="btn btn--primary" (click)="guardar()" [disabled]="guardando()">
       @if (guardando()) {
         <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
       } @else {

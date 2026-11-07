@@ -1,21 +1,34 @@
-import { Component, ElementRef, inject, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnInit,
+  inject,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { DialogService } from '../../../../../core/services/dialog.service';
-import { hoyEnEcuador, sumarDias } from '../../../../../core/utils/fechas';
+import { formatearFecha, hoyEnEcuador, sumarDias } from '../../../../../core/utils/fechas';
+import { SectorItem } from '../../../../../core/models/api-payloads';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { MultaConfiguradaComponent } from '../../../../../shared/multa-configurada/multa-configurada.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
-/** Formulario de convocatoria de una nueva asamblea con su orden del día inicial. */
+/** Formulario de convocatoria de una nueva asamblea, para todos los usuarios o un sector, con su orden del día inicial. */
 @Component({
   selector: 'app-asamblea-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent, MultaConfiguradaComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent, MultaConfiguradaComponent],
   templateUrl: './asamblea-form.component.html',
 })
-export class AsambleaFormComponent {
+export class AsambleaFormComponent implements OnInit {
   private admin = inject(AdminService);
   private dialog = inject(DialogService);
+  private destroyRef = inject(DestroyRef);
 
   readonly cerrar = output<void>();
   readonly creada = output<void>();
@@ -23,6 +36,7 @@ export class AsambleaFormComponent {
   private readonly listaPuntos = viewChild<ElementRef<HTMLElement>>('listaPuntos');
 
   readonly guardando = signal(false);
+  readonly sectores = signal<SectorItem[]>([]);
   readonly fechaMinima = hoyEnEcuador();
 
   formulario = {
@@ -33,6 +47,7 @@ export class AsambleaFormComponent {
     hora_inicio: '18:00',
     hora_fin: '21:00',
     lugar: 'Casa Comunal Junta La Jones',
+    sector_id: null as number | null,
     genera_multa_ausencia: true,
     puntos_orden_dia: [
       '1. Constatación del cuórum reglamentario',
@@ -41,6 +56,17 @@ export class AsambleaFormComponent {
       '4. Asuntos varios y resoluciones',
     ] as string[],
   };
+
+  ngOnInit(): void {
+    this.admin
+      .getSectores()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => this.sectores.set(res.data ?? []),
+        // Sin la lista se conserva la opción "Todos".
+        error: () => undefined,
+      });
+  }
 
   agregarPunto(): void {
     this.formulario.puntos_orden_dia.push(
@@ -59,6 +85,7 @@ export class AsambleaFormComponent {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const f = this.formulario;
     if (!f.titulo.trim() || !f.fecha || !f.hora_inicio) {
       this.dialog.aviso({
@@ -72,7 +99,7 @@ export class AsambleaFormComponent {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'Fecha no válida',
-        mensaje: `La fecha de la asamblea (${f.fecha}) no puede ser anterior a hoy (${this.fechaMinima}).`,
+        mensaje: `La fecha de la asamblea (${formatearFecha(f.fecha)}) no puede ser anterior a hoy (${formatearFecha(this.fechaMinima)}). Elija una fecha de hoy en adelante.`,
       });
       return;
     }
@@ -86,6 +113,7 @@ export class AsambleaFormComponent {
       hora_inicio: f.hora_inicio,
       hora_fin: f.hora_fin || null,
       lugar: f.lugar.trim(),
+      sector_id: f.sector_id ? Number(f.sector_id) : null,
       // El valor de la multa lo toma el servidor de Ajustes → Tarifas.
       genera_multa_ausencia: f.genera_multa_ausencia,
       puntos_orden_dia: f.puntos_orden_dia.filter((p) => p.trim().length > 0),

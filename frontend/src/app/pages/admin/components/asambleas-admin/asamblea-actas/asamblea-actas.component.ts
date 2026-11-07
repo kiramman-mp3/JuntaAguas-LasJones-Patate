@@ -11,12 +11,20 @@ import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { AsambleaItem, PuntoAsamblea } from '../asamblea.model';
 import { AsambleasService } from '../asambleas.service';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Redacción del acta general de una asamblea: los puntos tratados y los temas nuevos de la sesión (F07). */
 @Component({
   selector: 'app-asamblea-actas',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, ModalComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    ModalComponent,
+    SkeletonComponent,
+    EmptyStateComponent,
+  ],
   templateUrl: './asamblea-actas.component.html',
 })
 export class AsambleaActasComponent implements OnInit {
@@ -34,6 +42,7 @@ export class AsambleaActasComponent implements OnInit {
   readonly errorCarga = signal(false);
   readonly guardando = signal(false);
   readonly subiendoActa = signal(false);
+  readonly generandoPdf = signal(false);
   readonly actaFirmadaUrl = signal<string | undefined>(undefined);
 
   puntos: PuntoAsamblea[] = [];
@@ -82,6 +91,7 @@ export class AsambleaActasComponent implements OnInit {
   }
 
   guardarTodos(): void {
+    if (this.guardando()) return;
     this.guardando.set(true);
     this.admin.guardarPuntosAsamblea(this.asamblea().id, this.puntos).subscribe({
       next: (res) => {
@@ -100,8 +110,26 @@ export class AsambleaActasComponent implements OnInit {
     });
   }
 
+  /** Genera el PDF con los presentes registrados ahora mismo y con los puntos que están en pantalla. */
   descargarActaGeneral(): void {
-    this.actas.generarActaPDF(this.asamblea(), this.puntos);
+    if (this.generandoPdf()) return;
+    this.generandoPdf.set(true);
+    this.admin.getAsistencias(this.asamblea().id).subscribe({
+      next: async ({ resumen }) => {
+        const estadisticas = [
+          { estado: 'PRESENTE', total: resumen.presentes },
+          { estado: 'AUSENTE', total: resumen.ausentes },
+          { estado: 'JUSTIFICADO', total: resumen.justificados },
+          { estado: 'PENDIENTE', total: resumen.pendientes },
+        ];
+        await this.actas.generarActaPDF(this.asamblea(), this.puntos, estadisticas);
+        this.generandoPdf.set(false);
+      },
+      error: () => {
+        this.generandoPdf.set(false);
+        this.notify.error('No se pudo leer la asistencia registrada. Intente nuevamente.');
+      },
+    });
   }
 
   verDocumento(url?: string): void {

@@ -77,9 +77,45 @@ describe('WhatsAppSesionService', () => {
     vi.advanceTimersByTime(4000);
     expect(admin.getWhatsAppEstado).toHaveBeenCalledTimes(2);
 
+    // Al cerrar se consulta una vez más para que el botón de las vistas refleje lo hecho en el panel.
     servicio.cerrar();
+    expect(admin.getWhatsAppEstado).toHaveBeenCalledTimes(3);
     vi.advanceTimersByTime(6000);
-    expect(admin.getWhatsAppEstado).toHaveBeenCalledTimes(2);
+    expect(admin.getWhatsAppEstado).toHaveBeenCalledTimes(3);
+  });
+
+  describe('botón de las vistas', () => {
+    const conEstado = (estado: string, conectadoSesion = false) =>
+      servicio.estado.set({
+        estado,
+        conectado: conectadoSesion,
+        mensaje: '',
+        qr: null,
+        grupo: null,
+      } as any);
+
+    it('dice "WhatsApp no iniciado" si el servicio no está en marcha o configurado', () => {
+      conEstado('NO_DISPONIBLE');
+      expect(servicio.boton().texto).toBe('WhatsApp no iniciado');
+      conEstado('NO_CONFIGURADO');
+      expect(servicio.boton().texto).toBe('WhatsApp no iniciado');
+    });
+
+    it('dice "Conectar WhatsApp" si el servicio está activo pero no hay sesión iniciada', () => {
+      for (const estado of ['DESCONECTADO', 'INICIANDO', 'ESPERANDO_QR']) {
+        conEstado(estado);
+        expect(servicio.boton().texto).toBe('Conectar WhatsApp');
+      }
+    });
+
+    it('dice "Conectado" con la sesión iniciada', () => {
+      conEstado('CONECTADO', true);
+      expect(servicio.boton().texto).toBe('Conectado');
+    });
+
+    it('muestra un texto neutro mientras no se conoce el estado', () => {
+      expect(servicio.boton().texto).toBe('WhatsApp');
+    });
   });
 
   it('detiene el sondeo activo al destruirse el servicio con ngOnDestroy', () => {

@@ -8,6 +8,7 @@ import { LoteItem, PersonaListado, TurnoItem } from '../../../../../core/models/
 import { errorHorarioTurno } from '../../../../../core/utils/turnos';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { DIAS_SEMANA } from '../turno.model';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /**
  * Asignación de un turno de riego: se busca el usuario en el servidor (máximo 20 resultados),
@@ -16,7 +17,7 @@ import { DIAS_SEMANA } from '../turno.model';
 @Component({
   selector: 'app-turno-asignar',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent],
   templateUrl: './turno-asignar.component.html',
 })
 export class TurnoAsignarComponent implements OnInit {
@@ -94,6 +95,7 @@ export class TurnoAsignarComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const t = this.turno;
     if (!t.persona_id) return this.notify.warning('Debe seleccionar un usuario.');
     if (!t.lote_id) return this.notify.warning('Debe seleccionar un lote para asignar el turno.');

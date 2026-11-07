@@ -8,20 +8,20 @@ import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../shared/ui/paginador.component';
 import { SectorItem } from '../../../../core/models/api-payloads';
-import { DIAS_SEMANA, Turno, filtrarTurnos } from './turno.model';
+import { DIAS_SEMANA, Turno, filtrarTurnos, indiceSector } from './turno.model';
 import { TurnosService } from './turnos.service';
 import { TurnosTablaComponent } from './turnos-tabla/turnos-tabla.component';
 import { TurnosCalendarioComponent } from './turnos-calendario/turnos-calendario.component';
-import { TurnosCronogramaComponent } from './turnos-cronograma/turnos-cronograma.component';
 import { TurnoAsignarComponent } from './turno-asignar/turno-asignar.component';
 import { TurnoEditarComponent } from './turno-editar/turno-editar.component';
 import { TurnoDetalleComponent } from './turno-detalle/turno-detalle.component';
+import { AYUDAS_FORMULARIO } from '../../../../core/directives/formularios';
 
-type Vista = 'TABLA' | 'CALENDARIO' | 'CRONOGRAMA';
+type Vista = 'TABLA' | 'CALENDARIO';
 const CLAVE_VISTA = 'turnos.vista';
 
 /**
- * Turnos semanales de riego. Tabla, calendario y cronograma por sectores son tres vistas de los mismos datos,
+ * Turnos semanales de riego. Tabla y calendario son dos vistas de los mismos datos,
  * así que comparten la carga y los filtros; asignar, editar y ver detalle son componentes propios.
  */
 @Component({
@@ -29,13 +29,13 @@ const CLAVE_VISTA = 'turnos.vista';
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     PageHeaderComponent,
     EmptyStateComponent,
     SkeletonComponent,
     PaginadorComponent,
     TurnosTablaComponent,
     TurnosCalendarioComponent,
-    TurnosCronogramaComponent,
     TurnoAsignarComponent,
     TurnoEditarComponent,
     TurnoDetalleComponent,
@@ -70,6 +70,12 @@ export class TurnosAdminComponent implements OnInit {
       sector: this.sectorFiltro(),
     }),
   );
+  /** Turnos de cada sector (sin aplicar el resto de filtros) para el contador de cada pastilla. */
+  readonly turnosPorSector = computed(() => {
+    const conteo: Record<string, number> = {};
+    for (const t of this.turnos()) conteo[t.sector] = (conteo[t.sector] ?? 0) + 1;
+    return conteo;
+  });
   readonly hayFiltros = computed(
     () => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.sectorFiltro(),
   );
@@ -122,6 +128,10 @@ export class TurnosAdminComponent implements OnInit {
     }
   }
 
+  colorSector(nombre: string): number {
+    return indiceSector(nombre);
+  }
+
   cambiarVista(vista: Vista): void {
     this.vista.set(vista);
     try {
@@ -172,7 +182,7 @@ export class TurnosAdminComponent implements OnInit {
   private vistaGuardada(): Vista {
     try {
       const v = localStorage.getItem(CLAVE_VISTA);
-      return v === 'CALENDARIO' ? 'CALENDARIO' : v === 'CRONOGRAMA' ? 'CRONOGRAMA' : 'TABLA';
+      return v === 'CALENDARIO' ? 'CALENDARIO' : 'TABLA';
     } catch {
       return 'TABLA';
     }

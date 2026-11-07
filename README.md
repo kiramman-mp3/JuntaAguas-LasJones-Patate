@@ -91,7 +91,7 @@ Las organizaciones comunitarias de riego suelen gestionar su padrón de socios, 
   - Sistema de migraciones SQL y JS versionadas y ordenadas
 * **Pruebas y Calidad de Código:**
   - ESLint para análisis estático en frontend, backend y microservicio
-  - Vitest (203 pruebas unitarias en frontend)
+  - Vitest (227 pruebas unitarias en frontend)
   - Runner nativo de Node (`node --test`) con base de datos real (206 pruebas unitarias y de integración en backend)
   - Playwright para pruebas E2E automatizadas (186 pruebas, con revisión de accesibilidad WCAG AA mediante axe-core en ambos temas)
 * **Despliegue e Infraestructura:**
@@ -172,7 +172,7 @@ JuntaAguas-LasJones-Patate/
 ├── frontend/                          # Aplicación web cliente en Angular 22
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── core/                  # Autenticación, interceptores, guards y modelos
+│   │   │   ├── core/                  # Autenticación, interceptores, guards, directivas de formularios y modelos
 │   │   │   ├── pages/                 # Vistas (admin, eventos, login, mi-cuenta, noticias)
 │   │   │   └── shared/                # Componentes reutilizables, modales, toasts y pipes
 │   │   └── styles/                    # Sistema de estilos SCSS modular
@@ -285,7 +285,7 @@ npm run prod
 | Backend | `npm run db:setup` | Prepara la base de datos e inicializa el primer administrador en producción |
 | Backend | `npm run db:reset-admin -- <cédula>` | Recupera a un administrador que perdió su contraseña (genera una temporal; solo con acceso al servidor) |
 | Backend | `npm run db:seed` | Siembra usuarios, turnos, lotes y cobros simulados para demostración |
-| Frontend | `npm test -- --watch=false` | Ejecuta las 203 pruebas unitarias con Vitest |
+| Frontend | `npm test -- --watch=false` | Ejecuta las 227 pruebas unitarias con Vitest |
 | Frontend | `npm run build` | Compila el bundle optimizado para despliegue en producción |
 
 ---
@@ -311,7 +311,7 @@ Para desplegar en un servidor en la nube o local:
    ```
 4. Configure el bloque de servidor en Nginx apuntando con `proxy_pass` hacia `http://127.0.0.1:3000`.
 
-La lista completa para un VPS (DNS, usuario de MySQL, SSH, HTTPS, primer ingreso y comprobaciones) está en `docs/operacion.md`, sección 0.
+La lista completa para un VPS (DNS, usuario de MySQL, SSH, HTTPS, primer ingreso y comprobaciones) está en `docs/operacion.md`, sección 0. La creación y autorización de llaves SSH está en `docs/acceso-servidor.md`.
 
 ---
 
@@ -347,8 +347,23 @@ La lista completa para un VPS (DNS, usuario de MySQL, SSH, HTTPS, primer ingreso
 | **Edad Mínima** | Una persona registrada debe tener al menos 18 años (fecha de nacimiento opcional, validada en el servidor y en el formulario). |
 | **Búsquedas** | Los comodines `%` y `_` de una búsqueda se tratan como texto, no como patrones. |
 
+### Convenciones de Formularios y Mensajes de Error
+Todos los formularios del panel siguen las mismas reglas para evitar errores de captura. Las ayudas viven en `frontend/src/app/core/directives/` y se importan juntas con `AYUDAS_FORMULARIO`.
+
+| Convención | Qué hace | Dónde está |
+|---|---|---|
+| Campos obligatorios | Asterisco rojo junto a la etiqueta, la leyenda `* Campos obligatorios` y la marca `(Opcional)` en los demás | `styles/_components.scss` (`.req`, `.opt`, `.form-legend`) |
+| Máscaras numéricas | Cédula, celular y teléfono aceptan solo dígitos y respetan su largo | `mascara.directive.ts` |
+| Error bajo el campo | Mensaje en español sencillo al salir del campo, con `aria-invalid` y `aria-describedby` | `campo-error.directive.ts` |
+| Revisión al enviar | Si faltan datos no se envía, se enfoca el primer campo con error y se avisa con un mensaje | `envio-validado.directive.ts` |
+| Datos sin guardar | Cerrar un modal con datos escritos (con la X, Esc, el fondo o el botón Cancelar) pide confirmación antes de descartarlos | `shared/ui/modal.component.ts` y `core/directives/modal-a11y.directive.ts` (atributo `data-cancelar`) |
+| Envío único | Los botones de guardar se bloquean mientras se guarda para evitar registros duplicados | cada componente de formulario |
+| Mensajes amistosos | Los errores técnicos del servidor o de la conexión se traducen a un texto comprensible | `core/interceptors/errores.interceptor.ts` |
+
+Los cobros en caja piden confirmar el monto, la persona y el medio de pago antes de registrarse.
+
 ### Migraciones y Base de Datos
-El proyecto cuenta con 29 migraciones versionadas y aplicadas de forma secuencial (`backend/database/migrations/`). Cada cambio estructural en tablas, índices, catálogos o restricciones foráneas se realiza a través de un archivo nuevo numerado, impidiendo inconsistencias entre entornos de desarrollo y producción.
+El proyecto cuenta con 30 migraciones versionadas y aplicadas de forma secuencial (`backend/database/migrations/`). Cada cambio estructural en tablas, índices, catálogos o restricciones foráneas se realiza a través de un archivo nuevo numerado, impidiendo inconsistencias entre entornos de desarrollo y producción.
 
 ### Manejo de Fechas y Zona Horaria
 La Junta de Agua opera en la zona horaria oficial de Ecuador continental (`America/Guayaquil`, UTC-5). En la base de datos:
@@ -370,6 +385,7 @@ La Junta de Agua opera en la zona horaria oficial de Ecuador continental (`Ameri
 - [x] Portal privado de autogestión para cada socio (`/mi-cuenta`).
 - [x] Auditoría integral de modificaciones en base de datos.
 - [x] Scroll interno y responsivo en listas extensas de asistencia.
+- [x] Formularios con campos obligatorios marcados, máscaras, errores por campo y confirmación antes de descartar datos.
 - [ ] Exportación de reportes financieros consolidados a formato Excel (.xlsx).
 - [ ] Integración de pasarela de pago digital para abonos en línea.
 - [ ] Notificaciones push para advertir inicios de turnos de riego en dispositivos móviles.
@@ -383,8 +399,8 @@ Información recopilada a partir del historial de versiones (`git shortlog -sn`)
 | Puesto | Colaborador | Commits registrados |
 |:---:|---|:---:|
 | 1 | Johan Rodríguez | 197 |
-| 2 | JoseM151 | 165 |
-| 3 | kiramman-mp3 | 102 |
+| 2 | JoseM151 | 169 |
+| 3 | kiramman-mp3 | 123 |
 | 4 | app-secure | 19 |
 | 5 | Alejandro Falcon | 18 |
 | 6 | T1Angel4220 | 16 |
@@ -405,6 +421,7 @@ Información recopilada a partir del historial de versiones (`git shortlog -sn`)
 <details>
 <summary>Documentación interna y normativas</summary>
 
+* Acceso al servidor por SSH y primeros pasos para programadores nuevos: `docs/acceso-servidor.md`
 * Documentación de la API: `docs/api_documentation.md`
 * Auditoría de base de datos: `docs/auditoria_base_de_datos.md`
 * Guía de presentación y demostración: `docs/GUIA_DE_PRESENTACION.md`

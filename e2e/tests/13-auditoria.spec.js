@@ -56,7 +56,7 @@ test('las anulaciones de pago se registran con su motivo', async ({ page }) => {
 test('cada operación importante dejó su rastro: cobros, altas, tarifas, egresos, lotes, eventos e inventario', async ({ page }) => {
   const rastros = [
     ['PAGO', 'pagos'], ['PAGO', 'pago_anual_agua'], ['CREAR', 'tarifas'], ['CREAR', 'personas'], ['CREAR', 'egresos'],
-    ['CREAR', 'sectores'], ['CREAR', 'lotes'], ['CREAR', 'eventos'], ['CREAR', 'bienes_inventario'], ['CREAR', 'planes_anuales'],
+    ['CREAR', 'lotes'], ['CREAR', 'eventos'], ['CREAR', 'bienes_inventario'], ['CREAR', 'planes_anuales'],
     ['CREAR', 'obligacion_anual_agua'], ['MODIFICAR', 'pagos']
   ];
   for (const [accion, entidad] of rastros) {

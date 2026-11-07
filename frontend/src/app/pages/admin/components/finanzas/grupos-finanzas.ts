@@ -20,8 +20,8 @@ export interface GrupoSecciones {
 
 /**
  * Tres apartados del menú lateral, cada uno con su URL (/admin/cobros/egresos):
- * Cobros y pagos (caja y egresos), Ajustes (tarifas y pago anual de agua)
- * e Historial (recibos e ingresos/egresos por año). `?nuevo=egreso` abre el formulario de egreso.
+ * Cobros y pagos (caja y egresos), Tarifas y pago anual (tarifas y pago anual de agua)
+ * e Historial financiero (recibos e ingresos/egresos por año). `?nuevo=egreso` abre el formulario de egreso.
  */
 export const GRUPOS_FINANZAS: GrupoSecciones[] = [
   {
@@ -37,8 +37,8 @@ export const GRUPOS_FINANZAS: GrupoSecciones[] = [
   },
   {
     id: 'ajustes',
-    etiqueta: 'Ajustes',
-    icono: 'ri-settings-3-line',
+    etiqueta: 'Tarifas y pago anual',
+    icono: 'ri-price-tag-3-line',
     indicadores: false,
     descripcion: 'Tarifas de agua, multas y demás conceptos, y emisión del pago anual de agua.',
     secciones: [
@@ -48,7 +48,7 @@ export const GRUPOS_FINANZAS: GrupoSecciones[] = [
   },
   {
     id: 'historial',
-    etiqueta: 'Historial',
+    etiqueta: 'Historial financiero',
     icono: 'ri-history-line',
     indicadores: true,
     descripcion: 'Todos los recibos de cobro y los ingresos y egresos de la Junta por año.',

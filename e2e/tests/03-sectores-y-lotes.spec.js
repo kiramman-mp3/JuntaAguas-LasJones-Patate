@@ -1,8 +1,11 @@
 const { test, expect } = require('@playwright/test');
 const { unico, aviso, guardarEstado, leerEstado, crearUsuarioConCuenta, buscarEnPadron } = require('./ayudas');
 
-// Un sector nuevo recibe un lote, el lote se asigna a un usuario y luego se transfiere a otro.
+// Se registra un lote en un sector existente, se asigna a un usuario y luego se transfiere a otro.
 test.describe.configure({ mode: 'serial' });
+
+// Los sectores de la Junta son fijos y vienen en la base sembrada: no se crean desde el panel.
+const sector = 'La Merced';
 
 const filasCatastro = (page) => page.locator('tbody tr');
 
@@ -18,41 +21,27 @@ async function abrirAsignacion(page, cedula, codigo) {
   const fila = await buscarEnPadron(page, cedula);
   await fila.getByRole('button', { name: /^Asignar terreno a / }).click();
   await page.getByLabel('Buscar lote').fill(codigo);
-  const lote = page.locator('#vin-lote option', { hasText: `Lote ${codigo}` });
+  const lote = page.locator('.lote-opt', { hasText: `Lote ${codigo}` });
   await expect(lote).toHaveCount(1);
-  await page.locator('#vin-lote').selectOption({ label: (await lote.innerText()).trim() });
+  await lote.click();
 }
 
-test('crear un sector lo deja disponible para los lotes', async ({ page }) => {
-  const sector = unico('Sector E2E');
-  await page.goto('/admin/usuarios/lotes');
-  await page.getByRole('button', { name: 'Nuevo sector' }).click();
-  await page.getByLabel('Nombre del sector').fill(sector);
-  await page.getByRole('button', { name: 'Guardar sector' }).click();
-  await expect(aviso(page, `Sector ${sector} creado.`)).toBeVisible();
-  guardarEstado({ sector });
-
-  await page.reload();
-  const opciones = await page.getByLabel('Sector', { exact: true }).locator('option').allInnerTexts();
-  expect(opciones.map((o) => o.trim())).toContain(sector);
-});
-
 test('crear un lote valida el código, sugiere uno y registra la ubicación en el mapa', async ({ page }) => {
-  const { sector } = leerEstado();
   await page.goto('/admin/usuarios/lotes');
   await page.getByRole('button', { name: 'Nuevo lote' }).click();
   const guardar = page.getByRole('button', { name: 'Guardar lote' });
 
-  // Sin sector ni código el formulario no se puede guardar.
-  await expect(guardar).toBeDisabled();
-  await page.getByLabel('Sector *').selectOption({ label: sector });
+  // Sin sector ni código el formulario no se guarda: avisa qué falta y marca los campos.
+  await guardar.click();
+  await expect(aviso(page, 'Faltan datos')).toBeVisible();
+  await expect(page.getByText('Seleccione una opción de la lista.')).toBeVisible();
+  await page.locator('#lote-sector').selectOption({ label: sector });
 
   // Un código con formato incorrecto se señala.
-  const codigo = page.getByLabel('Código interno *');
+  const codigo = page.getByLabel(/^\s*Código interno\s*\*?\s*$/);
   await codigo.fill('malo');
   await codigo.blur();
-  await expect(page.getByText('Ingrese un código como LJA-001')).toBeVisible();
-  await expect(guardar).toBeDisabled();
+  await expect(page.getByText('Escriba un código como LJA-001')).toBeVisible();
 
   // "Sugerir" propone el siguiente código libre del sector.
   await page.getByRole('button', { name: 'Sugerir' }).click();
@@ -76,7 +65,7 @@ test('crear un lote valida el código, sugiere uno y registra la ubicación en e
 });
 
 test('la ficha del lote muestra su titular, ubicación y referencia', async ({ page }) => {
-  const { codigoLote, sector } = leerEstado();
+  const { codigoLote } = leerEstado();
   const fila = await buscarLote(page, codigoLote);
   await fila.getByRole('button', { name: 'Ver ficha' }).click();
 
@@ -91,13 +80,15 @@ test('la ficha del lote muestra su titular, ubicación y referencia', async ({ p
 });
 
 test('el catastro filtra por código y por sector, y repite la búsqueda sin resultados', async ({ page }) => {
-  const { codigoLote, sector } = leerEstado();
+  const { codigoLote } = leerEstado();
   await page.goto('/admin/usuarios/lotes');
   await page.getByLabel('Sector', { exact: true }).selectOption({ label: sector });
+  await page.getByLabel('Buscar lote').fill(codigoLote);
   await expect(filasCatastro(page)).toHaveCount(1);
   await expect(filasCatastro(page).first()).toContainText(codigoLote);
+  await expect(filasCatastro(page).first()).toContainText(sector);
 
-  await page.getByLabel('Sector', { exact: true }).selectOption({ index: 0 });
+  await page.getByLabel(/^\s*Sector\s*\*?\s*$/).selectOption({ index: 0 });
   await page.getByLabel('Buscar lote').fill('ZZZ-no-existe');
   await expect(page.getByText('Sin coincidencias')).toBeVisible();
   await page.getByRole('button', { name: 'Limpiar filtros' }).click();

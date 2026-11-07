@@ -1,5 +1,13 @@
 <!-- PORTADA: el agua del canal, con las cifras de la Junta -->
 <section class="hero" id="inicio">
+  <img
+    class="hero__foto"
+    src="imagenes/valle-del-rio.jpg"
+    width="1280"
+    height="863"
+    fetchpriority="high"
+    alt=""
+  />
   <app-curvas-nivel class="hero__curvas" />
   <div class="portal hero__contenido">
     <h1 class="hero__titulo">Gestión del Agua de Riego y Servicios Comunitarios</h1>
@@ -25,14 +33,15 @@
 
     <div class="hero__consulta">
       <div>
-        <h2 class="hero__consulta-titulo">¿Deseas verificar el estado de tus obligaciones?</h2>
+        <h2 class="hero__consulta-titulo">¿Desea ver el estado de sus obligaciones?</h2>
         <p>
-          Inicia sesión para consultar tus pagos pendientes de agua de riego, asistencia a mingas y
-          asambleas.
+          Inicie sesión para consultar sus pagos pendientes de agua de riego y su asistencia a
+          mingas y asambleas.
         </p>
       </div>
       <a routerLink="/login" class="btn btn--lg hero__boton">
-        <i aria-hidden="true" class="ri-user-settings-line"></i> Inicia sesión para verificarlas
+        <i aria-hidden="true" class="ri-user-settings-line"></i> Iniciar sesión para ver mis
+        obligaciones
       </a>
     </div>
   </div>
@@ -591,8 +600,8 @@
           <footer class="impresion-firmas">
             <div class="firma-col">
               <div class="firma-linea"></div>
-              <strong>PRESIDENTE DE LA JUNTA</strong>
-              <span>Junta de Agua Las Jones</span>
+              <strong>{{ directiva.presidente.titulo }} {{ directiva.presidente.nombre }}</strong>
+              <span>Presidente de la Junta</span>
             </div>
             <div class="firma-col">
               <div class="firma-linea"></div>
@@ -601,8 +610,8 @@
             </div>
             <div class="firma-col">
               <div class="firma-linea"></div>
-              <strong>SECRETARÍA / ACTAS</strong>
-              <span>Certificación</span>
+              <strong>{{ directiva.secretario.titulo }} {{ directiva.secretario.nombre }}</strong>
+              <span>Secretario de la Junta</span>
             </div>
           </footer>
         </section>

@@ -32,24 +32,30 @@ export interface Turno {
   observacion?: string;
 }
 
+/** Cantidad de colores con los que se distinguen los sectores (clases `sector-0` … `sector-4` en _turnos.scss). */
+export const COLORES_SECTOR = 5;
+
+/**
+ * Color de un sector según su nombre: el mismo sector se ve igual en el calendario y en los filtros,
+ * sin guardar nada en la base. Con los tres sectores actuales ninguno repite color.
+ */
+export function indiceSector(nombre: string): number {
+  let hash = 0;
+  for (const letra of nombre) hash = (hash * 31 + letra.charCodeAt(0)) >>> 0;
+  return hash % COLORES_SECTOR;
+}
+
+/** Día de la semana (1 = lunes … 7 = domingo) de una fecha 'AAAA-MM-DD', sin pasar por la zona horaria. */
+export function diaSemanaDe(fecha: string): number {
+  const [anio, mes, dia] = fecha.split('-').map(Number);
+  const js = new Date(Date.UTC(anio, mes - 1, dia)).getUTCDay();
+  return js === 0 ? 7 : js;
+}
+
 export interface FiltrosTurno {
   busqueda: string;
   dia: string;
   sector?: string;
-}
-
-export interface SectorCronograma {
-  sector_id?: number;
-  sector_nombre: string;
-  sector_descripcion?: string;
-  total_turnos: number;
-  total_horas: number;
-  total_lotes?: number;
-  dias: {
-    dia_semana: number;
-    dia_nombre: string;
-    turnos: Turno[];
-  }[];
 }
 
 export function nombreDia(valor: number): string {

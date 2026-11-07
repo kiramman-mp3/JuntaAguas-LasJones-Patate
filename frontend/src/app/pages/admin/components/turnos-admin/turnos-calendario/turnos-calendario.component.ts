@@ -1,10 +1,23 @@
 import { Component, computed, input, output } from '@angular/core';
-import { DIAS_SEMANA, DiaSemana, Turno } from '../turno.model';
+import { hoyEnEcuador } from '../../../../../core/utils/fechas';
+import { DIAS_SEMANA, DiaSemana, Turno, diaSemanaDe, indiceSector } from '../turno.model';
+
+interface GrupoHora {
+  hora: string;
+  turnos: Turno[];
+}
+
+interface ColumnaDia {
+  dia: DiaSemana;
+  total: number;
+  grupos: GrupoHora[];
+  esHoy: boolean;
+}
 
 /**
- * Calendario semanal: una columna por día. En escritorio se ven los siete días;
- * en pantallas angostas las columnas se desplazan horizontalmente con ajuste por día
- * dentro de su propio contenedor (la página nunca se desborda).
+ * Calendario semanal: una columna por día, con los turnos agrupados por hora de inicio y el color del sector
+ * en el borde de cada tarjeta. En escritorio se ven los siete días; en pantallas angostas las columnas se
+ * desplazan horizontalmente con ajuste por día dentro de su propio contenedor (la página nunca se desborda).
  */
 @Component({
   selector: 'app-turnos-calendario',
@@ -14,49 +27,62 @@ import { DIAS_SEMANA, DiaSemana, Turno } from '../turno.model';
       @for (d of columnas(); track d.dia.valor) {
         <section
           class="week__day"
+          [class.week__day--hoy]="d.esHoy"
           role="listitem"
-          [attr.aria-label]="d.dia.label + ': ' + d.turnos.length + ' turnos'"
+          [attr.aria-label]="d.dia.label + ': ' + d.total + ' turnos'"
+          [attr.aria-current]="d.esHoy ? 'date' : null"
         >
           <header class="week__head">
             <strong>{{ d.dia.label }}</strong>
-            <span class="week__count">{{ d.turnos.length }}</span>
+            @if (d.esHoy) {
+              <span class="week__today">Hoy</span>
+            }
+            <span class="week__count">{{ d.total }}</span>
           </header>
           <div class="week__list">
-            @for (t of d.turnos; track t.id) {
-              <article class="shift">
-                <button
-                  type="button"
-                  class="shift__main"
-                  (click)="ver.emit(t)"
-                  [attr.aria-label]="'Ver turno de ' + t.usuario"
-                >
-                  <span class="shift__time">{{ t.horaInicio }} – {{ t.horaFin }}</span>
-                  <strong class="shift__who" [title]="t.usuario">{{ t.usuario }}</strong>
-                  <span class="shift__lot"
-                    ><i class="ri-landscape-line" aria-hidden="true"></i> {{ t.lote }}</span
-                  >
-                </button>
-                <div class="shift__actions">
+            @for (g of d.grupos; track g.hora) {
+              <div class="week__hour" role="presentation">
+                <span>{{ g.hora }}</span>
+                <span class="week__hour-count">{{ g.turnos.length }}</span>
+              </div>
+              @for (t of g.turnos; track t.id) {
+                <article class="shift" [class]="'sector-' + colorDe(t)">
                   <button
                     type="button"
-                    class="icon-btn"
-                    (click)="editar.emit(t)"
-                    title="Editar"
-                    [attr.aria-label]="'Editar turno de ' + t.usuario"
+                    class="shift__main"
+                    (click)="ver.emit(t)"
+                    [attr.aria-label]="
+                      'Ver turno de ' + t.usuario + ', ' + t.horaInicio + ' a ' + t.horaFin
+                    "
                   >
-                    <i class="ri-edit-line" aria-hidden="true"></i>
+                    <strong class="shift__who" [title]="t.usuario">{{ t.usuario }}</strong>
+                    <span class="shift__meta" [title]="t.sector">
+                      <span>hasta {{ t.horaFin }}</span>
+                      <span><i class="ri-landscape-line" aria-hidden="true"></i> {{ t.lote }}</span>
+                    </span>
                   </button>
-                  <button
-                    type="button"
-                    class="icon-btn icon-btn--danger"
-                    (click)="eliminar.emit(t)"
-                    title="Eliminar"
-                    [attr.aria-label]="'Eliminar turno de ' + t.usuario"
-                  >
-                    <i class="ri-delete-bin-line" aria-hidden="true"></i>
-                  </button>
-                </div>
-              </article>
+                  <div class="shift__actions">
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      (click)="editar.emit(t)"
+                      title="Editar"
+                      [attr.aria-label]="'Editar turno de ' + t.usuario"
+                    >
+                      <i class="ri-edit-line" aria-hidden="true"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-btn icon-btn--danger"
+                      (click)="eliminar.emit(t)"
+                      title="Eliminar"
+                      [attr.aria-label]="'Eliminar turno de ' + t.usuario"
+                    >
+                      <i class="ri-delete-bin-line" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </article>
+              }
             } @empty {
               <p class="week__empty">
                 <i class="ri-moon-clear-line" aria-hidden="true"></i> Sin turnos
@@ -74,12 +100,28 @@ export class TurnosCalendarioComponent {
   readonly editar = output<Turno>();
   readonly eliminar = output<Turno>();
 
-  readonly columnas = computed<{ dia: DiaSemana; turnos: Turno[] }[]>(() =>
-    DIAS_SEMANA.map((dia) => ({
-      dia,
-      turnos: this.turnos()
+  /** Día de la semana de hoy en Ecuador, para resaltar su columna. */
+  private readonly hoy = diaSemanaDe(hoyEnEcuador());
+
+  readonly columnas = computed<ColumnaDia[]>(() =>
+    DIAS_SEMANA.map((dia) => {
+      const delDia = this.turnos()
         .filter((t) => t.dia_semana === dia.valor)
-        .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio)),
-    })),
+        .sort(
+          (a, b) =>
+            a.horaInicio.localeCompare(b.horaInicio) || a.usuario.localeCompare(b.usuario, 'es'),
+        );
+      const grupos: GrupoHora[] = [];
+      for (const t of delDia) {
+        const ultimo = grupos[grupos.length - 1];
+        if (ultimo?.hora === t.horaInicio) ultimo.turnos.push(t);
+        else grupos.push({ hora: t.horaInicio, turnos: [t] });
+      }
+      return { dia, total: delDia.length, grupos, esHoy: dia.valor === this.hoy };
+    }),
   );
+
+  colorDe(turno: Turno): number {
+    return indiceSector(turno.sector);
+  }
 }

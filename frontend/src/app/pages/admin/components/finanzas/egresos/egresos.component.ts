@@ -1,12 +1,14 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FinanzasService } from '../../../../../core/services/finanzas.service';
+import { DialogService } from '../../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalA11yDirective } from '../../../../../core/directives/modal-a11y.directive';
 import { Egreso, numeroEgreso } from '../../../../../core/models/finanzas';
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 interface FormEgreso {
   fecha: string;
@@ -32,12 +34,13 @@ const formVacio = (): FormEgreso => ({
 @Component({
   selector: 'app-egresos',
   standalone: true,
-  imports: [MonedaPipe, FormsModule, FechaLocalPipe, ModalA11yDirective],
+  imports: [MonedaPipe, FormsModule, ...AYUDAS_FORMULARIO, FechaLocalPipe, ModalA11yDirective],
   templateUrl: './egresos.component.html',
 })
 export class EgresosComponent implements OnInit {
   private finanzas = inject(FinanzasService);
   private notify = inject(NotificationService);
+  private dialog = inject(DialogService);
 
   /** Abre el formulario de registro al mostrarse (atajo del dashboard). */
   readonly abrirNuevo = input(false);
@@ -121,8 +124,10 @@ export class EgresosComponent implements OnInit {
     this.formularioVisible.set(true);
   }
 
-  cerrarFormulario(): void {
+  /** `sinGuardar`: se cierra con la X o Escape teniendo datos escritos; antes se pregunta. */
+  async cerrarFormulario(sinGuardar: boolean | null = false): Promise<void> {
     if (this.guardando()) return;
+    if (sinGuardar && !(await this.dialog.confirmarDescartar())) return;
     this.formularioVisible.set(false);
   }
 

@@ -89,7 +89,7 @@ export const ADMIN_ROUTES: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   {
     path: 'dashboard',
-    title: 'Dashboard · Junta La Jones',
+    title: 'Resumen general · Junta La Jones',
     loadComponent: () =>
       import('./dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
@@ -158,14 +158,14 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'ajustes', pathMatch: 'full', redirectTo: 'ajustes/tarifas' },
   {
     path: 'ajustes/:seccion',
-    title: 'Ajustes · Junta La Jones',
+    title: 'Tarifas y pago anual · Junta La Jones',
     data: { grupo: 'ajustes' },
     loadComponent: cargarFinanzas,
   },
   { path: 'historial', pathMatch: 'full', redirectTo: 'historial/pagos' },
   {
     path: 'historial/:seccion',
-    title: 'Historial · Junta La Jones',
+    title: 'Historial financiero · Junta La Jones',
     data: { grupo: 'historial' },
     loadComponent: cargarFinanzas,
   },

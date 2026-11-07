@@ -1,4 +1,4 @@
-<section class="module" aria-label="Dashboard">
+<section class="module" aria-label="Resumen general">
   <app-page-header
     titulo="Resumen de la Junta"
     subtitulo="Indicadores del mes, accesos directos y próximos eventos."
@@ -117,7 +117,7 @@
       >
         <span class="quick-tile__icon" aria-hidden="true"><i class="ri-user-add-line"></i></span>
         <span class="quick-tile__text"
-          ><strong>Registrar usuario</strong><span>Alta en el padrón</span></span
+          ><strong>Registrar usuario</strong><span>Agregar a la lista de usuarios</span></span
         >
         <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
       </a>
@@ -125,6 +125,29 @@
         <span class="quick-tile__icon" aria-hidden="true"><i class="ri-drop-line"></i></span>
         <span class="quick-tile__text"
           ><strong>Asignar turno de agua</strong><span>Horario semanal de riego</span></span
+        >
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
+      <a
+        class="quick-tile"
+        routerLink="/admin/asistencias/asambleas"
+        [queryParams]="{ nuevo: 'asamblea' }"
+      >
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-team-line"></i></span>
+        <span class="quick-tile__text"
+          ><strong>Convocar asamblea</strong><span>Fecha, lugar y temas a tratar</span></span
+        >
+        <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
+      </a>
+      <a
+        class="quick-tile quick-tile--warning"
+        routerLink="/admin/asistencias/mingas"
+        [queryParams]="{ nuevo: 'minga' }"
+      >
+        <span class="quick-tile__icon" aria-hidden="true"><i class="ri-tools-line"></i></span>
+        <span class="quick-tile__text"
+          ><strong>Convocar minga</strong
+          ><span>Trabajo comunitario y multa por ausencia</span></span
         >
         <i class="ri-arrow-right-s-line quick-tile__chevron" aria-hidden="true"></i>
       </a>
@@ -167,6 +190,14 @@
                 r.asistencia.promedio === null ? '—' : (r.asistencia.promedio | percent: '1.0-0')
               }}
             </dd>
+          </div>
+          <div>
+            <dt>Cuentas de acceso activas</dt>
+            <dd>{{ r.comunidad.cuentasActivas }}</dd>
+          </div>
+          <div>
+            <dt>Usuarios en mora</dt>
+            <dd>{{ r.finanzas.usuariosEnMora }}</dd>
           </div>
         </dl>
       </section>

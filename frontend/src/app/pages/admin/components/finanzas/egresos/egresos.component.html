@@ -113,17 +113,23 @@
 
 @if (formularioVisible()) {
   <div appModalA11y class="sheet-backdrop" aria-labelledby="egreso-form-titulo">
-    <form class="sheet" (ngSubmit)="guardar()" novalidate>
+    <form class="sheet" (ngSubmit)="guardar()" novalidate #formulario="ngForm">
       <div class="sheet__header">
         <h3 id="egreso-form-titulo">Registrar egreso</h3>
-        <button type="button" class="btn-close" (click)="cerrarFormulario()" aria-label="Cerrar">
+        <button
+          type="button"
+          class="btn-close"
+          (click)="cerrarFormulario(formulario.dirty)"
+          aria-label="Cerrar"
+        >
           <i class="ri-close-line" aria-hidden="true"></i>
         </button>
       </div>
       <div class="sheet__body">
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="field-row">
           <div class="field">
-            <label for="egreso-fecha">Fecha</label>
+            <label for="egreso-fecha">Fecha <span class="req" aria-hidden="true">*</span></label>
             <input
               id="egreso-fecha"
               name="fecha"
@@ -137,7 +143,9 @@
             }
           </div>
           <div class="field">
-            <label for="egreso-valor">Valor</label>
+            <label for="egreso-valor"
+              >Valor (USD) <span class="req" aria-hidden="true">*</span></label
+            >
             <input
               id="egreso-valor"
               name="valor"
@@ -146,7 +154,7 @@
               inputmode="decimal"
               min="0"
               step="0.01"
-              placeholder="0.00"
+              placeholder="Ej. 45.00"
               [(ngModel)]="form.valor"
             />
             @if (errorDe('valor')) {
@@ -155,14 +163,16 @@
           </div>
         </div>
         <div class="field">
-          <label for="egreso-concepto">Concepto</label>
+          <label for="egreso-concepto"
+            >Concepto <span class="req" aria-hidden="true">*</span></label
+          >
           <input
             id="egreso-concepto"
             name="concepto"
             class="input"
             type="text"
             maxlength="200"
-            placeholder="Ej.: Compra de tubería PVC de 2 pulgadas"
+            placeholder="Ej. Compra de tubería PVC de 2 pulgadas"
             [(ngModel)]="form.concepto"
           />
           @if (errorDe('concepto')) {
@@ -171,20 +181,19 @@
         </div>
         <div class="field-row">
           <div class="field">
-            <label for="egreso-proveedor"
-              >Proveedor <span class="text-muted">(opcional)</span></label
-            >
+            <label for="egreso-proveedor">Proveedor <span class="opt">(Opcional)</span></label>
             <input
               id="egreso-proveedor"
               name="proveedor"
               class="input"
               type="text"
               maxlength="150"
+              placeholder="Ej. Ferretería El Agricultor"
               [(ngModel)]="form.proveedor"
             />
           </div>
           <div class="field">
-            <label for="egreso-ruc">RUC / cédula <span class="text-muted">(opcional)</span></label>
+            <label for="egreso-ruc">RUC / cédula <span class="opt">(Opcional)</span></label>
             <input
               id="egreso-ruc"
               name="ruc"
@@ -192,6 +201,7 @@
               type="text"
               inputmode="numeric"
               maxlength="13"
+              placeholder="Ej. 1801234567001"
               [(ngModel)]="form.ruc_proveedor"
               (input)="soloDigitosRuc($event)"
             />
@@ -201,9 +211,7 @@
           </div>
         </div>
         <div class="field">
-          <label for="egreso-factura"
-            >N.º de factura <span class="text-muted">(opcional)</span></label
-          >
+          <label for="egreso-factura">N.º de factura <span class="opt">(Opcional)</span></label>
           <input
             id="egreso-factura"
             name="factura"
@@ -218,15 +226,14 @@
           }
         </div>
         <div class="field">
-          <label for="egreso-descripcion"
-            >Descripción <span class="text-muted">(opcional)</span></label
-          >
+          <label for="egreso-descripcion">Descripción <span class="opt">(Opcional)</span></label>
           <textarea
             id="egreso-descripcion"
             name="descripcion"
             class="input"
             rows="3"
             maxlength="2000"
+            placeholder="Ej. Se usó para reparar la fuga del canal norte"
             [(ngModel)]="form.descripcion"
           ></textarea>
         </div>
@@ -235,7 +242,7 @@
         <button
           type="button"
           class="btn btn--outline pressable"
-          (click)="cerrarFormulario()"
+          (click)="cerrarFormulario(formulario.dirty)"
           [disabled]="guardando()"
         >
           Cancelar

@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { credenciales, iniciarSesion, crearObligacionManual, personaIdPorCedula, fechaEcuador, descargarPdf, tokenAdmin } = require('./ayudas');
+const { credenciales, dialogo, iniciarSesion, crearObligacionManual, personaIdPorCedula, fechaEcuador, descargarPdf, tokenAdmin } = require('./ayudas');
 
 // El usuario consulta su propia cuenta; lo que cobra el administrador aparece en su portal.
 test.describe.configure({ mode: 'serial' });
@@ -24,11 +24,11 @@ test.describe('lo que ve el usuario', () => {
     await iniciarSesion(page, { cedula: usuario.cedula, password });
     await expect(page).toHaveURL(/\/mi-cuenta/);
     await expect(page.getByRole('heading', { name: usuario.nombre })).toBeVisible();
-    await expect(page.getByText('Total Saldo Pendiente a Cancelar')).toBeVisible();
+    await expect(page.getByText('Total que debe pagar')).toBeVisible();
     await expect(page.getByText('VALORES PENDIENTES', { exact: true })).toBeVisible();
-    const pendiente = page.getByRole('row').filter({ hasText: 'PENDIENTE' });
+    const pendiente = page.getByRole('row').filter({ hasText: 'PENDIENTE' }).filter({ hasText: 'Multa por Inasistencia a Asamblea' });
     await expect(pendiente).toContainText('$' + VALOR + '.00');
-    await expect(pendiente).toContainText('Multa por Inasistencia');
+    await expect(pendiente).toHaveCount(1);
     await expect(page.getByText('AL DÍA EN PAGOS')).toHaveCount(0);
   });
 
@@ -86,6 +86,7 @@ test.describe('el administrador cobra y el usuario lo ve', () => {
     await page.getByRole('radio', { name: 'Transferencia' }).click();
     await page.getByLabel('Número de referencia').fill(`E2E-CUENTA-${Date.now()}`);
     await page.getByRole('button', { name: 'Registrar pago' }).click();
+    await dialogo(page).getByRole('button', { name: 'Registrar pago' }).click();
     await expect(page.locator('strong', { hasText: /Pago .+ registrado/ })).toBeVisible();
   });
 });
@@ -98,7 +99,7 @@ test.describe('después del cobro', () => {
     await iniciarSesion(page, { cedula: usuario.cedula, password });
     await expect(page).toHaveURL(/\/mi-cuenta/);
     await expect(page.getByText('AL DÍA EN PAGOS')).toBeVisible();
-    await expect(page.getByText('¡Felicitaciones! No registras valores pendientes.')).toBeVisible();
+    await expect(page.getByText('¡Felicitaciones! No tiene valores pendientes.')).toBeVisible();
     // La obligación cobrada pasa al historial de cuentas pagadas.
     const pagada = page.getByRole('row').filter({ hasText: 'PAGADA' }).filter({ hasText: 'Multa por Inasistencia a Asamblea' });
     await expect(pagada.first()).toContainText('$' + VALOR + '.00');

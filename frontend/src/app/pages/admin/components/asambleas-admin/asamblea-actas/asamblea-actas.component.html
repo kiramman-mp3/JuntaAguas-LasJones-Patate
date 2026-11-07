@@ -23,11 +23,16 @@
       </button>
       <button
         type="button"
-        class="btn btn--secondary btn--sm"
+        class="btn btn--outline btn--sm"
         (click)="descargarActaGeneral()"
-        [disabled]="cargando() || !puntos.length"
+        [disabled]="cargando() || !puntos.length || generandoPdf()"
+        title="Generar el PDF del acta general para firmar"
       >
-        <i class="ri-file-download-line" aria-hidden="true"></i> Acta general (PDF)
+        @if (generandoPdf()) {
+          <span class="spinner spinner--sm" aria-hidden="true"></span> Generando…
+        } @else {
+          <i class="ri-file-pdf-2-line" aria-hidden="true"></i> Generar PDF
+        }
       </button>
       <label
         class="btn btn--outline btn--sm btn-upload"
@@ -38,7 +43,7 @@
           <span class="spinner spinner--sm" aria-hidden="true"></span> Subiendo…
         } @else {
           <i class="ri-upload-2-line" aria-hidden="true"></i>
-          {{ actaFirmadaUrl() ? 'Reemplazar firmada' : 'Subir firmada' }}
+          Subir firmado
         }
         <input
           type="file"
@@ -60,41 +65,56 @@
       }
     </div>
 
+    <div class="alert alert--info" role="note">
+      <i aria-hidden="true" class="ri-information-line"></i>
+      <span class="alert__text">
+        El PDF se generará con los usuarios presentes que estén registrados en este momento en la
+        plataforma y con la información que ya llenó en los puntos y resoluciones. Puede modificarla
+        más adelante, pero revísela antes de generar el PDF.
+      </span>
+    </div>
+
     @if (mostrarNuevoTema) {
       <section class="inset-panel inset-panel--accent" animate.enter="reveal-enter">
         <h4 class="inset-panel__title">
           <i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Tema nuevo / punto
           extraordinario
         </h4>
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="form-group">
-          <label for="tema-asunto">Tema o asunto *</label>
+          <label for="tema-asunto"
+            >Tema o asunto <span class="req" aria-hidden="true">*</span></label
+          >
           <input
             id="tema-asunto"
             type="text"
             class="input"
+            required
             [(ngModel)]="nuevoTema.punto_tratar"
-            placeholder="Ej: Adquisición de válvula para canal de riego"
+            placeholder="Ej. Adquisición de válvula para canal de riego"
           />
         </div>
         <div class="grid-2">
           <div class="form-group">
-            <label for="tema-tratado">Deliberación</label>
+            <label for="tema-tratado">Deliberación <span class="opt">(Opcional)</span></label>
             <textarea
               id="tema-tratado"
               class="input"
               rows="2"
               [(ngModel)]="nuevoTema.tratado"
-              placeholder="Resumen del debate…"
+              placeholder="Ej. Se discutió el costo y quién lo pagaría"
             ></textarea>
           </div>
           <div class="form-group">
-            <label for="tema-resolucion">Resolución aprobada</label>
+            <label for="tema-resolucion"
+              >Resolución aprobada <span class="opt">(Opcional)</span></label
+            >
             <textarea
               id="tema-resolucion"
               class="input"
               rows="2"
               [(ngModel)]="nuevoTema.resolucion"
-              placeholder="Acuerdos o resolución votada…"
+              placeholder="Ej. Se aprobó comprar la válvula por mayoría"
             ></textarea>
           </div>
         </div>

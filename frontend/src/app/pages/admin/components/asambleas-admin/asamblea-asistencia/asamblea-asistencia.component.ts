@@ -15,6 +15,7 @@ import {
 } from '../asamblea.model';
 import { AsambleasService } from '../asambleas.service';
 import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 type FiltroEstado = 'TODOS' | EstadoAsistencia;
 
@@ -24,6 +25,7 @@ type FiltroEstado = 'TODOS' | EstadoAsistencia;
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     FechaLocalPipe,
     MonedaPipe,
     ModalComponent,
@@ -44,6 +46,8 @@ export class AsambleaAsistenciaComponent implements OnInit {
   readonly cargando = signal(true);
   readonly errorCarga = signal(false);
   readonly guardando = signal(false);
+  /** Hay marcas de asistencia sin guardar: al cerrar con la X o Escape se pregunta antes. */
+  readonly cambios = signal(false);
   readonly personas = signal<AsistentePadron[]>([]);
   readonly filtro = signal('');
   readonly estadoFiltro = signal<FiltroEstado>('TODOS');
@@ -76,6 +80,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
     this.asambleas.padron(this.asamblea().id).subscribe({
       next: (padron) => {
         this.personas.set(padron);
+        this.cambios.set(false);
         this.cargando.set(false);
       },
       error: () => {
@@ -86,6 +91,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
   }
 
   marcarTodos(estado: 'PRESENTE' | 'AUSENTE'): void {
+    this.cambios.set(true);
     this.personas.update((lista) =>
       lista.map((p) => ({
         ...p,
@@ -98,6 +104,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
   }
 
   setEstado(persona: AsistentePadron, estado: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO'): void {
+    this.cambios.set(true);
     this.personas.update((lista) =>
       lista.map((p) =>
         p === persona
@@ -213,6 +220,7 @@ export class AsambleaAsistenciaComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const personas = this.personas();
     const sinMotivo = personas.filter(
       (p) => p.estado === 'JUSTIFICADO' && !p.motivo_justificacion.trim(),

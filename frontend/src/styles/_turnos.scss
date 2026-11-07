@@ -21,26 +21,96 @@
   animation: ui-fade 0.25s ease backwards;
 }
 
+/* --- Color por sector: el mismo en las tarjetas del calendario y en los filtros --- */
+.sector-0 {
+  --sector: #0d9488;
+}
+.sector-1 {
+  --sector: #2563eb;
+}
+.sector-2 {
+  --sector: #7c3aed;
+}
+.sector-3 {
+  --sector: #d97706;
+}
+.sector-4 {
+  --sector: #e11d48;
+}
+
+/* --- Filtro de sectores: una pastilla por sector, con su color y cuántos turnos tiene --- */
+.sector-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.75rem;
+}
+
+.sector-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover {
+    background: var(--bg-surface-hover);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  &--active {
+    border-color: var(--sector, var(--color-primary));
+    background: color-mix(in srgb, var(--sector, var(--color-primary)) 12%, var(--bg-surface));
+    color: var(--text-main);
+  }
+
+  &__dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--sector, var(--text-muted));
+  }
+
+  &__count {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 /* --- Calendario semanal: siete columnas; en pantallas angostas se desplaza dentro de su contenedor --- */
 .week {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  /* Cada día conserva un ancho para leer el nombre completo; si no caben los siete, se desplaza dentro del calendario. */
+  grid-template-columns: repeat(7, minmax(165px, 1fr));
   gap: 0.6rem;
   padding: 1rem;
-
-  @media (max-width: 1100px) {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(200px, 42%);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scroll-padding: 1rem;
-    -webkit-overflow-scrolling: touch;
-  }
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding: 1rem;
+  -webkit-overflow-scrolling: touch;
 
   @media (max-width: 600px) {
+    grid-template-columns: none;
+    grid-auto-flow: column;
     grid-auto-columns: 82%;
+    scroll-snap-type: x mandatory;
   }
 
   &__day {
@@ -57,7 +127,7 @@
   &__head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.4rem;
     padding: 0.7rem 0.85rem;
 
     strong {
@@ -66,9 +136,55 @@
     }
   }
 
+  /* El día de hoy se marca en la columna y en su cabecera. */
+  &__day--hoy {
+    background: color-mix(in srgb, var(--color-primary) 7%, var(--bg-surface-hover));
+    box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  }
+
+  &__today {
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  /* Separa a quienes riegan a la misma hora de inicio y dice cuántos son. */
+  &__hour {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+
+    &::after {
+      content: '';
+      flex: 1;
+      order: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  &__hour-count {
+    order: 2;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
   &__count {
     display: grid;
     place-items: center;
+    margin-left: auto;
     min-width: 1.5rem;
     height: 1.5rem;
     padding: 0 0.4rem;
@@ -108,12 +224,13 @@
   border-radius: 10px;
   background: var(--bg-surface);
   box-shadow: var(--shadow-sm);
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--sector, var(--color-primary));
   transition:
     box-shadow 0.25s var(--ease-out),
     transform 0.25s var(--ease-out);
 
-  &:hover {
+  &:hover,
+  &:focus-within {
     box-shadow: var(--shadow-md);
   }
   &--extra {
@@ -125,7 +242,7 @@
     flex-direction: column;
     gap: 0.15rem;
     width: 100%;
-    padding: 0.6rem 0.7rem 0.4rem;
+    padding: 0.55rem 0.7rem;
     border: 0;
     background: transparent;
     color: inherit;
@@ -139,38 +256,68 @@
     }
   }
 
-  &__time {
+  /* El nombre se lee completo: pasa a una segunda línea antes de cortarse. */
+  &__who {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    font-size: 0.84rem;
+    line-height: 1.25;
+  }
+
+  /* Hora de fin y lote nunca se cortan: si no caben en una línea, el lote pasa a la siguiente. */
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.4rem;
     font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--color-primary);
+    color: var(--text-muted);
     font-variant-numeric: tabular-nums;
   }
 
-  &__who {
-    font-size: 0.84rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__lot {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
+  /* Editar y eliminar flotan sobre la tarjeta: no ocupan una fila propia. */
   &__actions {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
     display: flex;
-    justify-content: flex-end;
     gap: 0.1rem;
-    padding: 0 0.3rem 0.3rem;
+    padding: 0.1rem;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-md);
 
     .icon-btn {
-      width: 1.75rem;
-      height: 1.75rem;
-      font-size: 0.95rem;
+      width: 1.6rem;
+      height: 1.6rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  /* Con ratón se muestran al pasar o enfocar; en pantallas táctiles quedan visibles. */
+  @media (hover: hover) {
+    &__actions {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+    &:hover &__actions,
+    &:focus-within &__actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  @media (hover: none) {
+    &__who {
+      padding-right: 3.6rem;
+    }
+    &__actions {
+      box-shadow: none;
+      background: transparent;
     }
   }
 }
@@ -327,6 +474,6 @@
   }
 }
 
-.segmented--compact {
-  max-width: 360px;
+.section-nav .segmented--compact {
+  max-width: 420px;
 }

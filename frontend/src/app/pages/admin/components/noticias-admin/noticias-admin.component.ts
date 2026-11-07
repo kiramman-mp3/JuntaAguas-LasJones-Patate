@@ -16,6 +16,7 @@ import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component
 import { ModalComponent } from '../../../../shared/ui/modal.component';
 import { PaginadorComponent } from '../../../../shared/ui/paginador.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
+import { AYUDAS_FORMULARIO } from '../../../../core/directives/formularios';
 
 const TIPOS_IMAGEN = ['image/jpeg', 'image/png'];
 const TAMANO_MAXIMO_IMAGEN = 10 * 1024 * 1024;
@@ -33,6 +34,7 @@ const formularioVacio = (): DatosNoticia => ({
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     FechaLocalPipe,
     EmptyStateComponent,
     ModalComponent,

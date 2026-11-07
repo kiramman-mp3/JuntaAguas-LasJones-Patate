@@ -13,7 +13,7 @@ async function abrirNueva(page, { titulo, fecha, sector, conMulta = true }) {
   await page.getByRole('button', { name: 'Nueva minga' }).click();
   await page.getByLabel('Actividad / título').fill(titulo);
   await page.getByLabel('Trabajo a realizar').fill('Trabajo comunitario de prueba de extremo a extremo.');
-  await page.getByLabel('Fecha *').fill(fecha);
+  await page.locator('#minga-fecha').fill(fecha);
   await page.getByLabel('Hora de inicio').fill('00:01');
   await page.getByLabel('Lugar de encuentro').fill('Bocatoma del canal matriz');
   if (sector) await page.getByLabel('Sector convocado').selectOption({ label: sector });
@@ -122,7 +122,7 @@ test('la lista de asistencia se descarga para firmar y la firmada se adjunta', a
   const card = tarjeta(page, TITULO);
   await expect(card).toContainText('Pendiente de firma');
 
-  await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Descargar lista para firmar' }).click());
+  await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Generar PDF de la lista para firmar' }).click());
 
   const archivo = card.locator('input[type=file]');
   await archivo.setInputFiles(fixture('no-es-pdf.txt'));
@@ -187,9 +187,9 @@ test('la lista de mingas se filtra por texto y por fecha', async ({ page }) => {
   await expect(page.locator('article.event-card')).toHaveCount(1);
   await page.getByLabel('Buscar minga').fill('');
 
-  await page.getByLabel('Fecha', { exact: true }).selectOption('ANTERIORES');
+  await page.getByLabel(/^\s*Fecha\s*\*?\s*$/).selectOption('ANTERIORES');
   await expect(tarjeta(page, TITULO)).toHaveCount(0);
-  await page.getByLabel('Fecha', { exact: true }).selectOption('PROXIMAS');
+  await page.getByLabel(/^\s*Fecha\s*\*?\s*$/).selectOption('PROXIMAS');
   await expect(tarjeta(page, TITULO)).toHaveCount(1);
 
   await page.getByLabel('Buscar minga').fill('zzzz-no-existe');
@@ -200,7 +200,7 @@ test('la lista de mingas se filtra por texto y por fecha', async ({ page }) => {
 
 test('WhatsApp de mingas avisa cuando el servicio no está disponible', async ({ page }) => {
   await page.goto('/admin/asistencias/mingas');
-  await page.getByRole('button', { name: 'Conectar WhatsApp' }).click();
+  await page.getByRole('button', { name: /Conectar WhatsApp|WhatsApp no iniciado/ }).click();
   const panel = page.getByRole('dialog');
   await expect(panel).toBeVisible();
   await expect(panel).toContainText(/WhatsApp/);

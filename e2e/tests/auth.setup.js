@@ -7,7 +7,7 @@ test('el administrador inicia sesión y se guarda la sesión', async ({ page }) 
 
   await page.goto('/login');
   await page.getByLabel('Usuario o Cédula').fill(admin.cedula);
-  await page.getByLabel('Contraseña', { exact: true }).fill(password);
+  await page.getByLabel(/^\s*Contraseña\s*\*?\s*$/).fill(password);
   // Con "Recordar mi sesión" el token va a localStorage y Playwright puede reutilizarlo.
   await page.getByLabel('Recordar mi sesión').check();
   await page.getByRole('button', { name: 'Ingresar al Sistema' }).click();

@@ -96,6 +96,9 @@ import { LoteItem } from '../../../../../core/models/api-payloads';
             <i class="ri-google-fill" aria-hidden="true"></i> Ver en Google Maps
           </button>
         }
+        <button type="button" class="btn btn--outline" (click)="editar.emit(l)">
+          <i class="ri-edit-line" aria-hidden="true"></i> Editar lote
+        </button>
         <button type="button" class="btn btn--primary" (click)="cerrar.emit()">Cerrar</button>
       </div>
     </app-modal>
@@ -104,6 +107,7 @@ import { LoteItem } from '../../../../../core/models/api-payloads';
 export class LoteDetalleComponent {
   readonly lote = input.required<LoteItem>();
   readonly cerrar = output<void>();
+  readonly editar = output<LoteItem>();
 
   readonly propietarios = computed<string[]>(() =>
     this.lote().propietarios ? String(this.lote().propietarios).split(', ') : [],

@@ -7,8 +7,9 @@
       </p>
     </div>
     <div class="section-head__actions">
-      <button type="button" class="btn btn--whatsapp" (click)="whatsapp.abrir()">
-        <i class="ri-whatsapp-line" aria-hidden="true"></i> WhatsApp
+      @let wa = whatsapp.boton();
+      <button type="button" class="btn" [class]="wa.clase" (click)="whatsapp.abrir()">
+        <i [class]="wa.icono" aria-hidden="true"></i> {{ wa.texto }}
       </button>
       <button type="button" class="btn btn--primary" (click)="formularioAbierto.set(true)">
         <i class="ri-add-line" aria-hidden="true"></i> Nueva asamblea
@@ -24,7 +25,7 @@
         type="search"
         [ngModel]="busqueda()"
         (ngModelChange)="busqueda.set($event)"
-        placeholder="Buscar por asunto, lugar o descripción…"
+        placeholder="Buscar por asunto, lugar o sector…"
         aria-label="Buscar asamblea"
       />
     </div>
@@ -37,6 +38,18 @@
       <option value="TODAS">Todos los tipos</option>
       <option value="ORDINARIA">Ordinarias</option>
       <option value="EXTRAORDINARIA">Extraordinarias</option>
+    </select>
+    <select
+      class="input toolbar__select"
+      [ngModel]="sectorFiltro()"
+      [ngModelOptions]="{ standalone: true }"
+      (ngModelChange)="sectorFiltro.set($event)"
+      aria-label="Sector convocado"
+    >
+      <option [ngValue]="null">Todos los sectores</option>
+      @for (s of sectores(); track s.id) {
+        <option [ngValue]="s.id">{{ s.nombre }}</option>
+      }
     </select>
     <select
       class="input toolbar__select"

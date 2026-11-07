@@ -20,7 +20,7 @@
       @if (authService.isLoggedIn()) {
         <li>
           @if (authService.esAdmin()) {
-            <a routerLink="/admin" routerLinkActive="active">Panel de Control</a>
+            <a routerLink="/admin" routerLinkActive="active">Panel de la directiva</a>
           }
           @if (authService.getUser()?.rol === 'USUARIO') {
             <a routerLink="/mi-cuenta" routerLinkActive="active">Mi cuenta</a>
@@ -101,7 +101,7 @@
         @if (authService.isLoggedIn() && authService.esAdmin()) {
           <li>
             <a routerLink="/admin" routerLinkActive="active" (click)="cerrarMenu()"
-              >Panel de Control</a
+              >Panel de la directiva</a
             >
           </li>
         }
@@ -147,8 +147,8 @@
           <li><a routerLink="/noticias">Noticias</a></li>
           <li><a routerLink="/eventos">Eventos y Actas</a></li>
           <li><a routerLink="/informacion">Información de la Junta</a></li>
-          <li><a routerLink="/mi-cuenta">Consulta de Multas / Deudas</a></li>
-          <li><a routerLink="/admin">Panel de Directiva</a></li>
+          <li><a routerLink="/mi-cuenta">Mi cuenta: multas y pagos</a></li>
+          <li><a routerLink="/admin">Panel de la directiva</a></li>
         </ul>
       </nav>
 

@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 import { FechaLocalPipe } from '../../shared/pipes/fecha-local.pipe';
 import { CurvasNivelComponent } from '../../shared/ui/curvas-nivel.component';
 import { partesFecha } from '../../core/utils/fechas';
+import { NOMBRES_DIRECTIVA } from '../../core/utils/directiva';
 import {
   ApiResponse,
   CronogramaSectorPublico,
@@ -14,6 +15,7 @@ import {
   SectorItem,
   TurnoCronogramaPublico,
 } from '../../core/models/api-payloads';
+import { AYUDAS_FORMULARIO } from '../../core/directives/formularios';
 
 type DiaCronograma = CronogramaSectorPublico['dias'][number];
 type DiaVisible = DiaCronograma & { turnosFiltrados: TurnoCronogramaPublico[] };
@@ -27,13 +29,23 @@ interface StatsPublicos {
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [CommonModule, FormsModule, FechaLocalPipe, RouterLink, CurvasNivelComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    RouterLink,
+    CurvasNivelComponent,
+  ],
   templateUrl: './inicio.component.html',
   styleUrls: ['./inicio.portada.scss', './inicio.component.scss'],
 })
 export class InicioComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  /** Firman el cronograma impreso. */
+  readonly directiva = NOMBRES_DIRECTIVA;
 
   totalUsuarios = 0;
   proximosEventos: EventoItem[] = [];

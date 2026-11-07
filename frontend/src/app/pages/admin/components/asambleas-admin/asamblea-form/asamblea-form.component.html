@@ -8,6 +8,7 @@
 >
   <form (ngSubmit)="guardar()" #formAsamblea="ngForm">
     <div class="modal__body form-stack">
+      <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
       <fieldset class="field-set">
         <legend class="field-set__legend">Tipo de asamblea</legend>
         <div class="choice-grid">
@@ -45,7 +46,9 @@
       </fieldset>
 
       <div class="form-group">
-        <label for="asamblea-titulo">Título o asunto *</label>
+        <label for="asamblea-titulo"
+          >Título o asunto <span class="req" aria-hidden="true">*</span></label
+        >
         <input
           id="asamblea-titulo"
           type="text"
@@ -53,13 +56,15 @@
           name="titulo"
           [(ngModel)]="formulario.titulo"
           required
-          placeholder="Ej: ASAMBLEA GENERAL ORDINARIA DE USUARIOS"
+          placeholder="Ej. ASAMBLEA GENERAL ORDINARIA DE USUARIOS"
         />
       </div>
 
       <div class="grid-2">
         <div class="form-group">
-          <label for="asamblea-fecha">Fecha de la sesión *</label>
+          <label for="asamblea-fecha"
+            >Fecha de la sesión <span class="req" aria-hidden="true">*</span></label
+          >
           <input
             id="asamblea-fecha"
             type="date"
@@ -71,7 +76,9 @@
           />
         </div>
         <div class="form-group">
-          <label for="asamblea-hora">Hora de inicio *</label>
+          <label for="asamblea-hora"
+            >Hora de inicio <span class="req" aria-hidden="true">*</span></label
+          >
           <input
             id="asamblea-hora"
             type="time"
@@ -84,7 +91,7 @@
       </div>
 
       <div class="form-group">
-        <label for="asamblea-lugar">Lugar *</label>
+        <label for="asamblea-lugar">Lugar <span class="req" aria-hidden="true">*</span></label>
         <input
           id="asamblea-lugar"
           type="text"
@@ -92,14 +99,31 @@
           name="lugar"
           [(ngModel)]="formulario.lugar"
           required
-          placeholder="Ej: Casa Comunal Junta La Jones"
+          placeholder="Ej. Casa Comunal Junta La Jones"
         />
+      </div>
+
+      <div class="form-group">
+        <label for="asamblea-sector">Sector convocado <span class="opt">(Opcional)</span></label>
+        <select
+          id="asamblea-sector"
+          class="input"
+          name="sector_id"
+          [(ngModel)]="formulario.sector_id"
+        >
+          <option [ngValue]="null">Todos (todos los sectores)</option>
+          @for (s of sectores(); track s.id) {
+            <option [ngValue]="s.id">{{ s.nombre }}</option>
+          }
+        </select>
+        <small class="field__hint">Si no elige un sector, se convoca a todos los usuarios.</small>
       </div>
 
       <section class="inset-panel">
         <div class="inset-panel__head">
           <h4 class="inset-panel__title">
             <i class="ri-list-check-2" aria-hidden="true"></i> Orden del día
+            <span class="opt">(Opcional)</span>
           </h4>
           <button type="button" class="btn btn--ghost btn--sm" (click)="agregarPunto()">
             <i class="ri-add-line" aria-hidden="true"></i> Añadir punto
@@ -115,7 +139,7 @@
                 [(ngModel)]="formulario.puntos_orden_dia[i]"
                 [name]="'punto_' + i"
                 [attr.aria-label]="'Punto ' + (i + 1)"
-                placeholder="Descripción del punto a tratar…"
+                placeholder="Ej. Informe de tesorería del año"
               />
               @if (formulario.puntos_orden_dia.length > 1) {
                 <button
@@ -148,19 +172,10 @@
     </div>
 
     <div class="modal__footer">
-      <button
-        type="button"
-        class="btn btn--outline"
-        (click)="cerrar.emit()"
-        [disabled]="guardando()"
-      >
+      <button type="button" class="btn btn--outline" data-cancelar [disabled]="guardando()">
         Cancelar
       </button>
-      <button
-        type="submit"
-        class="btn btn--primary"
-        [disabled]="formAsamblea.invalid || guardando()"
-      >
+      <button type="submit" class="btn btn--primary" [disabled]="guardando()">
         @if (guardando()) {
           <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
         } @else {

@@ -307,8 +307,50 @@ textarea.input {
   border-radius: 9px;
 }
 
+/* Convención de formularios: asterisco rojo = obligatorio, "(Opcional)" = se puede dejar vacío. */
+.req {
+  margin-left: 0.15em;
+  color: var(--color-danger-strong);
+  font-weight: 700;
+}
+
+.opt {
+  margin-left: 0.3em;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.form-legend {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Texto de ayuda y de error bajo un campo (formato esperado, ejemplo, qué corregir). */
+.field__hint,
+.form-group > small {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.field__error {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--color-danger-strong);
+
+  &::before {
+    content: '\26A0\FE0E\00A0';
+  }
+}
+
 /* Validación en línea: el error se ve mientras se escribe, no solo al enviar. */
-.input.ng-invalid.ng-touched:not(form) {
+.input.ng-invalid.ng-touched:not(form),
+.form-group .form-control.ng-invalid.ng-touched {
   border-color: var(--color-danger);
 
   &:focus {
@@ -597,6 +639,12 @@ textarea.input {
   font-size: 0.88rem;
   line-height: 1.5;
 
+  /* El texto ocupa el resto de la línea junto al icono en vez de bajar debajo de él. */
+  &__text {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
   &--info {
     background: var(--color-primary-light);
     color: var(--color-info-strong);
@@ -716,5 +764,26 @@ textarea.input {
 @keyframes skeletonShimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+/* Pantallas táctiles: los controles pequeños suben a un tamaño que un dedo pulsa sin errar (≈44 px). */
+@media (pointer: coarse) {
+  .btn--sm,
+  .btn-close {
+    min-height: 2.75rem;
+  }
+
+  .btn--xs {
+    min-height: 2.5rem;
+  }
+
+  .btn-close {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .input--sm {
+    min-height: 2.6rem;
   }
 }

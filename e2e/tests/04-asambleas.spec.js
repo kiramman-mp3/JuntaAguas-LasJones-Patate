@@ -14,10 +14,10 @@ async function crearAsamblea(page, { titulo, subtipo = 'Ordinaria', fecha, punto
   await page.goto('/admin/asistencias/asambleas');
   await page.getByRole('button', { name: 'Nueva asamblea' }).click();
   await page.getByRole('radio', { name: new RegExp(subtipo) }).check();
-  await page.getByLabel('Título o asunto *').fill(titulo);
-  await page.getByLabel('Fecha de la sesión *').fill(fecha);
-  await page.getByLabel('Hora de inicio *').fill('00:01');
-  await page.getByLabel('Lugar *').fill('Casa comunal de La Jones');
+  await page.getByLabel(/^\s*Título o asunto\s*\*?\s*$/).fill(titulo);
+  await page.getByLabel(/^\s*Fecha de la sesión\s*\*?\s*$/).fill(fecha);
+  await page.getByLabel(/^\s*Hora de inicio\s*\*?\s*$/).fill('00:01');
+  await page.getByLabel(/^\s*Lugar\s*\*?\s*$/).fill('Casa comunal de La Jones');
   for (const [i, punto] of puntos.entries()) {
     await page.getByRole('button', { name: 'Añadir punto' }).click();
     await punto(page, i + 1).fill(punto);
@@ -27,9 +27,11 @@ async function crearAsamblea(page, { titulo, subtipo = 'Ordinaria', fecha, punto
 
 test('la convocatoria exige título y guarda el orden del día con sus puntos', async ({ page }) => {
   const guardar = await crearAsamblea(page, { titulo: '', fecha: fechaEcuador(0) });
-  await expect(guardar).toBeDisabled();
+  await guardar.click();
+  await expect(aviso(page, 'Faltan datos')).toBeVisible();
+  await expect(page.getByText('Este dato es obligatorio.')).toBeVisible();
 
-  await page.getByLabel('Título o asunto *').fill(TITULO);
+  await page.getByLabel(/^\s*Título o asunto\s*\*?\s*$/).fill(TITULO);
   await page.getByRole('button', { name: 'Añadir punto' }).click();
   await punto(page, 1).fill('Lectura del acta anterior');
   await page.getByRole('button', { name: 'Añadir punto' }).click();
@@ -84,7 +86,7 @@ test('el padrón para firmas se descarga en PDF y el firmado se adjunta', async 
   await page.goto('/admin/asistencias/asambleas');
   const card = tarjeta(page, TITULO);
   await card.getByRole('button', { name: /Documentos firmados/ }).click();
-  const pdf = await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Descargar padrón para firmas' }).click());
+  const pdf = await pdfEnPestana(page, new RegExp('/pdf-asistencia'), () => card.getByRole('button', { name: 'Generar PDF del padrón para firmas' }).click());
   expect(pdf.length).toBeGreaterThan(1500);
 
   await card.locator('input[type=file]').nth(1).setInputFiles(fixture('documento-firmado.pdf'));
@@ -151,14 +153,16 @@ test('el acta recoge los temas tratados, se descarga en PDF y admite la versión
   const modal = page.getByRole('dialog');
 
   await modal.getByRole('button', { name: 'Añadir tema nuevo' }).click();
-  await modal.getByLabel('Tema o asunto *').fill('Compra de una compuerta para el canal');
+  await modal.getByLabel(/^\s*Tema o asunto\s*\*?\s*$/).fill('Compra de una compuerta para el canal');
   await modal.getByLabel('Deliberación').first().fill('Se discutió el costo y la urgencia.');
   await modal.getByLabel('Resolución aprobada').fill('Se aprueba comprar la compuerta hasta $400.');
   await modal.getByRole('button', { name: 'Agregar', exact: false }).last().click();
   await modal.getByRole('button', { name: 'Guardar acta' }).click();
   await expect(aviso(page, /acta/i)).toBeVisible();
 
-  await modal.getByRole('button', { name: 'Acta general (PDF)' }).click();
+  // El PDF se arma con la asistencia registrada y los puntos guardados.
+  const { nombre } = await descargarPdf(page, () => modal.getByRole('button', { name: 'Generar PDF' }).click());
+  expect(nombre).toMatch(/\.pdf$/);
   await modal.locator('input[type=file]').setInputFiles(fixture('documento-firmado.pdf'));
   await expect(modal.getByRole('button', { name: 'Ver firmada' })).toBeVisible();
   await modal.getByRole('button', { name: 'Cerrar' }).last().click();

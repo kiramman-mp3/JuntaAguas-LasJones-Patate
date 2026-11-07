@@ -3,12 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Registro de un sector de riego. Los lotes pertenecen a un sector y su código usa su prefijo. */
 @Component({
   selector: 'app-sector-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent],
   template: `
     <app-modal
       titulo="Nuevo sector"
@@ -20,8 +21,13 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
     >
       <form (ngSubmit)="guardar()" #sectorForm="ngForm">
         <div class="modal__body form-stack">
+          <p class="form-legend">
+            <span class="req" aria-hidden="true">*</span> Campos obligatorios
+          </p>
           <div class="form-group">
-            <label for="sector-nombre">Nombre del sector *</label>
+            <label for="sector-nombre"
+              >Nombre del sector <span class="req" aria-hidden="true">*</span></label
+            >
             <input
               id="sector-nombre"
               class="input"
@@ -30,19 +36,18 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
               required
               minlength="2"
               maxlength="100"
-              placeholder="Ej: La Jones Alto"
+              placeholder="Ej. La Jones Alto"
             />
           </div>
           <div class="form-group">
-            <label for="sector-descripcion"
-              >Descripción <span class="text-muted">(opcional)</span></label
-            >
+            <label for="sector-descripcion">Descripción <span class="opt">(Opcional)</span></label>
             <input
               id="sector-descripcion"
               class="input"
               name="descripcion"
               [(ngModel)]="descripcion"
               maxlength="255"
+              placeholder="Ej. Sector alto, junto al reservorio"
             />
           </div>
           @if (error()) {
@@ -50,19 +55,10 @@ import { ModalComponent } from '../../../../../shared/ui/modal.component';
           }
         </div>
         <div class="modal__footer">
-          <button
-            type="button"
-            class="btn btn--outline"
-            (click)="cerrar.emit()"
-            [disabled]="guardando()"
-          >
+          <button type="button" class="btn btn--outline" data-cancelar [disabled]="guardando()">
             Cancelar
           </button>
-          <button
-            type="submit"
-            class="btn btn--primary"
-            [disabled]="sectorForm.invalid || guardando()"
-          >
+          <button type="submit" class="btn btn--primary" [disabled]="guardando()">
             @if (guardando()) {
               <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
             } @else {
@@ -87,6 +83,7 @@ export class SectorFormComponent {
   descripcion = '';
 
   guardar(): void {
+    if (this.guardando()) return;
     const nombre = this.nombre.trim();
     if (nombre.length < 2) {
       this.error.set('Ingrese el nombre del sector.');

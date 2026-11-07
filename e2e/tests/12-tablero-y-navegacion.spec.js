@@ -40,6 +40,11 @@ test('el resumen operativo concuerda con lo que ve el público', async ({ page, 
   await expect(page.locator('.metric-list div', { hasText: 'Turnos de riego activos' }).locator('dd')).toHaveText(/^\d+$/);
   await expect(page.locator('.metric-list div', { hasText: 'Cobro del pago anual de agua' }).locator('dd')).toHaveText(/^\s*(\d+%|—)\s*$/);
 
+  // Las cuentas de acceso y los usuarios en mora se muestran como números; la mora coincide con la de la tarjeta de cartera.
+  await expect(page.locator('.metric-list div', { hasText: 'Cuentas de acceso activas' }).locator('dd')).toHaveText(/^\s*\d+\s*$/);
+  const mora = (await page.locator('.metric-list div', { hasText: 'Usuarios en mora' }).locator('dd').innerText()).trim();
+  await expect(page.getByText(`${mora} usuarios en mora`)).toBeVisible();
+
   const publico = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const anonima = await publico.newPage();
   await anonima.goto('http://127.0.0.1:3210/');
@@ -86,7 +91,21 @@ test.describe('acciones rápidas', () => {
     await page.goto('/admin/dashboard');
     await page.getByRole('link', { name: /Registrar usuario/ }).click();
     await expect(page).toHaveURL(/\/admin\/usuarios\/padron/);
-    await expect(page.getByLabel('Cédula *')).toBeVisible();
+    await expect(page.getByLabel(/^\s*Cédula\s*\*?\s*$/)).toBeVisible();
+  });
+
+  test('Convocar asamblea abre el formulario de asamblea', async ({ page }) => {
+    await page.goto('/admin/dashboard');
+    await page.getByRole('link', { name: /Convocar asamblea/ }).click();
+    await expect(page).toHaveURL(/\/admin\/asistencias\/asambleas/);
+    await expect(page.getByRole('dialog').getByRole('heading', { name: /asamblea/i })).toBeVisible();
+  });
+
+  test('Convocar minga abre el formulario de minga', async ({ page }) => {
+    await page.goto('/admin/dashboard');
+    await page.getByRole('link', { name: /Convocar minga/ }).click();
+    await expect(page).toHaveURL(/\/admin\/asistencias\/mingas/);
+    await expect(page.locator('#minga-fecha')).toBeVisible();
   });
 
   test('Asignar turno de agua lleva a los turnos', async ({ page }) => {
@@ -102,10 +121,10 @@ test.describe('menú del panel', () => {
     ['Asistencias', /\/admin\/asistencias\/asambleas/],
     ['Turnos de agua', /\/admin\/turnos/],
     ['Cobros y pagos', /\/admin\/cobros\/cobrar/],
-    ['Ajustes', /\/admin\/ajustes\/tarifas/],
-    ['Historial', /\/admin\/historial\/pagos/],
+    ['Tarifas y pago anual', /\/admin\/ajustes\/tarifas/],
+    ['Historial financiero', /\/admin\/historial\/pagos/],
     ['Gestión interna', /\/admin\/gestion\/auditoria/],
-    ['Dashboard', /\/admin\/dashboard/]
+    ['Resumen general', /\/admin\/dashboard/]
   ];
 
   test('cada apartado del menú abre su módulo y se marca como página actual', async ({ page }) => {

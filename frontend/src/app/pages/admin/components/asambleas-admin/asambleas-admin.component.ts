@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ActasService } from '../../../../core/services/actas.service';
@@ -6,7 +6,8 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import { DocumentosService } from '../../../../core/services/documentos.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { WhatsAppSesionService } from '../../../../core/services/whatsapp-sesion.service';
-import { hoyEnEcuador } from '../../../../core/utils/fechas';
+import { SectorItem } from '../../../../core/models/api-payloads';
+import { formatearFecha, hoyEnEcuador } from '../../../../core/utils/fechas';
 import { agruparPorFecha } from '../../../../core/utils/eventos';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
@@ -22,6 +23,7 @@ import { AsambleaAsistenciaComponent } from './asamblea-asistencia/asamblea-asis
 import { AsambleaActasComponent } from './asamblea-actas/asamblea-actas.component';
 import { DocumentoFirmadoComponent } from './documento-firmado/documento-firmado.component';
 import { formatearDinero } from '../../../../core/utils/dinero';
+import { AYUDAS_FORMULARIO } from '../../../../core/directives/formularios';
 
 export type { AsambleaItem, PuntoAsamblea } from './asamblea.model';
 
@@ -37,6 +39,7 @@ type EstadoDestino = 'PROGRAMADO' | 'CONVOCADO' | 'CANCELADO';
   standalone: true,
   imports: [
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     EmptyStateComponent,
     SkeletonComponent,
     AsambleaCardComponent,
@@ -56,6 +59,9 @@ export class AsambleasAdminComponent implements OnInit {
   private notify = inject(NotificationService);
   readonly whatsapp = inject(WhatsAppSesionService);
 
+  /** ?nuevo=asamblea abre el formulario desde el acceso rápido del dashboard. */
+  readonly nuevo = input<string | undefined>();
+
   readonly asambleas = signal<AsambleaItem[]>([]);
   readonly cargando = signal(false);
   readonly error = signal('');
@@ -64,6 +70,9 @@ export class AsambleasAdminComponent implements OnInit {
   readonly busqueda = signal('');
   readonly subtipoFiltro = signal<'TODAS' | 'ORDINARIA' | 'EXTRAORDINARIA'>('TODAS');
   readonly periodo = signal<'TODAS' | 'PROXIMAS' | 'ANTERIORES'>('TODAS');
+  readonly sectores = signal<SectorItem[]>([]);
+  /** Sector elegido en el filtro; null muestra todas las asambleas. */
+  readonly sectorFiltro = signal<number | null>(null);
 
   // Modales abiertos (cada uno es un componente independiente)
   readonly formularioAbierto = signal(false);
@@ -76,14 +85,17 @@ export class AsambleasAdminComponent implements OnInit {
     const q = this.busqueda().toLowerCase().trim();
     const subtipo = this.subtipoFiltro();
     const periodo = this.periodo();
+    const sector = this.sectorFiltro();
     return this.asambleas().filter(
       (a) =>
         (subtipo === 'TODAS' || a.subtipo_asamblea === subtipo) &&
+        (sector === null || a.sector_id === sector) &&
         !(periodo === 'PROXIMAS' && a.fecha < hoy) &&
         !(periodo === 'ANTERIORES' && a.fecha >= hoy) &&
         (!q ||
           a.titulo.toLowerCase().includes(q) ||
           !!a.lugar?.toLowerCase().includes(q) ||
+          !!a.sector_nombre?.toLowerCase().includes(q) ||
           !!a.descripcion?.toLowerCase().includes(q)),
     );
   });
@@ -93,10 +105,17 @@ export class AsambleasAdminComponent implements OnInit {
 
   readonly hayFiltros = computed(
     () =>
-      !!this.busqueda().trim() || this.subtipoFiltro() !== 'TODAS' || this.periodo() !== 'TODAS',
+      !!this.busqueda().trim() ||
+      this.subtipoFiltro() !== 'TODAS' ||
+      this.sectorFiltro() !== null ||
+      this.periodo() !== 'TODAS',
   );
 
   ngOnInit(): void {
+    if (this.nuevo() === 'asamblea') this.formularioAbierto.set(true);
+    // El botón de WhatsApp refleja la conexión desde que se abre la vista (consultar no inicia WhatsApp).
+    this.whatsapp.consultar(true);
+    this.admin.getSectores().subscribe({ next: (res) => this.sectores.set(res.data ?? []) });
     this.cargar();
   }
 
@@ -118,6 +137,7 @@ export class AsambleasAdminComponent implements OnInit {
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.subtipoFiltro.set('TODAS');
+    this.sectorFiltro.set(null);
     this.periodo.set('TODAS');
   }
 
@@ -194,7 +214,7 @@ export class AsambleasAdminComponent implements OnInit {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'La sesión aún no ocurre',
-        mensaje: `La asamblea "${asamblea.titulo}" está programada para el ${asamblea.fecha}. Solo puede darse por realizada desde esa fecha. Si se suspendió, use "Cancelar".`,
+        mensaje: `La asamblea "${asamblea.titulo}" está programada para el ${formatearFecha(asamblea.fecha, 'larga')}. Solo puede darse por realizada desde esa fecha. Si se suspendió, use "Cancelar".`,
       });
       return;
     }

@@ -4,12 +4,15 @@
     asamblea().titulo +
     ' · ' +
     (asamblea().fecha | fechaLocal) +
+    ' · ' +
+    (asamblea().sector_nombre || 'Todos los sectores') +
     (asamblea().genera_multa_ausencia ? ' · Multa ' + (asamblea().valor_multa | moneda) : '')
   "
   icono="ri-checkbox-circle-line"
   tono="success"
   tamano="lg"
   [bloqueado]="guardando()"
+  [sinGuardar]="cambios()"
   (cerrar)="cerrar.emit()"
 >
   <div class="modal__body form-stack">
