@@ -29,10 +29,10 @@ test('el tablón de eventos lista asambleas con su multa y la convocatoria ofici
   expect(contenido.length).toBeGreaterThan(1000);
 });
 
-test('la página de información muestra misión, visión, directiva y sectores', async ({ page }) => {
+test('la página de información muestra quiénes somos, órganos de dirección, misión y sectores', async ({ page }) => {
   await page.goto('/informacion');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('La Jones');
-  for (const titulo of ['Misión', 'Visión', 'Directiva', 'Sectores de riego', 'Contacto y atención']) {
+  for (const titulo of ['Quiénes somos', 'Órganos de Dirección', 'Nuestra misión', 'Sectores de riego', 'Contacto y atención']) {
     await expect(page.getByRole('heading', { name: titulo })).toBeVisible();
   }
   await expect(page.getByText(/\d+ lotes/).first()).toBeVisible();
