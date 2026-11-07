@@ -17,6 +17,7 @@ import {
  *  - Atrapa el foco (Tab / Shift+Tab) dentro del modal.
  *  - Cierra con la tecla Escape pulsando el botón `.btn-close` interno.
  *  - Cierra al hacer clic en el fondo (backdrop).
+ *  - Un botón con `data-cancelar` cierra igual que la X, de modo que también pregunta si hay datos sin guardar.
  *  - Restaura el foco al elemento que abrió el modal al destruirse.
  *  - Se mueve a <body> para quedar por encima de todo: ningún ancestro con
  *    transform, filtro, opacidad animada o z-index propio puede atraparlo.
@@ -122,6 +123,11 @@ export class ModalA11yDirective implements OnInit, AfterViewInit, OnDestroy {
     if (event.target === this.host.nativeElement) {
       this.cerrar();
     }
+  }
+
+  @HostListener('click', ['$event'])
+  onClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement | null)?.closest('[data-cancelar]')) this.cerrar();
   }
 
   private cerrar(): void {
