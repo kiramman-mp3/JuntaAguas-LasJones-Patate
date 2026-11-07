@@ -760,3 +760,24 @@ textarea.input {
     transform: translateX(100%);
   }
 }
+
+/* Pantallas táctiles: los controles pequeños suben a un tamaño que un dedo pulsa sin errar (≈44 px). */
+@media (pointer: coarse) {
+  .btn--sm,
+  .btn-close {
+    min-height: 2.75rem;
+  }
+
+  .btn--xs {
+    min-height: 2.5rem;
+  }
+
+  .btn-close {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .input--sm {
+    min-height: 2.6rem;
+  }
+}
