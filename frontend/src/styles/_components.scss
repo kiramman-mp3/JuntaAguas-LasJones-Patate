@@ -639,6 +639,12 @@ textarea.input {
   font-size: 0.88rem;
   line-height: 1.5;
 
+  /* El texto ocupa el resto de la línea junto al icono en vez de bajar debajo de él. */
+  &__text {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
   &--info {
     background: var(--color-primary-light);
     color: var(--color-info-strong);

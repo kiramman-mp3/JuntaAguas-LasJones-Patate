@@ -62,7 +62,11 @@ const MESES = [
   'noviembre',
   'diciembre',
 ];
-const LINEA = '____________________________________________________________________________';
+/** Directiva que firma las actas y las convocatorias de la Junta. */
+export const DIRECTIVA = {
+  presidente: { nombre: 'Ramiro Cepeda Caicedo', cedula: '1801701366' },
+  secretario: { nombre: 'John Mora Pérez', cedula: '1801371327' },
+};
 const AZUL: [number, number, number] = [43, 84, 126];
 const ROJO: [number, number, number] = [220, 38, 38];
 
@@ -77,6 +81,13 @@ function fechaDelEvento(evento: EventoDocumento) {
 
 const hora = (valor: string | null | undefined, porDefecto: string) =>
   valor ? valor.substring(0, 5) : porDefecto;
+
+/** Bloque de firma: nombre, cargo y, si se conoce, cédula. */
+const bloqueFirma = (nombre: string, cargo: string, cedula?: string) => [
+  nombre,
+  cargo,
+  ...(cedula ? [`C.I. ${cedula}`] : []),
+];
 
 /**
  * Escribe un documento A4 de arriba hacia abajo con salto de página automático.
@@ -245,20 +256,21 @@ export class ActasService {
     asistenciaStats?: AsistenciaResumen[],
   ): Promise<void> {
     const { anio, dia, mesNombre, texto: fechaTexto } = fechaDelEvento(evento);
-    const horaInicio = hora(evento.hora_inicio, '________');
+    const horaInicio = hora(evento.hora_inicio, '08:00');
+    // Sin hora de fin ni de clausura, el acta solo dice el día en que se clausuró.
     const horaClausura = evento.hora_fin
       ? evento.hora_fin.substring(0, 5)
-      : evento.hora_clausura || '________';
+      : evento.hora_clausura || '';
     const extraordinaria =
       (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase() === 'EXTRAORDINARIA';
 
-    let presentes: number | string = evento.usuarios_presentes || '______';
-    let totalUsuarios: number | string = evento.total_usuarios || '______';
+    let presentes = Number(evento.usuarios_presentes) || 0;
+    let totalUsuarios = Number(evento.total_usuarios) || 0;
     if (asistenciaStats?.length) {
       const presentesFila = asistenciaStats.find(
         (s) => (s.estado || '').toUpperCase() === 'PRESENTE',
       );
-      if (presentesFila) presentes = presentesFila.total;
+      if (presentesFila) presentes = Number(presentesFila.total) || 0;
       const suma = asistenciaStats.reduce(
         (acc, s) => acc + (Number.parseInt(String(s.total), 10) || 0),
         0,
@@ -266,11 +278,15 @@ export class ActasService {
       if (suma > 0) totalUsuarios = suma;
     }
 
-    const presidente = evento.presidente || '____________________________________________';
-    const secretario = evento.secretario || '____________________________________________';
+    const presidente = evento.presidente || DIRECTIVA.presidente.nombre;
+    const secretario = evento.secretario || DIRECTIVA.secretario.nombre;
+    const cuorumRequerido = Math.floor(totalUsuarios / 2) + 1;
+    const hayCuorum = presentes >= cuorumRequerido;
     const lugar = evento.lugar || 'sede de la organización';
     const sector = evento.sector || 'Patate Centro';
     const textoDe = (p: PuntoActa | undefined) => (p?.punto_tratar || '').toLowerCase();
+    /** Quita la numeración escrita en el título ("3. Informe…"): el acta numera sus puntos por su cuenta. */
+    const sinNumero = (p: PuntoActa) => (p.punto_tratar || '').replace(/^\s*\d+\s*[.)-]\s*/, '');
 
     return this.generar(`Acta_Asamblea_${evento.fecha}.pdf`, 40, (r) => {
       r.centrado('JUNTA DE RIEGO LA JONES - PATATE', 14, { separacion: 2 });
@@ -283,26 +299,26 @@ export class ActasService {
       ]);
 
       r.parrafo(
-        `En la sede de la organización ubicada en ${lugar}, sector ${sector}, cantón Patate, provincia de Tungurahua, a los ${dia} días del mes de ${mesNombre} del año ${anio}, siendo las ${horaInicio} horas, se reúnen los usuarios de la Junta de Riego La Jones - Patate, previa convocatoria realizada de conformidad con las disposiciones correspondientes, con el objeto de celebrar la Asamblea General ${extraordinaria ? 'Extraordinaria' : 'Ordinaria'}.`,
+        `En la sede de la organización ubicada en ${lugar}, sector ${sector}, cantón Patate, provincia de Tungurahua, a los ${dia} días del mes de ${mesNombre} del año ${anio}, siendo las ${horaInicio} horas, se reúnen los usuarios ${evento.sector_nombre ? `del sector ${evento.sector_nombre} de` : 'de'} la Junta de Riego La Jones - Patate, previa convocatoria realizada de conformidad con las disposiciones correspondientes, con el objeto de celebrar la Asamblea General ${extraordinaria ? 'Extraordinaria' : 'Ordinaria'}.`,
       );
 
       r.seccion('INSTALACIÓN DE LA ASAMBLEA');
       r.parrafo(
-        `Preside la Asamblea el señor ${presidente}, Presidente de la Junta de Riego La Jones - Patate, y actúa como Secretario/a el/la señor/a ${secretario}.`,
+        `Preside la Asamblea el señor ${presidente}, Presidente de la Junta de Riego La Jones - Patate, y actúa como Secretario el señor ${secretario}.`,
       );
       r.parrafo('El señor Presidente da la bienvenida a los usuarios presentes.');
 
       r.seccion('Punto 1. CONSTATACIÓN DEL CUÓRUM');
       r.parrafo(
-        `El/la Secretario/a procede a constatar la asistencia de los usuarios convocados, mediante las firmas constantes en las hojas de asistencia, verificándose la presencia de ${presentes} usuarios de un total de ${totalUsuarios} usuarios registrados.`,
+        `El Secretario procede a constatar la asistencia de los usuarios convocados, mediante las firmas constantes en las hojas de asistencia, verificándose la presencia de ${presentes} usuarios de un total de ${totalUsuarios} usuarios registrados.`,
       );
       r.parrafo(`Usuarios presentes: ${presentes}`, { sangria: 10 });
       r.parrafo(
-        `Cuórum requerido: ${evento.cuorum_requerido || '50% + 1 de los usuarios registrados'}`,
+        `Cuórum requerido: ${evento.cuorum_requerido || `50% + 1 de los usuarios registrados (${cuorumRequerido})`}`,
         { sangria: 10 },
       );
       r.parrafo(
-        `Cuórum constatado: ${evento.cuorum_constatado || (presentes !== '______' ? 'Existe cuórum reglamentario' : '______________________________')}`,
+        `Cuórum constatado: ${evento.cuorum_constatado || (hayCuorum ? 'Existe cuórum reglamentario' : 'No existe cuórum reglamentario')}`,
         { sangria: 10 },
       );
       r.parrafo(
@@ -311,9 +327,9 @@ export class ActasService {
 
       r.seccion('Punto 2. LECTURA Y APROBACIÓN DEL ACTA ANTERIOR');
       r.parrafo(
-        'El/la Secretario/a procede a dar lectura al acta de la Asamblea General anterior. Una vez concluida la lectura, el señor Presidente pone el acta a consideración de los usuarios presentes.',
+        'El Secretario procede a dar lectura al acta de la Asamblea General anterior. Una vez concluida la lectura, el señor Presidente pone el acta a consideración de los usuarios presentes.',
       );
-      const punto2 = puntos.find((p) => p.orden === 2 || textoDe(p).includes('acta anterior'));
+      const punto2 = puntos.find((p) => p.orden === 2 || /acta.*anterior/.test(textoDe(p)));
       r.parrafo('Resolución:', { negrita: true });
       r.parrafo(
         punto2?.resolucion ||
@@ -323,36 +339,45 @@ export class ActasService {
 
       const dinamicos = puntos.filter(
         (p) =>
-          !['cuórum', 'cuorum', 'acta anterior', 'varios'].some((clave) =>
-            textoDe(p).includes(clave),
-          ),
+          p !== punto2 &&
+          !['cuórum', 'cuorum', 'varios'].some((clave) => textoDe(p).includes(clave)),
       );
       let numero = 3;
       for (const p of dinamicos) {
-        r.seccion(`PUNTO ${numero}. ${(p.punto_tratar || '').toUpperCase()}`);
+        r.seccion(`PUNTO ${numero}. ${sinNumero(p).toUpperCase()}`);
         r.parrafo('Desarrollo:', { negrita: true });
-        r.parrafo(p.tratado || p.desarrollo || LINEA);
+        r.parrafo(p.tratado || p.desarrollo || 'No se registró el desarrollo de este punto.');
         r.parrafo('Resolución / Resoluciones:', { negrita: true });
-        r.parrafo(p.resolucion || LINEA);
+        r.parrafo(p.resolucion || 'No se registró una resolución para este punto.');
         numero++;
       }
 
       const varios = puntos.find((p) => textoDe(p).includes('varios'));
       r.seccion(`PUNTO ${numero}. VARIOS`);
       r.parrafo('Durante este punto, los usuarios presentan los siguientes asuntos:');
-      r.parrafo(varios?.tratado || evento.varios_desarrollo || LINEA);
+      r.parrafo(varios?.tratado || evento.varios_desarrollo || 'No se presentaron asuntos varios.');
       r.parrafo('Resoluciones / Acuerdos:', { negrita: true });
-      r.parrafo(varios?.resolucion || evento.varios_resolucion || LINEA);
+      r.parrafo(
+        varios?.resolucion || evento.varios_resolucion || 'No se tomaron resoluciones ni acuerdos.',
+      );
 
       r.seccion('CLAUSURA');
       r.parrafo(
-        `Una vez tratados todos los puntos constantes en el orden del día, y no habiendo más asuntos que tratar, el señor Presidente agradece la presencia y participación de los usuarios y declara clausurada la Asamblea General a las ${horaClausura} horas del día ${fechaTexto}.`,
+        `Una vez tratados todos los puntos constantes en el orden del día, y no habiendo más asuntos que tratar, el señor Presidente agradece la presencia y participación de los usuarios y declara clausurada la Asamblea General ${horaClausura ? `a las ${horaClausura} horas del día` : 'el día'} ${fechaTexto}.`,
       );
       r.parrafo('Para constancia de lo actuado, se suscribe la presente acta.');
 
       r.firmas([
-        [`Sr. ${presidente}`, 'PRESIDENTE', 'Junta de Riego La Jones - Patate'],
-        [`Sr./Sra. ${secretario}`, 'SECRETARIO/A', 'Junta de Riego La Jones - Patate'],
+        bloqueFirma(
+          presidente,
+          'Presidente',
+          evento.presidente ? undefined : DIRECTIVA.presidente.cedula,
+        ),
+        bloqueFirma(
+          secretario,
+          'Secretario',
+          evento.secretario ? undefined : DIRECTIVA.secretario.cedula,
+        ),
       ]);
       r.parrafo('Anexos: Hojas de asistencia de los sectores.', { negrita: true, color: AZUL });
     });
@@ -395,8 +420,8 @@ export class ActasService {
       r.espacio(14);
       r.parrafo('Atentamente,');
       r.firmas([
-        ['Ramiro Cepeda Caicedo', 'Presidente', 'C.I. 1801701366'],
-        ['John Mora Pérez', 'Secretario', 'C.I. 1801371327'],
+        bloqueFirma(DIRECTIVA.presidente.nombre, 'Presidente', DIRECTIVA.presidente.cedula),
+        bloqueFirma(DIRECTIVA.secretario.nombre, 'Secretario', DIRECTIVA.secretario.cedula),
       ]);
     });
   }

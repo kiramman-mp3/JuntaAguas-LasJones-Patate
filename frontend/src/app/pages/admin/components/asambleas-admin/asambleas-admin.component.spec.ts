@@ -307,9 +307,26 @@ describe('Módulo de Asambleas', () => {
       expect(adminMock.guardarPuntosAsamblea).toHaveBeenCalledWith(10, component.puntos);
     });
 
-    it('genera un único PDF con el acta general de la asamblea (F07)', () => {
+    it('genera un único PDF con el acta y la asistencia registrada en este momento (F07)', async () => {
       component.descargarActaGeneral();
-      expect(actasMock.generarActaPDF).toHaveBeenCalledWith(asambleaMock, component.puntos);
+      await vi.waitFor(() => expect(actasMock.generarActaPDF).toHaveBeenCalled());
+      expect(adminMock.getAsistencias).toHaveBeenCalledWith(10);
+      expect(actasMock.generarActaPDF).toHaveBeenCalledWith(asambleaMock, component.puntos, [
+        { estado: 'PRESENTE', total: 1 },
+        { estado: 'AUSENTE', total: 0 },
+        { estado: 'JUSTIFICADO', total: 1 },
+        { estado: 'PENDIENTE', total: 0 },
+      ]);
+      await vi.waitFor(() => expect(component.generandoPdf()).toBe(false));
+    });
+
+    it('avisa que el PDF usa los presentes registrados y los puntos ya llenados', () => {
+      const fixture = TestBed.createComponent(AsambleaActasComponent);
+      fixture.componentRef.setInput('asamblea', asambleaMock);
+      fixture.detectChanges();
+      const aviso = document.body.querySelector('.alert') as HTMLElement;
+      expect(aviso.textContent).toContain('usuarios presentes que estén registrados');
+      expect(aviso.textContent).toContain('revísela antes de generar el PDF');
     });
   });
 });

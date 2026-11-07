@@ -123,6 +123,68 @@ describe('ActasService', () => {
     expect(pdf.textos).toContain('Usuarios presentes: 40');
   });
 
+  it('el acta nombra a la directiva y completa sus datos sin dejar espacios en blanco', async () => {
+    const actas = TestBed.inject(ActasService);
+    await actas.generarActaPDF(
+      { id: 4, fecha: '2026-03-01', hora_inicio: '09:00', sector_nombre: 'San Javier' },
+      [],
+      [
+        { estado: 'PRESENTE', total: 30 },
+        { estado: 'AUSENTE', total: 20 },
+      ],
+    );
+    const texto = pdf.textos.join(' ');
+    expect(texto).toContain(
+      'Preside la Asamblea el señor Ramiro Cepeda Caicedo, Presidente de la Junta de Riego La Jones - Patate, y actúa como Secretario el señor John Mora Pérez.',
+    );
+    expect(texto).toContain('se reúnen los usuarios del sector San Javier de la Junta de Riego');
+    expect(texto).toContain(
+      'verificándose la presencia de 30 usuarios de un total de 50 usuarios registrados',
+    );
+    expect(texto).toContain('Cuórum requerido: 50% + 1 de los usuarios registrados (26)');
+    expect(texto).toContain('Cuórum constatado: Existe cuórum reglamentario');
+    expect(texto).toContain('declara clausurada la Asamblea General el día 1 de marzo de 2026.');
+    expect(pdf.textos).toEqual(expect.arrayContaining(['C.I. 1801701366', 'C.I. 1801371327']));
+    // Solo quedan las rayas donde se firma: ningún dato del acta queda en blanco.
+    expect(pdf.textos.filter((t) => t.includes('____') && !/^_+$/.test(t))).toEqual([]);
+  });
+
+  it('el acta no repite el punto del acta anterior ni duplica la numeración de los títulos', async () => {
+    const actas = TestBed.inject(ActasService);
+    await actas.generarActaPDF(
+      { id: 6, fecha: '2026-03-01', hora_inicio: '09:00' },
+      [
+        { orden: 1, punto_tratar: '1. Constatación del cuórum reglamentario' },
+        { orden: 2, punto_tratar: '2. Lectura y aprobación del acta de la asamblea anterior' },
+        { orden: 3, punto_tratar: '3. Informe de presidencia y balance financiero' },
+        { orden: 4, punto_tratar: '4. Asuntos varios y resoluciones' },
+      ],
+      [{ estado: 'PRESENTE', total: 10 }],
+    );
+    const secciones = pdf.textos.filter((t) => t.startsWith('PUNTO') || t.startsWith('Punto'));
+    expect(secciones).toEqual([
+      'Punto 1. CONSTATACIÓN DEL CUÓRUM',
+      'Punto 2. LECTURA Y APROBACIÓN DEL ACTA ANTERIOR',
+      'PUNTO 3. INFORME DE PRESIDENCIA Y BALANCE FINANCIERO',
+      'PUNTO 4. VARIOS',
+    ]);
+  });
+
+  it('el acta dice que no hay cuórum cuando los presentes no alcanzan la mitad más uno', async () => {
+    const actas = TestBed.inject(ActasService);
+    await actas.generarActaPDF(
+      { id: 5, fecha: '2026-03-01', hora_inicio: '09:00', hora_fin: '11:30:00' },
+      [],
+      [
+        { estado: 'PRESENTE', total: 10 },
+        { estado: 'AUSENTE', total: 40 },
+      ],
+    );
+    const texto = pdf.textos.join(' ');
+    expect(texto).toContain('Cuórum constatado: No existe cuórum reglamentario');
+    expect(texto).toContain('a las 11:30 horas del día 1 de marzo de 2026');
+  });
+
   it('informa con una notificación si el PDF no se pudo generar', async () => {
     pdf.fallar = true;
     vi.spyOn(console, 'error').mockImplementation(() => {});
