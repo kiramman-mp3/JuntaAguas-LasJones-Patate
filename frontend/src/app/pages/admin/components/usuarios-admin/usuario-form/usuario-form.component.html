@@ -86,18 +86,15 @@
             </div>
             <div class="form-group">
               <label for="com-apellidos"
-                >Apellidos
-                @if (!modoEdicion) {
-                  <span class="req" aria-hidden="true">*</span>
-                }
-              </label>
+                >Apellidos <span class="req" aria-hidden="true">*</span></label
+              >
               <input
                 id="com-apellidos"
                 type="text"
                 class="input"
                 name="apellidos"
                 [(ngModel)]="form.apellidos"
-                [required]="!modoEdicion"
+                required
                 placeholder="Ej. Pérez Andrade"
                 autocomplete="off"
               />
