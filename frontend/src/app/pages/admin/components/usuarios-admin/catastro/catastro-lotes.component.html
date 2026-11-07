@@ -7,10 +7,7 @@
       </p>
     </div>
     <div class="section-head__actions">
-      <button type="button" class="btn btn--outline" (click)="sectorAbierto.set(true)">
-        <i class="ri-map-2-line" aria-hidden="true"></i> Nuevo sector
-      </button>
-      <button type="button" class="btn btn--primary" (click)="nuevoLote()">
+      <button type="button" class="btn btn--primary" (click)="formularioAbierto.set(true)">
         <i class="ri-add-line" aria-hidden="true"></i> Nuevo lote
       </button>
     </div>
@@ -69,35 +66,19 @@
           </button>
         </app-empty-state>
       } @else {
-        @if (!sectores().length) {
-          <app-empty-state
-            icono="ri-map-2-line"
-            titulo="Primero registre los sectores"
-            mensaje="Cada lote pertenece a un sector de riego. Cree al menos un sector para empezar el catastro."
+        <app-empty-state
+          icono="ri-map-2-line"
+          titulo="Aún no hay lotes"
+          mensaje="Registre el primer lote para asignarlo a un usuario."
+        >
+          <button
+            type="button"
+            class="btn btn--primary btn--sm"
+            (click)="formularioAbierto.set(true)"
           >
-            <button
-              type="button"
-              class="btn btn--primary btn--sm"
-              (click)="sectorAbierto.set(true)"
-            >
-              <i class="ri-add-line" aria-hidden="true"></i> Nuevo sector
-            </button>
-          </app-empty-state>
-        } @else {
-          <app-empty-state
-            icono="ri-map-2-line"
-            titulo="Aún no hay lotes"
-            mensaje="Registre el primer lote para asignarlo a un usuario."
-          >
-            <button
-              type="button"
-              class="btn btn--primary btn--sm"
-              (click)="formularioAbierto.set(true)"
-            >
-              <i class="ri-add-line" aria-hidden="true"></i> Nuevo lote
-            </button>
-          </app-empty-state>
-        }
+            <i class="ri-add-line" aria-hidden="true"></i> Nuevo lote
+          </button>
+        </app-empty-state>
       }
     } @else {
       <div class="table-container table-container--flush" [class.is-refreshing]="cargando()">
@@ -178,9 +159,6 @@
     (cerrar)="formularioAbierto.set(false)"
     (creado)="onCreado()"
   />
-}
-@if (sectorAbierto()) {
-  <app-sector-form (cerrar)="sectorAbierto.set(false)" (creado)="onSectorCreado()" />
 }
 @if (detalle(); as l) {
   <app-lote-detalle [lote]="l" (cerrar)="detalle.set(null)" (editar)="editarDesdeFicha($event)" />

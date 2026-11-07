@@ -9,7 +9,6 @@ import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../../shared/ui/paginador.component';
 import { LoteFormComponent } from '../lote-form/lote-form.component';
 import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
-import { SectorFormComponent } from '../sector-form/sector-form.component';
 import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Catastro de lotes: búsqueda por código, filtro por sector, paginación en el servidor, alta de lotes y ficha de cada uno. */
@@ -24,7 +23,6 @@ import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
     PaginadorComponent,
     LoteFormComponent,
     LoteDetalleComponent,
-    SectorFormComponent,
   ],
   templateUrl: './catastro-lotes.component.html',
 })
@@ -39,7 +37,6 @@ export class CatastroLotesComponent implements OnInit {
   readonly formularioAbierto = signal(false);
   readonly detalle = signal<LoteItem | null>(null);
   readonly loteEnEdicion = signal<LoteItem | null>(null);
-  readonly sectorAbierto = signal(false);
   readonly pagina = signal(1);
   readonly porPagina = signal(25);
   readonly total = signal(0);
@@ -59,17 +56,6 @@ export class CatastroLotesComponent implements OnInit {
 
   cargarSectores(): void {
     this.admin.getSectores().subscribe({ next: (res) => this.sectores.set(res?.data ?? []) });
-  }
-
-  onSectorCreado(): void {
-    this.sectorAbierto.set(false);
-    this.cargarSectores();
-  }
-
-  /** Sin sectores no se pueden registrar lotes: se pide crear uno primero. */
-  nuevoLote(): void {
-    if (this.sectores().length) this.formularioAbierto.set(true);
-    else this.sectorAbierto.set(true);
   }
 
   cargar(): void {
