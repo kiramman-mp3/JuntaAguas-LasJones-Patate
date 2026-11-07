@@ -37,6 +37,18 @@ test('cada renglón deja espacio para firmar: 25 nombres cortos ya no caben en u
   assert.equal(await paginasDe(cortos), 2);
 });
 
+test('el padrón se separa por sector: cada sector (y los usuarios sin lote) empieza en su página', async () => {
+  const conSector = (i, sector) => ({ ...persona(i, `Perez Juan ${i}`), sector_nombre: sector });
+  const mezclados = [
+    conSector(1, 'San Javier'),
+    conSector(2, 'La Merced'),
+    conSector(3, null),
+    conSector(4, 'San Javier'),
+  ];
+  assert.equal(await paginasDe(mezclados), 3);
+  assert.equal(await paginasDe([conSector(1, 'La Merced'), conSector(2, 'La Merced')]), 1);
+});
+
 test('la hoja sin personas igual se genera', async () => {
   assert.equal(await paginasDe([]), 1);
 });
