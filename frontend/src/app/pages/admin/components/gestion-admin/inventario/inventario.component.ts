@@ -284,12 +284,7 @@ const formularioVacio = (): NuevoBien => ({
             </div>
           </div>
           <div class="modal__footer">
-            <button
-              type="button"
-              class="btn btn--outline"
-              [disabled]="guardando()"
-              (click)="formularioAbierto.set(false)"
-            >
+            <button type="button" class="btn btn--outline" [disabled]="guardando()" data-cancelar>
               Cancelar
             </button>
             <button type="submit" class="btn btn--primary" [disabled]="guardando()">
