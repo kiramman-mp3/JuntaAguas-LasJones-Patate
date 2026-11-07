@@ -1,7 +1,11 @@
 <app-modal
-  titulo="Registrar lote"
-  subtitulo="Ubique el terreno en el mapa y asígnele un código del sector."
-  icono="ri-map-pin-add-line"
+  [titulo]="modoEdicion ? 'Editar lote' : 'Registrar lote'"
+  [subtitulo]="
+    modoEdicion
+      ? 'Lote ' + lote()!.codigo + ' · ' + lote()!.sector_nombre
+      : 'Ubique el terreno en el mapa y asígnele un código del sector.'
+  "
+  [icono]="modoEdicion ? 'ri-edit-box-line' : 'ri-map-pin-add-line'"
   tamano="lg"
   [bloqueado]="guardando"
   (cerrar)="solicitarCierre()"
@@ -127,7 +131,13 @@
         </div>
 
         <div class="lote-form__map">
-          <app-lotes-map [editable]="true" [alto]="300" (ubicacion)="fijarUbicacion($event)" />
+          <app-lotes-map
+            [editable]="true"
+            [latitud]="latInicial"
+            [longitud]="lngInicial"
+            [alto]="300"
+            (ubicacion)="fijarUbicacion($event)"
+          />
           <div class="coord-readout" aria-live="polite">
             <i class="ri-crosshair-2-line" aria-hidden="true"></i>
             @if (form.latitud_aproximada) {
@@ -154,7 +164,8 @@
         @if (guardando) {
           <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
         } @else {
-          <i class="ri-save-line" aria-hidden="true"></i> Guardar lote
+          <i class="ri-save-line" aria-hidden="true"></i>
+          {{ modoEdicion ? 'Guardar cambios' : 'Guardar lote' }}
         }
       </button>
     </div>

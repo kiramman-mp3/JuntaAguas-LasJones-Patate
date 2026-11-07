@@ -83,6 +83,67 @@ describe('Código de nuevo lote (LoteFormComponent)', () => {
   });
 });
 
+describe('Edición de un lote (LoteFormComponent)', () => {
+  const lote = {
+    id: 7,
+    sector_id: 2,
+    sector_nombre: 'La Merced',
+    codigo: 'LJB-007',
+    superficie_m2: '1500.00',
+    latitud_aproximada: '-1.329025',
+    longitud_aproximada: '-78.510492',
+    radio_error_m: 12,
+    referencia_ubicacion: 'Junto al tanque',
+    observacion: null,
+  };
+
+  const crear = () => {
+    const fixture = TestBed.createComponent(LoteFormComponent);
+    fixture.componentRef.setInput('lote', lote);
+    fixture.componentInstance.ngOnInit();
+    return fixture.componentInstance;
+  };
+
+  it('precarga los datos del lote y la ubicación inicial del mapa', () => {
+    configurar({ updateLote: vi.fn() });
+    const component = crear();
+    expect(component.modoEdicion).toBe(true);
+    expect(component.form.codigo).toBe('LJB-007');
+    expect(component.form.superficie_m2).toBe(1500);
+    expect(component.form.observacion).toBe('');
+    expect(component.latInicial).toBeCloseTo(-1.329025);
+    expect(component.lngInicial).toBeCloseTo(-78.510492);
+  });
+
+  it('actualiza el lote existente en vez de crear uno nuevo', () => {
+    configurar({ updateLote: vi.fn(() => of({ status: 'OK' })), createLote: vi.fn() });
+    const component = crear();
+    const actualizado = vi.fn();
+    component.actualizado.subscribe(actualizado);
+    component.form.superficie_m2 = 1800;
+    component.guardar();
+    expect(admin.updateLote).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ superficie_m2: 1800 }),
+    );
+    expect(admin.createLote).not.toHaveBeenCalled();
+    expect(actualizado).toHaveBeenCalled();
+  });
+
+  it('muestra el error del servidor y no cierra si falla la actualización', () => {
+    configurar({
+      updateLote: vi.fn(() => throwError(() => ({ error: { message: 'Código duplicado' } }))),
+    });
+    const component = crear();
+    const actualizado = vi.fn();
+    component.actualizado.subscribe(actualizado);
+    component.guardar();
+    expect(actualizado).not.toHaveBeenCalled();
+    expect(component.guardando).toBe(false);
+    expect(component.error).toBe('Código duplicado');
+  });
+});
+
 describe('Contraseña temporal de cuentas (UsuarioFormComponent)', () => {
   const crear = (usuario: any = null) => {
     const fixture = TestBed.createComponent(UsuarioFormComponent);
@@ -251,6 +312,25 @@ describe('Titularidad única (VincularLoteComponent)', () => {
 
     c.busqueda.set('');
     expect(c.lotesFiltrados().length).toBe(3);
+  });
+
+  it('filtra los lotes por sector y lo combina con la búsqueda', () => {
+    const c = crear();
+    c.lotes.set([
+      { id: 1, sector_id: 5, sector_nombre: 'La Merced', codigo: 'LJB-001' },
+      { id: 2, sector_id: 5, sector_nombre: 'La Merced', codigo: 'LJB-002' },
+      { id: 3, sector_id: 9, sector_nombre: 'San Javier', codigo: 'LJB-003' },
+    ] as never);
+    expect(c.sectores().map((s) => s.nombre)).toEqual(['La Merced', 'San Javier']);
+
+    c.sectorId.set(5);
+    expect(c.lotesFiltrados().map((l) => l.id)).toEqual([1, 2]);
+
+    c.busqueda.set('002');
+    expect(c.lotesFiltrados().map((l) => l.id)).toEqual([2]);
+
+    c.sectorId.set(9);
+    expect(c.lotesFiltrados().length).toBe(0);
   });
 
   it('mantiene el lote actualmente seleccionado en la lista si no coincide con el filtro', () => {

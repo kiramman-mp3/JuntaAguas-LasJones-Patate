@@ -23,7 +23,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
       titulo="Asignar terreno"
       [subtitulo]="c.apellidos + ' ' + c.nombres + ' · C.I. ' + c.cedula"
       icono="ri-link"
-      tamano="sm"
+      tamano="md"
       [bloqueado]="guardando()"
       (cerrar)="cerrar.emit()"
     >
@@ -32,64 +32,74 @@ export const PORCENTAJE_TITULARIDAD = 100;
           <p class="form-legend">
             <span class="req" aria-hidden="true">*</span> Campos obligatorios
           </p>
-          <div class="form-group">
-            <div
-              style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;"
-            >
-              <label for="vin-lote" style="margin-bottom: 0;"
-                >Lote <span class="req" aria-hidden="true">*</span></label
-              >
-              @if (!cargando() && lotes().length > 0) {
-                <small class="text-muted" style="font-size: 0.75rem;">
-                  {{ lotesFiltrados().length }} de {{ lotes().length }} disponibles
-                </small>
-              }
-            </div>
-            <div class="search-field" style="margin-bottom: 0.5rem;">
-              <i class="ri-search-line" aria-hidden="true"></i>
-              <input
-                id="vin-lote-busqueda"
-                type="search"
+          <fieldset class="field-set">
+            <legend class="field-set__legend">
+              Lote <span class="req" aria-hidden="true">*</span>
+            </legend>
+            <div class="lote-filtros">
+              <div class="search-field">
+                <i class="ri-search-line" aria-hidden="true"></i>
+                <input
+                  id="vin-lote-busqueda"
+                  type="search"
+                  class="input"
+                  placeholder="Código, sector o dueño…"
+                  [ngModel]="busqueda()"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="busqueda.set($event)"
+                  [disabled]="cargando()"
+                  aria-label="Buscar lote"
+                />
+              </div>
+              <select
                 class="input"
-                placeholder="Buscar por código, sector o usuario…"
-                [ngModel]="busqueda()"
-                (ngModelChange)="busqueda.set($event)"
+                [ngModel]="sectorId()"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="sectorId.set($event)"
                 [disabled]="cargando()"
-                aria-label="Buscar lote"
-              />
+                aria-label="Sector del lote"
+              >
+                <option [ngValue]="null">Todos los sectores</option>
+                @for (s of sectores(); track s.id) {
+                  <option [ngValue]="s.id">{{ s.nombre }}</option>
+                }
+              </select>
             </div>
-            <select
-              id="vin-lote"
-              class="input"
-              name="lote_id"
-              [ngModel]="loteId()"
-              (ngModelChange)="loteId.set($event)"
-              required
-              [disabled]="cargando()"
-            >
-              <option [ngValue]="null">
-                {{
-                  cargando()
-                    ? 'Cargando lotes…'
-                    : lotesFiltrados().length
-                      ? 'Elija un lote (' + lotesFiltrados().length + ' disponibles)…'
-                      : 'No hay lotes con ese criterio'
-                }}
-              </option>
-              @for (lote of lotesFiltrados(); track lote.id) {
-                <option [ngValue]="lote.id">
-                  {{ lote.sector_nombre }} — Lote {{ lote.codigo
-                  }}{{ lote.propietarios ? ' (de ' + lote.propietarios + ')' : ' (sin dueño)' }}
-                </option>
+            <div class="lote-list" role="radiogroup" aria-label="Lotes">
+              @if (cargando()) {
+                <p class="lote-list__vacio">Cargando lotes…</p>
+              } @else {
+                @for (lote of lotesFiltrados(); track lote.id) {
+                  <label class="lote-opt" [class.lote-opt--selected]="loteId() === lote.id">
+                    <input
+                      type="radio"
+                      name="lote_id"
+                      [value]="lote.id"
+                      [checked]="loteId() === lote.id"
+                      (change)="loteId.set(lote.id)"
+                    />
+                    <span class="lote-opt__main">
+                      <strong>Lote {{ lote.codigo }}</strong>
+                      <span class="lote-opt__sector">{{ lote.sector_nombre }}</span>
+                    </span>
+                    <span
+                      class="lote-opt__owner"
+                      [class.lote-opt__owner--libre]="!lote.propietarios"
+                    >
+                      {{ lote.propietarios ? 'de ' + lote.propietarios : 'Sin dueño' }}
+                    </span>
+                  </label>
+                } @empty {
+                  <p class="lote-list__vacio">Ningún lote coincide con la búsqueda o el sector.</p>
+                }
               }
-            </select>
-            @if (busqueda() && lotesFiltrados().length === 0 && !cargando()) {
-              <small class="field__error" style="margin-top: 0.25rem;">
-                <i class="ri-information-line" aria-hidden="true"></i> No se encontraron lotes que
-                coincidan con "{{ busqueda() }}".
+            </div>
+            @if (!cargando()) {
+              <small class="field__hint">
+                {{ lotesFiltrados().length }} de {{ lotes().length }} lotes
               </small>
             }
-          </div>
+          </fieldset>
 
           <div class="form-group">
             <label for="vin-relacion"
@@ -124,7 +134,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
           <button type="button" class="btn btn--outline" data-cancelar [disabled]="guardando()">
             Cancelar
           </button>
-          <button type="submit" class="btn btn--primary" [disabled]="guardando()">
+          <button type="submit" class="btn btn--primary" [disabled]="guardando() || !loteId()">
             @if (guardando()) {
               <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
             } @else if (titularActual()) {
@@ -151,15 +161,28 @@ export class VincularLoteComponent implements OnInit {
   readonly guardando = signal(false);
   readonly loteId = signal<number | null>(null);
   readonly busqueda = signal('');
+  readonly sectorId = signal<number | null>(null);
   tipoRelacion: 'PROPIETARIO' | 'REPRESENTANTE' = 'PROPIETARIO';
 
-  /** Lotes filtrados por código, sector, ID o propietario, conservando el seleccionado si existe. */
+  /** Sectores que tienen lotes, para el filtro. */
+  readonly sectores = computed(() => {
+    const porId = new Map<number, string>();
+    for (const l of this.lotes()) porId.set(l.sector_id, l.sector_nombre);
+    return [...porId]
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  });
+
+  /** Lotes filtrados por sector y por código, sector, ID o propietario, conservando el seleccionado si existe. */
   readonly lotesFiltrados = computed(() => {
     const q = this.busqueda().trim().toLowerCase();
+    const sectorElegido = this.sectorId();
     const todos = this.lotes();
-    if (!q) return todos;
+    if (!q && sectorElegido === null) return todos;
 
     const coinciden = todos.filter((l) => {
+      if (sectorElegido !== null && l.sector_id !== sectorElegido) return false;
+      if (!q) return true;
       const codigo = String(l.codigo || '').toLowerCase();
       const sector = String(l.sector_nombre || '').toLowerCase();
       const prop = String(l.propietarios || l.propietario_nombre || '').toLowerCase();
