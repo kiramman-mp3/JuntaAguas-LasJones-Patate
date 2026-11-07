@@ -86,7 +86,7 @@ test.describe('acciones rápidas', () => {
     await page.goto('/admin/dashboard');
     await page.getByRole('link', { name: /Registrar usuario/ }).click();
     await expect(page).toHaveURL(/\/admin\/usuarios\/padron/);
-    await expect(page.getByLabel('Cédula', { exact: true })).toBeVisible();
+    await expect(page.getByLabel(/^\s*Cédula\s*\*?\s*$/)).toBeVisible();
   });
 
   test('Asignar turno de agua lleva a los turnos', async ({ page }) => {

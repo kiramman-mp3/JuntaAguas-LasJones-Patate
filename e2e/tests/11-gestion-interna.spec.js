@@ -34,12 +34,12 @@ test.describe('inventario', () => {
     await page.locator('#bien-nombre').fill(BIEN);
     await page.locator('#bien-cantidad').fill('0');
     await guardar();
-    await expect(aviso(page, 'La cantidad debe ser al menos 1.')).toBeVisible();
+    await expect(page.getByText('El valor mínimo es 1.')).toBeVisible();
 
     await page.locator('#bien-cantidad').fill('3');
     await page.locator('#bien-valor').fill('-5');
     await guardar();
-    await expect(aviso(page, 'El valor unitario no puede ser negativo.')).toBeVisible();
+    await expect(page.getByText('El valor mínimo es 0.')).toBeVisible();
   });
 
   test('un bien válido queda en la lista con su valor total', async ({ page }) => {
@@ -70,7 +70,8 @@ test.describe('plan anual', () => {
     await page.getByRole('button', { name: 'Nuevo plan' }).click();
     await page.locator('#plan-anio').fill('1');
     await page.getByRole('button', { name: 'Crear plan' }).click();
-    await expect(aviso(page, 'Indique un año válido.')).toBeVisible();
+    await expect(aviso(page, 'Faltan datos')).toBeVisible();
+    await expect(page.getByText('El valor mínimo es 2000.')).toBeVisible();
 
     await page.locator('#plan-anio').fill(ANIO_PLAN);
     await page.locator('#plan-descripcion').fill('Plan de prueba de extremo a extremo');

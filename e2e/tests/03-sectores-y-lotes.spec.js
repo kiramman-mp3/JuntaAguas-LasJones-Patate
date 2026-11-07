@@ -33,8 +33,8 @@ test('crear un sector lo deja disponible para los lotes', async ({ page }) => {
   guardarEstado({ sector });
 
   await page.reload();
-  const opciones = await page.getByLabel('Sector', { exact: true }).locator('option').allInnerTexts();
-  expect(opciones.map((o) => o.trim())).toContain(sector);
+  // Los sectores llegan del servidor tras recargar: se espera a que aparezca el nuevo.
+  await expect(page.getByLabel('Sector', { exact: true }).locator('option', { hasText: sector })).toHaveCount(1);
 });
 
 test('crear un lote valida el código, sugiere uno y registra la ubicación en el mapa', async ({ page }) => {
@@ -43,16 +43,17 @@ test('crear un lote valida el código, sugiere uno y registra la ubicación en e
   await page.getByRole('button', { name: 'Nuevo lote' }).click();
   const guardar = page.getByRole('button', { name: 'Guardar lote' });
 
-  // Sin sector ni código el formulario no se puede guardar.
-  await expect(guardar).toBeDisabled();
-  await page.getByLabel('Sector', { exact: true }).selectOption({ label: sector });
+  // Sin sector ni código el formulario no se guarda: avisa qué falta y marca los campos.
+  await guardar.click();
+  await expect(aviso(page, 'Faltan datos')).toBeVisible();
+  await expect(page.getByText('Seleccione una opción de la lista.')).toBeVisible();
+  await page.locator('#lote-sector').selectOption({ label: sector });
 
   // Un código con formato incorrecto se señala.
-  const codigo = page.getByLabel('Código interno', { exact: true });
+  const codigo = page.getByLabel(/^\s*Código interno\s*\*?\s*$/);
   await codigo.fill('malo');
   await codigo.blur();
-  await expect(page.getByText('Ingrese un código como LJA-001')).toBeVisible();
-  await expect(guardar).toBeDisabled();
+  await expect(page.getByText('Escriba un código como LJA-001')).toBeVisible();
 
   // "Sugerir" propone el siguiente código libre del sector.
   await page.getByRole('button', { name: 'Sugerir' }).click();
@@ -97,7 +98,7 @@ test('el catastro filtra por código y por sector, y repite la búsqueda sin res
   await expect(filasCatastro(page)).toHaveCount(1);
   await expect(filasCatastro(page).first()).toContainText(codigoLote);
 
-  await page.getByLabel('Sector', { exact: true }).selectOption({ index: 0 });
+  await page.getByLabel(/^\s*Sector\s*\*?\s*$/).selectOption({ index: 0 });
   await page.getByLabel('Buscar lote').fill('ZZZ-no-existe');
   await expect(page.getByText('Sin coincidencias')).toBeVisible();
   await page.getByRole('button', { name: 'Limpiar filtros' }).click();

@@ -163,23 +163,19 @@ test.describe('administración (directiva)', () => {
     await page.getByRole('button', { name: 'Nueva noticia' }).click();
     const publicar = () => page.getByRole('button', { name: 'Publicar noticia' }).click();
 
+    // Con todo vacío avisa y marca cada dato obligatorio bajo su campo.
     await publicar();
-    await expect(aviso(page, /título debe tener entre/i)).toBeVisible();
+    await expect(aviso(page, 'Faltan datos')).toBeVisible();
+    await expect(page.getByText('Este dato es obligatorio.')).toHaveCount(3);
 
     await page.locator('#noticia-titulo').fill(TITULO);
+    await page.locator('#noticia-corta').fill('Resumen de la noticia de prueba E2E.');
+    await page.locator('#noticia-larga').fill('Primera línea de la noticia.\nSegunda línea de la noticia de prueba.');
     await publicar();
     await expect(aviso(page, 'Indique al menos una etiqueta.')).toBeVisible();
 
     await page.locator('#noticia-etiqueta').fill('E2E');
     await page.locator('#noticia-etiqueta').press('Enter');
-    await publicar();
-    await expect(aviso(page, /descripción corta/i)).toBeVisible();
-
-    await page.locator('#noticia-corta').fill('Resumen de la noticia de prueba E2E.');
-    await publicar();
-    await expect(aviso(page, /descripción larga/i)).toBeVisible();
-
-    await page.locator('#noticia-larga').fill('Primera línea de la noticia.\nSegunda línea de la noticia de prueba.');
     await publicar();
     await expect(aviso(page, 'La imagen de la noticia es obligatoria.')).toBeVisible();
 

@@ -28,7 +28,8 @@ test('asignar un turno exige usuario y lote, y rechaza un horario que cruza la m
   await page.goto('/admin/turnos');
   await page.getByRole('button', { name: 'Asignar turno' }).click();
   const modal = page.getByRole('dialog');
-  await expect(modal.getByRole('button', { name: 'Guardar turno' })).toBeDisabled();
+  await modal.getByRole('button', { name: 'Guardar turno' }).click();
+  await expect(aviso(page, 'Debe seleccionar un usuario.')).toBeVisible();
   await modal.getByRole('button', { name: 'Cancelar' }).click();
 
   const formulario = await abrirAsignacion(page, receptor);
@@ -114,14 +115,14 @@ test('la tabla de turnos filtra por sector, día y texto', async ({ page }) => {
   const { receptor, sector } = leerEstado();
   await page.goto('/admin/turnos');
 
-  await page.getByLabel('Sector', { exact: true }).selectOption({ label: sector });
+  await page.getByLabel(/^\s*Sector\s*\*?\s*$/).selectOption({ label: sector });
   const filas = page.locator('tbody tr');
   await expect(filas).toHaveCount(2);
   await expect(filas.first()).toContainText(receptor.nombres);
 
-  await page.getByLabel('Día', { exact: true }).selectOption({ label: 'Jueves' });
+  await page.getByLabel(/^\s*Día\s*\*?\s*$/).selectOption({ label: 'Jueves' });
   await expect(filas).toHaveCount(1);
-  await page.getByLabel('Día', { exact: true }).selectOption({ label: 'Lunes' });
+  await page.getByLabel(/^\s*Día\s*\*?\s*$/).selectOption({ label: 'Lunes' });
   await expect(page.getByText(/Sin coincidencias|No hay turnos/i).first()).toBeVisible();
 });
 
