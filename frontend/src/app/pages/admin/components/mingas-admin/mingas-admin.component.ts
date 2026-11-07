@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject, input } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -50,6 +50,9 @@ export class MingasAdminComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   readonly whatsapp = inject(WhatsAppSesionService);
 
+  /** ?nuevo=minga abre el formulario desde el acceso rápido del dashboard. */
+  readonly nuevo = input<string | undefined>();
+
   mingas: Minga[] = [];
   cargando = false;
   /** Error al cargar la lista (las fallas de acciones se notifican con toasts). */
@@ -63,6 +66,7 @@ export class MingasAdminComponent implements OnInit {
   descargandoId: number | null = null;
 
   ngOnInit() {
+    if (this.nuevo() === 'minga') this.formularioAbierto = true;
     this.cargar();
   }
 

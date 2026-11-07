@@ -89,6 +89,20 @@ test.describe('acciones rápidas', () => {
     await expect(page.getByLabel(/^\s*Cédula\s*\*?\s*$/)).toBeVisible();
   });
 
+  test('Convocar asamblea abre el formulario de asamblea', async ({ page }) => {
+    await page.goto('/admin/dashboard');
+    await page.getByRole('link', { name: /Convocar asamblea/ }).click();
+    await expect(page).toHaveURL(/\/admin\/asistencias\/asambleas/);
+    await expect(page.getByRole('dialog').getByRole('heading', { name: /asamblea/i })).toBeVisible();
+  });
+
+  test('Convocar minga abre el formulario de minga', async ({ page }) => {
+    await page.goto('/admin/dashboard');
+    await page.getByRole('link', { name: /Convocar minga/ }).click();
+    await expect(page).toHaveURL(/\/admin\/asistencias\/mingas/);
+    await expect(page.locator('#minga-fecha')).toBeVisible();
+  });
+
   test('Asignar turno de agua lleva a los turnos', async ({ page }) => {
     await page.goto('/admin/dashboard');
     await page.getByRole('link', { name: /Asignar turno de agua/ }).click();
