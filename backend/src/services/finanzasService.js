@@ -112,7 +112,7 @@ async function anularPago(conexion, { pagoId, motivo, cuentaId }) {
   return { pago: pagos[0], obligaciones: detalles.length };
 }
 
-/** Crea una obligación manual (cuota extraordinaria, reposición, etc.). */
+/** Crea una obligación manual de un concepto de cobro vigente. */
 async function crearObligacionManual(conexion, datos) {
   const [personas] = await conexion.query("SELECT id FROM personas WHERE id = ? AND estado = 'ACTIVO'", [datos.persona_id]);
   if (!personas.length) throw notFound('El usuario no existe o está inactivo.');

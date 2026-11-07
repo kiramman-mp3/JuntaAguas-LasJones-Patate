@@ -103,7 +103,7 @@ async function personaIdPorCedula(request, cedula) {
 }
 
 /**
- * Crea por API una obligación manual pendiente (cuota extraordinaria, reposición…): la interfaz no tiene
+ * Crea por API una obligación manual pendiente (por ejemplo una multa): la interfaz no tiene
  * pantalla para ello, pero sí la cobra y la muestra. Devuelve su id.
  */
 async function crearObligacionManual(request, { personaId, valor, observacion, vencimiento = fechaEcuador(30) }) {

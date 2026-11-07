@@ -105,7 +105,7 @@ describe('Cobro en caja', () => {
     const getObligaciones = vi.fn(() =>
       of({
         status: 'OK',
-        data: [obligacion(1, 'CUOTA_EXTRAORDINARIA', 3.5), obligacion(2, 'MULTA_MINGA', 5, null)],
+        data: [obligacion(1, 'MULTA_ASAMBLEA', 3.5), obligacion(2, 'MULTA_MINGA', 5, null)],
       }),
     );
     const getObligacionesAnualesAgua = vi.fn(() =>
@@ -255,10 +255,10 @@ describe('Cobro en caja', () => {
         of({
           status: 'OK',
           data: [
-            obligacion(1, 'CUOTA_EXTRAORDINARIA', 3.5, 2),
+            obligacion(1, 'MULTA_ASAMBLEA', 3.5, 2),
             obligacion(2, 'MULTA_MINGA', 10, 2),
-            obligacion(3, 'CUOTA_EXTRAORDINARIA', 3.5, 1),
-            { ...obligacion(4, 'CUOTA_EXTRAORDINARIA', 3, 12), periodo_anio: 2025 },
+            obligacion(3, 'MULTA_ASAMBLEA', 3.5, 1),
+            { ...obligacion(4, 'MULTA_ASAMBLEA', 3, 12), periodo_anio: 2025 },
             { ...obligacion(5, 'OTRO', 2, null), periodo_anio: undefined },
           ],
         }),
@@ -279,7 +279,7 @@ describe('Cobro en caja', () => {
       ['Febrero', 13.5],
     ]);
     expect(anio2026.meses[1].obligaciones.map((o) => o.concepto_nombre)).toEqual([
-      'CUOTA_EXTRAORDINARIA',
+      'MULTA_ASAMBLEA',
       'MULTA_MINGA',
     ]);
   });
@@ -289,7 +289,7 @@ describe('Cobro en caja', () => {
       getObligaciones: () =>
         of({
           status: 'OK',
-          data: [obligacion(1, 'CUOTA_EXTRAORDINARIA', 3.5, 1), obligacion(2, 'MULTA_MINGA', 5, 2)],
+          data: [obligacion(1, 'MULTA_ASAMBLEA', 3.5, 1), obligacion(2, 'MULTA_MINGA', 5, 2)],
         }),
     });
     const c = TestBed.createComponent(CobroCajaComponent).componentInstance;
