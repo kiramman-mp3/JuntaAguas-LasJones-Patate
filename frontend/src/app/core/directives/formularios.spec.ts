@@ -144,6 +144,7 @@ describe('Revisión al enviar', () => {
     <app-modal titulo="Prueba" [sinGuardar]="marcado()" (cerrar)="cerrado = true">
       <input id="texto" name="texto" [(ngModel)]="texto" />
       <input id="buscar" type="search" [ngModel]="''" />
+      <button type="button" id="cancelar" data-cancelar>Cancelar</button>
     </app-modal>
   `,
 })
@@ -171,7 +172,12 @@ describe('Cerrar un modal con datos sin guardar', () => {
       await fixture.whenStable();
       await Promise.resolve();
     };
-    return { fixture, confirmarDescartar, cerrarConX };
+    const cerrarConCancelar = async () => {
+      ultimo<HTMLButtonElement>('#cancelar').click();
+      await fixture.whenStable();
+      await Promise.resolve();
+    };
+    return { fixture, confirmarDescartar, cerrarConX, cerrarConCancelar };
   }
 
   it('cierra sin preguntar si no se escribió nada', async () => {
@@ -202,6 +208,21 @@ describe('Cerrar un modal con datos sin guardar', () => {
     escribir(ultimo<HTMLInputElement>('#texto'), 'a medias');
     await cerrarConX();
     expect(confirmarDescartar).toHaveBeenCalledOnce();
+    expect(fixture.componentInstance.cerrado).toBe(true);
+  });
+
+  it('el botón Cancelar del pie pregunta igual que la X si se escribió algo', async () => {
+    const { fixture, confirmarDescartar, cerrarConCancelar } = abrir(false);
+    escribir(ultimo<HTMLInputElement>('#texto'), 'a medias');
+    await cerrarConCancelar();
+    expect(confirmarDescartar).toHaveBeenCalledOnce();
+    expect(fixture.componentInstance.cerrado).toBe(false);
+  });
+
+  it('el botón Cancelar cierra sin preguntar si no se escribió nada', async () => {
+    const { fixture, confirmarDescartar, cerrarConCancelar } = abrir(true);
+    await cerrarConCancelar();
+    expect(confirmarDescartar).not.toHaveBeenCalled();
     expect(fixture.componentInstance.cerrado).toBe(true);
   });
 

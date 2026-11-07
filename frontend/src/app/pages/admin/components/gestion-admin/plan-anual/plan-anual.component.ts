@@ -207,12 +207,7 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
             </div>
           </div>
           <div class="modal__footer">
-            <button
-              type="button"
-              class="btn btn--outline"
-              [disabled]="guardando()"
-              (click)="planAbierto.set(false)"
-            >
+            <button type="button" class="btn btn--outline" [disabled]="guardando()" data-cancelar>
               Cancelar
             </button>
             <button type="submit" class="btn btn--primary" [disabled]="guardando()">
@@ -330,12 +325,7 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
             }
           </div>
           <div class="modal__footer">
-            <button
-              type="button"
-              class="btn btn--outline"
-              [disabled]="guardando()"
-              (click)="planDeActividad.set(null)"
-            >
+            <button type="button" class="btn btn--outline" [disabled]="guardando()" data-cancelar>
               Cancelar
             </button>
             <button type="submit" class="btn btn--primary" [disabled]="guardando()">

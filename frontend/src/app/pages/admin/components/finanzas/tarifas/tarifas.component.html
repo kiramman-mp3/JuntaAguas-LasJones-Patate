@@ -205,7 +205,7 @@
         <button
           type="button"
           class="btn btn--outline pressable"
-          (click)="cerrarFormulario()"
+          (click)="cerrarFormulario(formulario.dirty)"
           [disabled]="guardando()"
         >
           Cancelar

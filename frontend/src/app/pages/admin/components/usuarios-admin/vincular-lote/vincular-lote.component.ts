@@ -121,12 +121,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
           }
         </div>
         <div class="modal__footer">
-          <button
-            type="button"
-            class="btn btn--outline"
-            (click)="cerrar.emit()"
-            [disabled]="guardando()"
-          >
+          <button type="button" class="btn btn--outline" data-cancelar [disabled]="guardando()">
             Cancelar
           </button>
           <button type="submit" class="btn btn--primary" [disabled]="guardando()">
