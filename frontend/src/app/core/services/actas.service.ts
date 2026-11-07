@@ -17,6 +17,8 @@ export interface EventoDocumento {
   hora_clausura?: string | null;
   lugar?: string | null;
   sector?: string | null;
+  /** Sector convocado; vacío convoca a todos los usuarios. */
+  sector_nombre?: string | null;
   subtipo_asamblea?: string | null;
   numero_acta?: string | null;
   presidente?: string | null;
@@ -360,6 +362,7 @@ export class ActasService {
   generarConvocatoriaPDF(evento: EventoDocumento): Promise<void> {
     const { texto: fechaTexto } = fechaDelEvento(evento);
     const subtipo = (evento.subtipo_asamblea || 'ORDINARIA').toUpperCase();
+    const sectorConvocado = evento.sector_nombre ? `, sector ${evento.sector_nombre}` : '';
     const multa = evento.genera_multa_ausencia
       ? `* IMPORTANTE: La inasistencia no justificada estará sujeta a la sanción/multa establecida de ${formatearDinero(Number(evento.valor_multa || 10))}.`
       : 'Asistencia obligatoria para los miembros registrados.';
@@ -373,7 +376,7 @@ export class ActasService {
       r.derecha(`Patate, ${fechaTexto}`, 10);
       r.espacio(10);
       r.parrafo(
-        'Se convoca con carácter de OBLIGATORIO a todos los usuarios pertenecientes a la Junta de Riego La Jones - Patate a participar en el siguiente evento programado:',
+        `Se convoca con carácter de OBLIGATORIO a todos los usuarios pertenecientes a la Junta de Riego La Jones - Patate${sectorConvocado} a participar en el siguiente evento programado:`,
       );
       r.tabla([
         ['Asunto / Título:', evento.titulo || 'Asamblea General'],
@@ -381,6 +384,7 @@ export class ActasService {
         ['Fecha de Realización:', fechaTexto],
         ['Hora de Inicio:', `${hora(evento.hora_inicio, '09:00')} hs`],
         ['Lugar:', evento.lugar || 'Casa Comunal Junta La Jones'],
+        ['Sector:', evento.sector_nombre || 'Todos los sectores'],
         ['Descripción:', evento.descripcion || 'Sin descripción adicional.'],
       ]);
       r.parrafo(multa, {
