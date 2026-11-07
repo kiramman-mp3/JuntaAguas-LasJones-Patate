@@ -25,10 +25,14 @@
         type="button"
         class="btn btn--outline btn--sm"
         (click)="descargarActaGeneral()"
-        [disabled]="cargando() || !puntos.length"
+        [disabled]="cargando() || !puntos.length || generandoPdf()"
         title="Generar el PDF del acta general para firmar"
       >
-        <i class="ri-file-pdf-2-line" aria-hidden="true"></i> Generar PDF
+        @if (generandoPdf()) {
+          <span class="spinner spinner--sm" aria-hidden="true"></span> Generando…
+        } @else {
+          <i class="ri-file-pdf-2-line" aria-hidden="true"></i> Generar PDF
+        }
       </button>
       <label
         class="btn btn--outline btn--sm btn-upload"
@@ -59,6 +63,15 @@
           <i class="ri-eye-line" aria-hidden="true"></i> Ver firmada
         </button>
       }
+    </div>
+
+    <div class="alert alert--info" role="note">
+      <i aria-hidden="true" class="ri-information-line"></i>
+      <span class="alert__text">
+        El PDF se generará con los usuarios presentes que estén registrados en este momento en la
+        plataforma y con la información que ya llenó en los puntos y resoluciones. Puede modificarla
+        más adelante, pero revísela antes de generar el PDF.
+      </span>
     </div>
 
     @if (mostrarNuevoTema) {

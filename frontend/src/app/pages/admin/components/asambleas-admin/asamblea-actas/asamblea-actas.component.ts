@@ -42,6 +42,7 @@ export class AsambleaActasComponent implements OnInit {
   readonly errorCarga = signal(false);
   readonly guardando = signal(false);
   readonly subiendoActa = signal(false);
+  readonly generandoPdf = signal(false);
   readonly actaFirmadaUrl = signal<string | undefined>(undefined);
 
   puntos: PuntoAsamblea[] = [];
@@ -109,8 +110,26 @@ export class AsambleaActasComponent implements OnInit {
     });
   }
 
+  /** Genera el PDF con los presentes registrados ahora mismo y con los puntos que están en pantalla. */
   descargarActaGeneral(): void {
-    this.actas.generarActaPDF(this.asamblea(), this.puntos);
+    if (this.generandoPdf()) return;
+    this.generandoPdf.set(true);
+    this.admin.getAsistencias(this.asamblea().id).subscribe({
+      next: async ({ resumen }) => {
+        const estadisticas = [
+          { estado: 'PRESENTE', total: resumen.presentes },
+          { estado: 'AUSENTE', total: resumen.ausentes },
+          { estado: 'JUSTIFICADO', total: resumen.justificados },
+          { estado: 'PENDIENTE', total: resumen.pendientes },
+        ];
+        await this.actas.generarActaPDF(this.asamblea(), this.puntos, estadisticas);
+        this.generandoPdf.set(false);
+      },
+      error: () => {
+        this.generandoPdf.set(false);
+        this.notify.error('No se pudo leer la asistencia registrada. Intente nuevamente.');
+      },
+    });
   }
 
   verDocumento(url?: string): void {
