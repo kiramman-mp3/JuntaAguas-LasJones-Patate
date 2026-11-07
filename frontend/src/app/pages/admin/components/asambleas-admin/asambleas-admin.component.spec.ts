@@ -143,6 +143,19 @@ describe('Módulo de Asambleas', () => {
       expect(component.filtradas().length).toBe(1);
     });
 
+    it('conserva el sector convocado que devuelve la API', () => {
+      adminMock.getEventos.mockReturnValue(
+        of({ data: [{ ...asambleaMock, sector_id: 7, sector_nombre: 'San Javier' }] }),
+      );
+      component.cargar();
+      expect(component.asambleas()[0]).toMatchObject({ sector_id: 7, sector_nombre: 'San Javier' });
+
+      component.sectorFiltro.set(7);
+      expect(component.filtradas().length).toBe(1);
+      component.sectorFiltro.set(6);
+      expect(component.filtradas().length).toBe(0);
+    });
+
     it('filtra y busca por sector convocado', () => {
       component.asambleas.set([
         asambleaMock,

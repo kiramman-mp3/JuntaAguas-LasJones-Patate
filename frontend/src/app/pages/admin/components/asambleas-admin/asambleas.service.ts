@@ -90,6 +90,8 @@ export class AsambleasService {
       hora_inicio: e.hora_inicio ? e.hora_inicio.substring(0, 5) : '18:00',
       hora_fin: e.hora_fin ? e.hora_fin.substring(0, 5) : '',
       lugar: e.lugar || LUGAR_POR_DEFECTO,
+      sector_id: e.sector_id ?? null,
+      sector_nombre: e.sector_nombre ?? null,
       estado: e.estado || 'BORRADOR',
       genera_multa_ausencia: e.genera_multa_ausencia !== false && e.genera_multa_ausencia !== 0,
       valor_multa: Number(e.valor_multa) || 0,
