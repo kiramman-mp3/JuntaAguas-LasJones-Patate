@@ -172,7 +172,7 @@ JuntaAguas-LasJones-Patate/
 ├── frontend/                          # Aplicación web cliente en Angular 22
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── core/                  # Autenticación, interceptores, guards y modelos
+│   │   │   ├── core/                  # Autenticación, interceptores, guards, directivas de formularios y modelos
 │   │   │   ├── pages/                 # Vistas (admin, eventos, login, mi-cuenta, noticias)
 │   │   │   └── shared/                # Componentes reutilizables, modales, toasts y pipes
 │   │   └── styles/                    # Sistema de estilos SCSS modular
@@ -347,6 +347,21 @@ La lista completa para un VPS (DNS, usuario de MySQL, SSH, HTTPS, primer ingreso
 | **Edad Mínima** | Una persona registrada debe tener al menos 18 años (fecha de nacimiento opcional, validada en el servidor y en el formulario). |
 | **Búsquedas** | Los comodines `%` y `_` de una búsqueda se tratan como texto, no como patrones. |
 
+### Convenciones de Formularios y Mensajes de Error
+Todos los formularios del panel siguen las mismas reglas para evitar errores de captura. Las ayudas viven en `frontend/src/app/core/directives/` y se importan juntas con `AYUDAS_FORMULARIO`.
+
+| Convención | Qué hace | Dónde está |
+|---|---|---|
+| Campos obligatorios | Asterisco rojo junto a la etiqueta, la leyenda `* Campos obligatorios` y la marca `(Opcional)` en los demás | `styles/_components.scss` (`.req`, `.opt`, `.form-legend`) |
+| Máscaras numéricas | Cédula, celular y teléfono aceptan solo dígitos y respetan su largo | `mascara.directive.ts` |
+| Error bajo el campo | Mensaje en español sencillo al salir del campo, con `aria-invalid` y `aria-describedby` | `campo-error.directive.ts` |
+| Revisión al enviar | Si faltan datos no se envía, se enfoca el primer campo con error y se avisa con un mensaje | `envio-validado.directive.ts` |
+| Datos sin guardar | Cerrar un modal con datos escritos pide confirmación antes de descartarlos | `shared/ui/modal.component.ts` |
+| Envío único | Los botones de guardar se bloquean mientras se guarda para evitar registros duplicados | cada componente de formulario |
+| Mensajes amistosos | Los errores técnicos del servidor o de la conexión se traducen a un texto comprensible | `core/interceptors/errores.interceptor.ts` |
+
+Los cobros en caja piden confirmar el monto, la persona y el medio de pago antes de registrarse.
+
 ### Migraciones y Base de Datos
 El proyecto cuenta con 29 migraciones versionadas y aplicadas de forma secuencial (`backend/database/migrations/`). Cada cambio estructural en tablas, índices, catálogos o restricciones foráneas se realiza a través de un archivo nuevo numerado, impidiendo inconsistencias entre entornos de desarrollo y producción.
 
@@ -370,6 +385,7 @@ La Junta de Agua opera en la zona horaria oficial de Ecuador continental (`Ameri
 - [x] Portal privado de autogestión para cada socio (`/mi-cuenta`).
 - [x] Auditoría integral de modificaciones en base de datos.
 - [x] Scroll interno y responsivo en listas extensas de asistencia.
+- [x] Formularios con campos obligatorios marcados, máscaras, errores por campo y confirmación antes de descartar datos.
 - [ ] Exportación de reportes financieros consolidados a formato Excel (.xlsx).
 - [ ] Integración de pasarela de pago digital para abonos en línea.
 - [ ] Notificaciones push para advertir inicios de turnos de riego en dispositivos móviles.
