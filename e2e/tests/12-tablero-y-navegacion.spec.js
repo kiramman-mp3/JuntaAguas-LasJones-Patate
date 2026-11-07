@@ -40,6 +40,11 @@ test('el resumen operativo concuerda con lo que ve el público', async ({ page, 
   await expect(page.locator('.metric-list div', { hasText: 'Turnos de riego activos' }).locator('dd')).toHaveText(/^\d+$/);
   await expect(page.locator('.metric-list div', { hasText: 'Cobro del pago anual de agua' }).locator('dd')).toHaveText(/^\s*(\d+%|—)\s*$/);
 
+  // Las cuentas de acceso y los usuarios en mora se muestran como números; la mora coincide con la de la tarjeta de cartera.
+  await expect(page.locator('.metric-list div', { hasText: 'Cuentas de acceso activas' }).locator('dd')).toHaveText(/^\s*\d+\s*$/);
+  const mora = (await page.locator('.metric-list div', { hasText: 'Usuarios en mora' }).locator('dd').innerText()).trim();
+  await expect(page.getByText(`${mora} usuarios en mora`)).toBeVisible();
+
   const publico = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const anonima = await publico.newPage();
   await anonima.goto('http://127.0.0.1:3210/');
