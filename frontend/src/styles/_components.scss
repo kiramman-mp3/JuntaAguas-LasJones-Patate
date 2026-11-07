@@ -307,8 +307,48 @@ textarea.input {
   border-radius: 9px;
 }
 
+/* Convención de formularios: asterisco rojo = obligatorio, "(Opcional)" = se puede dejar vacío. */
+.req {
+  margin-left: 0.15em;
+  color: var(--color-danger-strong);
+  font-weight: 700;
+}
+
+.opt {
+  margin-left: 0.3em;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.form-legend {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Texto de ayuda y de error bajo un campo (formato esperado, ejemplo, qué corregir). */
+.field__hint,
+.form-group > small {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.field__error {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--color-danger-strong);
+
+  &::before {
+    content: '\26A0\FE0E\00A0';
+  }
+}
+
 /* Validación en línea: el error se ve mientras se escribe, no solo al enviar. */
-.input.ng-invalid.ng-touched:not(form) {
+.input.ng-invalid.ng-touched:not(form),
+.form-group .form-control.ng-invalid.ng-touched {
   border-color: var(--color-danger);
 
   &:focus {
