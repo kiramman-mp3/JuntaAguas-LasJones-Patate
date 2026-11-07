@@ -254,5 +254,13 @@
   />
 }
 @if (loteDetalle(); as l) {
-  <app-lote-detalle [lote]="l" (cerrar)="loteDetalle.set(null)" />
+  <app-lote-detalle [lote]="l" (cerrar)="loteDetalle.set(null)" (editar)="editarLote($event)" />
+}
+@if (loteEnEdicion(); as e) {
+  <app-lote-form
+    [sectores]="sectores()"
+    [lote]="e"
+    (cerrar)="loteEnEdicion.set(null)"
+    (actualizado)="onLoteActualizado()"
+  />
 }

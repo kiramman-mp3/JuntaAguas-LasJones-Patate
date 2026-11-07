@@ -27,6 +27,7 @@ import { UsuarioFormComponent } from '../usuario-form/usuario-form.component';
 import { VincularLoteComponent } from '../vincular-lote/vincular-lote.component';
 import { LotesUsuarioComponent } from '../lotes-usuario/lotes-usuario.component';
 import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
+import { LoteFormComponent } from '../lote-form/lote-form.component';
 import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Padrón de usuarios: búsqueda en el servidor, paginación y acciones por usuario. */
@@ -44,6 +45,7 @@ import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
     VincularLoteComponent,
     LotesUsuarioComponent,
     LoteDetalleComponent,
+    LoteFormComponent,
   ],
   templateUrl: './padron-usuarios.component.html',
 })
@@ -75,6 +77,7 @@ export class PadronUsuariosComponent implements OnInit {
   readonly vincularA = signal<PersonaListado | null>(null);
   readonly lotesDeUsuario = signal<PersonaListado | null>(null);
   readonly loteDetalle = signal<LoteItem | null>(null);
+  readonly loteEnEdicion = signal<LoteItem | null>(null);
 
   constructor() {
     effect(() => {
@@ -199,6 +202,16 @@ export class PadronUsuariosComponent implements OnInit {
   verLoteDesdeUsuario(lote: LoteItem): void {
     this.lotesDeUsuario.set(null);
     this.loteDetalle.set(lote);
+  }
+
+  editarLote(lote: LoteItem): void {
+    this.loteDetalle.set(null);
+    this.loteEnEdicion.set(lote);
+  }
+
+  onLoteActualizado(): void {
+    this.loteEnEdicion.set(null);
+    this.cargar();
   }
 
   asignarOtroTerreno(usuario: PersonaListado): void {

@@ -38,6 +38,7 @@ export class CatastroLotesComponent implements OnInit {
   readonly error = signal(false);
   readonly formularioAbierto = signal(false);
   readonly detalle = signal<LoteItem | null>(null);
+  readonly loteEnEdicion = signal<LoteItem | null>(null);
   readonly sectorAbierto = signal(false);
   readonly pagina = signal(1);
   readonly porPagina = signal(25);
@@ -130,6 +131,16 @@ export class CatastroLotesComponent implements OnInit {
 
   onCreado(): void {
     this.formularioAbierto.set(false);
+    this.cargar();
+  }
+
+  editarDesdeFicha(lote: LoteItem): void {
+    this.detalle.set(null);
+    this.loteEnEdicion.set(lote);
+  }
+
+  onActualizado(): void {
+    this.loteEnEdicion.set(null);
     this.cargar();
   }
 }

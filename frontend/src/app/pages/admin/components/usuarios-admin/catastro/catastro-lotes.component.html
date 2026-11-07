@@ -144,6 +144,15 @@
                   <button type="button" class="btn btn--ghost btn--sm" (click)="detalle.set(lote)">
                     <i class="ri-eye-line" aria-hidden="true"></i> Ver ficha
                   </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    (click)="loteEnEdicion.set(lote)"
+                    title="Editar lote"
+                    [attr.aria-label]="'Editar el lote ' + lote.codigo"
+                  >
+                    <i class="ri-edit-line" aria-hidden="true"></i>
+                  </button>
                 </td>
               </tr>
             }
@@ -174,5 +183,13 @@
   <app-sector-form (cerrar)="sectorAbierto.set(false)" (creado)="onSectorCreado()" />
 }
 @if (detalle(); as l) {
-  <app-lote-detalle [lote]="l" (cerrar)="detalle.set(null)" />
+  <app-lote-detalle [lote]="l" (cerrar)="detalle.set(null)" (editar)="editarDesdeFicha($event)" />
+}
+@if (loteEnEdicion(); as e) {
+  <app-lote-form
+    [sectores]="sectores()"
+    [lote]="e"
+    (cerrar)="loteEnEdicion.set(null)"
+    (actualizado)="onActualizado()"
+  />
 }
