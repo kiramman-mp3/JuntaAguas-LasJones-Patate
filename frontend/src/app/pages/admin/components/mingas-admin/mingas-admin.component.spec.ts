@@ -50,6 +50,11 @@ describe('Gestión de Mingas', () => {
         }),
       ),
       createEvento: vi.fn(() => of({ eventoId: 1 })),
+      getWhatsAppEstado: vi.fn(() =>
+        of({
+          data: { estado: 'DESCONECTADO', conectado: false, mensaje: '', qr: null, grupo: null },
+        }),
+      ),
       getPersonas: vi.fn(() =>
         of({
           data: [
@@ -296,5 +301,11 @@ describe('Gestión de Mingas', () => {
     expect(texto).not.toContain('Actas');
     expect(texto).not.toContain('ORDINARIA');
     expect(texto).not.toContain('Acta Resolutiva');
+  });
+
+  it('el botón de WhatsApp indica si hay que conectarlo', () => {
+    const fixture = TestBed.createComponent(MingasAdminComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Conectar WhatsApp');
   });
 });

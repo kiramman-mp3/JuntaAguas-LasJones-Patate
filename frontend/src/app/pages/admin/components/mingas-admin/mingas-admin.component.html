@@ -7,8 +7,9 @@
       </p>
     </div>
     <div class="section-head__actions">
-      <button type="button" class="btn btn--whatsapp" (click)="whatsapp.abrir()">
-        <i class="ri-whatsapp-line" aria-hidden="true"></i> Conectar WhatsApp
+      @let wa = whatsapp.boton();
+      <button type="button" class="btn" [class]="wa.clase" (click)="whatsapp.abrir()">
+        <i [class]="wa.icono" aria-hidden="true"></i> {{ wa.texto }}
       </button>
       <button type="button" class="btn btn--primary" (click)="formularioAbierto = true">
         <i class="ri-add-line" aria-hidden="true"></i> Nueva minga

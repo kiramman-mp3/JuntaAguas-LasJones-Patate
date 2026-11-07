@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy, inject, signal } from '@angular/core';
+import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AdminService } from './admin.service';
 import { DialogService } from './dialog.service';
@@ -8,6 +8,8 @@ import { ConvocatoriaWhatsApp, EstadoWhatsApp, GrupoWhatsApp } from '../models/a
 /** Estados en los que la conexión cambia sola y conviene volver a consultarla. */
 const EN_CURSO = ['INICIANDO', 'ESPERANDO_QR'];
 const INTERVALO_SONDEO_MS = 2000;
+/** Estados en los que el servicio de WhatsApp no está en marcha (o no está configurado). */
+const SERVICIO_INACTIVO = ['NO_DISPONIBLE', 'NO_CONFIGURADO'];
 
 /** Cuerpo de error de la API ({ message, codigo }) dentro de un HttpErrorResponse. */
 const cuerpoError = (err: unknown) =>
@@ -34,6 +36,26 @@ export class WhatsAppSesionService implements OnDestroy {
   /** Evento cuya convocatoria se está publicando (incluye la confirmación), o null. */
   readonly enviandoEventoId = signal<number | null>(null);
 
+  /**
+   * Aspecto del botón de WhatsApp de las vistas: sin servicio no hay nada que conectar,
+   * con el servicio activo pero sin teléfono vinculado se invita a conectar, y vinculado se confirma.
+   */
+  readonly boton = computed<{ texto: string; icono: string; clase: string }>(() => {
+    const e = this.estado();
+    if (!e) return { texto: 'WhatsApp', icono: 'ri-whatsapp-line', clase: 'btn--outline' };
+    if (e.conectado) {
+      return { texto: 'Conectado', icono: 'ri-checkbox-circle-line', clase: 'btn--whatsapp' };
+    }
+    if (SERVICIO_INACTIVO.includes(e.estado)) {
+      return {
+        texto: 'WhatsApp no iniciado',
+        icono: 'ri-error-warning-line',
+        clase: 'btn--outline',
+      };
+    }
+    return { texto: 'Conectar WhatsApp', icono: 'ri-whatsapp-line', clase: 'btn--whatsapp' };
+  });
+
   private sondeo: ReturnType<typeof setInterval> | null = null;
 
   abrir(): void {
@@ -49,6 +71,8 @@ export class WhatsAppSesionService implements OnDestroy {
   cerrar(): void {
     this.visible.set(false);
     this.detenerSondeo();
+    // Lo que se hizo en el panel (vincular, desvincular) debe verse en el botón.
+    this.consultar(true);
   }
 
   consultar(silencioso = false): void {

@@ -67,6 +67,8 @@ export class MingasAdminComponent implements OnInit {
 
   ngOnInit() {
     if (this.nuevo() === 'minga') this.formularioAbierto = true;
+    // El botón de WhatsApp refleja la conexión desde que se abre la vista (consultar no inicia WhatsApp).
+    this.whatsapp.consultar(true);
     this.cargar();
   }
 
