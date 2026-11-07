@@ -7,159 +7,176 @@
         : 'Datos personales y acceso al sistema.'
     "
     [icono]="modoEdicion ? 'ri-user-settings-line' : 'ri-user-add-line'"
-    tamano="md"
+    tamano="lg"
     [bloqueado]="guardando()"
     (cerrar)="cerrar.emit()"
   >
     <form (ngSubmit)="guardar()" #usuarioForm="ngForm">
       <div class="modal__body form-stack">
         <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
-        <div class="grid-2">
-          <div class="form-group">
-            <label for="com-cedula">Cédula <span class="req" aria-hidden="true">*</span></label>
-            <input
-              id="com-cedula"
-              type="text"
-              class="input"
-              name="cedula"
-              [(ngModel)]="form.cedula"
-              required
-              inputmode="numeric"
-              maxlength="10"
-              appMascara="cedula"
-              placeholder="Ej. 1801234567"
-              [attr.aria-invalid]="errorCedula ? 'true' : null"
-              [attr.aria-describedby]="errorCedula ? 'com-cedula-error' : null"
-            />
-            @if (errorCedula) {
-              <span id="com-cedula-error" class="field__error" role="alert">{{ errorCedula }}</span>
-            }
-            <small class="field__hint">
-              {{
-                modoEdicion
-                  ? 'Corrija la cédula solo si hubo un error al registrarla.'
-                  : 'Escriba los 10 dígitos, sin espacios ni guiones.'
-              }}
-            </small>
-          </div>
-          <div class="form-group">
-            <label for="com-nacimiento"
-              >Fecha de nacimiento <span class="opt">(Opcional)</span></label
-            >
-            <input
-              id="com-nacimiento"
-              type="date"
-              class="input"
-              name="fecha_nacimiento"
-              [(ngModel)]="form.fecha_nacimiento"
-              [max]="fechaMaximaNacimiento"
-              [attr.aria-invalid]="errorNacimiento ? 'true' : null"
-              [attr.aria-describedby]="errorNacimiento ? 'com-nacimiento-error' : null"
-            />
-            @if (!errorNacimiento) {
-              <small class="field__hint">La persona debe ser mayor de 18 años.</small>
-            }
-            @if (errorNacimiento) {
-              <span id="com-nacimiento-error" class="field__error" role="alert">{{
-                errorNacimiento
-              }}</span>
-            }
-          </div>
-          <div class="form-group">
-            <label for="com-nombres">Nombres <span class="req" aria-hidden="true">*</span></label>
-            <input
-              id="com-nombres"
-              type="text"
-              class="input"
-              name="nombres"
-              [(ngModel)]="form.nombres"
-              required
-              placeholder="Ej. Juan Carlos"
-              autocomplete="off"
-            />
-          </div>
-          <div class="form-group">
-            <label for="com-apellidos"
-              >Apellidos
-              @if (!modoEdicion) {
-                <span class="req" aria-hidden="true">*</span>
+        <section class="form-section" aria-labelledby="com-sec-personales">
+          <h4 id="com-sec-personales" class="form-section__title">
+            <i class="ri-user-3-line" aria-hidden="true"></i> Datos personales
+          </h4>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="com-cedula">Cédula <span class="req" aria-hidden="true">*</span></label>
+              <input
+                id="com-cedula"
+                type="text"
+                class="input"
+                name="cedula"
+                [(ngModel)]="form.cedula"
+                required
+                inputmode="numeric"
+                maxlength="10"
+                appMascara="cedula"
+                placeholder="Ej. 1801234567"
+                [attr.aria-invalid]="errorCedula ? 'true' : null"
+                [attr.aria-describedby]="errorCedula ? 'com-cedula-error' : null"
+              />
+              @if (errorCedula) {
+                <span id="com-cedula-error" class="field__error" role="alert">{{
+                  errorCedula
+                }}</span>
               }
-            </label>
-            <input
-              id="com-apellidos"
-              type="text"
-              class="input"
-              name="apellidos"
-              [(ngModel)]="form.apellidos"
-              [required]="!modoEdicion"
-              placeholder="Ej. Pérez Andrade"
-              autocomplete="off"
-            />
+              <small class="field__hint">
+                {{
+                  modoEdicion
+                    ? 'Corrija la cédula solo si hubo un error al registrarla.'
+                    : 'Escriba los 10 dígitos, sin espacios ni guiones.'
+                }}
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="com-nacimiento"
+                >Fecha de nacimiento <span class="opt">(Opcional)</span></label
+              >
+              <input
+                id="com-nacimiento"
+                type="date"
+                class="input"
+                name="fecha_nacimiento"
+                [(ngModel)]="form.fecha_nacimiento"
+                [max]="fechaMaximaNacimiento"
+                [attr.aria-invalid]="errorNacimiento ? 'true' : null"
+                [attr.aria-describedby]="errorNacimiento ? 'com-nacimiento-error' : null"
+              />
+              @if (!errorNacimiento) {
+                <small class="field__hint">La persona debe ser mayor de 18 años.</small>
+              }
+              @if (errorNacimiento) {
+                <span id="com-nacimiento-error" class="field__error" role="alert">{{
+                  errorNacimiento
+                }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label for="com-nombres">Nombres <span class="req" aria-hidden="true">*</span></label>
+              <input
+                id="com-nombres"
+                type="text"
+                class="input"
+                name="nombres"
+                [(ngModel)]="form.nombres"
+                required
+                placeholder="Ej. Juan Carlos"
+                autocomplete="off"
+              />
+            </div>
+            <div class="form-group">
+              <label for="com-apellidos"
+                >Apellidos
+                @if (!modoEdicion) {
+                  <span class="req" aria-hidden="true">*</span>
+                }
+              </label>
+              <input
+                id="com-apellidos"
+                type="text"
+                class="input"
+                name="apellidos"
+                [(ngModel)]="form.apellidos"
+                [required]="!modoEdicion"
+                placeholder="Ej. Pérez Andrade"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section" aria-labelledby="com-sec-contacto">
+          <h4 id="com-sec-contacto" class="form-section__title">
+            <i class="ri-contacts-book-3-line" aria-hidden="true"></i> Contacto y ubicación
+          </h4>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="com-celular">Celular <span class="opt">(Opcional)</span></label>
+              <input
+                id="com-celular"
+                type="tel"
+                class="input"
+                name="celular"
+                [(ngModel)]="form.celular"
+                appMascara="celular"
+                pattern="09[0-9]{8}"
+                data-error-pattern="El celular debe tener 10 dígitos y empezar con 09. Ej. 0991234567"
+                placeholder="Ej. 0991234567"
+              />
+            </div>
+            <div class="form-group">
+              <label for="com-telefono"
+                >Teléfono convencional <span class="opt">(Opcional)</span></label
+              >
+              <input
+                id="com-telefono"
+                type="tel"
+                class="input"
+                name="telefono"
+                [(ngModel)]="form.telefono"
+                appMascara="telefono"
+                pattern="0[2-7][0-9]{7}"
+                data-error-pattern="El teléfono fijo debe tener 9 dígitos. Ej. 032870112"
+                placeholder="Ej. 032870112"
+              />
+            </div>
           </div>
           <div class="form-group">
-            <label for="com-celular">Celular <span class="opt">(Opcional)</span></label>
+            <label for="com-email">Correo electrónico <span class="opt">(Opcional)</span></label>
             <input
-              id="com-celular"
-              type="tel"
+              id="com-email"
+              type="email"
               class="input"
-              name="celular"
-              [(ngModel)]="form.celular"
-              appMascara="celular"
-              pattern="09[0-9]{8}"
-              data-error-pattern="El celular debe tener 10 dígitos y empezar con 09. Ej. 0991234567"
-              placeholder="Ej. 0991234567"
+              name="email"
+              [(ngModel)]="form.email"
+              email
+              placeholder="Ej. usuario@correo.com"
             />
           </div>
-          <div class="form-group">
-            <label for="com-telefono"
-              >Teléfono convencional <span class="opt">(Opcional)</span></label
-            >
-            <input
-              id="com-telefono"
-              type="tel"
-              class="input"
-              name="telefono"
-              [(ngModel)]="form.telefono"
-              appMascara="telefono"
-              pattern="0[2-7][0-9]{7}"
-              data-error-pattern="El teléfono fijo debe tener 9 dígitos. Ej. 032870112"
-              placeholder="Ej. 032870112"
-            />
+          <div class="grid-2">
+            <div class="form-group" [class.form-group--full]="!modoEdicion">
+              <label for="com-direccion">Dirección <span class="opt">(Opcional)</span></label>
+              <input
+                id="com-direccion"
+                type="text"
+                class="input"
+                name="direccion"
+                [(ngModel)]="form.direccion"
+                placeholder="Ej. Barrio La Jones, calle principal"
+                autocomplete="off"
+              />
+            </div>
+            @if (modoEdicion) {
+              <div class="form-group">
+                <label for="com-estado">Estado</label>
+                <select id="com-estado" class="input" name="estado" [(ngModel)]="form.estado">
+                  <option value="ACTIVO">Activo</option>
+                  <option value="INACTIVO">Inactivo</option>
+                </select>
+              </div>
+            }
           </div>
-        </div>
-        <div class="form-group">
-          <label for="com-email">Correo electrónico <span class="opt">(Opcional)</span></label>
-          <input
-            id="com-email"
-            type="email"
-            class="input"
-            name="email"
-            [(ngModel)]="form.email"
-            email
-            placeholder="Ej. usuario@correo.com"
-          />
-        </div>
-        <div class="form-group">
-          <label for="com-direccion">Dirección <span class="opt">(Opcional)</span></label>
-          <input
-            id="com-direccion"
-            type="text"
-            class="input"
-            name="direccion"
-            [(ngModel)]="form.direccion"
-            placeholder="Ej. Barrio La Jones, calle principal"
-            autocomplete="off"
-          />
-        </div>
-        @if (modoEdicion) {
-          <div class="form-group">
-            <label for="com-estado">Estado</label>
-            <select id="com-estado" class="input" name="estado" [(ngModel)]="form.estado">
-              <option value="ACTIVO">Activo</option>
-              <option value="INACTIVO">Inactivo</option>
-            </select>
-          </div>
-        }
+        </section>
 
         <section class="inset-panel">
           <h4 class="inset-panel__title">
