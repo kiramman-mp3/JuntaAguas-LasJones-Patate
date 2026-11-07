@@ -66,35 +66,41 @@
           <i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Tema nuevo / punto
           extraordinario
         </h4>
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="form-group">
-          <label for="tema-asunto">Tema o asunto *</label>
+          <label for="tema-asunto"
+            >Tema o asunto <span class="req" aria-hidden="true">*</span></label
+          >
           <input
             id="tema-asunto"
             type="text"
             class="input"
+            required
             [(ngModel)]="nuevoTema.punto_tratar"
-            placeholder="Ej: Adquisición de válvula para canal de riego"
+            placeholder="Ej. Adquisición de válvula para canal de riego"
           />
         </div>
         <div class="grid-2">
           <div class="form-group">
-            <label for="tema-tratado">Deliberación</label>
+            <label for="tema-tratado">Deliberación <span class="opt">(Opcional)</span></label>
             <textarea
               id="tema-tratado"
               class="input"
               rows="2"
               [(ngModel)]="nuevoTema.tratado"
-              placeholder="Resumen del debate…"
+              placeholder="Ej. Se discutió el costo y quién lo pagaría"
             ></textarea>
           </div>
           <div class="form-group">
-            <label for="tema-resolucion">Resolución aprobada</label>
+            <label for="tema-resolucion"
+              >Resolución aprobada <span class="opt">(Opcional)</span></label
+            >
             <textarea
               id="tema-resolucion"
               class="input"
               rows="2"
               [(ngModel)]="nuevoTema.resolucion"
-              placeholder="Acuerdos o resolución votada…"
+              placeholder="Ej. Se aprobó comprar la válvula por mayoría"
             ></textarea>
           </div>
         </div>

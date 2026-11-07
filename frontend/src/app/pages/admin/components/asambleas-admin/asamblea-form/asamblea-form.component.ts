@@ -2,15 +2,16 @@ import { Component, ElementRef, inject, output, signal, viewChild } from '@angul
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../../core/services/admin.service';
 import { DialogService } from '../../../../../core/services/dialog.service';
-import { hoyEnEcuador, sumarDias } from '../../../../../core/utils/fechas';
+import { formatearFecha, hoyEnEcuador, sumarDias } from '../../../../../core/utils/fechas';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { MultaConfiguradaComponent } from '../../../../../shared/multa-configurada/multa-configurada.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Formulario de convocatoria de una nueva asamblea con su orden del día inicial. */
 @Component({
   selector: 'app-asamblea-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent, MultaConfiguradaComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent, MultaConfiguradaComponent],
   templateUrl: './asamblea-form.component.html',
 })
 export class AsambleaFormComponent {
@@ -59,6 +60,7 @@ export class AsambleaFormComponent {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const f = this.formulario;
     if (!f.titulo.trim() || !f.fecha || !f.hora_inicio) {
       this.dialog.aviso({
@@ -72,7 +74,7 @@ export class AsambleaFormComponent {
       this.dialog.aviso({
         tipo: 'WARNING',
         titulo: 'Fecha no válida',
-        mensaje: `La fecha de la asamblea (${f.fecha}) no puede ser anterior a hoy (${this.fechaMinima}).`,
+        mensaje: `La fecha de la asamblea (${formatearFecha(f.fecha)}) no puede ser anterior a hoy (${formatearFecha(this.fechaMinima)}). Elija una fecha de hoy en adelante.`,
       });
       return;
     }

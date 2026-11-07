@@ -8,107 +8,121 @@
   (cerrar)="cerrar.emit()"
 >
   <form #mingaForm="ngForm" (ngSubmit)="guardar()">
-    <fieldset class="modal__body form-stack" [disabled]="guardando">
-      <div class="form-group">
-        <label for="minga-titulo">Actividad / título *</label>
-        <input
-          id="minga-titulo"
-          class="input"
-          name="titulo"
-          [(ngModel)]="formulario.titulo"
-          required
-          maxlength="200"
-          placeholder="Limpieza del canal principal"
-        />
-      </div>
-      <div class="form-group">
-        <label for="minga-descripcion">Trabajo a realizar *</label>
-        <textarea
-          id="minga-descripcion"
-          class="input"
-          name="descripcion"
-          [(ngModel)]="formulario.descripcion"
-          required
-          rows="3"
-          placeholder="Detalle las actividades y las herramientas necesarias"
-        ></textarea>
-      </div>
-      <div class="grid-2">
+    <fieldset class="modal__fieldset" [disabled]="guardando">
+      <div class="modal__body form-stack">
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="form-group">
-          <label for="minga-fecha">Fecha *</label>
-          <input
-            id="minga-fecha"
-            class="input"
-            type="date"
-            name="fecha"
-            [(ngModel)]="formulario.fecha"
-            [min]="fechaMinima"
-            required
-          />
-        </div>
-        <div class="form-group">
-          <label for="minga-hora">Hora de inicio *</label>
-          <input
-            id="minga-hora"
-            class="input"
-            type="time"
-            name="hora"
-            [(ngModel)]="formulario.hora_inicio"
-            required
-          />
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label for="minga-lugar">Lugar de encuentro *</label>
-          <input
-            id="minga-lugar"
-            class="input"
-            name="lugar"
-            [(ngModel)]="formulario.lugar"
-            required
-            maxlength="255"
-            placeholder="Punto de encuentro de los usuarios"
-          />
-        </div>
-        <div class="form-group">
-          <label for="minga-sector">Sector convocado</label>
-          <select
-            id="minga-sector"
-            class="input"
-            name="sector_id"
-            [(ngModel)]="formulario.sector_id"
+          <label for="minga-titulo"
+            >Actividad / título <span class="req" aria-hidden="true">*</span></label
           >
-            <option [ngValue]="null">Todos (todos los sectores)</option>
-            @for (s of sectores; track s.id) {
-              <option [ngValue]="s.id">{{ s.nombre }}</option>
-            }
-          </select>
-        </div>
-      </div>
-      <section class="inset-panel">
-        <label class="switch-row">
           <input
-            id="minga-aplica-multa"
-            type="checkbox"
-            name="aplicaMulta"
-            [(ngModel)]="formulario.genera_multa_ausencia"
+            id="minga-titulo"
+            class="input"
+            name="titulo"
+            [(ngModel)]="formulario.titulo"
+            required
+            maxlength="200"
+            placeholder="Ej. Limpieza del canal principal"
           />
-          <span>Aplica multa por ausencia</span>
-        </label>
-        @if (formulario.genera_multa_ausencia) {
-          <app-multa-configurada tipo="MINGA" />
+        </div>
+        <div class="form-group">
+          <label for="minga-descripcion"
+            >Trabajo a realizar <span class="req" aria-hidden="true">*</span></label
+          >
+          <textarea
+            id="minga-descripcion"
+            class="input"
+            name="descripcion"
+            [(ngModel)]="formulario.descripcion"
+            required
+            rows="3"
+            placeholder="Ej. Retirar maleza y sedimentos; llevar pala, machete y botas"
+          ></textarea>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="minga-fecha">Fecha <span class="req" aria-hidden="true">*</span></label>
+            <input
+              id="minga-fecha"
+              class="input"
+              type="date"
+              name="fecha"
+              [(ngModel)]="formulario.fecha"
+              [min]="fechaMinima"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="minga-hora"
+              >Hora de inicio <span class="req" aria-hidden="true">*</span></label
+            >
+            <input
+              id="minga-hora"
+              class="input"
+              type="time"
+              name="hora"
+              [(ngModel)]="formulario.hora_inicio"
+              required
+            />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="minga-lugar"
+              >Lugar de encuentro <span class="req" aria-hidden="true">*</span></label
+            >
+            <input
+              id="minga-lugar"
+              class="input"
+              name="lugar"
+              [(ngModel)]="formulario.lugar"
+              required
+              maxlength="255"
+              placeholder="Ej. Casa comunal La Jones"
+            />
+          </div>
+          <div class="form-group">
+            <label for="minga-sector">Sector convocado <span class="opt">(Opcional)</span></label>
+            <select
+              id="minga-sector"
+              class="input"
+              name="sector_id"
+              [(ngModel)]="formulario.sector_id"
+            >
+              <option [ngValue]="null">Todos (todos los sectores)</option>
+              @for (s of sectores; track s.id) {
+                <option [ngValue]="s.id">{{ s.nombre }}</option>
+              }
+            </select>
+            <small class="field__hint"
+              >Si no elige un sector, se convoca a todos los usuarios.</small
+            >
+          </div>
+        </div>
+        <section class="inset-panel">
+          <label class="switch-row">
+            <input
+              id="minga-aplica-multa"
+              type="checkbox"
+              name="aplicaMulta"
+              [(ngModel)]="formulario.genera_multa_ausencia"
+            />
+            <span>Aplica multa por ausencia</span>
+          </label>
+          @if (formulario.genera_multa_ausencia) {
+            <app-multa-configurada tipo="MINGA" />
+          }
+        </section>
+        @if (error) {
+          <div class="alert alert--danger" role="alert">{{ error }}</div>
         }
-      </section>
-      @if (error) {
-        <div class="alert alert--danger" role="alert">{{ error }}</div>
-      }
+      </div>
     </fieldset>
     <div class="modal__footer">
       <button type="button" class="btn btn--outline" (click)="cerrar.emit()" [disabled]="guardando">
         Cancelar
       </button>
-      <button type="submit" class="btn btn--primary" [disabled]="mingaForm.invalid || guardando">
+      <button type="submit" class="btn btn--primary" [disabled]="guardando">
         @if (guardando) {
           <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
         } @else {

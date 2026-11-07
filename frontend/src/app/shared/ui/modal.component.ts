@@ -1,5 +1,6 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { ModalA11yDirective } from '../../core/directives/modal-a11y.directive';
+import { DialogService } from '../../core/services/dialog.service';
 
 let siguienteId = 0;
 
@@ -16,6 +17,8 @@ let siguienteId = 0;
   template: `
     <div
       appModalA11y
+      (input)="registrarEdicion($event)"
+      (change)="registrarEdicion($event)"
       class="modal-backdrop"
       animate.enter="modal-backdrop--enter"
       animate.leave="modal-backdrop--leave"
@@ -38,7 +41,7 @@ let siguienteId = 0;
           <button
             type="button"
             class="btn-close"
-            (click)="cerrar.emit()"
+            (click)="solicitarCierre()"
             [disabled]="bloqueado()"
             aria-label="Cerrar"
           >
@@ -58,7 +61,30 @@ export class ModalComponent {
   readonly tamano = input<'sm' | 'md' | 'lg' | 'xl'>('md');
   /** Impide cerrar mientras se guarda. */
   readonly bloqueado = input(false);
+  /** Hay cambios que no se detectan por escritura (p. ej. botones de asistencia): fuerza la pregunta al cerrar. */
+  readonly sinGuardar = input(false);
   readonly cerrar = output<void>();
 
   readonly tituloId = `modal-titulo-${++siguienteId}`;
+
+  private readonly dialog = inject(DialogService);
+  private readonly escrito = signal(false);
+
+  /** Cualquier campo editado (menos los buscadores) cuenta como trabajo que se perdería al cerrar. */
+  protected registrarEdicion(evento: Event): void {
+    const campo = evento.target as HTMLElement | null;
+    if (!campo?.matches('input, textarea, select')) return;
+    if (campo.matches('[type=search], [data-sin-cambios]')) return;
+    this.escrito.set(true);
+  }
+
+  /**
+   * Cierra el modal; si hay datos escritos sin guardar, pregunta antes (la X, Escape y el clic
+   * en el fondo pasan por aquí, de modo que un descuido no borra lo ingresado).
+   */
+  protected async solicitarCierre(): Promise<void> {
+    if (this.bloqueado()) return;
+    if ((this.escrito() || this.sinGuardar()) && !(await this.dialog.confirmarDescartar())) return;
+    this.cerrar.emit();
+  }
 }

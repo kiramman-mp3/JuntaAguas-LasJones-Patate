@@ -7,12 +7,13 @@ import { SectorItem } from '../../../../../core/models/api-payloads';
 import { hoyEnEcuador } from '../../../../../core/utils/fechas';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { MultaConfiguradaComponent } from '../../../../../shared/multa-configurada/multa-configurada.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Registro de una minga comunitaria con selección de sector o convocatoria a todos. */
 @Component({
   selector: 'app-minga-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent, MultaConfiguradaComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent, MultaConfiguradaComponent],
   templateUrl: './minga-form.component.html',
 })
 export class MingaFormComponent implements OnInit {

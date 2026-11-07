@@ -151,22 +151,27 @@
   >
     <form (ngSubmit)="guardar()" novalidate>
       <div class="modal__body form-stack">
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="form-group">
-          <label for="noticia-titulo">Título *</label>
+          <label for="noticia-titulo">Título <span class="req" aria-hidden="true">*</span></label>
           <input
             id="noticia-titulo"
             name="titulo"
             class="input"
             [maxlength]="limites.titulo.max"
             [(ngModel)]="form.titulo"
+            required
+            placeholder="Ej. Mantenimiento del canal principal"
           />
-          <small class="field-hint"
+          <small class="field__hint"
             >{{ form.titulo.trim().length }} / {{ limites.titulo.max }}</small
           >
         </div>
 
         <div class="form-group">
-          <label for="noticia-etiqueta">Etiquetas *</label>
+          <label for="noticia-etiqueta"
+            >Etiquetas <span class="req" aria-hidden="true">*</span></label
+          >
           <div class="etiquetas-campo">
             @for (t of form.tags; track t) {
               <span class="badge badge--info etiqueta-chip">
@@ -192,7 +197,7 @@
               (blur)="agregarEtiqueta()"
             />
           </div>
-          <small class="field-hint"
+          <small class="field__hint"
             >Hasta {{ limites.etiquetas }} etiquetas, en minúsculas ({{
               form.tags.length
             }}
@@ -201,7 +206,9 @@
         </div>
 
         <div class="form-group">
-          <label for="noticia-corta">Descripción corta *</label>
+          <label for="noticia-corta"
+            >Descripción corta <span class="req" aria-hidden="true">*</span></label
+          >
           <textarea
             id="noticia-corta"
             name="corta"
@@ -209,15 +216,19 @@
             rows="2"
             [maxlength]="limites.corta.max"
             [(ngModel)]="form.descripcion_corta"
+            required
+            placeholder="Ej. El sábado se limpiará el canal; se suspende el riego de 8 a 12."
           ></textarea>
-          <small class="field-hint"
+          <small class="field__hint"
             >Aparece en las tarjetas. {{ form.descripcion_corta.trim().length }} /
             {{ limites.corta.max }}</small
           >
         </div>
 
         <div class="form-group">
-          <label for="noticia-larga">Descripción larga *</label>
+          <label for="noticia-larga"
+            >Descripción larga <span class="req" aria-hidden="true">*</span></label
+          >
           <textarea
             id="noticia-larga"
             name="larga"
@@ -225,8 +236,10 @@
             rows="7"
             [maxlength]="limites.larga.max"
             [(ngModel)]="form.descripcion_larga"
+            required
+            placeholder="Cuente la noticia completa: qué ocurre, cuándo, dónde y qué debe hacer el usuario."
           ></textarea>
-          <small class="field-hint"
+          <small class="field__hint"
             >Texto completo de la noticia; respeta los saltos de línea.
             {{ form.descripcion_larga.trim().length }} / {{ limites.larga.max }}</small
           >
@@ -234,8 +247,13 @@
 
         <div class="form-group">
           <label for="noticia-imagen"
-            >Imagen {{ editando ? '(opcional: deje vacío para conservar la actual)' : '*' }}</label
-          >
+            >Imagen
+            @if (editando) {
+              <span class="opt">(Opcional: deje vacío para conservar la actual)</span>
+            } @else {
+              <span class="req" aria-hidden="true">*</span>
+            }
+          </label>
           <input
             #archivo
             id="noticia-imagen"
@@ -245,11 +263,11 @@
             accept="image/jpeg,image/png"
             (change)="elegirImagen(archivo)"
           />
-          <small class="field-hint"
+          <small class="field__hint"
             >JPG o PNG de hasta 10 MB. Se recomienda formato horizontal 16:9.</small
           >
           @if (errorImagen()) {
-            <small class="field-error" role="alert">{{ errorImagen() }}</small>
+            <small class="field__error" role="alert">{{ errorImagen() }}</small>
           }
           @if (vistaPrevia() || editando) {
             <figure class="noticia-previa">

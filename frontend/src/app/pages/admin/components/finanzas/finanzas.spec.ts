@@ -3,7 +3,7 @@ import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { FinanzasService } from '../../../../core/services/finanzas.service';
-import { DialogService } from '../../../../core/services/dialog.service';
+import { DialogOpciones, DialogService } from '../../../../core/services/dialog.service';
 import { ComprobantePdfService } from '../../../../core/services/comprobante-pdf.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import {
@@ -100,6 +100,7 @@ describe('Cobro en caja', () => {
     registrarPagoAnualAgua = vi.fn(() =>
       of({ status: 'OK' as const, message: '', pagoId: 21, valorTotal: 20 }),
     ),
+    confirmaPago = true,
   ) {
     const getObligaciones = vi.fn(() =>
       of({
@@ -110,18 +111,23 @@ describe('Cobro en caja', () => {
     const getObligacionesAnualesAgua = vi.fn(() =>
       of({ status: 'OK', data: [anual(50, 2025), anual(51, 2026)] }),
     );
-    configurar({
-      buscarUsuarios: () => of({ status: 'OK', data: [usuario] }),
-      getObligaciones,
-      getObligacionesAnualesAgua,
-      registrarPago,
-      registrarPagoAnualAgua,
-    });
+    const confirmar = vi.fn((_: DialogOpciones) => Promise.resolve(confirmaPago));
+    configurar(
+      {
+        buscarUsuarios: () => of({ status: 'OK', data: [usuario] }),
+        getObligaciones,
+        getObligacionesAnualesAgua,
+        registrarPago,
+        registrarPagoAnualAgua,
+      },
+      { confirmar },
+    );
     const fixture = TestBed.createComponent(CobroCajaComponent);
     const c = fixture.componentInstance;
     c.seleccionarUsuario(usuario);
     return {
       c,
+      confirmar,
       registrarPago,
       registrarPagoAnualAgua,
       getObligaciones,
@@ -206,11 +212,11 @@ describe('Cobro en caja', () => {
     }
   });
 
-  it('el pago anual de agua usa su propio servicio y permite adjuntar el comprobante bancario a su pago', () => {
+  it('el pago anual de agua usa su propio servicio y permite adjuntar el comprobante bancario a su pago', async () => {
     const { c, registrarPago, registrarPagoAnualAgua } = crear();
     expect(c.bloqueo()).toContain('referencia');
     c.referencia.set(' 778899 ');
-    c.cobrar();
+    await c.cobrar();
     expect(registrarPagoAnualAgua).toHaveBeenCalledWith({
       persona_id: 7,
       obligacionesIds: [50, 51],
@@ -224,12 +230,12 @@ describe('Cobro en caja', () => {
     expect(c.pagoRegistradoTipo()).toBe('AGUA');
   });
 
-  it('las multas y otros rubros se cobran con el pago general y permiten adjuntar el comprobante bancario', () => {
+  it('las multas y otros rubros se cobran con el pago general y permiten adjuntar el comprobante bancario', async () => {
     const { c, registrarPago, registrarPagoAnualAgua } = crear();
     c.pestana.set('OTRAS');
     c.metodo.set('DEPOSITO');
     c.referencia.set('778899');
-    c.cobrar();
+    await c.cobrar();
     expect(registrarPago).toHaveBeenCalledWith({
       persona_id: 7,
       obligacionesIds: [2, 1],
@@ -307,14 +313,25 @@ describe('Cobro en caja', () => {
     expect(c.estaAbierto(anio.clave)).toBe(false);
   });
 
-  it('si el servidor rechaza el pago no muestra comprobante', () => {
+  it('pide confirmar el pago con el monto y no registra nada si el cajero cancela', async () => {
+    const { c, registrarPagoAnualAgua, confirmar } = crear(undefined, undefined, false);
+    c.referencia.set('778899');
+    await c.cobrar();
+    expect(confirmar).toHaveBeenCalledOnce();
+    expect(confirmar.mock.calls[0][0].mensaje).toContain('$20.00');
+    expect(confirmar.mock.calls[0][0].mensaje).toContain('Rosa Caiza');
+    expect(registrarPagoAnualAgua).not.toHaveBeenCalled();
+    expect(c.comprobante()).toBeNull();
+  });
+
+  it('si el servidor rechaza el pago no muestra comprobante', async () => {
     const rechazo = () =>
       throwError(() => ({ error: { message: 'La obligación #1 ya se encuentra PAGADA' } }));
     const { c } = crear(vi.fn(rechazo), vi.fn(rechazo));
     for (const pestana of ['AGUA', 'OTRAS'] as const) {
       c.pestana.set(pestana);
       c.referencia.set('123');
-      c.cobrar();
+      await c.cobrar();
       expect(c.comprobante()).toBeNull();
       expect(c.procesando()).toBe(false);
     }
@@ -593,8 +610,8 @@ describe('Apartados de finanzas', () => {
   it('define tres apartados del menú con sus secciones', () => {
     expect(GRUPOS_FINANZAS.map((g) => [g.etiqueta, g.secciones.map((s) => s.id)])).toEqual([
       ['Cobros y pagos', ['cobrar', 'egresos']],
-      ['Ajustes', ['tarifas', 'facturacion']],
-      ['Historial', ['pagos', 'historial']],
+      ['Tarifas y pago anual', ['tarifas', 'facturacion']],
+      ['Historial financiero', ['pagos', 'historial']],
     ]);
   });
 
@@ -615,7 +632,7 @@ describe('Apartados de finanzas', () => {
     expect(c.indicadores()?.historico.balanceAlDia).toBe(60);
   });
 
-  it('Ajustes no muestra indicadores de caja; Cobros e Historial sí', () => {
+  it('Tarifas y pago anual no muestra indicadores de caja; Cobros e Historial sí', () => {
     configurar({});
     expect(crear('ajustes').componentInstance.grupoActual().indicadores).toBe(false);
     expect(crear('cobros').componentInstance.grupoActual().indicadores).toBe(true);

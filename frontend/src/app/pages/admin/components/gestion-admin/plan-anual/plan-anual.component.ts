@@ -14,6 +14,7 @@ import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.component';
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
   PENDIENTE: 'Pendiente',
@@ -27,7 +28,14 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
 @Component({
   selector: 'app-plan-anual',
   standalone: true,
-  imports: [FormsModule, FechaLocalPipe, EmptyStateComponent, SkeletonComponent, ModalComponent],
+  imports: [
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    EmptyStateComponent,
+    SkeletonComponent,
+    ModalComponent,
+  ],
   template: `
     <section class="fin-panel" aria-labelledby="plan-titulo">
       <div class="fin-panel__head">
@@ -169,8 +177,11 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
       >
         <form (ngSubmit)="guardarPlan()">
           <div class="modal__body form-stack">
+            <p class="form-legend">
+              <span class="req" aria-hidden="true">*</span> Campos obligatorios
+            </p>
             <div class="form-group">
-              <label for="plan-anio">Año *</label>
+              <label for="plan-anio">Año <span class="req" aria-hidden="true">*</span></label>
               <input
                 id="plan-anio"
                 name="anio"
@@ -178,16 +189,19 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
                 type="number"
                 min="2000"
                 max="2100"
+                required
+                placeholder="Ej. 2027"
                 [(ngModel)]="anio"
               />
             </div>
             <div class="form-group">
-              <label for="plan-descripcion">Descripción</label>
+              <label for="plan-descripcion">Descripción <span class="opt">(Opcional)</span></label>
               <input
                 id="plan-descripcion"
                 name="descripcion"
                 class="input"
                 maxlength="255"
+                placeholder="Ej. Plan de trabajo de la directiva 2027"
                 [(ngModel)]="descripcion"
               />
             </div>
@@ -218,52 +232,68 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
       >
         <form (ngSubmit)="guardarActividad(plan)">
           <div class="modal__body form-stack">
+            <p class="form-legend">
+              <span class="req" aria-hidden="true">*</span> Campos obligatorios
+            </p>
             <div class="form-group">
-              <label for="act-nombre">Actividad *</label>
+              <label for="act-nombre"
+                >Actividad <span class="req" aria-hidden="true">*</span></label
+              >
               <input
                 id="act-nombre"
                 name="nombre"
                 class="input"
                 maxlength="200"
+                required
+                placeholder="Ej. Limpieza general del canal de riego"
                 [(ngModel)]="actividad.nombre"
               />
             </div>
             <div class="grid-2">
               <div class="form-group">
-                <label for="act-inicio">Desde *</label>
+                <label for="act-inicio">Desde <span class="req" aria-hidden="true">*</span></label>
                 <input
                   id="act-inicio"
                   name="inicio"
                   class="input"
                   type="date"
+                  required
                   [(ngModel)]="actividad.fecha_inicio"
                 />
               </div>
               <div class="form-group">
-                <label for="act-fin">Hasta *</label>
+                <label for="act-fin">Hasta <span class="req" aria-hidden="true">*</span></label>
                 <input
                   id="act-fin"
                   name="fin"
                   class="input"
                   type="date"
+                  required
                   [(ngModel)]="actividad.fecha_fin"
                 />
               </div>
             </div>
             <div class="form-group">
-              <label for="act-descripcion">Descripción</label>
+              <label for="act-descripcion">Descripción <span class="opt">(Opcional)</span></label>
               <textarea
                 id="act-descripcion"
                 name="descripcion"
                 class="input"
                 rows="2"
+                placeholder="Ej. Participan todos los sectores; llevar pala y botas"
                 [(ngModel)]="actividad.descripcion"
               ></textarea>
             </div>
             @if (editandoId()) {
               <div class="form-group">
-                <label for="act-estado">Estado *</label>
-                <select id="act-estado" name="estado" class="input" [(ngModel)]="edicion.estado">
+                <label for="act-estado">Estado <span class="req" aria-hidden="true">*</span></label>
+                <select
+                  id="act-estado"
+                  name="estado"
+                  class="input"
+                  required
+                  [(ngModel)]="edicion.estado"
+                >
                   @for (e of estados; track e.valor) {
                     <option [ngValue]="e.valor">{{ e.etiqueta }}</option>
                   }
@@ -271,19 +301,24 @@ const ETIQUETA_ESTADO: Record<EstadoActividad, string> = {
               </div>
               @if (edicion.estado === 'CUMPLIDA') {
                 <div class="form-group">
-                  <label for="act-cumplimiento">Fecha de cumplimiento *</label>
+                  <label for="act-cumplimiento"
+                    >Fecha de cumplimiento <span class="req" aria-hidden="true">*</span></label
+                  >
                   <input
                     id="act-cumplimiento"
                     name="cumplimiento"
                     class="input"
                     type="date"
                     [max]="hoy"
+                    required
                     [(ngModel)]="edicion.fecha_cumplimiento"
                   />
                 </div>
               }
               <div class="form-group">
-                <label for="act-resultado">Resultado u observación</label>
+                <label for="act-resultado"
+                  >Resultado u observación <span class="opt">(Opcional)</span></label
+                >
                 <textarea
                   id="act-resultado"
                   name="resultado"
@@ -395,6 +430,7 @@ export class PlanAnualComponent {
   }
 
   guardarPlan(): void {
+    if (this.guardando()) return;
     if (!Number.isInteger(Number(this.anio)) || this.anio < 2000 || this.anio > 2100)
       return this.notify.warning('Indique un año válido.');
     this.guardando.set(true);
@@ -406,6 +442,7 @@ export class PlanAnualComponent {
   }
 
   guardarActividad(plan: PlanAnual): void {
+    if (this.guardando()) return;
     const a = this.actividad;
     if (a.nombre.trim().length < 3)
       return this.notify.warning('Describa la actividad (mínimo 3 caracteres).');

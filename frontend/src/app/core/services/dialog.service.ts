@@ -75,6 +75,18 @@ export class DialogService {
     });
   }
 
+  /** Pregunta si se descarta lo escrito en un formulario que se está cerrando sin guardar. */
+  confirmarDescartar(): Promise<boolean> {
+    return this.confirmar({
+      tipo: 'WARNING',
+      titulo: '¿Salir sin guardar?',
+      mensaje:
+        'Escribió información que todavía no se guardó. Si sale ahora, se perderá y tendrá que ingresarla de nuevo.',
+      textoConfirmar: 'Salir sin guardar',
+      textoCancelar: 'Seguir editando',
+    });
+  }
+
   aviso(opciones: DialogOpciones): void {
     this.estado.set({
       ...this.estadoInicial(),

@@ -5,6 +5,7 @@ import { NotificationService } from '../../../../../core/services/notification.s
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { LotesMapComponent } from '../../lotes-map/lotes-map.component';
 import { SectorItem } from '../../../../../core/models/api-payloads';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 const PATRON_CODIGO = /^[A-Z]{3}-\d{3,8}$/;
 
@@ -12,7 +13,7 @@ const PATRON_CODIGO = /^[A-Z]{3}-\d{3,8}$/;
 @Component({
   selector: 'app-lote-form',
   standalone: true,
-  imports: [FormsModule, ModalComponent, LotesMapComponent],
+  imports: [FormsModule, ...AYUDAS_FORMULARIO, ModalComponent, LotesMapComponent],
   templateUrl: './lote-form.component.html',
 })
 export class LoteFormComponent implements OnDestroy {

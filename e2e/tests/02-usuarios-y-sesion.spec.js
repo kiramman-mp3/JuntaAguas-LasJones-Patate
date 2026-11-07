@@ -15,9 +15,9 @@ test.describe('administración de usuarios', () => {
     await page.goto('/admin/usuarios/padron');
     await page.getByRole('button', { name: 'Nuevo usuario' }).click();
 
-    await page.getByLabel('Cédula *').fill(cedula);
-    await page.getByLabel('Nombres *').fill(nombres);
-    await page.getByLabel('Apellidos *').fill('Usuario E2E');
+    await page.getByLabel(/^\s*Cédula\s*\*?\s*$/).fill(cedula);
+    await page.getByLabel(/^\s*Nombres\s*\*?\s*$/).fill(nombres);
+    await page.getByLabel(/^\s*Apellidos\s*\*?\s*$/).fill('Usuario E2E');
     await page.getByLabel('Celular').fill('0991234567');
     await page.getByLabel('Correo electrónico').fill('prueba.e2e@ejemplo.com');
     await page.getByLabel('Generar cuenta de acceso para este usuario').check();
@@ -47,20 +47,20 @@ test.describe('administración de usuarios', () => {
     await page.goto('/admin/usuarios/padron');
 
     await page.getByRole('button', { name: 'Nuevo usuario' }).click();
-    await page.getByLabel('Cédula *').fill('1801234560');
-    await page.getByLabel('Nombres *').fill('Inválida');
-    await page.getByLabel('Apellidos *').fill('Prueba');
+    await page.getByLabel(/^\s*Cédula\s*\*?\s*$/).fill('1801234560');
+    await page.getByLabel(/^\s*Nombres\s*\*?\s*$/).fill('Inválida');
+    await page.getByLabel(/^\s*Apellidos\s*\*?\s*$/).fill('Prueba');
     // El dígito verificador se valida en el formulario, sin llegar al servidor.
     await expect(page.locator('#com-cedula-error')).toContainText('no es una cédula ecuatoriana válida');
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.locator('.toast--warning').first()).toBeVisible();
-    await expect(page.getByLabel('Cédula *')).toBeVisible(); // el formulario sigue abierto
+    await expect(page.getByLabel(/^\s*Cédula\s*\*?\s*$/)).toBeVisible(); // el formulario sigue abierto
 
-    await page.getByLabel('Cédula *').fill(nuevo.cedula);
+    await page.getByLabel(/^\s*Cédula\s*\*?\s*$/).fill(nuevo.cedula);
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.locator('.toast--error, .toast--danger').last()).toBeVisible();
     await page.getByRole('button', { name: 'Cancelar' }).click();
-    await expect(page.getByLabel('Cédula *')).toBeHidden();
+    await expect(page.getByLabel(/^\s*Cédula\s*\*?\s*$/)).toBeHidden();
   });
 
   test('el padrón filtra por texto, sector y estado y pagina los resultados', async ({ page }) => {
@@ -119,7 +119,7 @@ test.describe('primer ingreso del usuario nuevo', () => {
     await page.getByLabel('Nueva Contraseña').fill('corta1');
     await page.getByLabel('Confirmar Contraseña').fill('corta1');
     await enviar();
-    await expect(page.getByRole('alert')).toContainText(/8 caracteres|contraseña/i);
+    await expect(page.getByText('Debe tener al menos 10 caracteres.')).toBeVisible();
 
     await page.getByLabel('Nueva Contraseña').fill(CLAVE_NUEVA);
     await page.getByLabel('Confirmar Contraseña').fill('Distinta2026x');
@@ -282,6 +282,6 @@ test.describe('restablecimiento y baja', () => {
 
 async function iniciarSesionEn(page, cedula, password) {
   await page.getByLabel('Usuario o Cédula').fill(cedula);
-  await page.getByLabel('Contraseña', { exact: true }).fill(password);
+  await page.getByLabel(/^\s*Contraseña\s*\*?\s*$/).fill(password);
   await page.getByRole('button', { name: 'Ingresar al Sistema' }).click();
 }

@@ -8,10 +8,11 @@
 >
   <form (ngSubmit)="guardar()" #loteForm="ngForm">
     <div class="modal__body form-stack">
+      <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
       <div class="lote-form">
         <div class="lote-form__fields">
           <div class="form-group">
-            <label for="lote-sector">Sector *</label>
+            <label for="lote-sector">Sector <span class="req" aria-hidden="true">*</span></label>
             <select
               id="lote-sector"
               class="input"
@@ -29,7 +30,9 @@
           </div>
 
           <div class="form-group">
-            <label for="lote-codigo">Código interno *</label>
+            <label for="lote-codigo"
+              >Código interno <span class="req" aria-hidden="true">*</span></label
+            >
             <div class="input-group">
               <input
                 id="lote-codigo"
@@ -40,11 +43,11 @@
                 (ngModelChange)="normalizarCodigo($event)"
                 required
                 pattern="[A-Z]{3}-[0-9]{3,8}"
+                data-error-pattern="Escriba un código como LJA-001: tres letras, un guion y de tres a ocho números."
                 maxlength="12"
                 [disabled]="sugiriendoCodigo || guardando"
-                #codigoLote="ngModel"
                 aria-describedby="ayudaCodigoLote"
-                placeholder="Ej: LJA-001"
+                placeholder="Ej. LJA-001"
               />
               <button
                 type="button"
@@ -61,60 +64,64 @@
                 <span>Sugerir</span>
               </button>
             </div>
-            <small id="ayudaCodigoLote" class="field-hint"
+            <small id="ayudaCodigoLote" class="field__hint"
               >Tres letras, guion y de tres a ocho dígitos. Puede editar la sugerencia.</small
             >
-            @if (codigoLote.invalid && codigoLote.touched) {
-              <small class="field-error" role="alert"
-                >Ingrese un código como LJA-001 (máximo ocho dígitos).</small
-              >
-            }
           </div>
 
           <div class="grid-2">
             <div class="form-group">
-              <label for="lote-superficie">Superficie (m²)</label>
+              <label for="lote-superficie"
+                >Superficie (m²) <span class="opt">(Opcional)</span></label
+              >
               <input
                 id="lote-superficie"
                 type="number"
                 class="input"
                 name="superficie"
                 [(ngModel)]="form.superficie_m2"
-                placeholder="Ej: 1500"
+                min="0"
+                placeholder="Ej. 1500"
               />
             </div>
             <div class="form-group">
-              <label for="lote-radio">Margen de error (m)</label>
+              <label for="lote-radio"
+                >Margen de error (m) <span class="opt">(Opcional)</span></label
+              >
               <input
                 id="lote-radio"
                 type="number"
                 class="input"
                 name="radio_error"
                 [(ngModel)]="form.radio_error_m"
-                placeholder="Ej: 5"
+                min="0"
+                placeholder="Ej. 5"
               />
             </div>
           </div>
 
           <div class="form-group">
-            <label for="lote-referencia">Referencia de ubicación</label>
+            <label for="lote-referencia"
+              >Referencia de ubicación <span class="opt">(Opcional)</span></label
+            >
             <input
               id="lote-referencia"
               type="text"
               class="input"
               name="referencia"
               [(ngModel)]="form.referencia_ubicacion"
-              placeholder="Ej: Junto a la escuela"
+              placeholder="Ej. Junto a la escuela"
             />
           </div>
           <div class="form-group">
-            <label for="lote-observacion">Observaciones</label>
+            <label for="lote-observacion">Observaciones <span class="opt">(Opcional)</span></label>
             <input
               id="lote-observacion"
               type="text"
               class="input"
               name="observacion"
               [(ngModel)]="form.observacion"
+              placeholder="Ej. Acceso por el camino de tierra"
             />
           </div>
         </div>
@@ -148,11 +155,7 @@
       >
         Cancelar
       </button>
-      <button
-        type="submit"
-        class="btn btn--primary"
-        [disabled]="loteForm.invalid || guardando || sugiriendoCodigo"
-      >
+      <button type="submit" class="btn btn--primary" [disabled]="guardando || sugiriendoCodigo">
         @if (guardando) {
           <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
         } @else {

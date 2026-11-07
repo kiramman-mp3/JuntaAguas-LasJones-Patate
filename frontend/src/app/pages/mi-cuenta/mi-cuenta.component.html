@@ -8,7 +8,7 @@
   <!-- CARGANDO (SKELETON) -->
   @if (cargando) {
     <div class="skeleton-wrapper" aria-live="polite" aria-busy="true">
-      <span class="sr-only">Cargando tu información...</span>
+      <span class="sr-only">Cargando su información...</span>
       <div class="card">
         <div class="skeleton skeleton--title"></div>
         <div class="skeleton skeleton--text"></div>
@@ -110,7 +110,9 @@
         </div>
         <div class="kpi-card__content">
           <span class="kpi-card__value">{{ totalPendiente | currency: 'USD' }}</span>
-          <span class="kpi-card__label">Total Saldo Pendiente a Cancelar</span>
+          <span class="kpi-card__label">{{
+            totalPendiente > 0 ? 'Total que debe pagar' : 'Está al día: no debe nada'
+          }}</span>
         </div>
       </div>
 
@@ -121,6 +123,10 @@
             <h4 class="card__title">
               <i class="ri-file-list-3-line" aria-hidden="true"></i> Obligaciones Pendientes
             </h4>
+            <p class="caption">
+              Lo que todavía debe pagar. Si ya pagó y aquí aún aparece, consulte en la recaudación
+              de la Junta: los pagos los registra la directiva.
+            </p>
           </div>
 
           <div class="table-container">
@@ -337,10 +343,8 @@
       @if (totalPendiente === 0) {
         <div class="card success-empty-card">
           <i class="ri-checkbox-circle-fill success-icon" aria-hidden="true"></i>
-          <h3>¡Felicitaciones! No registras valores pendientes.</h3>
-          <p>
-            Te encuentras al día con tus cuotas de agua de riego y asistencias a mingas/asambleas.
-          </p>
+          <h3>¡Felicitaciones! No tiene valores pendientes.</h3>
+          <p>Está al día con sus cuotas de agua de riego y sus asistencias a mingas y asambleas.</p>
           @if (ultimoRecibo; as r) {
             <div class="mt-4">
               <button
@@ -374,8 +378,8 @@
         <div class="card payment-info-card">
           <h4><i class="ri-bank-card-line" aria-hidden="true"></i> Puntos de Pago Autorizados</h4>
           <p class="caption">
-            Para cancelar tus valores pendientes, acércate a la recaudación de la Junta o realiza
-            una transferencia bancaria:
+            Para pagar sus valores pendientes, acérquese a la recaudación de la Junta o haga una
+            transferencia bancaria:
           </p>
           <ul class="payment-list">
             <li>

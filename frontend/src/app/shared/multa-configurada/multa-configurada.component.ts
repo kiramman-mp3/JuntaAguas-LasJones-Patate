@@ -29,7 +29,7 @@ const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = {
           >Multa configurada: <strong class="money">{{ valor()! | moneda }}</strong> por ausencia
           sin justificación.</span
         >
-        <a routerLink="/admin/ajustes/tarifas" class="multa-info__link">Cambiar en Ajustes</a>
+        <a routerLink="/admin/ajustes/tarifas" class="multa-info__link">Cambiar en Tarifas</a>
       </p>
     } @else {
       <p class="alert alert--warning" role="alert">
@@ -37,7 +37,7 @@ const CONCEPTO: Record<'ASAMBLEA' | 'MINGA', string> = {
         <span>
           No hay una tarifa de multa
           {{ tipo() === 'ASAMBLEA' ? 'de asamblea' : 'de minga' }} configurada. Regístrela en
-          <a routerLink="/admin/ajustes/tarifas">Ajustes → Tarifas</a> o desactive la multa.
+          <a routerLink="/admin/ajustes/tarifas">Tarifas</a> o desactive la multa.
         </span>
       </p>
     }

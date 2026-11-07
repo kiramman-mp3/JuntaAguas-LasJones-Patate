@@ -16,6 +16,7 @@ import { EmptyStateComponent } from '../../../../../shared/ui/empty-state.compon
 import { SkeletonComponent } from '../../../../../shared/ui/skeleton.component';
 import { ModalComponent } from '../../../../../shared/ui/modal.component';
 import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 const ESTADOS: { valor: EstadoFisico; etiqueta: string }[] = [
   { valor: 'NUEVO', etiqueta: 'Nuevo' },
@@ -43,6 +44,7 @@ const formularioVacio = (): NuevoBien => ({
   imports: [
     MonedaPipe,
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     FechaLocalPipe,
     EmptyStateComponent,
     SkeletonComponent,
@@ -162,31 +164,39 @@ const formularioVacio = (): NuevoBien => ({
       >
         <form (ngSubmit)="guardar()">
           <div class="modal__body form-stack">
+            <p class="form-legend">
+              <span class="req" aria-hidden="true">*</span> Campos obligatorios
+            </p>
             <div class="grid-2">
               <div class="form-group">
-                <label for="bien-nombre">Nombre *</label>
+                <label for="bien-nombre"
+                  >Nombre <span class="req" aria-hidden="true">*</span></label
+                >
                 <input
                   id="bien-nombre"
                   name="nombre"
                   class="input"
                   maxlength="150"
                   required
+                  placeholder="Ej. Bomba de agua de 2 pulgadas"
                   [(ngModel)]="form.nombre"
                 />
               </div>
               <div class="form-group">
-                <label for="bien-codigo">Código <span class="text-muted">(opcional)</span></label>
+                <label for="bien-codigo">Código <span class="opt">(Opcional)</span></label>
                 <input
                   id="bien-codigo"
                   name="codigo"
                   class="input"
                   maxlength="50"
-                  placeholder="INV-011"
+                  placeholder="Ej. INV-011"
                   [(ngModel)]="form.codigo"
                 />
               </div>
               <div class="form-group">
-                <label for="bien-cantidad">Cantidad *</label>
+                <label for="bien-cantidad"
+                  >Cantidad <span class="req" aria-hidden="true">*</span></label
+                >
                 <input
                   id="bien-cantidad"
                   name="cantidad"
@@ -194,11 +204,15 @@ const formularioVacio = (): NuevoBien => ({
                   type="number"
                   [min]="editandoId() ? 0 : 1"
                   step="1"
+                  required
+                  placeholder="Ej. 2"
                   [(ngModel)]="form.cantidad"
                 />
               </div>
               <div class="form-group">
-                <label for="bien-valor">Valor unitario ($) *</label>
+                <label for="bien-valor"
+                  >Valor unitario ($) <span class="req" aria-hidden="true">*</span></label
+                >
                 <input
                   id="bien-valor"
                   name="valor"
@@ -206,15 +220,20 @@ const formularioVacio = (): NuevoBien => ({
                   type="number"
                   min="0"
                   step="0.01"
+                  required
+                  placeholder="Ej. 45.00"
                   [(ngModel)]="form.valor_unitario"
                 />
               </div>
               <div class="form-group">
-                <label for="bien-estado">Estado físico *</label>
+                <label for="bien-estado"
+                  >Estado físico <span class="req" aria-hidden="true">*</span></label
+                >
                 <select
                   id="bien-estado"
                   name="estado"
                   class="input"
+                  required
                   [(ngModel)]="form.estado_fisico"
                 >
                   @for (e of estados; track e.valor) {
@@ -228,7 +247,9 @@ const formularioVacio = (): NuevoBien => ({
                 }
               </div>
               <div class="form-group">
-                <label for="bien-fecha">Fecha de adquisición</label>
+                <label for="bien-fecha"
+                  >Fecha de adquisición <span class="opt">(Opcional)</span></label
+                >
                 <input
                   id="bien-fecha"
                   name="fecha"
@@ -240,23 +261,24 @@ const formularioVacio = (): NuevoBien => ({
               </div>
             </div>
             <div class="form-group">
-              <label for="bien-ubicacion">Ubicación</label>
+              <label for="bien-ubicacion">Ubicación <span class="opt">(Opcional)</span></label>
               <input
                 id="bien-ubicacion"
                 name="ubicacion"
                 class="input"
                 maxlength="150"
-                placeholder="Bodega de la casa comunal"
+                placeholder="Ej. Bodega de la casa comunal"
                 [(ngModel)]="form.ubicacion"
               />
             </div>
             <div class="form-group">
-              <label for="bien-descripcion">Descripción</label>
+              <label for="bien-descripcion">Descripción <span class="opt">(Opcional)</span></label>
               <textarea
                 id="bien-descripcion"
                 name="descripcion"
                 class="input"
                 rows="2"
+                placeholder="Ej. Marca, modelo o detalle que ayude a identificarlo"
                 [(ngModel)]="form.descripcion"
               ></textarea>
             </div>
@@ -350,6 +372,7 @@ export class InventarioComponent {
   }
 
   guardar(): void {
+    if (this.guardando()) return;
     const f = this.form;
     const id = this.editandoId();
     if (f.nombre.trim().length < 2) return this.notify.warning('Indique el nombre del bien.');

@@ -111,16 +111,24 @@
 
 @if (formularioVisible()) {
   <div appModalA11y class="sheet-backdrop" aria-labelledby="tarifa-form-titulo">
-    <form class="sheet" (ngSubmit)="guardar()" novalidate>
+    <form class="sheet" (ngSubmit)="guardar()" novalidate #formulario="ngForm">
       <div class="sheet__header">
         <h3 id="tarifa-form-titulo">Nueva tarifa</h3>
-        <button type="button" class="btn-close" (click)="cerrarFormulario()" aria-label="Cerrar">
+        <button
+          type="button"
+          class="btn-close"
+          (click)="cerrarFormulario(formulario.dirty)"
+          aria-label="Cerrar"
+        >
           <i class="ri-close-line" aria-hidden="true"></i>
         </button>
       </div>
       <div class="sheet__body">
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="field">
-          <label for="tarifa-concepto">Concepto</label>
+          <label for="tarifa-concepto"
+            >Concepto <span class="req" aria-hidden="true">*</span></label
+          >
           <select
             id="tarifa-concepto"
             name="concepto"
@@ -138,7 +146,9 @@
         </div>
         <div class="field-row">
           <div class="field">
-            <label for="tarifa-valor">Valor</label>
+            <label for="tarifa-valor"
+              >Valor (USD) <span class="req" aria-hidden="true">*</span></label
+            >
             <input
               id="tarifa-valor"
               name="valor"
@@ -147,7 +157,7 @@
               inputmode="decimal"
               min="0"
               step="0.01"
-              placeholder="0.00"
+              placeholder="Ej. 8.00"
               [(ngModel)]="form.valor"
             />
             @if (errorDe('valor')) {
@@ -155,7 +165,9 @@
             }
           </div>
           <div class="field">
-            <label for="tarifa-desde">Rige desde</label>
+            <label for="tarifa-desde"
+              >Rige desde <span class="req" aria-hidden="true">*</span></label
+            >
             <input
               id="tarifa-desde"
               name="desde"
@@ -177,16 +189,14 @@
           }
         }
         <div class="field">
-          <label for="tarifa-observacion"
-            >Observación <span class="text-muted">(opcional)</span></label
-          >
+          <label for="tarifa-observacion">Observación <span class="opt">(Opcional)</span></label>
           <input
             id="tarifa-observacion"
             name="observacion"
             class="input"
             type="text"
             maxlength="255"
-            placeholder="Ej.: Aprobada en asamblea del 12 de septiembre"
+            placeholder="Ej. Aprobada en asamblea del 12 de septiembre"
             [(ngModel)]="form.observacion"
           />
         </div>

@@ -86,7 +86,7 @@ test.describe('acciones rápidas', () => {
     await page.goto('/admin/dashboard');
     await page.getByRole('link', { name: /Registrar usuario/ }).click();
     await expect(page).toHaveURL(/\/admin\/usuarios\/padron/);
-    await expect(page.getByLabel('Cédula *')).toBeVisible();
+    await expect(page.getByLabel(/^\s*Cédula\s*\*?\s*$/)).toBeVisible();
   });
 
   test('Asignar turno de agua lleva a los turnos', async ({ page }) => {
@@ -102,10 +102,10 @@ test.describe('menú del panel', () => {
     ['Asistencias', /\/admin\/asistencias\/asambleas/],
     ['Turnos de agua', /\/admin\/turnos/],
     ['Cobros y pagos', /\/admin\/cobros\/cobrar/],
-    ['Ajustes', /\/admin\/ajustes\/tarifas/],
-    ['Historial', /\/admin\/historial\/pagos/],
+    ['Tarifas y pago anual', /\/admin\/ajustes\/tarifas/],
+    ['Historial financiero', /\/admin\/historial\/pagos/],
     ['Gestión interna', /\/admin\/gestion\/auditoria/],
-    ['Dashboard', /\/admin\/dashboard/]
+    ['Resumen general', /\/admin\/dashboard/]
   ];
 
   test('cada apartado del menú abre su módulo y se marca como página actual', async ({ page }) => {

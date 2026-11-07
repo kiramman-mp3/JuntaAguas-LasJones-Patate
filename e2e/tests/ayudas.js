@@ -38,7 +38,7 @@ const cedulaNueva = () => cedulaValida(cedulaSiguiente++);
 async function iniciarSesion(page, { cedula, password, recordar = false }) {
   await page.goto('/login');
   await page.getByLabel('Usuario o Cédula').fill(cedula);
-  await page.getByLabel('Contraseña', { exact: true }).fill(password);
+  await page.getByLabel(/^\s*Contraseña\s*\*?\s*$/).fill(password);
   if (recordar) await page.getByLabel('Recordar mi sesión').check();
   await page.getByRole('button', { name: 'Ingresar al Sistema' }).click();
 }

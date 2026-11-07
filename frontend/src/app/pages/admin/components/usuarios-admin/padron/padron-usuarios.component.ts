@@ -27,6 +27,7 @@ import { UsuarioFormComponent } from '../usuario-form/usuario-form.component';
 import { VincularLoteComponent } from '../vincular-lote/vincular-lote.component';
 import { LotesUsuarioComponent } from '../lotes-usuario/lotes-usuario.component';
 import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /** Padrón de usuarios: búsqueda en el servidor, paginación y acciones por usuario. */
 @Component({
@@ -35,6 +36,7 @@ import { LoteDetalleComponent } from '../lote-detalle/lote-detalle.component';
   imports: [
     NgClass,
     FormsModule,
+    ...AYUDAS_FORMULARIO,
     EmptyStateComponent,
     SkeletonComponent,
     PaginadorComponent,

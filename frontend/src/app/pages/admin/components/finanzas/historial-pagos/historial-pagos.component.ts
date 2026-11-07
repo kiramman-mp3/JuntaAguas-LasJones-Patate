@@ -11,6 +11,7 @@ import { ComprobanteBancarioComponent } from '../comprobante-bancario/comprobant
 import { FechaLocalPipe } from '../../../../../shared/pipes/fecha-local.pipe';
 import { MonedaPipe } from '../../../../../shared/pipes/moneda.pipe';
 import { formatearDinero } from '../../../../../core/utils/dinero';
+import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
 
 /**
  * Historial de recibos de un rango de fechas: los pagos de multas y otros cobros (REC-…) y los
@@ -19,7 +20,14 @@ import { formatearDinero } from '../../../../../core/utils/dinero';
 @Component({
   selector: 'app-historial-pagos',
   standalone: true,
-  imports: [MonedaPipe, FormsModule, FechaLocalPipe, TitleCasePipe, ComprobanteBancarioComponent],
+  imports: [
+    MonedaPipe,
+    FormsModule,
+    ...AYUDAS_FORMULARIO,
+    FechaLocalPipe,
+    TitleCasePipe,
+    ComprobanteBancarioComponent,
+  ],
   templateUrl: './historial-pagos.component.html',
 })
 export class HistorialPagosComponent {
