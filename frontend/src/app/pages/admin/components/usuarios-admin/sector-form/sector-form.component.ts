@@ -21,8 +21,13 @@ import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
     >
       <form (ngSubmit)="guardar()" #sectorForm="ngForm">
         <div class="modal__body form-stack">
+          <p class="form-legend">
+            <span class="req" aria-hidden="true">*</span> Campos obligatorios
+          </p>
           <div class="form-group">
-            <label for="sector-nombre">Nombre del sector *</label>
+            <label for="sector-nombre"
+              >Nombre del sector <span class="req" aria-hidden="true">*</span></label
+            >
             <input
               id="sector-nombre"
               class="input"
@@ -31,19 +36,18 @@ import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
               required
               minlength="2"
               maxlength="100"
-              placeholder="Ej: La Jones Alto"
+              placeholder="Ej. La Jones Alto"
             />
           </div>
           <div class="form-group">
-            <label for="sector-descripcion"
-              >Descripción <span class="text-muted">(opcional)</span></label
-            >
+            <label for="sector-descripcion">Descripción <span class="opt">(Opcional)</span></label>
             <input
               id="sector-descripcion"
               class="input"
               name="descripcion"
               [(ngModel)]="descripcion"
               maxlength="255"
+              placeholder="Ej. Sector alto, junto al reservorio"
             />
           </div>
           @if (error()) {
@@ -59,11 +63,7 @@ import { AYUDAS_FORMULARIO } from '../../../../../core/directives/formularios';
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            class="btn btn--primary"
-            [disabled]="sectorForm.invalid || guardando()"
-          >
+          <button type="submit" class="btn btn--primary" [disabled]="guardando()">
             @if (guardando()) {
               <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
             } @else {

@@ -24,15 +24,17 @@
     <!-- FLUJO LOGIN NORMAL -->
     @if (!requiereCambioPassword) {
       <form (submit)="iniciarSesion(); $event.preventDefault()" class="login-form">
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="form-group">
           <label for="usuario"
-            ><i aria-hidden="true" class="ri-user-line"></i> Usuario o Cédula</label
+            ><i aria-hidden="true" class="ri-user-line"></i> Usuario o Cédula
+            <span class="req" aria-hidden="true">*</span></label
           >
           <input
             type="text"
             id="usuario"
             class="form-control"
-            placeholder="Ingrese su usuario"
+            placeholder="Ej. 1801234567"
             [(ngModel)]="usuario"
             name="usuario"
             autocomplete="username"
@@ -42,14 +44,15 @@
 
         <div class="form-group">
           <label for="password"
-            ><i aria-hidden="true" class="ri-lock-password-line"></i> Contraseña</label
+            ><i aria-hidden="true" class="ri-lock-password-line"></i> Contraseña
+            <span class="req" aria-hidden="true">*</span></label
           >
           <div class="password-input-wrapper">
             <input
               [type]="mostrarPassword ? 'text' : 'password'"
               id="password"
               class="form-control"
-              placeholder="••••••••"
+              placeholder="Escriba su contraseña"
               [(ngModel)]="password"
               name="password"
               autocomplete="current-password"
@@ -108,11 +111,13 @@
           Está usando una contraseña temporal. Por seguridad, elija una nueva para ingresar al
           sistema.
         </div>
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
 
         @if (!password) {
           <div class="form-group">
             <label for="passwordActual"
-              ><i aria-hidden="true" class="ri-key-2-line"></i> Contraseña temporal</label
+              ><i aria-hidden="true" class="ri-key-2-line"></i> Contraseña temporal
+              <span class="req" aria-hidden="true">*</span></label
             >
             <input
               type="password"
@@ -129,7 +134,8 @@
 
         <div class="form-group">
           <label for="nuevaPassword1"
-            ><i aria-hidden="true" class="ri-lock-password-line"></i> Nueva Contraseña</label
+            ><i aria-hidden="true" class="ri-lock-password-line"></i> Nueva Contraseña
+            <span class="req" aria-hidden="true">*</span></label
           >
           <input
             type="password"
@@ -148,7 +154,8 @@
 
         <div class="form-group">
           <label for="nuevaPassword2"
-            ><i aria-hidden="true" class="ri-lock-password-line"></i> Confirmar Contraseña</label
+            ><i aria-hidden="true" class="ri-lock-password-line"></i> Confirmar Contraseña
+            <span class="req" aria-hidden="true">*</span></label
           >
           <input
             type="password"
@@ -160,6 +167,9 @@
             autocomplete="new-password"
             required
           />
+          @if (nuevaPassword2 && nuevaPassword1 !== nuevaPassword2) {
+            <span class="field__error">Las contraseñas no coinciden.</span>
+          }
         </div>
 
         <button type="submit" class="btn btn--primary btn--lg btn-block" [disabled]="cargando">

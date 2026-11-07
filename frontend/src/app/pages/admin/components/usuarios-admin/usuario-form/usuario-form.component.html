@@ -13,9 +13,10 @@
   >
     <form (ngSubmit)="guardar()" #usuarioForm="ngForm">
       <div class="modal__body form-stack">
+        <p class="form-legend"><span class="req" aria-hidden="true">*</span> Campos obligatorios</p>
         <div class="grid-2">
           <div class="form-group">
-            <label for="com-cedula">Cédula *</label>
+            <label for="com-cedula">Cédula <span class="req" aria-hidden="true">*</span></label>
             <input
               id="com-cedula"
               type="text"
@@ -25,21 +26,26 @@
               required
               inputmode="numeric"
               maxlength="10"
-              placeholder="Ej: 1801234567"
+              appMascara="cedula"
+              placeholder="Ej. 1801234567"
               [attr.aria-invalid]="errorCedula ? 'true' : null"
               [attr.aria-describedby]="errorCedula ? 'com-cedula-error' : null"
             />
             @if (errorCedula) {
               <span id="com-cedula-error" class="field__error" role="alert">{{ errorCedula }}</span>
             }
-            @if (modoEdicion) {
-              <small class="field__hint"
-                >Corrija la cédula solo si hubo un error tipográfico al registrarla.</small
-              >
-            }
+            <small class="field__hint">
+              {{
+                modoEdicion
+                  ? 'Corrija la cédula solo si hubo un error al registrarla.'
+                  : 'Escriba los 10 dígitos, sin espacios ni guiones.'
+              }}
+            </small>
           </div>
           <div class="form-group">
-            <label for="com-nacimiento">Fecha de nacimiento</label>
+            <label for="com-nacimiento"
+              >Fecha de nacimiento <span class="opt">(Opcional)</span></label
+            >
             <input
               id="com-nacimiento"
               type="date"
@@ -50,6 +56,9 @@
               [attr.aria-invalid]="errorNacimiento ? 'true' : null"
               [attr.aria-describedby]="errorNacimiento ? 'com-nacimiento-error' : null"
             />
+            @if (!errorNacimiento) {
+              <small class="field__hint">La persona debe ser mayor de 18 años.</small>
+            }
             @if (errorNacimiento) {
               <span id="com-nacimiento-error" class="field__error" role="alert">{{
                 errorNacimiento
@@ -57,7 +66,7 @@
             }
           </div>
           <div class="form-group">
-            <label for="com-nombres">Nombres *</label>
+            <label for="com-nombres">Nombres <span class="req" aria-hidden="true">*</span></label>
             <input
               id="com-nombres"
               type="text"
@@ -65,10 +74,17 @@
               name="nombres"
               [(ngModel)]="form.nombres"
               required
+              placeholder="Ej. Juan Carlos"
+              autocomplete="off"
             />
           </div>
           <div class="form-group">
-            <label for="com-apellidos">Apellidos *</label>
+            <label for="com-apellidos"
+              >Apellidos
+              @if (!modoEdicion) {
+                <span class="req" aria-hidden="true">*</span>
+              }
+            </label>
             <input
               id="com-apellidos"
               type="text"
@@ -76,52 +92,63 @@
               name="apellidos"
               [(ngModel)]="form.apellidos"
               [required]="!modoEdicion"
+              placeholder="Ej. Pérez Andrade"
+              autocomplete="off"
             />
           </div>
           <div class="form-group">
-            <label for="com-celular">Celular</label>
+            <label for="com-celular">Celular <span class="opt">(Opcional)</span></label>
             <input
               id="com-celular"
               type="tel"
               class="input"
               name="celular"
               [(ngModel)]="form.celular"
-              inputmode="tel"
+              appMascara="celular"
+              pattern="09[0-9]{8}"
+              data-error-pattern="El celular debe tener 10 dígitos y empezar con 09. Ej. 0991234567"
+              placeholder="Ej. 0991234567"
             />
           </div>
           <div class="form-group">
-            <label for="com-telefono">Teléfono convencional</label>
+            <label for="com-telefono"
+              >Teléfono convencional <span class="opt">(Opcional)</span></label
+            >
             <input
               id="com-telefono"
               type="tel"
               class="input"
               name="telefono"
               [(ngModel)]="form.telefono"
-              inputmode="tel"
+              appMascara="telefono"
+              pattern="0[2-7][0-9]{7}"
+              data-error-pattern="El teléfono fijo debe tener 9 dígitos. Ej. 032870112"
+              placeholder="Ej. 032870112"
             />
           </div>
         </div>
         <div class="form-group">
-          <label for="com-email"
-            >Correo electrónico <span class="text-muted">(opcional)</span></label
-          >
+          <label for="com-email">Correo electrónico <span class="opt">(Opcional)</span></label>
           <input
             id="com-email"
             type="email"
             class="input"
             name="email"
             [(ngModel)]="form.email"
-            placeholder="ejemplo@correo.com"
+            email
+            placeholder="Ej. usuario@correo.com"
           />
         </div>
         <div class="form-group">
-          <label for="com-direccion">Dirección</label>
+          <label for="com-direccion">Dirección <span class="opt">(Opcional)</span></label>
           <input
             id="com-direccion"
             type="text"
             class="input"
             name="direccion"
             [(ngModel)]="form.direccion"
+            placeholder="Ej. Barrio La Jones, calle principal"
+            autocomplete="off"
           />
         </div>
         @if (modoEdicion) {
@@ -205,11 +232,7 @@
         >
           Cancelar
         </button>
-        <button
-          type="submit"
-          class="btn btn--primary"
-          [disabled]="usuarioForm.invalid || guardando()"
-        >
+        <button type="submit" class="btn btn--primary" [disabled]="guardando()">
           @if (guardando()) {
             <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
           } @else {

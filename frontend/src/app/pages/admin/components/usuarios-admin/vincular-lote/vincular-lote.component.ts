@@ -29,11 +29,16 @@ export const PORCENTAJE_TITULARIDAD = 100;
     >
       <form (ngSubmit)="guardar()" #vincularForm="ngForm">
         <div class="modal__body form-stack">
+          <p class="form-legend">
+            <span class="req" aria-hidden="true">*</span> Campos obligatorios
+          </p>
           <div class="form-group">
             <div
               style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;"
             >
-              <label for="vin-lote" style="margin-bottom: 0;">Lote *</label>
+              <label for="vin-lote" style="margin-bottom: 0;"
+                >Lote <span class="req" aria-hidden="true">*</span></label
+              >
               @if (!cargando() && lotes().length > 0) {
                 <small class="text-muted" style="font-size: 0.75rem;">
                   {{ lotesFiltrados().length }} de {{ lotes().length }} disponibles
@@ -79,7 +84,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
               }
             </select>
             @if (busqueda() && lotesFiltrados().length === 0 && !cargando()) {
-              <small class="field-error" style="margin-top: 0.25rem;">
+              <small class="field__error" style="margin-top: 0.25rem;">
                 <i class="ri-information-line" aria-hidden="true"></i> No se encontraron lotes que
                 coincidan con "{{ busqueda() }}".
               </small>
@@ -87,7 +92,9 @@ export const PORCENTAJE_TITULARIDAD = 100;
           </div>
 
           <div class="form-group">
-            <label for="vin-relacion">Relación con el lote</label>
+            <label for="vin-relacion"
+              >Relación con el lote <span class="req" aria-hidden="true">*</span></label
+            >
             <select id="vin-relacion" class="input" name="tipo_relacion" [(ngModel)]="tipoRelacion">
               <option value="PROPIETARIO">Propietario titular</option>
               <option value="REPRESENTANTE">Representante</option>
@@ -122,11 +129,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            class="btn btn--primary"
-            [disabled]="vincularForm.invalid || guardando()"
-          >
+          <button type="submit" class="btn btn--primary" [disabled]="guardando()">
             @if (guardando()) {
               <span class="spinner spinner--sm" aria-hidden="true"></span> Guardando…
             } @else if (titularActual()) {
