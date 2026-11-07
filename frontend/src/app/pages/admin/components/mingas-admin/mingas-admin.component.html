@@ -225,7 +225,7 @@
                 <div class="doc-tile__actions">
                   <button
                     type="button"
-                    class="icon-btn"
+                    class="btn btn--outline btn--sm"
                     (click)="descargarLista(m)"
                     [disabled]="descargandoId !== null"
                     title="Descargar para firmar"
@@ -236,10 +236,11 @@
                     } @else {
                       <i class="ri-download-line" aria-hidden="true"></i>
                     }
+                    Descargar
                   </button>
                   <button
                     type="button"
-                    class="icon-btn"
+                    class="btn btn--outline btn--sm"
                     (click)="archivoFirmado.click()"
                     [disabled]="subiendoId !== null"
                     [title]="
@@ -254,6 +255,7 @@
                     } @else {
                       <i class="ri-upload-2-line" aria-hidden="true"></i>
                     }
+                    {{ m.lista_asistencia_firmada_url ? 'Reemplazar' : 'Subir firmada' }}
                   </button>
                   <input
                     [id]="'minga-lista-firmada-' + m.id"
@@ -267,12 +269,12 @@
                   @if (m.lista_asistencia_firmada_url) {
                     <button
                       type="button"
-                      class="icon-btn"
+                      class="btn btn--outline btn--sm"
                       (click)="verLista(m)"
                       title="Ver firmado"
                       aria-label="Ver lista firmada"
                     >
-                      <i class="ri-eye-line" aria-hidden="true"></i>
+                      <i class="ri-eye-line" aria-hidden="true"></i> Ver
                     </button>
                   }
                 </div>

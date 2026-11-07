@@ -150,19 +150,19 @@
           <div class="doc-tile__actions">
             <button
               type="button"
-              class="icon-btn"
+              class="btn btn--outline btn--sm"
               (click)="descargarConvocatoria.emit()"
               title="Generar PDF para firmas"
               aria-label="Generar PDF de la convocatoria"
             >
-              <i class="ri-download-line" aria-hidden="true"></i>
+              <i class="ri-download-line" aria-hidden="true"></i> Generar PDF
             </button>
             <label
-              class="icon-btn"
+              class="btn btn--outline btn--sm"
               [title]="a.convocatoria_firmada_url ? 'Reemplazar firmada' : 'Subir firmada'"
             >
               <i class="ri-upload-2-line" aria-hidden="true"></i>
-              <span class="sr-only">Subir convocatoria firmada</span>
+              {{ a.convocatoria_firmada_url ? 'Reemplazar' : 'Subir firmada' }}
               <input
                 type="file"
                 class="sr-only"
@@ -175,12 +175,12 @@
             @if (a.convocatoria_firmada_url) {
               <button
                 type="button"
-                class="icon-btn"
+                class="btn btn--outline btn--sm"
                 (click)="verDocumento.emit('CONVOCATORIA')"
                 title="Ver documento firmado"
                 aria-label="Ver convocatoria firmada"
               >
-                <i class="ri-eye-line" aria-hidden="true"></i>
+                <i class="ri-eye-line" aria-hidden="true"></i> Ver
               </button>
             }
           </div>
@@ -202,19 +202,19 @@
           <div class="doc-tile__actions">
             <button
               type="button"
-              class="icon-btn"
+              class="btn btn--outline btn--sm"
               (click)="descargarPadron.emit()"
               title="Descargar padrón para firmas"
               aria-label="Descargar padrón para firmas"
             >
-              <i class="ri-file-download-line" aria-hidden="true"></i>
+              <i class="ri-file-download-line" aria-hidden="true"></i> Descargar
             </button>
             <label
-              class="icon-btn"
+              class="btn btn--outline btn--sm"
               [title]="a.lista_asistencia_firmada_url ? 'Reemplazar firmado' : 'Subir firmado'"
             >
               <i class="ri-upload-2-line" aria-hidden="true"></i>
-              <span class="sr-only">Subir padrón firmado</span>
+              {{ a.lista_asistencia_firmada_url ? 'Reemplazar' : 'Subir firmado' }}
               <input
                 type="file"
                 class="sr-only"
@@ -227,12 +227,12 @@
             @if (a.lista_asistencia_firmada_url) {
               <button
                 type="button"
-                class="icon-btn"
+                class="btn btn--outline btn--sm"
                 (click)="verDocumento.emit('ASISTENCIA')"
                 title="Ver padrón firmado"
                 aria-label="Ver padrón firmado"
               >
-                <i class="ri-eye-line" aria-hidden="true"></i>
+                <i class="ri-eye-line" aria-hidden="true"></i> Ver
               </button>
             }
           </div>
