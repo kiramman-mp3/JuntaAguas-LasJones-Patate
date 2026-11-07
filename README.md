@@ -91,7 +91,7 @@ Las organizaciones comunitarias de riego suelen gestionar su padrón de socios, 
   - Sistema de migraciones SQL y JS versionadas y ordenadas
 * **Pruebas y Calidad de Código:**
   - ESLint para análisis estático en frontend, backend y microservicio
-  - Vitest (225 pruebas unitarias en frontend)
+  - Vitest (227 pruebas unitarias en frontend)
   - Runner nativo de Node (`node --test`) con base de datos real (206 pruebas unitarias y de integración en backend)
   - Playwright para pruebas E2E automatizadas (186 pruebas, con revisión de accesibilidad WCAG AA mediante axe-core en ambos temas)
 * **Despliegue e Infraestructura:**
@@ -285,7 +285,7 @@ npm run prod
 | Backend | `npm run db:setup` | Prepara la base de datos e inicializa el primer administrador en producción |
 | Backend | `npm run db:reset-admin -- <cédula>` | Recupera a un administrador que perdió su contraseña (genera una temporal; solo con acceso al servidor) |
 | Backend | `npm run db:seed` | Siembra usuarios, turnos, lotes y cobros simulados para demostración |
-| Frontend | `npm test -- --watch=false` | Ejecuta las 225 pruebas unitarias con Vitest |
+| Frontend | `npm test -- --watch=false` | Ejecuta las 227 pruebas unitarias con Vitest |
 | Frontend | `npm run build` | Compila el bundle optimizado para despliegue en producción |
 
 ---
@@ -356,7 +356,7 @@ Todos los formularios del panel siguen las mismas reglas para evitar errores de 
 | Máscaras numéricas | Cédula, celular y teléfono aceptan solo dígitos y respetan su largo | `mascara.directive.ts` |
 | Error bajo el campo | Mensaje en español sencillo al salir del campo, con `aria-invalid` y `aria-describedby` | `campo-error.directive.ts` |
 | Revisión al enviar | Si faltan datos no se envía, se enfoca el primer campo con error y se avisa con un mensaje | `envio-validado.directive.ts` |
-| Datos sin guardar | Cerrar un modal con datos escritos pide confirmación antes de descartarlos | `shared/ui/modal.component.ts` |
+| Datos sin guardar | Cerrar un modal con datos escritos (con la X, Esc, el fondo o el botón Cancelar) pide confirmación antes de descartarlos | `shared/ui/modal.component.ts` y `core/directives/modal-a11y.directive.ts` (atributo `data-cancelar`) |
 | Envío único | Los botones de guardar se bloquean mientras se guarda para evitar registros duplicados | cada componente de formulario |
 | Mensajes amistosos | Los errores técnicos del servidor o de la conexión se traducen a un texto comprensible | `core/interceptors/errores.interceptor.ts` |
 
