@@ -58,20 +58,6 @@ export interface FiltrosTurno {
   sector?: string;
 }
 
-export interface SectorCronograma {
-  sector_id?: number;
-  sector_nombre: string;
-  sector_descripcion?: string;
-  total_turnos: number;
-  total_horas: number;
-  total_lotes?: number;
-  dias: {
-    dia_semana: number;
-    dia_nombre: string;
-    turnos: Turno[];
-  }[];
-}
-
 export function nombreDia(valor: number): string {
   return DIAS_SEMANA.find((d) => d.valor === Number(valor))?.label ?? String(valor);
 }

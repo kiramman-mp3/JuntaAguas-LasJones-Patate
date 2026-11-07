@@ -96,16 +96,12 @@ test('la ficha del turno muestra sus datos y permite editarlo', async ({ page })
   await expect(fila).toContainText('12:00');
 });
 
-test('el turno se ve en el calendario semanal y en el cronograma por sectores', async ({ page }) => {
-  const { receptor, sector } = leerEstado();
+test('el turno se ve en el calendario semanal', async ({ page }) => {
+  const { receptor } = leerEstado();
   await page.goto('/admin/turnos');
 
   await page.getByRole('tab', { name: 'Calendario semanal' }).click();
   await expect(page.getByText(receptor.nombres).first()).toBeVisible();
-
-  await page.getByRole('tab', { name: 'Cronograma por sectores' }).click();
-  await expect(page.getByText(sector).locator('visible=true').first()).toBeVisible();
-  await expect(page.getByText(receptor.nombres).locator('visible=true').first()).toBeVisible();
 
   await page.getByRole('tab', { name: 'Tabla' }).click();
   await expect(page.locator('tbody tr').first()).toBeVisible();
