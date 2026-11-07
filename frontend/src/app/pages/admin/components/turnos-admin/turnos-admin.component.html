@@ -69,17 +69,6 @@
         </div>
         <select
           class="input toolbar__select"
-          [ngModel]="sectorFiltro()"
-          (ngModelChange)="sectorFiltro.set($event)"
-          aria-label="Sector"
-        >
-          <option value="">Todos los sectores</option>
-          @for (s of sectores(); track s.id) {
-            <option [value]="s.nombre">{{ s.nombre }}</option>
-          }
-        </select>
-        <select
-          class="input toolbar__select"
           [ngModel]="diaFiltro()"
           (ngModelChange)="diaFiltro.set($event)"
           aria-label="Día"
@@ -92,6 +81,31 @@
         <span class="pill pill--primary" aria-live="polite"
           >{{ filtrados().length }} de {{ turnos().length }} turnos</span
         >
+      </div>
+      <div class="sector-chips" role="group" aria-label="Filtrar por sector">
+        <button
+          type="button"
+          class="sector-chip"
+          [class.sector-chip--active]="!sectorFiltro()"
+          [attr.aria-pressed]="!sectorFiltro()"
+          (click)="sectorFiltro.set('')"
+        >
+          Todos los sectores <span class="sector-chip__count">{{ turnos().length }}</span>
+        </button>
+        @for (s of sectores(); track s.id) {
+          <button
+            type="button"
+            class="sector-chip"
+            [class]="'sector-' + colorSector(s.nombre)"
+            [class.sector-chip--active]="sectorFiltro() === s.nombre"
+            [attr.aria-pressed]="sectorFiltro() === s.nombre"
+            (click)="sectorFiltro.set(sectorFiltro() === s.nombre ? '' : s.nombre)"
+          >
+            <span class="sector-chip__dot" aria-hidden="true"></span>
+            {{ s.nombre }}
+            <span class="sector-chip__count">{{ turnosPorSector()[s.nombre] ?? 0 }}</span>
+          </button>
+        }
       </div>
     </div>
 

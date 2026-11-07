@@ -8,7 +8,7 @@ import { EmptyStateComponent } from '../../../../shared/ui/empty-state.component
 import { SkeletonComponent } from '../../../../shared/ui/skeleton.component';
 import { PaginadorComponent } from '../../../../shared/ui/paginador.component';
 import { SectorItem } from '../../../../core/models/api-payloads';
-import { DIAS_SEMANA, Turno, filtrarTurnos } from './turno.model';
+import { DIAS_SEMANA, Turno, filtrarTurnos, indiceSector } from './turno.model';
 import { TurnosService } from './turnos.service';
 import { TurnosTablaComponent } from './turnos-tabla/turnos-tabla.component';
 import { TurnosCalendarioComponent } from './turnos-calendario/turnos-calendario.component';
@@ -72,6 +72,12 @@ export class TurnosAdminComponent implements OnInit {
       sector: this.sectorFiltro(),
     }),
   );
+  /** Turnos de cada sector (sin aplicar el resto de filtros) para el contador de cada pastilla. */
+  readonly turnosPorSector = computed(() => {
+    const conteo: Record<string, number> = {};
+    for (const t of this.turnos()) conteo[t.sector] = (conteo[t.sector] ?? 0) + 1;
+    return conteo;
+  });
   readonly hayFiltros = computed(
     () => !!this.busqueda().trim() || !!this.diaFiltro() || !!this.sectorFiltro(),
   );
@@ -122,6 +128,10 @@ export class TurnosAdminComponent implements OnInit {
         },
       });
     }
+  }
+
+  colorSector(nombre: string): number {
+    return indiceSector(nombre);
   }
 
   cambiarVista(vista: Vista): void {

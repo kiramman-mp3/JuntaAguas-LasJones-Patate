@@ -115,7 +115,7 @@ test('la tabla de turnos filtra por sector, día y texto', async ({ page }) => {
   const { receptor, sector } = leerEstado();
   await page.goto('/admin/turnos');
 
-  await page.getByLabel(/^\s*Sector\s*\*?\s*$/).selectOption({ label: sector });
+  await page.getByRole('group', { name: 'Filtrar por sector' }).getByRole('button', { name: sector }).click();
   const filas = page.locator('tbody tr');
   await expect(filas).toHaveCount(2);
   await expect(filas.first()).toContainText(receptor.nombres);

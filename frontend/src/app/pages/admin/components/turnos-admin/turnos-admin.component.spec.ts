@@ -58,6 +58,17 @@ describe('Turnos de agua', () => {
     });
   });
 
+  it('cuenta los turnos de cada sector para las pastillas del filtro', () => {
+    const component = TestBed.createComponent(TurnosAdminComponent).componentInstance;
+    component.cargar();
+    expect(component.turnosPorSector()).toEqual({ 'La Merced': 1, Centro: 1 });
+
+    component.sectorFiltro.set('Centro');
+    expect(component.filtrados().map((t) => t.id)).toEqual([2]);
+    // El contador no cambia al filtrar: dice cuántos turnos tiene cada sector.
+    expect(component.turnosPorSector()['La Merced']).toBe(1);
+  });
+
   it('normaliza los turnos de la API y filtra por texto, día y sector', () => {
     const component = TestBed.createComponent(TurnosAdminComponent).componentInstance;
     component.cargar();
