@@ -38,6 +38,8 @@ export function mensajeValidacion(
  * se aplica solo a todo `input`, `select` y `textarea` con `ngModel`.
  * Un campo puede dar su propio texto con `data-error-required` y `data-error-pattern`.
  */
+// Se aplica a los elementos nativos sin marcado extra: no lleva el prefijo `app` a propósito.
+/* eslint-disable @angular-eslint/directive-selector */
 @Directive({
   selector:
     'input[ngModel]:not([type=checkbox]):not([type=radio]):not([type=file]), select[ngModel], textarea[ngModel]',

@@ -9,6 +9,8 @@ import { NotificationService } from '../services/notification.service';
  *
  * Se engancha en la fase de captura para correr antes que `ngSubmit` y que cualquier `(submit)`.
  */
+// Se aplica a los elementos nativos sin marcado extra: no lleva el prefijo `app` a propósito.
+/* eslint-disable @angular-eslint/directive-selector */
 @Directive({
   selector: 'form[ngForm], form:not([ngNoForm]):not([formGroup])',
   standalone: true,
