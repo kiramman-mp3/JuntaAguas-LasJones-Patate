@@ -6,9 +6,10 @@ const request = require('supertest');
 const app = require('../../src/app');
 const db = require('../../src/config/db');
 const { hoy } = require('../../src/shared/dates');
-const { crearUsuario, crearPersona, auth } = require('../helpers/fixtures');
+const { crearUsuario, crearPersona, crearSector, crearLote, auth } = require('../helpers/fixtures');
 const { withTransaction } = require('../../src/shared/transaction');
 const { obtenerEvento } = require('../../src/services/eventosService');
+const { textoConvocatoria } = require('../../src/services/convocatoriasService');
 
 let admin;
 const usuarios = [];
@@ -332,6 +333,50 @@ test('permite crear mingas seleccionando un sector o con la opción Todos (null)
     genera_multa_ausencia: false
   });
   assert.equal(rechazo.status, 400);
+});
+
+test('convoca una asamblea a un solo sector: limita el padrón y lo anuncia en la convocatoria', async () => {
+  const sectorA = await crearSector('Sector Asamblea A');
+  const sectorB = await crearSector('Sector Asamblea B');
+  await crearLote({ sectorId: sectorA, personaId: usuarios[0].personaId });
+  await crearLote({ sectorId: sectorB, personaId: usuarios[1].personaId });
+
+  const creada = await request(app).post('/api/eventos').set(auth(admin)).send({
+    tipo: 'ASAMBLEA', titulo: 'Asamblea del sector A', fecha: enDias(6), hora_inicio: '18:00',
+    sector_id: sectorA, genera_multa_ausencia: false, puntos_orden_dia: ['Riego del sector']
+  });
+  assert.equal(creada.status, 201, JSON.stringify(creada.body));
+  const id = creada.body.eventoId;
+
+  const detalle = await request(app).get(`/api/eventos/${id}`).set(auth(admin));
+  assert.equal(detalle.body.evento.sector_id, sectorA);
+  assert.equal(detalle.body.evento.sector_nombre, 'Sector Asamblea A');
+
+  // Solo los usuarios con lote en el sector forman el padrón.
+  const padron = await request(app).get(`/api/eventos/${id}/asistencias`).set(auth(admin));
+  assert.deepEqual(padron.body.data.map((p) => p.persona_id), [usuarios[0].personaId]);
+
+  const listado = await request(app).get('/api/eventos?tipo=ASAMBLEA').set(auth(admin));
+  const fila = listado.body.data.find((e) => e.id === id);
+  assert.equal(fila.sector_nombre, 'Sector Asamblea A');
+  assert.equal(fila.totalUsuarios, 1);
+
+  const texto = textoConvocatoria({ ...fila, tipo: 'ASAMBLEA' });
+  assert.match(texto, /usuarios del sector \*Sector Asamblea A\*/);
+  assert.match(texto, /Sector:\* Sector Asamblea A/);
+
+  // Cambiar a "Todos" vuelve a convocar a todos los usuarios.
+  const editada = await request(app).put(`/api/eventos/${id}`).set(auth(admin)).send({ sector_id: null });
+  assert.equal(editada.status, 200, JSON.stringify(editada.body));
+  const todos = await request(app).get(`/api/eventos/${id}`).set(auth(admin));
+  assert.equal(todos.body.evento.sector_id, null);
+  assert.doesNotMatch(textoConvocatoria({ ...fila, tipo: 'ASAMBLEA', sector_nombre: null }), /Sector:/);
+
+  const invalida = await request(app).post('/api/eventos').set(auth(admin)).send({
+    tipo: 'ASAMBLEA', titulo: 'Asamblea con sector inválido', fecha: enDias(6), hora_inicio: '18:00',
+    sector_id: 999999, genera_multa_ausencia: false
+  });
+  assert.equal(invalida.status, 400);
 });
 
 test('rechaza justificar o cambiar asistencia si la multa ya fue pagada en tesorería (H-25)', async () => {
