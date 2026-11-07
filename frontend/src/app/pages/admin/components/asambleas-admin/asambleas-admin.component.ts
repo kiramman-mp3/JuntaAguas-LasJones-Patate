@@ -103,6 +103,8 @@ export class AsambleasAdminComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.nuevo() === 'asamblea') this.formularioAbierto.set(true);
+    // El botón de WhatsApp refleja la conexión desde que se abre la vista (consultar no inicia WhatsApp).
+    this.whatsapp.consultar(true);
     this.cargar();
   }
 

@@ -200,7 +200,7 @@ test('la lista de mingas se filtra por texto y por fecha', async ({ page }) => {
 
 test('WhatsApp de mingas avisa cuando el servicio no está disponible', async ({ page }) => {
   await page.goto('/admin/asistencias/mingas');
-  await page.getByRole('button', { name: 'Conectar WhatsApp' }).click();
+  await page.getByRole('button', { name: 'WhatsApp no iniciado' }).click();
   const panel = page.getByRole('dialog');
   await expect(panel).toBeVisible();
   await expect(panel).toContainText(/WhatsApp/);
