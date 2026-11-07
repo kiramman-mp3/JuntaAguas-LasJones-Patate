@@ -27,7 +27,7 @@
         (click)="descargarActaGeneral()"
         [disabled]="cargando() || !puntos.length"
       >
-        <i class="ri-file-download-line" aria-hidden="true"></i> Acta general (PDF)
+        <i class="ri-file-pdf-2-line" aria-hidden="true"></i> Acta general (PDF)
       </button>
       <label
         class="btn btn--outline btn--sm btn-upload"
@@ -38,7 +38,7 @@
           <span class="spinner spinner--sm" aria-hidden="true"></span> Subiendo…
         } @else {
           <i class="ri-upload-2-line" aria-hidden="true"></i>
-          {{ actaFirmadaUrl() ? 'Reemplazar firmada' : 'Subir firmada' }}
+          Subir firmado
         }
         <input
           type="file"
