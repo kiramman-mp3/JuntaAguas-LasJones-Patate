@@ -53,6 +53,7 @@ export const PORCENTAJE_TITULARIDAD = 100;
                 class="input"
                 placeholder="Buscar por código, sector o usuario…"
                 [ngModel]="busqueda()"
+                [ngModelOptions]="{ standalone: true }"
                 (ngModelChange)="busqueda.set($event)"
                 [disabled]="cargando()"
                 aria-label="Buscar lote"
