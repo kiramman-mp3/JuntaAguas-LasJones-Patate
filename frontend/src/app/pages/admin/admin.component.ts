@@ -16,7 +16,7 @@ interface ItemMenu {
  * Contenedor del panel administrativo: menú lateral (barra de pestañas inferior en móvil).
  * Cada sección es una ruta hija (/admin/dashboard, /admin/cobros/cobrar…), así que
  * el menú se navega con teclado, el botón Atrás funciona y cada vista tiene su URL.
- * Finanzas son tres apartados propios: Cobros y pagos, Ajustes e Historial.
+ * Finanzas son tres apartados propios: Cobros y pagos, Tarifas y pago anual e Historial financiero.
  */
 @Component({
   selector: 'app-admin',
@@ -33,7 +33,7 @@ export class AdminComponent {
   readonly menu: ItemMenu[] = [
     {
       ruta: '/admin/dashboard',
-      etiqueta: 'Dashboard',
+      etiqueta: 'Resumen general',
       corta: 'Inicio',
       icono: 'ri-dashboard-line',
     },
@@ -59,10 +59,15 @@ export class AdminComponent {
       corta: 'Cobros',
       icono: 'ri-hand-coin-line',
     },
-    { ruta: '/admin/ajustes', etiqueta: 'Ajustes', corta: 'Ajustes', icono: 'ri-settings-3-line' },
+    {
+      ruta: '/admin/ajustes',
+      etiqueta: 'Tarifas y pago anual',
+      corta: 'Tarifas',
+      icono: 'ri-price-tag-3-line',
+    },
     {
       ruta: '/admin/historial',
-      etiqueta: 'Historial',
+      etiqueta: 'Historial financiero',
       corta: 'Historial',
       icono: 'ri-history-line',
     },

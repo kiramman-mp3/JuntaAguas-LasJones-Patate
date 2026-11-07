@@ -102,10 +102,10 @@ test.describe('menú del panel', () => {
     ['Asistencias', /\/admin\/asistencias\/asambleas/],
     ['Turnos de agua', /\/admin\/turnos/],
     ['Cobros y pagos', /\/admin\/cobros\/cobrar/],
-    ['Ajustes', /\/admin\/ajustes\/tarifas/],
-    ['Historial', /\/admin\/historial\/pagos/],
+    ['Tarifas y pago anual', /\/admin\/ajustes\/tarifas/],
+    ['Historial financiero', /\/admin\/historial\/pagos/],
     ['Gestión interna', /\/admin\/gestion\/auditoria/],
-    ['Dashboard', /\/admin\/dashboard/]
+    ['Resumen general', /\/admin\/dashboard/]
   ];
 
   test('cada apartado del menú abre su módulo y se marca como página actual', async ({ page }) => {
