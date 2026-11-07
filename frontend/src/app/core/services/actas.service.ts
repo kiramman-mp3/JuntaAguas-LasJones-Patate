@@ -285,6 +285,8 @@ export class ActasService {
     const lugar = evento.lugar || 'sede de la organización';
     const sector = evento.sector || 'Patate Centro';
     const textoDe = (p: PuntoActa | undefined) => (p?.punto_tratar || '').toLowerCase();
+    /** Quita la numeración escrita en el título ("3. Informe…"): el acta numera sus puntos por su cuenta. */
+    const sinNumero = (p: PuntoActa) => (p.punto_tratar || '').replace(/^\s*\d+\s*[.)-]\s*/, '');
 
     return this.generar(`Acta_Asamblea_${evento.fecha}.pdf`, 40, (r) => {
       r.centrado('JUNTA DE RIEGO LA JONES - PATATE', 14, { separacion: 2 });
@@ -327,7 +329,7 @@ export class ActasService {
       r.parrafo(
         'El Secretario procede a dar lectura al acta de la Asamblea General anterior. Una vez concluida la lectura, el señor Presidente pone el acta a consideración de los usuarios presentes.',
       );
-      const punto2 = puntos.find((p) => p.orden === 2 || textoDe(p).includes('acta anterior'));
+      const punto2 = puntos.find((p) => p.orden === 2 || /acta.*anterior/.test(textoDe(p)));
       r.parrafo('Resolución:', { negrita: true });
       r.parrafo(
         punto2?.resolucion ||
@@ -337,13 +339,12 @@ export class ActasService {
 
       const dinamicos = puntos.filter(
         (p) =>
-          !['cuórum', 'cuorum', 'acta anterior', 'varios'].some((clave) =>
-            textoDe(p).includes(clave),
-          ),
+          p !== punto2 &&
+          !['cuórum', 'cuorum', 'varios'].some((clave) => textoDe(p).includes(clave)),
       );
       let numero = 3;
       for (const p of dinamicos) {
-        r.seccion(`PUNTO ${numero}. ${(p.punto_tratar || '').toUpperCase()}`);
+        r.seccion(`PUNTO ${numero}. ${sinNumero(p).toUpperCase()}`);
         r.parrafo('Desarrollo:', { negrita: true });
         r.parrafo(p.tratado || p.desarrollo || 'No se registró el desarrollo de este punto.');
         r.parrafo('Resolución / Resoluciones:', { negrita: true });
