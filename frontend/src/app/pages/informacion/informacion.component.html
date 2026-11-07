@@ -5,32 +5,57 @@
     <p class="portal-cabecera__lead">{{ info.descripcion }}</p>
   </header>
 
-  <!-- MISIÓN Y VISIÓN -->
-  <section class="info__proposito" aria-label="Misión y visión">
-    <article class="declaracion declaracion--mision">
-      <h2 class="declaracion__titulo">Misión</h2>
-      <p class="declaracion__texto">{{ info.mision }}</p>
-    </article>
-    <article class="declaracion declaracion--vision">
-      <h2 class="declaracion__titulo">Visión</h2>
-      <p class="declaracion__texto">{{ info.vision }}</p>
-    </article>
+  <!-- QUIÉNES SOMOS -->
+  <section class="info__relato" aria-labelledby="quienes-titulo">
+    <div>
+      <h2 id="quienes-titulo" class="portal-subtitulo">Quiénes somos</h2>
+      <p class="info__texto">{{ info.quienesSomos }}</p>
+    </div>
+    <figure class="info__foto info__foto--ancha">
+      <img
+        src="imagenes/valle-del-rio.jpg"
+        width="1280"
+        height="863"
+        loading="lazy"
+        alt="Valle con cultivos y un río entre las montañas"
+      />
+    </figure>
   </section>
 
-  <!-- DIRECTIVA -->
+  <!-- ÓRGANOS DE DIRECCIÓN -->
   <section class="info__seccion" aria-labelledby="directiva-titulo">
-    <h2 id="directiva-titulo" class="portal-subtitulo">Directiva</h2>
+    <h2 id="directiva-titulo" class="portal-subtitulo">Órganos de Dirección</h2>
+    <p class="info__texto">{{ info.organos.asamblea }}</p>
+    <p class="info__texto">{{ info.organos.directiva }}</p>
     <ul class="directiva">
       @for (m of info.directiva; track m.cargo) {
         <li class="directiva__persona">
           <span class="directiva__monograma" aria-hidden="true">{{ iniciales(m.nombre) }}</span>
           <div>
-            <p class="directiva__nombre">{{ m.nombre }}</p>
+            <p class="directiva__nombre">{{ m.titulo }} {{ m.nombre }}</p>
             <p class="directiva__cargo">{{ m.cargo }}</p>
           </div>
         </li>
       }
     </ul>
+    <p class="info__nota info__nota--pie">{{ info.organos.vocales }}</p>
+  </section>
+
+  <!-- MISIÓN -->
+  <section class="info__mision" aria-labelledby="mision-titulo">
+    <figure class="info__foto info__foto--alta">
+      <img
+        src="imagenes/volcan-y-cultivos.jpg"
+        width="960"
+        height="1280"
+        loading="lazy"
+        alt="Volcán al atardecer sobre los cultivos de la zona"
+      />
+    </figure>
+    <article class="declaracion declaracion--mision">
+      <h2 id="mision-titulo" class="declaracion__titulo">Nuestra misión</h2>
+      <p class="declaracion__texto">{{ info.mision }}</p>
+    </article>
   </section>
 
   <!-- SECTORES: la barra de cada sector se llena según sus lotes -->
